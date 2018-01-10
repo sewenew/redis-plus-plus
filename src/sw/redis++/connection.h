@@ -92,6 +92,18 @@ public:
         }
 
     private:
+        template <typename>
+        struct IsKVPair : std::false_type {};
+
+        template <typename T>
+        struct IsKVPair<std::pair<T, T>> : std::true_type {};
+
+        template <typename Iter>
+        CmdArgs& _append(std::true_type, const std::pair<Iter, Iter> &range);
+
+        template <typename Iter>
+        CmdArgs& _append(std::false_type, const std::pair<Iter, Iter> &range);
+
         std::vector<const char *> _argv;
         std::vector<std::size_t> _argv_len;
     };
@@ -187,10 +199,29 @@ inline void Connection::send(const char *format, Args &&...args) {
 
 template <typename Iter>
 auto Connection::CmdArgs::operator<<(const std::pair<Iter, Iter> &range) -> CmdArgs& {
+    return _append(IsKVPair<typename std::decay<decltype(*(range.first))>::type>(), range);
+}
+
+template <typename Iter>
+auto Connection::CmdArgs::_append(std::false_type,
+                                    const std::pair<Iter, Iter> &range) -> CmdArgs& {
     auto first = range.first;
     auto last = range.second;
     while (first != last) {
         *this << *first;
+        ++first;
+    }
+
+    return *this;
+}
+
+template <typename Iter>
+auto Connection::CmdArgs::_append(std::true_type,
+                                    const std::pair<Iter, Iter> &range) -> CmdArgs& {
+    auto first = range.first;
+    auto last = range.second;
+    while (first != last) {
+        *this << first->first << first->second;
         ++first;
     }
 

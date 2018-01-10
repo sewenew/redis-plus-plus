@@ -16,6 +16,7 @@
 
 #include "r_string.h"
 #include "command.h"
+#include "exceptions.h"
 
 namespace sw {
 
@@ -23,6 +24,102 @@ namespace redis {
 
 long long RString::append(const StringView &str) {
     auto reply = _redis.command(cmd::append, _key, str);
+
+    return reply::to_integer(*reply);
+}
+
+OptionalString RString::get() {
+    auto reply = _redis.command(cmd::get, _key);
+
+    if (reply::is_nil(*reply)) {
+        return {};
+    }
+
+    return OptionalString(reply::to_string(*reply));
+}
+
+std::string RString::getrange(long long start, long long end) {
+    auto reply = _redis.command(cmd::getrange, _key, start, end);
+
+    return reply::to_string(*reply);
+}
+
+OptionalString RString::getset(const StringView &val) {
+    auto reply = _redis.command(cmd::getset, _key, val);
+
+    if (reply::is_nil(*reply)) {
+        return {};
+    }
+
+    return OptionalString(reply::to_string(*reply));
+}
+
+void RString::psetex(const StringView &val,
+                        const std::chrono::milliseconds &ttl) {
+    if (ttl <= std::chrono::milliseconds(0)) {
+        throw RException("TTL must be positive.");
+    }
+
+    auto reply = _redis.command(cmd::psetex, _key, val, ttl);
+
+    if (!reply::status_ok(*reply)) {
+        throw RException("Invalid status reply: " + reply::to_status(*reply));
+    }
+}
+
+bool RString::set(const StringView &val,
+                    const std::chrono::milliseconds &ttl,
+                    cmd::UpdateType type) {
+    auto reply = _redis.command(cmd::set, _key, val, ttl, type);
+
+    if (reply::is_nil(*reply)) {
+        // Failed to set.
+        return false;
+    }
+
+    assert(reply::is_status(*reply));
+
+    if (!reply::status_ok(*reply)) {
+        throw RException("Invalid status reply: " + reply::to_status(*reply));
+    }
+
+    return true;
+}
+
+bool RString::setnx(const StringView &val) {
+    auto reply = _redis.command(cmd::setnx, _key, val);
+
+    auto ret = reply::to_integer(*reply);
+
+    if (ret == 1) {
+        return true;
+    } else if (ret == 0) {
+        return false;
+    } else {
+        throw RException("Invalid integer reply: " + std::to_string(ret));
+    }
+}
+
+void RString::setex(const StringView &val, const std::chrono::seconds &ttl) {
+    if (ttl <= std::chrono::seconds(0)) {
+        throw RException("TTL must be positive.");
+    }
+
+    auto reply = _redis.command(cmd::setex, _key, val, ttl);
+
+    if (!reply::status_ok(*reply)) {
+        throw RException("Invalid status reply: " + reply::to_status(*reply));
+    }
+}
+
+long long RString::setrange(long long offset, const StringView &val) {
+    auto reply = _redis.command(cmd::setrange, _key, offset, val);
+
+    return reply::to_integer(*reply);
+}
+
+long long RString::strlen() {
+    auto reply = _redis.command(cmd::strlen, _key);
 
     return reply::to_integer(*reply);
 }

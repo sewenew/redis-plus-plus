@@ -80,6 +80,10 @@ bool has_error(redisReply &reply);
 
 bool is_nil(redisReply &reply);
 
+bool is_string(redisReply &reply);
+
+bool is_status(redisReply &reply);
+
 std::string to_error(redisReply &reply);
 
 std::string to_status(redisReply &reply);
@@ -130,6 +134,14 @@ namespace reply {
 
 inline bool is_nil(redisReply &reply) {
     return reply.type == REDIS_REPLY_NIL;
+}
+
+inline bool is_string(redisReply &reply) {
+    return reply.type == REDIS_REPLY_STRING;
+}
+
+inline bool is_status(redisReply &reply) {
+    return reply.type == REDIS_REPLY_STATUS;
 }
 
 }

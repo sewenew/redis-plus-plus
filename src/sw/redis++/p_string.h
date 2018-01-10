@@ -33,8 +33,12 @@ public:
 
     template <typename IntegerReplyCallback, typename ErrorCallback>
     PString& append(const StringView &str,
-            IntegerReplyCallback reply_callback,
-            ErrorCallback error_callback);
+                    IntegerReplyCallback reply_callback,
+                    ErrorCallback error_callback);
+
+    template <typename StringReplyCallback, typename ErrorCallback>
+    PString& get(StringReplyCallback reply_callback,
+                    ErrorCallback error_callback);
 
 private:
     friend class Pipeline;
@@ -54,13 +58,24 @@ inline Pipeline& PString::pipeline() {
 
 template <typename IntegerReplyCallback, typename ErrorCallback>
 inline PString& PString::append(const StringView &str,
-        IntegerReplyCallback reply_callback,
-        ErrorCallback error_callback) {
+                                IntegerReplyCallback reply_callback,
+                                ErrorCallback error_callback) {
     _pipeline.command(cmd::append,
-            IntegerReplyFunctor(reply_callback),
-            error_callback,
-            _key,
-            str);
+                        IntegerReplyFunctor(reply_callback),
+                        error_callback,
+                        _key,
+                        str);
+
+    return *this;
+}
+
+template <typename StringReplyCallback, typename ErrorCallback>
+inline PString& PString::get(StringReplyCallback reply_callback,
+                                ErrorCallback error_callback) {
+    _pipeline.command(cmd::get,
+                        StringReplyFunctor(reply_callback),
+                        error_callback,
+                        _key);
 
     return *this;
 }

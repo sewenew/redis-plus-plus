@@ -27,6 +27,12 @@ namespace redis {
 
 namespace cmd {
 
+enum class UpdateType {
+    EXIST,
+    NOT_EXIST,
+    ALWAYS
+};
+
 inline void auth(Connection &connection, const StringView &password) {
     connection.send("AUTH %b", password.data(), password.size());
 }
@@ -50,6 +56,77 @@ inline void append(Connection &connection, const StringView &key, const StringVi
     connection.send("APPEND %b %b",
                     key.data(), key.size(),
                     str.data(), str.size());
+}
+
+inline void get(Connection &connection, const StringView &key) {
+    connection.send("GET %b",
+                    key.data(), key.size());
+}
+
+inline void getrange(Connection &connection,
+                        const StringView &key,
+                        long long start,
+                        long long end) {
+    connection.send("GETRANGE %b %lld %lld",
+                    key.data(), key.size(),
+                    start,
+                    end);
+}
+
+inline void getset(Connection &connection,
+                    const StringView &key,
+                    const StringView &val) {
+    connection.send("GETSET %b %b",
+                    key.data(), key.size(),
+                    val.data(), val.size());
+}
+
+inline void psetex(Connection &connection,
+                    const StringView &key,
+                    const StringView &val,
+                    const std::chrono::milliseconds &ttl) {
+    connection.send("PSETEX %b %lld %b",
+                    key.data(), key.size(),
+                    ttl.count(),
+                    val.data(), val.size());
+}
+
+void set(Connection &connection,
+            const StringView &key,
+            const StringView &val,
+            const std::chrono::milliseconds &ttl,
+            UpdateType type);
+
+inline void setnx(Connection &connection,
+                    const StringView &key,
+                    const StringView &val) {
+    connection.send("SETNX %b %b",
+                    key.data(), key.size(),
+                    val.data(), val.size());
+}
+
+inline void setex(Connection &connection,
+                    const StringView &key,
+                    const StringView &val,
+                    const std::chrono::seconds &ttl) {
+    connection.send("SETEX %b %lld %b",
+                    key.data(), key.size(),
+                    ttl.count(),
+                    val.data(), val.size());
+}
+
+inline void setrange(Connection &connection,
+                        const StringView &key,
+                        long long offset,
+                        const StringView &val) {
+    connection.send("SETRANGE %b %lld %b",
+                    key.data(), key.size(),
+                    offset,
+                    val.data(), val.size());
+}
+
+inline void strlen(Connection &connection, const StringView &key) {
+    connection.send("STRLEN %b", key.data(), key.size());
 }
 
 // LIST commands.
