@@ -21,6 +21,7 @@
 #include "reply.h"
 #include "command.h"
 #include "redis.h"
+#include "utils.h"
 
 namespace sw {
 
@@ -31,7 +32,7 @@ class StringView;
 // Redis' LIST type.
 class RList {
 public:
-    std::string lpop();
+    OptionalString lpop();
 
     long long lpush(const StringView &val);
 
@@ -50,7 +51,7 @@ private:
 
 template <typename Iter>
 long long RList::lpush(Iter first, Iter last) {
-    auto reply = _redis.command(cmd::lpush_range, _key, first, last);
+    auto reply = _redis.command(cmd::lpush_range<Iter>, _key, first, last);
 
     return reply::to_integer(*reply);
 }

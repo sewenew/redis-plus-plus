@@ -22,14 +22,14 @@ namespace sw {
 
 namespace redis {
 
-std::string RList::lpop() {
+OptionalString RList::lpop() {
     auto reply = _redis.command(cmd::lpop, _key);
 
     if (reply::is_nil(*reply)) {
-        throw RException("Empty list: " + _key);
+        return {};
     }
 
-    return reply::to_string(*reply);
+    return OptionalString(reply::to_string(*reply));
 }
 
 long long RList::lpush(const StringView &val) {
