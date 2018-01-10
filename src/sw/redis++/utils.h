@@ -53,6 +53,52 @@ private:
     std::size_t _size = 0;
 };
 
+class OptionalString {
+public:
+    OptionalString() = default;
+
+    OptionalString(const OptionalString &) = default;
+    OptionalString& operator=(const OptionalString &) = default;
+
+    OptionalString(OptionalString &&) = default;
+    OptionalString& operator=(OptionalString &&) = default;
+
+    ~OptionalString() = default;
+
+    explicit OptionalString(std::string s) : _value(true, std::move(s)) {}
+
+    explicit operator bool() const {
+        return _value.first;
+    }
+
+    std::string& value() {
+        return _value.second;
+    }
+
+    const std::string& value() const {
+        return _value.second;
+    }
+
+    std::string* operator->() {
+        return &(_value.second);
+    }
+
+    const std::string* operator->() const {
+        return &(_value.second);
+    }
+
+    std::string& operator*() {
+        return _value.second;
+    }
+
+    const std::string& operator*() const {
+        return _value.second;
+    }
+
+private:
+    std::pair<bool, std::string> _value;
+};
+
 }
 
 }
