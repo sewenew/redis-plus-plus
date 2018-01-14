@@ -21,6 +21,8 @@
 #include <string>
 #include <functional>
 #include <hiredis/hiredis.h>
+#include "exceptions.h"
+#include "utils.h"
 
 namespace sw {
 
@@ -44,7 +46,7 @@ public:
 class StatusReplyFunctor {
 public:
     template <typename StringReplyCallback>
-    explicit StatusReplyFunctor(StringReplyCallback callback);
+    explicit StatusReplyFunctor(StringReplyCallback callback) : _callback(callback) {}
 
     void operator()(redisReply &reply);
 
@@ -55,7 +57,7 @@ private:
 class StringReplyFunctor {
 public:
     template <typename StringReplyCallback>
-    explicit StringReplyFunctor(StringReplyCallback callback);
+    explicit StringReplyFunctor(StringReplyCallback callback) : _callback(callback) {}
 
     void operator()(redisReply &reply);
 
@@ -66,7 +68,7 @@ private:
 class IntegerReplyFunctor {
 public:
     template <typename IntegerReplyCallback>
-    explicit IntegerReplyFunctor(IntegerReplyCallback callback);
+    explicit IntegerReplyFunctor(IntegerReplyCallback callback) : _callback(callback) {}
 
     void operator()(redisReply &reply);
 
@@ -76,61 +78,9 @@ private:
 
 namespace reply {
 
-bool has_error(redisReply &reply);
-
-bool is_nil(redisReply &reply);
-
-bool is_string(redisReply &reply);
-
-bool is_status(redisReply &reply);
-
-std::string to_error(redisReply &reply);
-
-std::string to_status(redisReply &reply);
-
-std::string to_string(redisReply &reply);
-
-long long to_integer(redisReply &reply);
-
-bool status_ok(redisReply &reply);
-
-// Inline implementations
-
-inline bool has_error(redisReply &reply) {
+inline bool is_error(redisReply &reply) {
     return reply.type == REDIS_REPLY_ERROR;
 }
-
-bool status_ok(redisReply &reply);
-
-}
-
-// Inline implementations.
-
-template <typename StringReplyCallback>
-inline StatusReplyFunctor::StatusReplyFunctor(StringReplyCallback callback) :
-    _callback(callback) {}
-
-inline void StatusReplyFunctor::operator()(redisReply &reply) {
-    _callback(reply::to_status(reply));
-}
-
-template <typename StringReplyCallback>
-inline StringReplyFunctor::StringReplyFunctor(StringReplyCallback callback) :
-    _callback(callback) {}
-
-inline void StringReplyFunctor::operator()(redisReply &reply) {
-    _callback(reply::to_string(reply));
-}
-
-template <typename IntegerReplyCallback>
-inline IntegerReplyFunctor::IntegerReplyFunctor(IntegerReplyCallback callback) :
-    _callback(callback) {}
-
-inline void IntegerReplyFunctor::operator()(redisReply &reply) {
-    _callback(reply::to_integer(reply));
-}
-
-namespace reply {
 
 inline bool is_nil(redisReply &reply) {
     return reply.type == REDIS_REPLY_NIL;
@@ -144,6 +94,56 @@ inline bool is_status(redisReply &reply) {
     return reply.type == REDIS_REPLY_STATUS;
 }
 
+inline bool is_integer(redisReply &reply) {
+    return reply.type == REDIS_REPLY_INTEGER;
+}
+
+inline bool is_array(redisReply &reply) {
+    return reply.type == REDIS_REPLY_ARRAY;
+}
+
+std::string to_error(redisReply &reply);
+
+std::string to_status(redisReply &reply);
+
+std::string to_string(redisReply &reply);
+
+OptionalString to_optional_string(redisReply &reply);
+
+long long to_integer(redisReply &reply);
+
+template <typename Iter>
+void to_string_array(redisReply &reply, Iter output) {
+    if (!reply::is_array(reply)) {
+        throw RException("Expect ARRAY reply.");
+    }
+
+    for (std::size_t idx = 0; idx != reply.elements; ++idx) {
+        auto *sub_reply = reply.element[idx];
+        if (sub_reply == nullptr) {
+            throw RException("Null string array reply.");
+        }
+
+        *output = to_string(*sub_reply);
+    }
+}
+
+bool status_ok(redisReply &reply);
+
+}
+
+// Inline implementations.
+
+inline void StatusReplyFunctor::operator()(redisReply &reply) {
+    _callback(reply::to_status(reply));
+}
+
+inline void StringReplyFunctor::operator()(redisReply &reply) {
+    _callback(reply::to_string(reply));
+}
+
+inline void IntegerReplyFunctor::operator()(redisReply &reply) {
+    _callback(reply::to_integer(reply));
 }
 
 }

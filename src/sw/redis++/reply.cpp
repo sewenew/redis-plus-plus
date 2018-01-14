@@ -15,7 +15,6 @@
  *************************************************************************/
 
 #include "reply.h"
-#include "exceptions.h"
 
 namespace sw {
 
@@ -24,7 +23,7 @@ namespace redis {
 namespace reply {
 
 std::string to_error(redisReply &reply) {
-    if (reply.type != REDIS_REPLY_ERROR) {
+    if (!reply::is_error(reply)) {
         throw RException("Expect ERROR reply.");
     }
 
@@ -36,7 +35,7 @@ std::string to_error(redisReply &reply) {
 }
 
 std::string to_status(redisReply &reply) {
-    if (reply.type != REDIS_REPLY_STATUS) {
+    if (!reply::is_status(reply)) {
         throw RException("Expect STATUS reply.");
     }
 
@@ -48,7 +47,7 @@ std::string to_status(redisReply &reply) {
 }
 
 std::string to_string(redisReply &reply) {
-    if (reply.type != REDIS_REPLY_STRING) {
+    if (!reply::is_string(reply)) {
         throw RException("Expect STRING reply.");
     }
 
@@ -59,8 +58,16 @@ std::string to_string(redisReply &reply) {
     return {reply.str, reply.len};
 }
 
+OptionalString to_optional_string(redisReply &reply) {
+    if (reply::is_nil(reply)) {
+        return {};
+    }
+
+    return OptionalString(reply::to_string(reply));
+}
+
 long long to_integer(redisReply &reply) {
-    if (reply.type != REDIS_REPLY_INTEGER) {
+    if (!reply::is_integer(reply)) {
         throw RException("Expect INTEGER reply.");
     }
 
@@ -68,7 +75,7 @@ long long to_integer(redisReply &reply) {
 }
 
 bool status_ok(redisReply &reply) {
-    if (reply.type != REDIS_REPLY_STATUS) {
+    if (!reply::is_status(reply)) {
         throw RException("Expect STATUS reply.");
     }
 

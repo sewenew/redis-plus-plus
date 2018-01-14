@@ -33,6 +33,11 @@ enum class UpdateType {
     ALWAYS
 };
 
+enum class InsertPosition {
+    BEFORE,
+    AFTER
+};
+
 inline void auth(Connection &connection, const StringView &password) {
     connection.send("AUTH %b", password.data(), password.size());
 }
@@ -131,6 +136,23 @@ inline void strlen(Connection &connection, const StringView &key) {
 
 // LIST commands.
 
+inline void lindex(Connection &connection, const StringView &key, long long index) {
+    connection.send("LINDEX %b %lld",
+                    key.data(), key.size(),
+                    index);
+}
+
+void linsert(Connection &connection,
+                const StringView &key,
+                const StringView &val,
+                InsertPosition position,
+                const StringView &pivot);
+
+inline void llen(Connection &connection,
+                    const StringView &key) {
+    connection.send("LLEN %b", key.data(), key.size());
+}
+
 inline void lpop(Connection &connection, const StringView &key) {
     connection.send("LPOP %b",
                     key.data(), key.size());
@@ -151,6 +173,79 @@ inline void lpush_range(Connection &connection,
     args << "LPUSH" << key << std::make_pair(first, last);
 
     connection.send(args);
+}
+
+inline void lpushx(Connection &connection, const StringView &key, const StringView &val) {
+    connection.send("LPUSHX %b %b",
+                    key.data(), key.size(),
+                    val.data(), val.size());
+}
+
+inline void lrange(Connection &connection,
+                    const StringView &key,
+                    long long start,
+                    long long stop) {
+    connection.send("LRANGE %b %lld %lld",
+                    key.data(), key.size(),
+                    start,
+                    stop);
+}
+
+inline void lrem(Connection &connection,
+                    const StringView &key,
+                    const StringView &val,
+                    long long count) {
+    connection.send("LREM %b %lld %b",
+                    key.data(), key.size(),
+                    count,
+                    val.data(), val.size());
+}
+
+inline void lset(Connection &connection,
+                    const StringView &key,
+                    long long index,
+                    const StringView &val) {
+    connection.send("LSET %b %lld %b",
+                    key.data(), key.size(),
+                    index,
+                    val.data(), val.size());
+}
+
+inline void ltrim(Connection &connection,
+                    const StringView &key,
+                    long long start,
+                    long long stop) {
+    connection.send("LTRIM %b %lld %lld",
+                    key.data(), key.size(),
+                    start,
+                    stop);
+}
+
+inline void rpop(Connection &connection, const StringView &key) {
+    connection.send("RPOP %b", key.data(), key.size());
+}
+
+inline void rpush(Connection &connection, const StringView &key, const StringView &val) {
+    connection.send("RPUSH %b %b",
+                    key.data(), key.size(),
+                    val.data(), val.size());
+}
+
+template <typename Iter>
+inline void rpush_range(Connection &connection,
+                        const StringView &key,
+                        Iter first,
+                        Iter last) {
+    Connection::CmdArgs args;
+    args << "RPUSH" << key << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+inline void rpushx(Connection &connection, const StringView &key, const StringView &val) {
+    connection.send("RPUSHX %b %b",
+                    key.data(), key.size(),
+                    val.data(), val.size());
 }
 
 }

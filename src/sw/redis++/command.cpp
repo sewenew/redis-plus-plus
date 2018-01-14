@@ -15,12 +15,15 @@
  *************************************************************************/
 
 #include "command.h"
+#include <cassert>
 
 namespace sw {
 
 namespace redis {
 
 namespace cmd {
+
+// STRING commands.
 
 void set(Connection &connection,
             const StringView &key,
@@ -54,6 +57,34 @@ void set(Connection &connection,
     }
 
     connection.send(args);
+}
+
+// LIST commands.
+
+void linsert(Connection &connection,
+                const StringView &key,
+                const StringView &val,
+                InsertPosition position,
+                const StringView &pivot) {
+    std::string pos;
+    switch (position) {
+    case InsertPosition::BEFORE:
+        pos = "BEFORE";
+        break;
+
+    case InsertPosition::AFTER:
+        pos = "AFTER";
+        break;
+
+    default:
+        assert(false);
+    }
+
+    connection.send("LINSERT %b %s %b %b",
+                    key.data(), key.size(),
+                    pos.c_str(),
+                    pivot.data(), pivot.size(),
+                    val.data(), val.size());
 }
 
 }

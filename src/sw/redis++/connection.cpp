@@ -131,7 +131,7 @@ ReplyUPtr Connection::recv() {
 
     auto reply = ReplyUPtr(static_cast<redisReply*>(r));
 
-    if (reply::has_error(*reply)) {
+    if (reply::is_error(*reply)) {
         throw RException("Get error reply, "
                 + reply::to_error(*reply));
     }

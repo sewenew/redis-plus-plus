@@ -34,10 +34,38 @@ class RList {
 public:
     OptionalString lpop();
 
+    OptionalString lindex(long long index);
+
+    long long linsert(const StringView &val,
+                        cmd::InsertPosition position,
+                        const StringView &pivot);
+
+    long long llen();
+
     long long lpush(const StringView &val);
 
     template <typename Iter>
     long long lpush(Iter first, Iter last);
+
+    long long lpushx(const StringView &val);
+
+    template <typename Iter>
+    void lrange(long long start, long long stop, Iter output);
+
+    long long lrem(const StringView &val, long long count = 0);
+
+    void lset(long long index, const StringView &val);
+
+    void ltrim(long long start, long long stop);
+
+    OptionalString rpop();
+
+    long long rpush(const StringView &val);
+
+    template <typename Iter>
+    long long rpush(Iter first, Iter last);
+
+    long long rpushx(const StringView &val);
 
 private:
     friend class Redis;
@@ -50,8 +78,22 @@ private:
 };
 
 template <typename Iter>
-long long RList::lpush(Iter first, Iter last) {
+inline long long RList::lpush(Iter first, Iter last) {
     auto reply = _redis.command(cmd::lpush_range<Iter>, _key, first, last);
+
+    return reply::to_integer(*reply);
+}
+
+template <typename Iter>
+inline void RList::lrange(long long start, long long stop, Iter output) {
+    auto reply = _redis.command(cmd::lrange, _key, start, stop);
+
+    reply::to_string_array(*reply, output);
+}
+
+template <typename Iter>
+inline long long RList::rpush(Iter first, Iter last) {
+    auto reply = _redis.command(cmd::rpush_range<Iter>, _key, first, last);
 
     return reply::to_integer(*reply);
 }
