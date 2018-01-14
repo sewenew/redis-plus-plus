@@ -31,11 +31,7 @@ long long RString::append(const StringView &str) {
 OptionalString RString::get() {
     auto reply = _redis.command(cmd::get, _key);
 
-    if (reply::is_nil(*reply)) {
-        return {};
-    }
-
-    return OptionalString(reply::to_string(*reply));
+    return reply::to_optional_string(*reply);
 }
 
 std::string RString::getrange(long long start, long long end) {
@@ -47,11 +43,7 @@ std::string RString::getrange(long long start, long long end) {
 OptionalString RString::getset(const StringView &val) {
     auto reply = _redis.command(cmd::getset, _key, val);
 
-    if (reply::is_nil(*reply)) {
-        return {};
-    }
-
-    return OptionalString(reply::to_string(*reply));
+    return reply::to_optional_string(*reply);
 }
 
 void RString::psetex(const StringView &val,
