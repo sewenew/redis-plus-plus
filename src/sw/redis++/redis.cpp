@@ -21,6 +21,7 @@
 #include "pipeline.h"
 #include "r_string.h"
 #include "r_list.h"
+#include "r_hash.h"
 
 namespace sw {
 
@@ -31,6 +32,10 @@ RString Redis::string(const std::string &key) {
 }
 
 RList Redis::list(const std::string &key) {
+    return {key, *this};
+}
+
+RHash Redis::hash(const std::string &key) {
     return {key, *this};
 }
 

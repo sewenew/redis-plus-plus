@@ -20,6 +20,7 @@
 #include "redis.h"
 #include "r_string.h"
 #include "r_list.h"
+#include "r_hash.h"
 #include "pipeline.h"
 #include "p_string.h"
 

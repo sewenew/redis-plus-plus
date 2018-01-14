@@ -17,6 +17,12 @@
 #ifndef SEWENEW_REDISPLUSPLUS_R_HASH_H
 #define SEWENEW_REDISPLUSPLUS_R_HASH_H
 
+#include <string>
+#include "reply.h"
+#include "command.h"
+#include "redis.h"
+#include "utils.h"
+
 namespace sw {
 
 namespace redis {
@@ -24,7 +30,71 @@ namespace redis {
 // Redis' HASH type.
 class RHash {
 public:
+    long long hdel(const StringView &field);
+
+    template <typename Iter>
+    long long hdel(Iter first, Iter last);
+
+    bool hexists(const StringView &field);
+
+    OptionalString hget(const StringView &field);
+
+    template <typename Iter>
+    void hgetall(Iter output);
+
+    template <typename Iter>
+    void hkeys(Iter output);
+
+    long long hlen();
+
+    bool hset(const StringView &field, const StringView &val);
+
+    bool hsetnx(const StringView &field, const StringView &val);
+
+    long long hstrlen(const StringView &field);
+
+    template <typename Iter>
+    void hvals(Iter output);
+
+private:
+    friend class Redis;
+
+    RHash(const std::string &key, Redis &redis) : _key(key), _redis(redis) {}
+
+    std::string _key;
+
+    Redis &_redis;
 };
+
+// Inline implementations.
+
+template <typename Iter>
+inline long long RHash::hdel(Iter first, Iter last) {
+    auto reply = _redis.command(cmd::hdel_range<Iter>, _key, first, last);
+
+    return reply::to_integer(*reply);
+}
+
+template <typename Iter>
+inline void RHash::hgetall(Iter output) {
+    auto reply = _redis.command(cmd::hgetall, _key);
+
+    reply::to_string_pair_array(*reply, output);
+}
+
+template <typename Iter>
+inline void RHash::hkeys(Iter output) {
+    auto reply = _redis.command(cmd::hkeys, _key);
+
+    reply::to_string_array(*reply, output);
+}
+
+template <typename Iter>
+inline void RHash::hvals(Iter output) {
+    auto reply = _redis.command(cmd::hvals, _key);
+
+    reply::to_string_array(*reply, output);
+}
 
 }
 

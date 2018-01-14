@@ -29,6 +29,7 @@ namespace redis {
 class StringView;
 class RString;
 class RList;
+class RHash;
 class Pipeline;
 
 class Redis {
@@ -39,6 +40,8 @@ public:
     RString string(const std::string &key);
 
     RList list(const std::string &key);
+
+    RHash hash(const std::string &key);
 
     Pipeline pipeline();
 

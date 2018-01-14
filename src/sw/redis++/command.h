@@ -248,6 +248,81 @@ inline void rpushx(Connection &connection, const StringView &key, const StringVi
                     val.data(), val.size());
 }
 
+// HASH commands.
+
+inline void hdel(Connection &connection, const StringView &key, const StringView &field) {
+    connection.send("HDEL %b %b",
+                    key.data(), key.size(),
+                    field.data(), field.size());
+}
+
+template <typename Iter>
+inline void hdel_range(Connection &connection,
+                        const StringView &key,
+                        Iter first,
+                        Iter last) {
+    Connection::CmdArgs args;
+    args << "HDEL" << key << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+inline void hexists(Connection &connection, const StringView &key, const StringView &field) {
+    connection.send("HEXISTS %b %b",
+                    key.data(), key.size(),
+                    field.data(), field.size());
+}
+
+inline void hget(Connection &connection, const StringView &key, const StringView &field) {
+    connection.send("HGET %b %b",
+                    key.data(), key.size(),
+                    field.data(), field.size());
+}
+
+inline void hgetall(Connection &connection, const StringView &key) {
+    connection.send("HGETALL %b", key.data(), key.size());
+}
+
+inline void hkeys(Connection &connection, const StringView &key) {
+    connection.send("HKEYS %b", key.data(), key.size());
+}
+
+inline void hlen(Connection &connection, const StringView &key) {
+    connection.send("HLEN %b", key.data(), key.size());
+}
+
+inline void hset(Connection &connection,
+                    const StringView &key,
+                    const StringView &field,
+                    const StringView &val) {
+    connection.send("HSET %b %b %b",
+                    key.data(), key.size(),
+                    field.data(), field.size(),
+                    val.data(), val.size());
+}
+
+inline void hsetnx(Connection &connection,
+                    const StringView &key,
+                    const StringView &field,
+                    const StringView &val) {
+    connection.send("HSETNX %b %b %b",
+                    key.data(), key.size(),
+                    field.data(), field.size(),
+                    val.data(), val.size());
+}
+
+inline void hstrlen(Connection &connection,
+                    const StringView &key,
+                    const StringView &field) {
+    connection.send("HSTRLEN %b %b",
+                    key.data(), key.size(),
+                    field.data(), field.size());
+}
+
+inline void hvals(Connection &connection, const StringView &key) {
+    connection.send("HVALS %b", key.data(), key.size());
+}
+
 }
 
 }

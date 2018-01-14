@@ -125,6 +125,31 @@ void to_string_array(redisReply &reply, Iter output) {
         }
 
         *output = to_string(*sub_reply);
+
+        ++output;
+    }
+}
+
+template <typename Iter>
+void to_string_pair_array(redisReply &reply, Iter output) {
+    if (!reply::is_array(reply)) {
+        throw RException("Expect ARRAY reply.");
+    }
+
+    if (reply.elements % 2 != 0) {
+        throw RException("Not string pair array reply");
+    }
+
+    for (std::size_t idx = 0; idx != reply.elements; idx += 2) {
+        auto *key_reply = reply.element[idx];
+        auto *val_reply = reply.element[idx + 1];
+        if (key_reply == nullptr || val_reply == nullptr) {
+            throw RException("Null string array reply.");
+        }
+
+        *output = std::make_pair(to_string(*key_reply), to_string(*val_reply));
+
+        ++output;
     }
 }
 
