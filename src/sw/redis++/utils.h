@@ -99,6 +99,21 @@ private:
     std::pair<bool, std::string> _value;
 };
 
+template <typename ...>
+struct IsKvPair : std::false_type {};
+
+template <typename T, typename U>
+struct IsKvPair<std::pair<T, U>> : std::true_type {};
+
+template <typename ...>
+using Void = void;
+
+template <typename T, typename U = Void<>>
+struct IsInserter : std::false_type {};
+
+template <typename T>
+struct IsInserter<T, Void<typename T::container_type>> : std::true_type {};
+
 }
 
 }

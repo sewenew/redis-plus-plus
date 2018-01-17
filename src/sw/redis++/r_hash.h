@@ -79,7 +79,7 @@ template <typename Iter>
 inline void RHash::hgetall(Iter output) {
     auto reply = _redis.command(cmd::hgetall, _key);
 
-    reply::to_string_pair_array(*reply, output);
+    reply::to_string_array(*reply, output);
 }
 
 template <typename Iter>

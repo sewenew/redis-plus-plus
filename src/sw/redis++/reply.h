@@ -112,46 +112,8 @@ OptionalString to_optional_string(redisReply &reply);
 
 long long to_integer(redisReply &reply);
 
-template <typename Iter>
-void to_string_array(redisReply &reply, Iter output) {
-    if (!reply::is_array(reply)) {
-        throw RException("Expect ARRAY reply.");
-    }
-
-    for (std::size_t idx = 0; idx != reply.elements; ++idx) {
-        auto *sub_reply = reply.element[idx];
-        if (sub_reply == nullptr) {
-            throw RException("Null string array reply.");
-        }
-
-        *output = to_string(*sub_reply);
-
-        ++output;
-    }
-}
-
-template <typename Iter>
-void to_string_pair_array(redisReply &reply, Iter output) {
-    if (!reply::is_array(reply)) {
-        throw RException("Expect ARRAY reply.");
-    }
-
-    if (reply.elements % 2 != 0) {
-        throw RException("Not string pair array reply");
-    }
-
-    for (std::size_t idx = 0; idx != reply.elements; idx += 2) {
-        auto *key_reply = reply.element[idx];
-        auto *val_reply = reply.element[idx + 1];
-        if (key_reply == nullptr || val_reply == nullptr) {
-            throw RException("Null string array reply.");
-        }
-
-        *output = std::make_pair(to_string(*key_reply), to_string(*val_reply));
-
-        ++output;
-    }
-}
+template<typename T>
+void to_string_array(redisReply &reply, T output);
 
 bool status_ok(redisReply &reply);
 
@@ -169,6 +131,68 @@ inline void StringReplyFunctor::operator()(redisReply &reply) {
 
 inline void IntegerReplyFunctor::operator()(redisReply &reply) {
     _callback(reply::to_integer(reply));
+}
+
+namespace reply {
+
+template <typename T>
+void _to_string_array_impl(std::true_type, redisReply &reply, T output) {
+    if (reply.elements % 2 != 0) {
+        throw RException("Not string pair array reply");
+    }
+
+    for (std::size_t idx = 0; idx != reply.elements; idx += 2) {
+        auto *key_reply = reply.element[idx];
+        auto *val_reply = reply.element[idx + 1];
+        if (key_reply == nullptr || val_reply == nullptr) {
+            throw RException("Null string array reply.");
+        }
+
+        *output = std::make_pair(to_string(*key_reply), to_string(*val_reply));
+
+        ++output;
+    }
+}
+
+template <typename T>
+void _to_string_array_impl(std::false_type, redisReply &reply, T output) {
+    for (std::size_t idx = 0; idx != reply.elements; ++idx) {
+        auto *sub_reply = reply.element[idx];
+        if (sub_reply == nullptr) {
+            throw RException("Null string array reply.");
+        }
+
+        *output = to_string(*sub_reply);
+
+        ++output;
+    }
+}
+
+template <typename T>
+void _to_string_array(std::true_type, redisReply &reply, T output) {
+    // std::inserter or std::back_inserter
+    _to_string_array_impl(IsKvPair<typename T::container_type::value_type>(),
+                            reply,
+                            output);
+}
+
+template <typename T>
+void _to_string_array(std::false_type, redisReply &reply, T output) {
+    // Normal iterator
+    _to_string_array_impl(IsKvPair<typename std::decay<decltype(*output)>::type>(),
+                            reply,
+                            output);
+}
+
+template<typename T>
+void to_string_array(redisReply &reply, T output) {
+    if (!reply::is_array(reply)) {
+        throw RException("Expect ARRAY reply.");
+    }
+
+    _to_string_array(typename IsInserter<T>::type(), reply, output);
+}
+
 }
 
 }

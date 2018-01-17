@@ -92,12 +92,6 @@ public:
         }
 
     private:
-        template <typename>
-        struct IsKVPair : std::false_type {};
-
-        template <typename T>
-        struct IsKVPair<std::pair<T, T>> : std::true_type {};
-
         template <typename Iter>
         CmdArgs& _append(std::true_type, const std::pair<Iter, Iter> &range);
 
@@ -199,7 +193,7 @@ inline void Connection::send(const char *format, Args &&...args) {
 
 template <typename Iter>
 auto Connection::CmdArgs::operator<<(const std::pair<Iter, Iter> &range) -> CmdArgs& {
-    return _append(IsKVPair<typename std::decay<decltype(*(range.first))>::type>(), range);
+    return _append(IsKvPair<typename std::decay<decltype(*(range.first))>::type>(), range);
 }
 
 template <typename Iter>
