@@ -47,6 +47,9 @@ public:
 
     long long hlen();
 
+    template <typename Iter>
+    void hmset(Iter first, Iter last);
+
     bool hset(const StringView &field, const StringView &val);
 
     bool hsetnx(const StringView &field, const StringView &val);
@@ -87,6 +90,15 @@ inline void RHash::hkeys(Iter output) {
     auto reply = _redis.command(cmd::hkeys, _key);
 
     reply::to_string_array(*reply, output);
+}
+
+template <typename Iter>
+inline void RHash::hmset(Iter first, Iter last) {
+    auto reply = _redis.command(cmd::hmset<Iter>, _key, first, last);
+
+    if (!reply::status_ok(*reply)) {
+        throw RException("Invalid status reply: " + reply::to_status(*reply));
+    }
 }
 
 template <typename Iter>

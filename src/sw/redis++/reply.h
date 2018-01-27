@@ -112,8 +112,8 @@ OptionalString to_optional_string(redisReply &reply);
 
 long long to_integer(redisReply &reply);
 
-template<typename T>
-void to_string_array(redisReply &reply, T output);
+template<typename Iter>
+void to_string_array(redisReply &reply, Iter output);
 
 bool status_ok(redisReply &reply);
 
@@ -135,8 +135,8 @@ inline void IntegerReplyFunctor::operator()(redisReply &reply) {
 
 namespace reply {
 
-template <typename T>
-void _to_string_array_impl(std::true_type, redisReply &reply, T output) {
+template <typename Iter>
+void _to_string_array_impl(std::true_type, redisReply &reply, Iter output) {
     if (reply.elements % 2 != 0) {
         throw RException("Not string pair array reply");
     }
@@ -154,8 +154,8 @@ void _to_string_array_impl(std::true_type, redisReply &reply, T output) {
     }
 }
 
-template <typename T>
-void _to_string_array_impl(std::false_type, redisReply &reply, T output) {
+template <typename Iter>
+void _to_string_array_impl(std::false_type, redisReply &reply, Iter output) {
     for (std::size_t idx = 0; idx != reply.elements; ++idx) {
         auto *sub_reply = reply.element[idx];
         if (sub_reply == nullptr) {
@@ -168,29 +168,29 @@ void _to_string_array_impl(std::false_type, redisReply &reply, T output) {
     }
 }
 
-template <typename T>
-void _to_string_array(std::true_type, redisReply &reply, T output) {
+template <typename Iter>
+void _to_string_array(std::true_type, redisReply &reply, Iter output) {
     // std::inserter or std::back_inserter
-    _to_string_array_impl(IsKvPair<typename T::container_type::value_type>(),
+    _to_string_array_impl(IsKvPair<typename Iter::container_type::value_type>(),
                             reply,
                             output);
 }
 
-template <typename T>
-void _to_string_array(std::false_type, redisReply &reply, T output) {
+template <typename Iter>
+void _to_string_array(std::false_type, redisReply &reply, Iter output) {
     // Normal iterator
     _to_string_array_impl(IsKvPair<typename std::decay<decltype(*output)>::type>(),
                             reply,
                             output);
 }
 
-template<typename T>
-void to_string_array(redisReply &reply, T output) {
+template<typename Iter>
+void to_string_array(redisReply &reply, Iter output) {
     if (!reply::is_array(reply)) {
         throw RException("Expect ARRAY reply.");
     }
 
-    _to_string_array(typename IsInserter<T>::type(), reply, output);
+    _to_string_array(typename IsInserter<Iter>::type(), reply, output);
 }
 
 }
