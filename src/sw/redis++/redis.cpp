@@ -22,6 +22,7 @@
 #include "r_string.h"
 #include "r_list.h"
 #include "r_hash.h"
+#include "r_set.h"
 
 namespace sw {
 
@@ -36,6 +37,10 @@ RList Redis::list(const std::string &key) {
 }
 
 RHash Redis::hash(const std::string &key) {
+    return {key, *this};
+}
+
+RSet Redis::set(const std::string &key) {
     return {key, *this};
 }
 

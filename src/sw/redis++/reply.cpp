@@ -74,6 +74,18 @@ long long to_integer(redisReply &reply) {
     return reply.integer;
 }
 
+bool to_bool(redisReply &reply) {
+    auto ret = reply::to_integer(reply);
+
+    if (ret == 1) {
+        return true;
+    } else if (ret == 0) {
+        return false;
+    } else {
+        throw RException("Invalid bool reply: " + std::to_string(ret));
+    }
+}
+
 bool status_ok(redisReply &reply) {
     if (!reply::is_status(reply)) {
         throw RException("Expect STATUS reply.");

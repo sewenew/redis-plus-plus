@@ -118,6 +118,8 @@ void to_string_array(redisReply &reply, Iter output);
 template <typename Iter>
 void to_optional_string_array(redisReply &reply, Iter output);
 
+bool to_bool(redisReply &reply);
+
 bool status_ok(redisReply &reply);
 
 }

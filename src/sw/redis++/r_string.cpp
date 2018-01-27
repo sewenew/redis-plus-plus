@@ -81,15 +81,7 @@ bool RString::set(const StringView &val,
 bool RString::setnx(const StringView &val) {
     auto reply = _redis.command(cmd::setnx, _key, val);
 
-    auto ret = reply::to_integer(*reply);
-
-    if (ret == 1) {
-        return true;
-    } else if (ret == 0) {
-        return false;
-    } else {
-        throw RException("Invalid integer reply: " + std::to_string(ret));
-    }
+    return reply::to_bool(*reply);
 }
 
 void RString::setex(const StringView &val, const std::chrono::seconds &ttl) {

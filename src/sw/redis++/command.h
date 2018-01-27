@@ -293,9 +293,9 @@ inline void hlen(Connection &connection, const StringView &key) {
 
 template <typename Iter>
 inline void hmget(Connection &connection,
-        const StringView &key,
-        Iter first,
-        Iter last) {
+                    const StringView &key,
+                    Iter first,
+                    Iter last) {
     Connection::CmdArgs args;
     args << "HMGET" << key << std::make_pair(first, last);
 
@@ -343,6 +343,84 @@ inline void hstrlen(Connection &connection,
 
 inline void hvals(Connection &connection, const StringView &key) {
     connection.send("HVALS %b", key.data(), key.size());
+}
+
+// SET commands
+
+inline void sadd(Connection &connection,
+                    const StringView &key,
+                    const StringView &member) {
+    connection.send("SADD %b %b",
+                    key.data(), key.size(),
+                    member.data(), member.size());
+}
+
+template <typename Iter>
+inline void sadd_range(Connection &connection,
+                        const StringView &key,
+                        Iter first,
+                        Iter last) {
+    Connection::CmdArgs args;
+    args << "SADD" << key << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+inline void scard(Connection &connection, const StringView &key) {
+    connection.send("SCARD %b", key.data(), key.size());
+}
+
+inline void sismember(Connection &connection,
+                        const StringView &key,
+                        const StringView &member) {
+    connection.send("SISMEMBER %b %b",
+                    key.data(), key.size(),
+                    member.data(), member.size());
+}
+
+inline void smembers(Connection &connection, const StringView &key) {
+    connection.send("SMEMBERS %b", key.data(), key.size());
+}
+
+inline void spop(Connection &connection, const StringView &key) {
+    connection.send("SPOP %b", key.data(), key.size());
+}
+
+inline void spop_range(Connection &connection, const StringView &key, long long count) {
+    connection.send("SPOP %b %lld",
+                    key.data(), key.size(),
+                    count);
+}
+
+inline void srandmember(Connection &connection, const StringView &key) {
+    connection.send("SRANDMEMBER %b", key.data(), key.size());
+}
+
+inline void srandmember_range(Connection &connection,
+                                const StringView &key,
+                                long long count) {
+    connection.send("SRANDMEMBER %b %lld",
+                    key.data(), key.size(),
+                    count);
+}
+
+inline void srem(Connection &connection,
+                    const StringView &key,
+                    const StringView &member) {
+    connection.send("SREM %b %b",
+                    key.data(), key.size(),
+                    member.data(), member.size());
+}
+
+template <typename Iter>
+inline void srem_range(Connection &connection,
+                    const StringView &key,
+                    Iter first,
+                    Iter last) {
+    Connection::CmdArgs args;
+    args << "SREM" << key << std::make_pair(first, last);
+
+    connection.send(args);
 }
 
 }

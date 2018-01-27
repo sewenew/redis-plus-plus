@@ -30,6 +30,7 @@ class StringView;
 class RString;
 class RList;
 class RHash;
+class RSet;
 class Pipeline;
 
 class Redis {
@@ -42,6 +43,8 @@ public:
     RList list(const std::string &key);
 
     RHash hash(const std::string &key);
+
+    RSet set(const std::string &key);
 
     Pipeline pipeline();
 

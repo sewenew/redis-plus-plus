@@ -29,15 +29,7 @@ long long RHash::hdel(const StringView &field) {
 bool RHash::hexists(const StringView &field) {
     auto reply = _redis.command(cmd::hexists, _key, field);
 
-    auto ret = reply::to_integer(*reply);
-
-    if (ret == 1) {
-        return true;
-    } else if (ret == 0) {
-        return false;
-    } else {
-        throw RException("Invalid integer reply: " + std::to_string(ret));
-    }
+    return reply::to_bool(*reply);
 }
 
 OptionalString RHash::hget(const StringView &field) {
@@ -55,27 +47,13 @@ long long RHash::hlen() {
 bool RHash::hset(const StringView &field, const StringView &val) {
     auto reply = _redis.command(cmd::hset, _key, field, val);
 
-    auto ret = reply::to_integer(*reply);
-    if (ret == 1) {
-        return true;
-    } else if (ret == 0) {
-        return false;
-    } else {
-        throw RException("Invalid integer reply: " + std::to_string(ret));
-    }
+    return reply::to_bool(*reply);
 }
 
 bool RHash::hsetnx(const StringView &field, const StringView &val) {
     auto reply = _redis.command(cmd::hsetnx, _key, field, val);
 
-    auto ret = reply::to_integer(*reply);
-    if (ret == 1) {
-        return true;
-    } else if (ret == 0) {
-        return false;
-    } else {
-        throw RException("Invalid integer reply: " + std::to_string(ret));
-    }
+    return reply::to_bool(*reply);
 }
 
 long long RHash::hstrlen(const StringView &field) {
