@@ -292,6 +292,17 @@ inline void hlen(Connection &connection, const StringView &key) {
 }
 
 template <typename Iter>
+inline void hmget(Connection &connection,
+        const StringView &key,
+        Iter first,
+        Iter last) {
+    Connection::CmdArgs args;
+    args << "HMGET" << key << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Iter>
 inline void hmset(Connection &connection,
                     const StringView &key,
                     Iter first,

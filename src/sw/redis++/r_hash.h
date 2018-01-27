@@ -47,6 +47,9 @@ public:
 
     long long hlen();
 
+    template <typename Input, typename Output>
+    void hmget(Input first, Input last, Output output);
+
     template <typename Iter>
     void hmset(Iter first, Iter last);
 
@@ -90,6 +93,13 @@ inline void RHash::hkeys(Iter output) {
     auto reply = _redis.command(cmd::hkeys, _key);
 
     reply::to_string_array(*reply, output);
+}
+
+template <typename Input, typename Output>
+inline void RHash::hmget(Input first, Input last, Output output) {
+    auto reply = _redis.command(cmd::hmget<Input>, _key, first, last);
+
+    reply::to_optional_string_array(*reply, output);
 }
 
 template <typename Iter>

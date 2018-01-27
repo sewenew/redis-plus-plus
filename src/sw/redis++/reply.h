@@ -115,6 +115,9 @@ long long to_integer(redisReply &reply);
 template<typename Iter>
 void to_string_array(redisReply &reply, Iter output);
 
+template <typename Iter>
+void to_optional_string_array(redisReply &reply, Iter output);
+
 bool status_ok(redisReply &reply);
 
 }
@@ -191,6 +194,24 @@ void to_string_array(redisReply &reply, Iter output) {
     }
 
     _to_string_array(typename IsInserter<Iter>::type(), reply, output);
+}
+
+template <typename Iter>
+void to_optional_string_array(redisReply &reply, Iter output) {
+    if (!reply::is_array(reply)) {
+        throw RException("Expect ARRAY reply.");
+    }
+
+    for (std::size_t idx = 0; idx != reply.elements; ++idx) {
+        auto *sub_reply = reply.element[idx];
+        if (sub_reply == nullptr) {
+            throw RException("Null string array reply.");
+        }
+
+        *output = to_optional_string(*sub_reply);
+
+        ++output;
+    }
 }
 
 }
