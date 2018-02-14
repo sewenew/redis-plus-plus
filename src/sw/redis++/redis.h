@@ -31,6 +31,7 @@ class RString;
 class RList;
 class RHash;
 class RSet;
+class RSortedSet;
 class Pipeline;
 
 class Redis {
@@ -45,6 +46,8 @@ public:
     RHash hash(const std::string &key);
 
     RSet set(const std::string &key);
+
+    RSortedSet sorted_set(const std::string &key);
 
     Pipeline pipeline();
 

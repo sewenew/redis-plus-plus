@@ -423,6 +423,24 @@ inline void srem_range(Connection &connection,
     connection.send(args);
 }
 
+// Sorted Set commands.
+
+/*
+void zadd(Connection &connection,
+                    const StringView &key,
+                    const StringView &member,
+                    double score,
+                    bool changed,
+                    cmd::UpdateType type);
+
+template <typename Iter>
+void zadd_range(Connection &connection,
+                Iter first,
+                Iter last,
+                bool changed,
+                cmd::UpdateType type);
+                */
+
 }
 
 }

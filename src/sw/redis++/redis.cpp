@@ -23,6 +23,7 @@
 #include "r_list.h"
 #include "r_hash.h"
 #include "r_set.h"
+#include "r_sorted_set.h"
 
 namespace sw {
 
@@ -41,6 +42,10 @@ RHash Redis::hash(const std::string &key) {
 }
 
 RSet Redis::set(const std::string &key) {
+    return {key, *this};
+}
+
+RSortedSet Redis::sorted_set(const std::string &key) {
     return {key, *this};
 }
 

@@ -17,6 +17,12 @@
 #ifndef SEWENEW_REDISPLUSPLUS_R_SORTED_SET_H
 #define SEWENEW_REDISPLUSPLUS_R_SORTED_SET_H
 
+#include <string>
+#include "reply.h"
+#include "command.h"
+#include "redis.h"
+#include "utils.h"
+
 namespace sw {
 
 namespace redis {
@@ -24,6 +30,28 @@ namespace redis {
 // Redis' SORTED SET type.
 class RSortedSet {
 public:
+    /*
+    // We don't support the INCR option, since you can always use ZINCRBY instead.
+    long long zadd(const StringView &member,
+                    double score,
+                    bool changed = false,
+                    cmd::UpdateType type = cmd::UpdateType::ALWAYS);
+
+    template <typename Iter>
+    long long zadd(Iter first,
+                    Iter last,
+                    bool changed = false,
+                    cmd::UpdateType type = cmd::UpdateType::ALWAYS);
+                    */
+
+private:
+    friend class Redis;
+
+    RSortedSet(const std::string &key, Redis &redis) : _key(key), _redis(redis) {}
+
+    std::string _key;
+
+    Redis &_redis;
 };
 
 }

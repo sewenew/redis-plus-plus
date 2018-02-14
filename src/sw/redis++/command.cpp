@@ -17,6 +17,12 @@
 #include "command.h"
 #include <cassert>
 
+namespace {
+
+void set_update_type(sw::redis::Connection::CmdArgs &args, sw::redis::cmd::UpdateType type);
+
+}
+
 namespace sw {
 
 namespace redis {
@@ -39,22 +45,7 @@ void set(Connection &connection,
         args << "PX" << ttl_options;
     }
 
-    switch (type) {
-    case UpdateType::EXIST:
-        args << "XX";
-        break;
-
-    case UpdateType::NOT_EXIST:
-        args << "NX";
-        break;
-
-    case UpdateType::ALWAYS:
-        // Do nothing.
-        break;
-
-    default:
-        assert(false);
-    }
+    set_update_type(args, type);
 
     connection.send(args);
 }
@@ -87,8 +78,56 @@ void linsert(Connection &connection,
                     val.data(), val.size());
 }
 
+/*
+void zadd(Connection &connection,
+                    const StringView &key,
+                    const StringView &member,
+                    double score,
+                    bool changed,
+                    cmd::UpdateType type) {
+    Connection::CmdArgs args;
+    args << "ZADD" << key;
+
+    set_update_type(args, type);
+
+    if (changed) {
+        args << "CH";
+    }
+
+    args << score << member;
+
+    connection.send(args);
+}
+*/
+
 }
 
+}
+
+}
+
+namespace {
+
+void set_update_type(sw::redis::Connection::CmdArgs &args, sw::redis::cmd::UpdateType type) {
+    using namespace sw::redis;
+    using namespace sw::redis::cmd;
+
+    switch (type) {
+    case UpdateType::EXIST:
+        args << "XX";
+        break;
+
+    case UpdateType::NOT_EXIST:
+        args << "NX";
+        break;
+
+    case UpdateType::ALWAYS:
+        // Do nothing.
+        break;
+
+    default:
+        throw RException("Unknown update type.");
+    }
 }
 
 }
