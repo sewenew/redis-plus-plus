@@ -17,12 +17,6 @@
 #include "command.h"
 #include <cassert>
 
-namespace {
-
-void set_update_type(sw::redis::Connection::CmdArgs &args, sw::redis::cmd::UpdateType type);
-
-}
-
 namespace sw {
 
 namespace redis {
@@ -45,7 +39,7 @@ void set(Connection &connection,
         args << "PX" << ttl_options;
     }
 
-    set_update_type(args, type);
+    detail::set_update_type(args, type);
 
     connection.send(args);
 }
@@ -78,40 +72,9 @@ void linsert(Connection &connection,
                     val.data(), val.size());
 }
 
-/*
-void zadd(Connection &connection,
-                    const StringView &key,
-                    const StringView &member,
-                    double score,
-                    bool changed,
-                    cmd::UpdateType type) {
-    Connection::CmdArgs args;
-    args << "ZADD" << key;
+namespace detail {
 
-    set_update_type(args, type);
-
-    if (changed) {
-        args << "CH";
-    }
-
-    args << score << member;
-
-    connection.send(args);
-}
-*/
-
-}
-
-}
-
-}
-
-namespace {
-
-void set_update_type(sw::redis::Connection::CmdArgs &args, sw::redis::cmd::UpdateType type) {
-    using namespace sw::redis;
-    using namespace sw::redis::cmd;
-
+void set_update_type(Connection::CmdArgs &args, UpdateType type) {
     switch (type) {
     case UpdateType::EXIST:
         args << "XX";
@@ -128,6 +91,12 @@ void set_update_type(sw::redis::Connection::CmdArgs &args, sw::redis::cmd::Updat
     default:
         throw RException("Unknown update type.");
     }
+}
+
+}
+
+}
+
 }
 
 }

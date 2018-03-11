@@ -21,6 +21,7 @@
 #include <cstring>
 #include <memory>
 #include <vector>
+#include <list>
 #include <string>
 #include <sstream>
 #include <chrono>
@@ -76,6 +77,8 @@ public:
     public:
         CmdArgs& operator<<(const StringView &arg);
 
+        CmdArgs& operator<<(double d);
+
         template <typename Iter>
         CmdArgs& operator<<(const std::pair<Iter, Iter> &range);
 
@@ -100,6 +103,8 @@ public:
 
         std::vector<const char *> _argv;
         std::vector<std::size_t> _argv_len;
+
+        std::list<std::string> _doubles;
     };
 
     void send(CmdArgs &args);

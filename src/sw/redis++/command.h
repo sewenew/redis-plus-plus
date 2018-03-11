@@ -425,21 +425,168 @@ inline void srem_range(Connection &connection,
 
 // Sorted Set commands.
 
-/*
-void zadd(Connection &connection,
-                    const StringView &key,
-                    const StringView &member,
-                    double score,
-                    bool changed,
-                    cmd::UpdateType type);
-
 template <typename Iter>
 void zadd_range(Connection &connection,
+                const StringView &key,
                 Iter first,
                 Iter last,
                 bool changed,
                 cmd::UpdateType type);
-                */
+
+inline void zadd(Connection &connection,
+                    const StringView &key,
+                    double score,
+                    const StringView &member,
+                    bool changed,
+                    cmd::UpdateType type) {
+    auto tmp = {std::make_pair(score, member)};
+
+    zadd_range(connection, key, tmp.begin(), tmp.end(), changed, type);
+}
+
+inline void zcard(Connection &connection, const StringView &key) {
+    connection.send("ZCARD %b", key.data(), key.size());
+}
+
+template <typename Interval>
+inline void zcount(Connection &connection,
+                    const StringView &key,
+                    const Interval &interval) {
+    connection.send("ZCOUNT %b %s %s",
+                    key.data(), key.size(),
+                    interval.min().c_str(),
+                    interval.max().c_str());
+}
+
+inline void zincrby(Connection &connection,
+                    const StringView &key,
+                    double increment,
+                    const StringView &member) {
+    connection.send("ZINCRBY %b %f %b",
+                    key.data(), key.size(),
+                    increment,
+                    member.data(), member.size());
+}
+
+template <typename Interval>
+inline void zlexcount(Connection &connection,
+                        const StringView &key,
+                        const Interval &interval) {
+    const auto &min = interval.min();
+    const auto &max = interval.max();
+
+    connection.send("ZLEXCOUNT %b %b %b",
+                    key.data(), key.size(),
+                    min.data(), min.size(),
+                    max.data(), max.size());
+}
+
+inline void zrange(Connection &connection,
+                const StringView &key,
+                long long start,
+                long long stop,
+                bool with_scores) {
+    if (with_scores) {
+        connection.send("ZRANGE %b %lld %lld WITHSCORES",
+                        key.data(), key.size(),
+                        start,
+                        stop);
+    } else {
+        connection.send("ZRANGE %b %lld %lld",
+                        key.data(), key.size(),
+                        start,
+                        stop);
+    }
+}
+
+template <typename Interval>
+inline void zrangebylex(Connection &connection,
+                        const StringView &key,
+                        const Interval &interval,
+                        const LimitOptions &opts) {
+    const auto &min = interval.min();
+    const auto &max = interval.max();
+
+    connection.send("ZRANGEBYLEX %b %b %b LIMIT %lld %lld",
+                    key.data(), key.size(),
+                    min.data(), min.size(),
+                    max.data(), max.size(),
+                    opts.offset,
+                    opts.count);
+}
+
+template <typename Interval>
+void zrangebyscore(Connection &connection,
+                    const StringView &key,
+                    const Interval &interval,
+                    bool with_scores,
+                    const LimitOptions &opts);
+
+namespace detail {
+
+void set_update_type(Connection::CmdArgs &args, UpdateType type);
+
+}
+
+}
+
+}
+
+}
+
+namespace sw {
+
+namespace redis {
+
+namespace cmd {
+
+template <typename Iter>
+void zadd_range(Connection &connection,
+                const StringView &key,
+                Iter first,
+                Iter last,
+                bool changed,
+                cmd::UpdateType type) {
+    Connection::CmdArgs args;
+
+    args << "ZADD" << key;
+
+    detail::set_update_type(args, type);
+
+    if (changed) {
+        args << "CH";
+    }
+
+    args << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Interval>
+void zrangebyscore(Connection &connection,
+                    const StringView &key,
+                    const Interval &interval,
+                    bool with_scores,
+                    const LimitOptions &opts) {
+    const auto &min = interval.min();
+    const auto &max = interval.max();
+
+    if (with_scores) {
+        connection.send("ZRANGEBYSCORE %b %b %b WITHSCORES LIMIT %lld %lld",
+                        key.data(), key.size(),
+                        min.data(), min.size(),
+                        max.data(), max.size(),
+                        opts.offset,
+                        opts.count);
+    } else {
+        connection.send("ZRANGEBYSCORE %b %b %b LIMIT %lld %lld",
+                        key.data(), key.size(),
+                        min.data(), min.size(),
+                        max.data(), max.size(),
+                        opts.offset,
+                        opts.count);
+    }
+}
 
 }
 

@@ -99,6 +99,146 @@ private:
     std::pair<bool, std::string> _value;
 };
 
+enum class BoundType {
+    CLOSED,
+    OPEN,
+    LEFT_OPEN,
+    RIGHT_OPEN
+};
+
+// (-inf, +inf)
+template <typename T>
+class UnboundedInterval;
+
+// [min, max], (min, max), (min, max], [min, max)
+template <typename T>
+class BoundedInterval;
+
+// [min, +inf), (min, +inf)
+template <typename T>
+class LeftBoundedInterval;
+
+// (-inf, max], (-inf, max)
+template <typename T>
+class RightBoundedInterval;
+
+template <>
+class UnboundedInterval<double> {
+public:
+    const std::string& min() const;
+
+    const std::string& max() const;
+};
+
+template <>
+class BoundedInterval<double> {
+public:
+    BoundedInterval(double min, double max, BoundType type);
+
+    const std::string& min() const {
+        return _min;
+    }
+
+    const std::string& max() const {
+        return _max;
+    }
+
+private:
+    std::string _min;
+    std::string _max;
+};
+
+template <>
+class LeftBoundedInterval<double> {
+public:
+    LeftBoundedInterval(double min, BoundType type);
+
+    const std::string& min() const {
+        return _min;
+    }
+
+    const std::string& max() const;
+
+private:
+    std::string _min;
+};
+
+template <>
+class RightBoundedInterval<double> {
+public:
+    RightBoundedInterval(double max, BoundType type);
+
+    const std::string& min() const;
+
+    const std::string& max() const {
+        return _max;
+    }
+
+private:
+    std::string _max;
+};
+
+template <>
+class UnboundedInterval<std::string> {
+public:
+    const std::string& min() const;
+
+    const std::string& max() const;
+};
+
+template <>
+class BoundedInterval<std::string> {
+public:
+    BoundedInterval(const std::string &min, const std::string &max, BoundType type);
+
+    const std::string& min() const {
+        return _min;
+    }
+
+    const std::string& max() const {
+        return _max;
+    }
+
+private:
+    std::string _min;
+    std::string _max;
+};
+
+template <>
+class LeftBoundedInterval<std::string> {
+public:
+    LeftBoundedInterval(const std::string &min, BoundType type);
+
+    const std::string& min() const {
+        return _min;
+    }
+
+    const std::string& max() const;
+
+private:
+    std::string _min;
+};
+
+template <>
+class RightBoundedInterval<std::string> {
+public:
+    RightBoundedInterval(const std::string &max, BoundType type);
+
+    const std::string& min() const;
+
+    const std::string& max() const {
+        return _max;
+    }
+
+private:
+    std::string _max;
+};
+
+struct LimitOptions {
+    long long offset = 0;
+    long long count = -1;
+};
+
 template <typename ...>
 struct IsKvPair : std::false_type {};
 

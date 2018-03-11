@@ -78,6 +78,12 @@ auto Connection::CmdArgs::operator<<(const StringView &arg) -> CmdArgs& {
     return *this;
 }
 
+auto Connection::CmdArgs::operator<<(double arg) -> CmdArgs& {
+    _doubles.push_back(std::to_string(arg));
+
+    return operator<<(_doubles.back());
+}
+
 void Connection::send(CmdArgs &args) {
     assert(_context);
 

@@ -112,6 +112,10 @@ OptionalString to_optional_string(redisReply &reply);
 
 long long to_integer(redisReply &reply);
 
+inline double to_double(redisReply &reply) {
+    return std::stod(to_string(reply));
+}
+
 template<typename Iter>
 void to_string_array(redisReply &reply, Iter output);
 
