@@ -144,8 +144,10 @@ inline void IntegerReplyFunctor::operator()(redisReply &reply) {
 
 namespace reply {
 
+namespace detail {
+
 template <typename Iter>
-void _to_string_array_impl(std::true_type, redisReply &reply, Iter output) {
+void to_string_array_impl(std::true_type, redisReply &reply, Iter output) {
     if (reply.elements % 2 != 0) {
         throw RException("Not string pair array reply");
     }
@@ -164,7 +166,7 @@ void _to_string_array_impl(std::true_type, redisReply &reply, Iter output) {
 }
 
 template <typename Iter>
-void _to_string_array_impl(std::false_type, redisReply &reply, Iter output) {
+void to_string_array_impl(std::false_type, redisReply &reply, Iter output) {
     for (std::size_t idx = 0; idx != reply.elements; ++idx) {
         auto *sub_reply = reply.element[idx];
         if (sub_reply == nullptr) {
@@ -178,19 +180,21 @@ void _to_string_array_impl(std::false_type, redisReply &reply, Iter output) {
 }
 
 template <typename Iter>
-void _to_string_array(std::true_type, redisReply &reply, Iter output) {
+void to_string_array(std::true_type, redisReply &reply, Iter output) {
     // std::inserter or std::back_inserter
-    _to_string_array_impl(IsKvPair<typename Iter::container_type::value_type>(),
+    to_string_array_impl(IsKvPair<typename Iter::container_type::value_type>(),
                             reply,
                             output);
 }
 
 template <typename Iter>
-void _to_string_array(std::false_type, redisReply &reply, Iter output) {
+void to_string_array(std::false_type, redisReply &reply, Iter output) {
     // Normal iterator
-    _to_string_array_impl(IsKvPair<typename std::decay<decltype(*output)>::type>(),
+    to_string_array_impl(IsKvPair<typename std::decay<decltype(*output)>::type>(),
                             reply,
                             output);
+}
+
 }
 
 template<typename Iter>
@@ -199,7 +203,7 @@ void to_string_array(redisReply &reply, Iter output) {
         throw RException("Expect ARRAY reply.");
     }
 
-    _to_string_array(typename IsInserter<Iter>::type(), reply, output);
+    detail::to_string_array(typename IsInserter<Iter>::type(), reply, output);
 }
 
 template <typename Iter>
