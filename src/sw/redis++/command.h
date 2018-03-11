@@ -522,6 +522,87 @@ void zrangebyscore(Connection &connection,
                     bool with_scores,
                     const LimitOptions &opts);
 
+inline void zrank(Connection &connection,
+                    const StringView &key,
+                    const StringView &member) {
+    connection.send("ZRANK %b %b",
+                    key.data(), key.size(),
+                    member.data(), member.size());
+}
+
+inline void zrem(Connection &connection,
+                    const StringView &key,
+                    const StringView &member) {
+    connection.send("ZREM %b %b",
+                    key.data(), key.size(),
+                    member.data(), member.size());
+}
+
+template <typename Input>
+inline void zrem_range(Connection &connection,
+                        const StringView &key,
+                        Input first,
+                        Input last) {
+    Connection::CmdArgs args;
+    args << "ZREM" << key << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Interval>
+inline void zremrangebylex(Connection &connection,
+                            const StringView &key,
+                            const Interval &interval) {
+    const auto &min = interval.min();
+    const auto &max = interval.max();
+
+    connection.send("ZREMRANGEBYLEX %b %b %b",
+                    key.data(), key.size(),
+                    min.data(), min.size(),
+                    max.data(), max.size());
+}
+
+inline void zremrangebyrank(Connection &connection,
+                            const StringView &key,
+                            long long start,
+                            long long stop) {
+    connection.send("zremrangebyrank %b %lld %lld",
+                    key.data(), key.size(),
+                    start,
+                    stop);
+}
+
+template <typename Interval>
+inline void zremrangebyscore(Connection &connection,
+                                const StringView &key,
+                                const Interval &interval) {
+    const auto &min = interval.min();
+    const auto &max = interval.max();
+
+    connection.send("ZREMRANGEBYSCORE %b %b %b",
+                    key.data(), key.size(),
+                    min.data(), min.size(),
+                    max.data(), max.size());
+}
+
+inline void zrevrange(Connection &connection,
+                        const StringView &key,
+                        long long start,
+                        long long stop,
+                        bool with_scores) {
+    if (with_scores) {
+        connection.send("ZREVRANGE %b %lld %lld WITHSCORES",
+                        key.data(), key.size(),
+                        start,
+                        stop);
+    } else {
+        connection.send("ZREVRANGE %b %lld %lld",
+                        key.data(), key.size(),
+                        start,
+                        stop);
+    }
+}
+
 namespace detail {
 
 void set_update_type(Connection::CmdArgs &args, UpdateType type);

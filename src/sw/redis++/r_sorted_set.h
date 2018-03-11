@@ -67,6 +67,24 @@ public:
     template <typename Interval, typename Output>
     void zrangebyscore(const Interval &interval, const LimitOptions &opts, Output output);
 
+    OptionalLongLong zrank(const StringView &member);
+
+    long long zrem(const StringView &member);
+
+    template <typename Input>
+    long long zrem(Input first, Input last);
+
+    template <typename Interval>
+    long long zremrangebylex(const Interval &interval);
+
+    long long zremrangebyrank(long long start, long long stop);
+
+    template <typename Interval>
+    long long zremrangebyscore(const Interval &interval);
+
+    template <typename Output>
+    void zrevrange(long long start, long long stop, Output output);
+
 private:
     friend class Redis;
 
@@ -130,6 +148,30 @@ private:
                             interval,
                             opts,
                             output);
+    }
+
+    template <typename Output>
+    void _zrevrange_impl(std::true_type, long long start, long long stop, Output output);
+
+    template <typename Output>
+    void _zrevrange_impl(std::false_type, long long start, long long stop, Output output);
+
+    template <typename Output>
+    void _zrevrange(std::true_type, long long start, long long stop, Output output) {
+        // std::inserter or std::back_inserter
+        _zrevrange_impl(IsKvPair<typename Output::container_type::value_type>(),
+                        start,
+                        stop,
+                        output);
+    }
+
+    template <typename Output>
+    void _zrevrange(std::false_type, long long start, long long stop, Output output) {
+        // Normal iterator
+        _zrevrange_impl(IsKvPair<typename std::decay<decltype(*output)>::type>(),
+                        start,
+                        stop,
+                        output);
     }
 
     std::string _key;
@@ -214,6 +256,27 @@ void RSortedSet::zrangebyscore(const Interval &interval,
     _zrangebyscore(typename IsInserter<Output>::type(), interval, opts, output);
 }
 
+template <typename Input>
+long long RSortedSet::zrem(Input first, Input last) {
+    auto reply = _redis.command(cmd::zrem_range<Input>, _key, first, last);
+
+    return reply::to_integer(*reply);
+}
+
+template <typename Interval>
+long long RSortedSet::zremrangebylex(const Interval &interval) {
+    auto reply = _redis.command(cmd::zremrangebylex<Interval>, _key, interval);
+
+    return reply::to_integer(*reply);
+}
+
+template <typename Interval>
+long long zremrangebyscore(const Interval &interval) {
+    auto reply = _redis.command(cmd::zremrangebyscore, _key, interval);
+
+    return reply::to_integer(*reply);
+}
+
 template <typename Interval, typename Output>
 void RSortedSet::_zrangebyscore_impl(std::true_type,
                                         const Interval &interval,
@@ -245,6 +308,33 @@ void RSortedSet::_zrangebyscore_impl(std::false_type,
 
     reply::to_string_array(*reply, output);
 }
+
+template <typename Output>
+void RSortedSet::_zrevrange_impl(std::true_type, long long start, long long stop, Output output) {
+    // With scores
+    auto reply = _redis.command(cmd::zrevrange, _key, start, stop, true);
+
+    std::vector<std::string> tmp;
+    reply::to_string_array(*reply, std::back_inserter(tmp));
+
+    if (tmp.size() % 2 != 0) {
+        throw RException("Score member pairs DO NOT match.");
+    }
+
+    for (std::size_t idx = 0; idx != tmp.size(); idx += 2) {
+        *output = std::make_pair(std::move(tmp[idx]), std::stod(tmp[idx+1]));
+        ++output;
+    }
+}
+
+template <typename Output>
+void RSortedSet::_zrevrange_impl(std::false_type, long long start, long long stop, Output output) {
+    // Without scores
+    auto reply = _redis.command(cmd::zrevrange, _key, start, stop, false);
+
+    reply::to_string_array(*reply, output);
+}
+
 }
 
 }

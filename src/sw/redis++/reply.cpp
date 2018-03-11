@@ -74,6 +74,14 @@ long long to_integer(redisReply &reply) {
     return reply.integer;
 }
 
+OptionalLongLong to_optional_integer(redisReply &reply) {
+    if (reply::is_nil(reply)) {
+        return {};
+    }
+
+    return OptionalLongLong(reply::to_integer(reply));
+}
+
 bool to_bool(redisReply &reply) {
     auto ret = reply::to_integer(reply);
 

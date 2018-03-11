@@ -41,6 +41,24 @@ double RSortedSet::zincrby(double increment, const StringView &member) {
     return reply::to_double(*reply);
 }
 
+OptionalLongLong RSortedSet::zrank(const StringView &member) {
+    auto reply = _redis.command(cmd::zrank, _key, member);
+
+    return reply::to_optional_integer(*reply);
+}
+
+long long RSortedSet::zrem(const StringView &member) {
+    auto reply = _redis.command(cmd::zrem, _key, member);
+
+    return reply::to_integer(*reply);
+}
+
+long long RSortedSet::zremrangebyrank(long long start, long long stop) {
+    auto reply = _redis.command(cmd::zremrangebyrank, _key, start, stop);
+
+    return reply::to_integer(*reply);
+}
+
 }
 
 }

@@ -112,6 +112,8 @@ OptionalString to_optional_string(redisReply &reply);
 
 long long to_integer(redisReply &reply);
 
+OptionalLongLong to_optional_integer(redisReply &reply);
+
 inline double to_double(redisReply &reply) {
     return std::stod(to_string(reply));
 }
