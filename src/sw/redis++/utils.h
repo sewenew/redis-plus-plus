@@ -53,51 +53,57 @@ private:
     std::size_t _size = 0;
 };
 
-class OptionalString {
+template <typename T>
+class Optional {
 public:
-    OptionalString() = default;
+    Optional() = default;
 
-    OptionalString(const OptionalString &) = default;
-    OptionalString& operator=(const OptionalString &) = default;
+    Optional(const Optional &) = default;
+    Optional& operator=(const Optional &) = default;
 
-    OptionalString(OptionalString &&) = default;
-    OptionalString& operator=(OptionalString &&) = default;
+    Optional(Optional &&) = default;
+    Optional& operator=(Optional &&) = default;
 
-    ~OptionalString() = default;
+    ~Optional() = default;
 
-    explicit OptionalString(std::string s) : _value(true, std::move(s)) {}
+    template <typename ...Args>
+    explicit Optional(Args &&...args) : _value(true, T(std::forward<Args>(args)...)) {}
 
     explicit operator bool() const {
         return _value.first;
     }
 
-    std::string& value() {
+    T& value() {
         return _value.second;
     }
 
-    const std::string& value() const {
+    const T& value() const {
         return _value.second;
     }
 
-    std::string* operator->() {
+    T* operator->() {
         return &(_value.second);
     }
 
-    const std::string* operator->() const {
+    const T* operator->() const {
         return &(_value.second);
     }
 
-    std::string& operator*() {
+    T& operator*() {
         return _value.second;
     }
 
-    const std::string& operator*() const {
+    const T& operator*() const {
         return _value.second;
     }
 
 private:
-    std::pair<bool, std::string> _value;
+    std::pair<bool, T> _value;
 };
+
+using OptionalString = Optional<std::string>;
+
+using OptionalLongLong = Optional<long long>;
 
 enum class BoundType {
     CLOSED,
