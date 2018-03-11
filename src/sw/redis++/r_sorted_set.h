@@ -271,7 +271,7 @@ long long RSortedSet::zremrangebylex(const Interval &interval) {
 }
 
 template <typename Interval>
-long long zremrangebyscore(const Interval &interval) {
+long long RSortedSet::zremrangebyscore(const Interval &interval) {
     auto reply = _redis.command(cmd::zremrangebyscore, _key, interval);
 
     return reply::to_integer(*reply);
