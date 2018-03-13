@@ -78,21 +78,21 @@ template <typename Iter>
 void RSet::smembers(Iter output) {
     auto reply = _redis.command(cmd::smembers, _key);
 
-    reply::to_string_array(*reply, output);
+    reply::to_array(*reply, output);
 }
 
 template <typename Iter>
 void RSet::spop(long long count, Iter output) {
     auto reply = _redis.command(cmd::spop_range, _key, count);
 
-    reply::to_string_array(*reply, output);
+    reply::to_array(*reply, output);
 }
 
 template <typename Iter>
 void RSet::srandmember(long long count, Iter output) {
     auto reply = _redis.command(cmd::srandmember_range, _key, count);
 
-    reply::to_string_array(*reply, output);
+    reply::to_array(*reply, output);
 }
 
 template <typename Iter>

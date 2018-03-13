@@ -85,14 +85,14 @@ template <typename Iter>
 inline void RHash::hgetall(Iter output) {
     auto reply = _redis.command(cmd::hgetall, _key);
 
-    reply::to_string_array(*reply, output);
+    reply::to_array(*reply, output);
 }
 
 template <typename Iter>
 inline void RHash::hkeys(Iter output) {
     auto reply = _redis.command(cmd::hkeys, _key);
 
-    reply::to_string_array(*reply, output);
+    reply::to_array(*reply, output);
 }
 
 template <typename Input, typename Output>
@@ -115,7 +115,7 @@ template <typename Iter>
 inline void RHash::hvals(Iter output) {
     auto reply = _redis.command(cmd::hvals, _key);
 
-    reply::to_string_array(*reply, output);
+    reply::to_array(*reply, output);
 }
 
 }

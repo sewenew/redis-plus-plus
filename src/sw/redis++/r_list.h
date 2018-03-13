@@ -88,7 +88,7 @@ template <typename Iter>
 inline void RList::lrange(long long start, long long stop, Iter output) {
     auto reply = _redis.command(cmd::lrange, _key, start, stop);
 
-    reply::to_string_array(*reply, output);
+    reply::to_array(*reply, output);
 }
 
 template <typename Iter>

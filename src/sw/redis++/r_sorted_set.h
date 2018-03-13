@@ -210,17 +210,7 @@ void RSortedSet::_zrange_impl(std::true_type, long long start, long long stop, O
     // With scores
     auto reply = _redis.command(cmd::zrange, _key, start, stop, true);
 
-    std::vector<std::string> tmp;
-    reply::to_string_array(*reply, std::back_inserter(tmp));
-
-    if (tmp.size() % 2 != 0) {
-        throw RException("Score member pairs DO NOT match.");
-    }
-
-    for (std::size_t idx = 0; idx != tmp.size(); idx += 2) {
-        *output = std::make_pair(std::move(tmp[idx]), std::stod(tmp[idx+1]));
-        ++output;
-    }
+    reply::to_array(*reply, output);
 }
 
 template <typename Output>
@@ -228,7 +218,7 @@ void RSortedSet::_zrange_impl(std::false_type, long long start, long long stop, 
     // Without scores
     auto reply = _redis.command(cmd::zrange, _key, start, stop, false);
 
-    reply::to_string_array(*reply, output);
+    reply::to_array(*reply, output);
 }
 
 template <typename Interval, typename Output>
@@ -240,7 +230,7 @@ template <typename Interval, typename Output>
 void RSortedSet::zrangebylex(const Interval &interval, const LimitOptions &opts, Output output) {
     auto reply = _redis.command(cmd::zrangebylex<Interval>, _key, interval, opts);
 
-    reply::to_string_array(*reply, output);
+    reply::to_array(*reply, output);
 }
 
 template <typename Interval, typename Output>
@@ -285,17 +275,7 @@ void RSortedSet::_zrangebyscore_impl(std::true_type,
     // With scores
     auto reply = _redis.command(cmd::zrangebyscore<Interval>, _key, interval, true, opts);
 
-    std::vector<std::string> tmp;
-    reply::to_string_array(*reply, std::back_inserter(tmp));
-
-    if (tmp.size() % 2 != 0) {
-        throw RException("Score member pairs DO NOT match.");
-    }
-
-    for (std::size_t idx = 0; idx != tmp.size(); idx += 2) {
-        *output = std::make_pair(std::move(tmp[idx]), std::stod(tmp[idx+1]));
-        ++output;
-    }
+    reply::to_array(*reply, output);
 }
 
 template <typename Interval, typename Output>
@@ -306,7 +286,7 @@ void RSortedSet::_zrangebyscore_impl(std::false_type,
     // Without scores
     auto reply = _redis.command(cmd::zrangebyscore<Interval>, _key, interval, false, opts);
 
-    reply::to_string_array(*reply, output);
+    reply::to_array(*reply, output);
 }
 
 template <typename Output>
@@ -314,17 +294,7 @@ void RSortedSet::_zrevrange_impl(std::true_type, long long start, long long stop
     // With scores
     auto reply = _redis.command(cmd::zrevrange, _key, start, stop, true);
 
-    std::vector<std::string> tmp;
-    reply::to_string_array(*reply, std::back_inserter(tmp));
-
-    if (tmp.size() % 2 != 0) {
-        throw RException("Score member pairs DO NOT match.");
-    }
-
-    for (std::size_t idx = 0; idx != tmp.size(); idx += 2) {
-        *output = std::make_pair(std::move(tmp[idx]), std::stod(tmp[idx+1]));
-        ++output;
-    }
+    reply::to_array(*reply, output);
 }
 
 template <typename Output>
@@ -332,7 +302,7 @@ void RSortedSet::_zrevrange_impl(std::false_type, long long start, long long sto
     // Without scores
     auto reply = _redis.command(cmd::zrevrange, _key, start, stop, false);
 
-    reply::to_string_array(*reply, output);
+    reply::to_array(*reply, output);
 }
 
 }
