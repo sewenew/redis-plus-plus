@@ -519,8 +519,8 @@ template <typename Interval>
 void zrangebyscore(Connection &connection,
                     const StringView &key,
                     const Interval &interval,
-                    bool with_scores,
-                    const LimitOptions &opts);
+                    const LimitOptions &opts,
+                    bool with_scores);
 
 inline void zrank(Connection &connection,
                     const StringView &key,
@@ -647,8 +647,8 @@ template <typename Interval>
 void zrangebyscore(Connection &connection,
                     const StringView &key,
                     const Interval &interval,
-                    bool with_scores,
-                    const LimitOptions &opts) {
+                    const LimitOptions &opts,
+                    bool with_scores) {
     const auto &min = interval.min();
     const auto &max = interval.max();
 
