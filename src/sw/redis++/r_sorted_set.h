@@ -85,6 +85,22 @@ public:
     template <typename Output>
     void zrevrange(long long start, long long stop, Output output);
 
+    template <typename Interval, typename Output>
+    void zrevrangebylex(const Interval &interval, Output &output);
+
+    template <typename Interval, typename Output>
+    void zrevrangebylex(const Interval &interval, const LimitOptions &opts, Output &output);
+
+    template <typename Interval, typename Output>
+    void zrevrangebyscore(const Interval &interval, Output &output);
+
+    template <typename Interval, typename Output>
+    void zrevrangebyscore(const Interval &interval, const LimitOptions &opts, Output &output);
+
+    OptionalLongLong zrevrank(const StringView &member);
+
+    OptionalDouble zscore(const StringView &member);
+
 private:
     friend class Redis;
 
@@ -185,6 +201,34 @@ long long RSortedSet::zremrangebyscore(const Interval &interval) {
 template <typename Output>
 void RSortedSet::zrevrange(long long start, long long stop, Output output) {
     _score_command(output, cmd::zrevrange, _key, start, stop);
+}
+
+template <typename Interval, typename Output>
+inline void RSortedSet::zrevrangebylex(const Interval &interval, Output &output) {
+    zrevrangebylex(interval, {}, output);
+}
+
+template <typename Interval, typename Output>
+void RSortedSet::zrevrangebylex(const Interval &interval,
+                                const LimitOptions &opts,
+                                Output &output) {
+    auto reply = _redis.command(cmd::zrevrangebylex<Interval>, _key, interval, opts);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Interval, typename Output>
+void RSortedSet::zrevrangebyscore(const Interval &interval, Output &output) {
+    zrevrangebyscore(interval, {}, output);
+}
+
+template <typename Interval, typename Output>
+void RSortedSet::zrevrangebyscore(const Interval &interval,
+                                    const LimitOptions &opts,
+                                    Output &output) {
+    auto reply = _redis.command(cmd::zrevrangebyscore<Interval>, _key, interval, opts);
+
+    reply::to_array(*reply, output);
 }
 
 template <typename Output, typename ...Args>

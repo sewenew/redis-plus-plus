@@ -118,6 +118,8 @@ inline double to_double(redisReply &reply) {
     return std::stod(to_string(reply));
 }
 
+OptionalDouble to_optional_double(redisReply &reply);
+
 template<typename Iter>
 void to_array(redisReply &reply, Iter output);
 

@@ -82,6 +82,14 @@ OptionalLongLong to_optional_integer(redisReply &reply) {
     return OptionalLongLong(reply::to_integer(reply));
 }
 
+OptionalDouble to_optional_double(redisReply &reply) {
+    if (reply::is_nil(reply)) {
+        return {};
+    }
+
+    return OptionalDouble(reply::to_double(reply));
+}
+
 bool to_bool(redisReply &reply) {
     auto ret = reply::to_integer(reply);
 

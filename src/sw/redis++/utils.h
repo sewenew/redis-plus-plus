@@ -105,6 +105,8 @@ using OptionalString = Optional<std::string>;
 
 using OptionalLongLong = Optional<long long>;
 
+using OptionalDouble = Optional<double>;
+
 enum class BoundType {
     CLOSED,
     OPEN,

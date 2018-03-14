@@ -603,6 +603,64 @@ inline void zrevrange(Connection &connection,
     }
 }
 
+template <typename Interval>
+inline void zrevrangebylex(Connection &connection,
+                            const StringView &key,
+                            const Interval &interval,
+                            const LimitOptions &opts) {
+    const auto &min = interval.min();
+    const auto &max = interval.max();
+
+    connection.send("ZREVRANGEBYLEX %b %b %b LIMIT %lld %lld",
+                    key.data(), key.size(),
+                    max.data(), max.size(),
+                    min.data(), min.size(),
+                    opts.offset,
+                    opts.count);
+}
+
+template <typename Interval>
+inline void zrevrangebyscore(Connection &connection,
+                                const StringView &key,
+                                const Interval &interval,
+                                const LimitOptions &opts,
+                                bool with_scores) {
+    const auto &min = interval.min();
+    const auto &max = interval.max();
+
+    if (with_scores) {
+        connection.send("ZREVRANGEBYSCORE %b %b %b WITHSCORES LIMIT %lld %lld",
+                        key.data(), key.size(),
+                        max.data(), max.size(),
+                        min.data(), min.size(),
+                        opts.offset,
+                        opts.count);
+    } else {
+        connection.send("ZREVRANGEBYSCORE %b %b %b LIMIT %lld %lld",
+                        key.data(), key.size(),
+                        max.data(), max.size(),
+                        min.data(), min.size(),
+                        opts.offset,
+                        opts.count);
+    }
+}
+
+inline void zrevrank(Connection &connection,
+                        const StringView &key,
+                        const StringView &member) {
+    connection.send("ZREVRANK %b %b",
+                    key.data(), key.size(),
+                    member.data(), member.size());
+}
+
+inline void zscore(Connection &connection,
+                    const StringView &key,
+                    const StringView &member) {
+    connection.send("ZSCORE %b %b",
+                    key.data(), key.size(),
+                    member.data(), member.size());
+}
+
 namespace detail {
 
 void set_update_type(Connection::CmdArgs &args, UpdateType type);

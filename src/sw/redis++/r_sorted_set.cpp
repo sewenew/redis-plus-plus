@@ -59,6 +59,18 @@ long long RSortedSet::zremrangebyrank(long long start, long long stop) {
     return reply::to_integer(*reply);
 }
 
+OptionalLongLong RSortedSet::zrevrank(const StringView &member) {
+    auto reply = _redis.command(cmd::zrevrank, _key, member);
+
+    return reply::to_optional_integer(*reply);
+}
+
+OptionalDouble RSortedSet::zscore(const StringView &member) {
+    auto reply = _redis.command(cmd::zscore, _key, member);
+
+    return reply::to_optional_double(*reply);
+}
+
 }
 
 }
