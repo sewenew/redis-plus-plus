@@ -63,9 +63,34 @@ inline void append(Connection &connection, const StringView &key, const StringVi
                     str.data(), str.size());
 }
 
+inline void bitcount(Connection &connection,
+                        const StringView &key,
+                        long long start,
+                        long long end) {
+    connection.send("BITCOUNT %b %lld %lld",
+                    key.data(), key.size(),
+                    start, end);
+}
+
+inline void decr(Connection &connection, const StringView &key) {
+    connection.send("DECR %b", key.data(), key.size());
+}
+
+inline void decrby(Connection &connection, const StringView &key, long long decrement) {
+    connection.send("DECRBY %b",
+                    key.data(), key.size(),
+                    decrement);
+}
+
 inline void get(Connection &connection, const StringView &key) {
     connection.send("GET %b",
                     key.data(), key.size());
+}
+
+inline void getbit(Connection &connection, const StringView &key, long long offset) {
+    connection.send("GETBIT %b %lld",
+                    key.data(), key.size(),
+                    offset);
 }
 
 inline void getrange(Connection &connection,
@@ -86,6 +111,22 @@ inline void getset(Connection &connection,
                     val.data(), val.size());
 }
 
+inline void incr(Connection &connection, const StringView &key) {
+    connection.send("INCR %b", key.data(), key.size());
+}
+
+inline void incrby(Connection &connection, const StringView &key, long long increment) {
+    connection.send("INCRBY %b",
+                    key.data(), key.size(),
+                    increment);
+}
+
+inline void incrbyfloat(Connection &connection, const StringView &key, double increment) {
+    connection.send("INCRBYFLOAT %b",
+                    key.data(), key.size(),
+                    increment);
+}
+
 inline void psetex(Connection &connection,
                     const StringView &key,
                     const StringView &val,
@@ -101,6 +142,16 @@ void set(Connection &connection,
             const StringView &val,
             const std::chrono::milliseconds &ttl,
             UpdateType type);
+
+inline void setbit(Connection &connection,
+                    const StringView &key,
+                    long long offset,
+                    long long value) {
+    connection.send("SETBIT %b %lld %lld",
+                    key.data(), key.size(),
+                    offset,
+                    value);
+}
 
 inline void setnx(Connection &connection,
                     const StringView &key,

@@ -33,11 +33,25 @@ class RString {
 public:
     long long append(const StringView &str);
 
+    long long bitcount(long long start = 0, long long end = -1);
+
+    long long decr();
+
+    long long decrby(long long decrement);
+
     OptionalString get();
+
+    long long getbit(long long offset);
 
     std::string getrange(long long start, long long end);
 
     OptionalString getset(const StringView &val);
+
+    long long incr();
+
+    long long incrby(long long increment);
+
+    double incrbyfloat(double increment);
 
     void psetex(const StringView &val,
                 const std::chrono::milliseconds &ttl);
@@ -45,6 +59,8 @@ public:
     bool set(const StringView &val,
                 const std::chrono::milliseconds &ttl = std::chrono::milliseconds(0),
                 cmd::UpdateType type = cmd::UpdateType::ALWAYS);
+
+    long long setbit(long long offset, long long value);
 
     bool setnx(const StringView &val);
 

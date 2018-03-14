@@ -28,10 +28,34 @@ long long RString::append(const StringView &str) {
     return reply::to_integer(*reply);
 }
 
+long long RString::bitcount(long long start, long long end) {
+    auto reply = _redis.command(cmd::bitcount, _key, start, end);
+
+    return reply::to_integer(*reply);
+}
+
+long long RString::decr() {
+    auto reply = _redis.command(cmd::decr, _key);
+
+    return reply::to_integer(*reply);
+}
+
+long long RString::decrby(long long decrement) {
+    auto reply = _redis.command(cmd::decrby, _key, decrement);
+
+    return reply::to_integer(*reply);
+}
+
 OptionalString RString::get() {
     auto reply = _redis.command(cmd::get, _key);
 
     return reply::to_optional_string(*reply);
+}
+
+long long RString::getbit(long long offset) {
+    auto reply = _redis.command(cmd::getbit, _key, offset);
+
+    return reply::to_integer(*reply);
 }
 
 std::string RString::getrange(long long start, long long end) {
@@ -44,6 +68,24 @@ OptionalString RString::getset(const StringView &val) {
     auto reply = _redis.command(cmd::getset, _key, val);
 
     return reply::to_optional_string(*reply);
+}
+
+long long RString::incr() {
+    auto reply = _redis.command(cmd::incr, _key);
+
+    return reply::to_integer(*reply);
+}
+
+long long RString::incrby(long long increment) {
+    auto reply = _redis.command(cmd::incrby, _key, increment);
+
+    return reply::to_integer(*reply);
+}
+
+double RString::incrbyfloat(double increment) {
+    auto reply = _redis.command(cmd::incrbyfloat, _key, increment);
+
+    return reply::to_double(*reply);
 }
 
 void RString::psetex(const StringView &val,
@@ -76,6 +118,12 @@ bool RString::set(const StringView &val,
     }
 
     return true;
+}
+
+long long RString::setbit(long long offset, long long value) {
+    auto reply = _redis.command(cmd::setbit, _key, offset, value);
+
+    return reply::to_integer(*reply);
 }
 
 bool RString::setnx(const StringView &val) {
