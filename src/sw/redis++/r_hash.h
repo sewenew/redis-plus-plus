@@ -30,6 +30,10 @@ namespace redis {
 // Redis' HASH type.
 class RHash {
 public:
+    const std::string& key() const {
+        return _key;
+    }
+
     long long hdel(const StringView &field);
 
     template <typename Iter>

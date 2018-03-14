@@ -30,6 +30,10 @@ namespace redis {
 // Redis' SET type.
 class RSet {
 public:
+    const std::string& key() const {
+        return _key;
+    }
+
     long long sadd(const StringView &member);
 
     template <typename Iter>

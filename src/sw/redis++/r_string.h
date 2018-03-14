@@ -31,6 +31,10 @@ class StringView;
 // Redis' STRING type.
 class RString {
 public:
+    const std::string& key() const {
+        return _key;
+    }
+
     long long append(const StringView &str);
 
     long long bitcount(long long start = 0, long long end = -1);

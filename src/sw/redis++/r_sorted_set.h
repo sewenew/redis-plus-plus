@@ -30,6 +30,10 @@ namespace redis {
 // Redis' SORTED SET type.
 class RSortedSet {
 public:
+    const std::string& key() const {
+        return _key;
+    }
+
     // We don't support the INCR option, since you can always use ZINCRBY instead.
     long long zadd(double score,
                     const StringView &member,

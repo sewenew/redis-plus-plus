@@ -32,6 +32,10 @@ class StringView;
 // Redis' LIST type.
 class RList {
 public:
+    const std::string& key() const {
+        return _key;
+    }
+
     OptionalString lpop();
 
     OptionalString lindex(long long index);
