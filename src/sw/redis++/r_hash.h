@@ -46,6 +46,10 @@ public:
     template <typename Iter>
     void hgetall(Iter output);
 
+    long long hincrby(const StringView &field, long long increment);
+
+    double hincrbyfloat(const StringView &field, double increment);
+
     template <typename Iter>
     void hkeys(Iter output);
 

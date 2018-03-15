@@ -38,6 +38,18 @@ OptionalString RHash::hget(const StringView &field) {
     return reply::to_optional_string(*reply);
 }
 
+long long RHash::hincrby(const StringView &field, long long increment) {
+    auto reply = _redis.command(cmd::hincrby, _key, field, increment);
+
+    return reply::to_integer(*reply);
+}
+
+double RHash::hincrbyfloat(const StringView &field, double increment) {
+    auto reply = _redis.command(cmd::hincrby, _key, field, increment);
+
+    return reply::to_double(*reply);
+}
+
 long long RHash::hlen() {
     auto reply = _redis.command(cmd::hlen, _key);
 

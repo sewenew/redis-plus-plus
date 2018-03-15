@@ -122,7 +122,7 @@ inline void incrby(Connection &connection, const StringView &key, long long incr
 }
 
 inline void incrbyfloat(Connection &connection, const StringView &key, double increment) {
-    connection.send("INCRBYFLOAT %b",
+    connection.send("INCRBYFLOAT %b %f",
                     key.data(), key.size(),
                     increment);
 }
@@ -356,6 +356,26 @@ inline void hget(Connection &connection, const StringView &key, const StringView
 
 inline void hgetall(Connection &connection, const StringView &key) {
     connection.send("HGETALL %b", key.data(), key.size());
+}
+
+inline void hincrby(Connection &connection,
+                    const StringView &key,
+                    const StringView &field,
+                    long long increment) {
+    connection.send("HINCRBY %b %b %lld",
+                    key.data(), key.size(),
+                    field.data(), field.size(),
+                    increment);
+}
+
+inline void hincrbyfloat(Connection &connection,
+                            const StringView &key,
+                            const StringView &field,
+                            double increment) {
+    connection.send("HINCRBYFLOAT %b %b %f",
+                    key.data(), key.size(),
+                    field.data(), field.size(),
+                    increment);
 }
 
 inline void hkeys(Connection &connection, const StringView &key) {
