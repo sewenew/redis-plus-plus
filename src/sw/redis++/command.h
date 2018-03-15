@@ -127,6 +127,30 @@ inline void incrbyfloat(Connection &connection, const StringView &key, double in
                     increment);
 }
 
+template <typename Input>
+inline void mget(Connection &connection, Input first, Input last) {
+    Connection::CmdArgs args;
+    args << "MGET" << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Input>
+inline void mset(Connection &connection, Input first, Input last) {
+    Connection::CmdArgs args;
+    args << "MSET" << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Input>
+inline void msetnx(Connection &connection, Input first, Input last) {
+    Connection::CmdArgs args;
+    args << "MSETNX" << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
 inline void psetex(Connection &connection,
                     const StringView &key,
                     const StringView &val,

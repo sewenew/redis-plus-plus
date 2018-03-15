@@ -18,6 +18,7 @@
 #define SEWENEW_REDISPLUSPLUS_R_STRING_H
 
 #include <string>
+#include "reply.h"
 #include "redis.h"
 #include "command.h"
 #include "utils.h"
@@ -57,6 +58,15 @@ public:
 
     double incrbyfloat(double increment);
 
+    template <typename Input, typename Output>
+    void mget(Input first, Input last, Output output);
+
+    template <typename Input>
+    void mset(Input first, Input last);
+
+    template <typename Input>
+    bool msetnx(Input first, Input last);
+
     void psetex(const StringView &val,
                 const std::chrono::milliseconds &ttl);
 
@@ -83,6 +93,29 @@ private:
 
     Redis &_redis;
 };
+
+template <typename Input, typename Output>
+void RString::mget(Input first, Input last, Output output) {
+    auto reply = _redis.command(cmd::mget<Input>, first, last);
+
+    reply::to_optional_string_array(*reply, output);
+}
+
+template <typename Input>
+void RString::mset(Input first, Input last) {
+    auto reply = _redis.command(cmd::mset<Input>, first, last);
+
+    if (!reply::status_ok(*reply)) {
+        throw RException("Invalid status reply: " + reply::to_status(*reply));
+    }
+}
+
+template <typename Input>
+bool RString::msetnx(Input first, Input last) {
+    auto reply = _redis.command(cmd::msetnx<Input>, first, last);
+
+    return reply::to_bool(*reply);
+}
 
 }
 
