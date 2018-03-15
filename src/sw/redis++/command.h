@@ -465,6 +465,44 @@ inline void scard(Connection &connection, const StringView &key) {
     connection.send("SCARD %b", key.data(), key.size());
 }
 
+template <typename Input>
+inline void sdiff(Connection &connection, Input first, Input last) {
+    Connection::CmdArgs args;
+    args << "SDIFF" << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Input>
+inline void sdiffstore(Connection &connection,
+                        const StringView &destination,
+                        Input first,
+                        Input last) {
+    Connection::CmdArgs args;
+    args << "SDIFFSTORE" << destination << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Input>
+inline void sinter(Connection &connection, Input first, Input last) {
+    Connection::CmdArgs args;
+    args << "SINTER" << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Input>
+inline void sinterstore(Connection &connection,
+                        const StringView &destination,
+                        Input first,
+                        Input last) {
+    Connection::CmdArgs args;
+    args << "SINTERSTORE" << destination << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
 inline void sismember(Connection &connection,
                         const StringView &key,
                         const StringView &member) {
@@ -475,6 +513,16 @@ inline void sismember(Connection &connection,
 
 inline void smembers(Connection &connection, const StringView &key) {
     connection.send("SMEMBERS %b", key.data(), key.size());
+}
+
+inline void smove(Connection &connection,
+                    const StringView &source,
+                    const StringView &destination,
+                    const StringView &member) {
+    connection.send("SMOVE %b %b %b",
+                    source.data(), source.size(),
+                    destination.data(), destination.size(),
+                    member.data(), member.size());
 }
 
 inline void spop(Connection &connection, const StringView &key) {
@@ -514,6 +562,25 @@ inline void srem_range(Connection &connection,
                     Iter last) {
     Connection::CmdArgs args;
     args << "SREM" << key << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Input>
+inline void sunion(Connection &connection, Input first, Input last) {
+    Connection::CmdArgs args;
+    args << "SUNION" << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Input>
+inline void sunionstore(Connection &connection,
+                        const StringView &destination,
+                        Input first,
+                        Input last) {
+    Connection::CmdArgs args;
+    args << "SUNIONSTORE" << destination << std::make_pair(first, last);
 
     connection.send(args);
 }

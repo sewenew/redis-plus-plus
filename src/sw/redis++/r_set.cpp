@@ -38,6 +38,12 @@ bool RSet::sismember(const StringView &member) {
     return reply::to_bool(*reply);
 }
 
+bool RSet::smove(const StringView &destination, const StringView &member) {
+    auto reply = _redis.command(cmd::smove, _key, destination, member);
+
+    return reply::to_bool(*reply);
+}
+
 OptionalString RSet::spop() {
     auto reply = _redis.command(cmd::spop, _key);
 

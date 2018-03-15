@@ -41,10 +41,28 @@ public:
 
     long long scard();
 
+    template <typename Input, typename Output>
+    void sdiff(Input first, Input last, Output output);
+
+    template <typename Input>
+    long long sdiffstore(const StringView &destination,
+                            Input first,
+                            Input last);
+
+    template <typename Input, typename Output>
+    void sinter(Input first, Input last, Output output);
+
+    template <typename Input>
+    long long sinterstore(const StringView &destination,
+                            Input first,
+                            Input last);
+
     bool sismember(const StringView &member);
 
     template <typename Iter>
     void smembers(Iter output);
+
+    bool smove(const StringView &destination, const StringView &member);
 
     OptionalString spop();
 
@@ -61,6 +79,12 @@ public:
     template <typename Iter>
     long long srem(Iter first, Iter last);
 
+    template <typename Input, typename Output>
+    void sunion(Input first, Input last, Output output);
+
+    template <typename Input>
+    long long sunionstore(const StringView &destination, Input first, Input last);
+
 private:
     friend class Redis;
 
@@ -76,6 +100,38 @@ long long RSet::sadd(Iter first, Iter last) {
     auto reply = _redis.command(cmd::sadd_range<Iter>, _key, first, last);
 
     return reply::to_integer(*reply);
+}
+
+template <typename Input, typename Output>
+void RSet::sdiff(Input first, Input last, Output output) {
+    auto reply = _redis.command(cmd::sdiff<Input>, first, last);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Input>
+long long RSet::sdiffstore(const StringView &destination,
+                            Input first,
+                            Input last) {
+    auto reply = _redis.command(cmd::sdiffstore<Input>, destination, first, last);
+
+    reply::to_integer(*reply);
+}
+
+template <typename Input, typename Output>
+void RSet::sinter(Input first, Input last, Output output) {
+    auto reply = _redis.command(cmd::sinter<Input>, first, last);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Input>
+long long RSet::sinterstore(const StringView &destination,
+                            Input first,
+                            Input last) {
+    auto reply = _redis.command(cmd::sinterstore<Input>, destination, first, last);
+
+    reply::to_integer(*reply);
 }
 
 template <typename Iter>
@@ -104,6 +160,20 @@ long long RSet::srem(Iter first, Iter last) {
     auto reply = _redis.command(cmd::srem_range<Iter>, _key, first, last);
 
     reply::to_integer(*reply);
+}
+
+template <typename Input, typename Output>
+void RSet::sunion(Input first, Input last, Output output) {
+    auto reply = _redis.command(cmd::sunion<Input>, first, last);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Input>
+long long RSet::sunionstore(const StringView &destination, Input first, Input last) {
+    auto reply = _redis.command(cmd::sunionstore<Input>, destination, first, last);
+
+    return reply::to_integer(*reply);
 }
 
 }
