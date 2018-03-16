@@ -62,7 +62,9 @@ public:
     template <typename Iter>
     void smembers(Iter output);
 
-    bool smove(const StringView &destination, const StringView &member);
+    bool smove(const StringView &source,
+                const StringView &destination,
+                const StringView &member);
 
     OptionalString spop();
 
