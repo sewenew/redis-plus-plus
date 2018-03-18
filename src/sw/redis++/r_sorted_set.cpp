@@ -23,7 +23,7 @@ namespace redis {
 long long RSortedSet::zadd(double score,
                             const StringView &member,
                             bool changed,
-                            cmd::UpdateType type) {
+                            UpdateType type) {
     auto reply = _redis.command(cmd::zadd, _key, score, member, changed, type);
 
     return reply::to_integer(*reply);

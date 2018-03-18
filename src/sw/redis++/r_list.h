@@ -41,7 +41,7 @@ public:
     OptionalString lindex(long long index);
 
     long long linsert(const StringView &val,
-                        cmd::InsertPosition position,
+                        InsertPosition position,
                         const StringView &pivot);
 
     long long llen();

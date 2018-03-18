@@ -103,7 +103,7 @@ void RString::psetex(const StringView &val,
 
 bool RString::set(const StringView &val,
                     const std::chrono::milliseconds &ttl,
-                    cmd::UpdateType type) {
+                    UpdateType type) {
     auto reply = _redis.command(cmd::set, _key, val, ttl, type);
 
     if (reply::is_nil(*reply)) {

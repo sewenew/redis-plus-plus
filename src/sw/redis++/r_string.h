@@ -72,7 +72,7 @@ public:
 
     bool set(const StringView &val,
                 const std::chrono::milliseconds &ttl = std::chrono::milliseconds(0),
-                cmd::UpdateType type = cmd::UpdateType::ALWAYS);
+                UpdateType type = UpdateType::ALWAYS);
 
     long long setbit(long long offset, long long value);
 

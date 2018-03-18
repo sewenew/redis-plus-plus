@@ -38,13 +38,13 @@ public:
     long long zadd(double score,
                     const StringView &member,
                     bool changed = false,
-                    cmd::UpdateType type = cmd::UpdateType::ALWAYS);
+                    UpdateType type = UpdateType::ALWAYS);
 
     template <typename Input>
     long long zadd(Input first,
                     Input last,
                     bool changed = false,
-                    cmd::UpdateType type = cmd::UpdateType::ALWAYS);
+                    UpdateType type = UpdateType::ALWAYS);
 
     long long zcard();
 
@@ -116,7 +116,7 @@ private:
 };
 
 template <typename Input>
-long long RSortedSet::zadd(Input first, Input last, bool changed, cmd::UpdateType type) {
+long long RSortedSet::zadd(Input first, Input last, bool changed, UpdateType type) {
     auto reply = _redis.command(cmd::zadd_range<Input>, _key, first, last, changed, type);
 
     return reply::to_integer(*reply);

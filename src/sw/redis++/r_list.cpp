@@ -29,7 +29,7 @@ OptionalString RList::lindex(long long index) {
 }
 
 long long RList::linsert(const StringView &val,
-                            cmd::InsertPosition position,
+                            InsertPosition position,
                             const StringView &pivot) {
     auto reply = _redis.command(cmd::linsert, _key, val, position, pivot);
 

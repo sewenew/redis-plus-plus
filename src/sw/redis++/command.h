@@ -19,6 +19,7 @@
 
 #include <string>
 #include "connection.h"
+#include "command_options.h"
 #include "utils.h"
 
 namespace sw {
@@ -26,17 +27,6 @@ namespace sw {
 namespace redis {
 
 namespace cmd {
-
-enum class UpdateType {
-    EXIST,
-    NOT_EXIST,
-    ALWAYS
-};
-
-enum class InsertPosition {
-    BEFORE,
-    AFTER
-};
 
 inline void auth(Connection &connection, const StringView &password) {
     connection.send("AUTH %b", password.data(), password.size());
@@ -593,14 +583,14 @@ void zadd_range(Connection &connection,
                 Iter first,
                 Iter last,
                 bool changed,
-                cmd::UpdateType type);
+                UpdateType type);
 
 inline void zadd(Connection &connection,
                     const StringView &key,
                     double score,
                     const StringView &member,
                     bool changed,
-                    cmd::UpdateType type) {
+                    UpdateType type) {
     auto tmp = {std::make_pair(score, member)};
 
     zadd_range(connection, key, tmp.begin(), tmp.end(), changed, type);
@@ -905,7 +895,7 @@ void zadd_range(Connection &connection,
                 Iter first,
                 Iter last,
                 bool changed,
-                cmd::UpdateType type) {
+                UpdateType type) {
     Connection::CmdArgs args;
 
     args << "ZADD" << key;
