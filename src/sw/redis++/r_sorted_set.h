@@ -90,16 +90,16 @@ public:
     void zrevrange(long long start, long long stop, Output output);
 
     template <typename Interval, typename Output>
-    void zrevrangebylex(const Interval &interval, Output &output);
+    void zrevrangebylex(const Interval &interval, Output output);
 
     template <typename Interval, typename Output>
-    void zrevrangebylex(const Interval &interval, const LimitOptions &opts, Output &output);
+    void zrevrangebylex(const Interval &interval, const LimitOptions &opts, Output output);
 
     template <typename Interval, typename Output>
-    void zrevrangebyscore(const Interval &interval, Output &output);
+    void zrevrangebyscore(const Interval &interval, Output output);
 
     template <typename Interval, typename Output>
-    void zrevrangebyscore(const Interval &interval, const LimitOptions &opts, Output &output);
+    void zrevrangebyscore(const Interval &interval, const LimitOptions &opts, Output output);
 
     OptionalLongLong zrevrank(const StringView &member);
 
@@ -109,21 +109,6 @@ private:
     friend class Redis;
 
     RSortedSet(const std::string &key, Redis &redis) : _key(key), _redis(redis) {}
-
-    template <typename Output, typename ...Args>
-    void _score_command(Output output, Args &&...args);
-
-    template <typename Output, typename ...Args>
-    void _score_command(std::true_type, Output output, Args &&...args);
-
-    template <typename Output, typename ...Args>
-    void _score_command(std::false_type, Output output, Args &&...args);
-
-    template <typename Output, typename ...Args>
-    void _score_command_impl(std::true_type, Output output, Args &&...args);
-
-    template <typename Output, typename ...Args>
-    void _score_command_impl(std::false_type, Output output, Args &&...args);
 
     std::string _key;
 
@@ -153,7 +138,9 @@ long long RSortedSet::zlexcount(const Interval &interval) {
 
 template <typename Output>
 void RSortedSet::zrange(long long start, long long stop, Output output) {
-    _score_command(output, cmd::zrange, _key, start, stop);
+    auto reply = _redis.command(cmd::zrange<Output>, _key, start, stop);
+
+    reply::to_array(*reply, output);
 }
 
 template <typename Interval, typename Output>
@@ -178,7 +165,10 @@ template <typename Interval, typename Output>
 void RSortedSet::zrangebyscore(const Interval &interval,
                                 const LimitOptions &opts,
                                 Output output) {
-    _score_command(output, cmd::zrangebyscore<Interval>, _key, interval, opts);
+    auto reply = _redis.command(cmd::zrangebyscore<Interval, Output>,
+                                _key, interval, opts);
+
+    reply::to_array(*reply, output);
 }
 
 template <typename Input>
@@ -204,70 +194,35 @@ long long RSortedSet::zremrangebyscore(const Interval &interval) {
 
 template <typename Output>
 void RSortedSet::zrevrange(long long start, long long stop, Output output) {
-    _score_command(output, cmd::zrevrange, _key, start, stop);
+    auto reply = _redis.command(cmd::zrevrange<Output>, _key, start, stop);
+
+    reply::to_array(*reply, output);
 }
 
 template <typename Interval, typename Output>
-inline void RSortedSet::zrevrangebylex(const Interval &interval, Output &output) {
+inline void RSortedSet::zrevrangebylex(const Interval &interval, Output output) {
     zrevrangebylex(interval, {}, output);
 }
 
 template <typename Interval, typename Output>
 void RSortedSet::zrevrangebylex(const Interval &interval,
                                 const LimitOptions &opts,
-                                Output &output) {
+                                Output output) {
     auto reply = _redis.command(cmd::zrevrangebylex<Interval>, _key, interval, opts);
 
     reply::to_array(*reply, output);
 }
 
 template <typename Interval, typename Output>
-void RSortedSet::zrevrangebyscore(const Interval &interval, Output &output) {
+void RSortedSet::zrevrangebyscore(const Interval &interval, Output output) {
     zrevrangebyscore(interval, {}, output);
 }
 
 template <typename Interval, typename Output>
 void RSortedSet::zrevrangebyscore(const Interval &interval,
                                     const LimitOptions &opts,
-                                    Output &output) {
-    auto reply = _redis.command(cmd::zrevrangebyscore<Interval>, _key, interval, opts);
-
-    reply::to_array(*reply, output);
-}
-
-template <typename Output, typename ...Args>
-void RSortedSet::_score_command(Output output, Args &&...args) {
-    _score_command(typename IsInserter<Output>::type(),
-                    output,
-                    std::forward<Args>(args)...);
-}
-
-template <typename Output, typename ...Args>
-void RSortedSet::_score_command(std::true_type, Output output, Args &&...args) {
-    // std::inserter or std::back_inserter
-    _score_command_impl(IsKvPair<typename Output::container_type::value_type>(),
-                        output,
-                        std::forward<Args>(args)...);
-}
-
-template <typename Output, typename ...Args>
-void RSortedSet::_score_command(std::false_type, Output output, Args &&...args) {
-    // Normal iterator
-    _score_command_impl(IsKvPair<typename std::decay<decltype(*output)>::type>(),
-                        output,
-                        std::forward<Args>(args)...);
-}
-
-template <typename Output, typename ...Args>
-void RSortedSet::_score_command_impl(std::true_type, Output output, Args &&...args) {
-    auto reply = _redis.command(std::forward<Args>(args)..., true);
-
-    reply::to_array(*reply, output);
-}
-
-template <typename Output, typename ...Args>
-void RSortedSet::_score_command_impl(std::false_type, Output output, Args &&...args) {
-    auto reply = _redis.command(std::forward<Args>(args)..., false);
+                                    Output output) {
+    auto reply = _redis.command(cmd::zrevrangebyscore<Interval, Output>, _key, interval, opts);
 
     reply::to_array(*reply, output);
 }

@@ -643,23 +643,11 @@ inline void zlexcount(Connection &connection,
                     max.data(), max.size());
 }
 
-inline void zrange(Connection &connection,
+template <typename Output>
+void zrange(Connection &connection,
                 const StringView &key,
                 long long start,
-                long long stop,
-                bool with_scores) {
-    if (with_scores) {
-        connection.send("ZRANGE %b %lld %lld WITHSCORES",
-                        key.data(), key.size(),
-                        start,
-                        stop);
-    } else {
-        connection.send("ZRANGE %b %lld %lld",
-                        key.data(), key.size(),
-                        start,
-                        stop);
-    }
-}
+                long long stop);
 
 template <typename Interval>
 inline void zrangebylex(Connection &connection,
@@ -677,12 +665,11 @@ inline void zrangebylex(Connection &connection,
                     opts.count);
 }
 
-template <typename Interval>
+template <typename Interval, typename Output>
 void zrangebyscore(Connection &connection,
                     const StringView &key,
                     const Interval &interval,
-                    const LimitOptions &opts,
-                    bool with_scores);
+                    const LimitOptions &opts);
 
 inline void zrank(Connection &connection,
                     const StringView &key,
@@ -747,6 +734,113 @@ inline void zremrangebyscore(Connection &connection,
                     max.data(), max.size());
 }
 
+template <typename Outupt>
+void zrevrange(Connection &connection,
+                const StringView &key,
+                long long start,
+                long long stop);
+
+template <typename Interval>
+inline void zrevrangebylex(Connection &connection,
+                            const StringView &key,
+                            const Interval &interval,
+                            const LimitOptions &opts) {
+    const auto &min = interval.min();
+    const auto &max = interval.max();
+
+    connection.send("ZREVRANGEBYLEX %b %b %b LIMIT %lld %lld",
+                    key.data(), key.size(),
+                    max.data(), max.size(),
+                    min.data(), min.size(),
+                    opts.offset,
+                    opts.count);
+}
+
+template <typename Interval, typename Output>
+void zrevrangebyscore(Connection &connection,
+                        const StringView &key,
+                        const Interval &interval,
+                        const LimitOptions &opts);
+
+inline void zrevrank(Connection &connection,
+                        const StringView &key,
+                        const StringView &member) {
+    connection.send("ZREVRANK %b %b",
+                    key.data(), key.size(),
+                    member.data(), member.size());
+}
+
+inline void zscore(Connection &connection,
+                    const StringView &key,
+                    const StringView &member) {
+    connection.send("ZSCORE %b %b",
+                    key.data(), key.size(),
+                    member.data(), member.size());
+}
+
+namespace detail {
+
+void set_update_type(Connection::CmdArgs &args, UpdateType type);
+
+template <typename Cmd, typename ...Args>
+inline void score_command(std::true_type, Cmd cmd, Args &&... args) {
+    cmd(std::forward<Args>(args)..., true);
+}
+
+template <typename Cmd, typename ...Args>
+inline void score_command(std::false_type, Cmd cmd, Args &&... args) {
+    cmd(std::forward<Args>(args)..., false);
+}
+
+template <typename Output, typename Cmd, typename ...Args>
+inline void score_command(Cmd cmd, Args &&... args) {
+    score_command(typename IsKvPairIter<Output>::type(), cmd, std::forward<Args>(args)...);
+}
+
+inline void zrange(Connection &connection,
+                const StringView &key,
+                long long start,
+                long long stop,
+                bool with_scores) {
+    if (with_scores) {
+        connection.send("ZRANGE %b %lld %lld WITHSCORES",
+                        key.data(), key.size(),
+                        start,
+                        stop);
+    } else {
+        connection.send("ZRANGE %b %lld %lld",
+                        key.data(), key.size(),
+                        start,
+                        stop);
+    }
+}
+
+template <typename Interval>
+void zrangebyscore(Connection &connection,
+                    const StringView &key,
+                    const Interval &interval,
+                    const LimitOptions &opts,
+                    bool with_scores) {
+    const auto &min = interval.min();
+    const auto &max = interval.max();
+
+    if (with_scores) {
+        connection.send("ZRANGEBYSCORE %b %b %b WITHSCORES LIMIT %lld %lld",
+                        key.data(), key.size(),
+                        min.data(), min.size(),
+                        max.data(), max.size(),
+                        opts.offset,
+                        opts.count);
+    } else {
+        connection.send("ZRANGEBYSCORE %b %b %b LIMIT %lld %lld",
+                        key.data(), key.size(),
+                        min.data(), min.size(),
+                        max.data(), max.size(),
+                        opts.offset,
+                        opts.count);
+    }
+}
+
 inline void zrevrange(Connection &connection,
                         const StringView &key,
                         long long start,
@@ -763,22 +857,6 @@ inline void zrevrange(Connection &connection,
                         start,
                         stop);
     }
-}
-
-template <typename Interval>
-inline void zrevrangebylex(Connection &connection,
-                            const StringView &key,
-                            const Interval &interval,
-                            const LimitOptions &opts) {
-    const auto &min = interval.min();
-    const auto &max = interval.max();
-
-    connection.send("ZREVRANGEBYLEX %b %b %b LIMIT %lld %lld",
-                    key.data(), key.size(),
-                    max.data(), max.size(),
-                    min.data(), min.size(),
-                    opts.offset,
-                    opts.count);
 }
 
 template <typename Interval>
@@ -806,26 +884,6 @@ inline void zrevrangebyscore(Connection &connection,
                         opts.count);
     }
 }
-
-inline void zrevrank(Connection &connection,
-                        const StringView &key,
-                        const StringView &member) {
-    connection.send("ZREVRANK %b %b",
-                    key.data(), key.size(),
-                    member.data(), member.size());
-}
-
-inline void zscore(Connection &connection,
-                    const StringView &key,
-                    const StringView &member) {
-    connection.send("ZSCORE %b %b",
-                    key.data(), key.size(),
-                    member.data(), member.size());
-}
-
-namespace detail {
-
-void set_update_type(Connection::CmdArgs &args, UpdateType type);
 
 }
 
@@ -863,30 +921,40 @@ void zadd_range(Connection &connection,
     connection.send(args);
 }
 
-template <typename Interval>
+template <typename Output>
+inline void zrange(Connection &connection,
+                const StringView &key,
+                long long start,
+                long long stop) {
+    detail::score_command<Output>(detail::zrange, connection, key, start, stop);
+}
+
+template <typename Interval, typename Output>
 void zrangebyscore(Connection &connection,
                     const StringView &key,
                     const Interval &interval,
-                    const LimitOptions &opts,
-                    bool with_scores) {
-    const auto &min = interval.min();
-    const auto &max = interval.max();
+                    const LimitOptions &opts) {
+    detail::score_command<Output>(detail::zrangebyscore<Interval>, connection, key, interval, opts);
+}
 
-    if (with_scores) {
-        connection.send("ZRANGEBYSCORE %b %b %b WITHSCORES LIMIT %lld %lld",
-                        key.data(), key.size(),
-                        min.data(), min.size(),
-                        max.data(), max.size(),
-                        opts.offset,
-                        opts.count);
-    } else {
-        connection.send("ZRANGEBYSCORE %b %b %b LIMIT %lld %lld",
-                        key.data(), key.size(),
-                        min.data(), min.size(),
-                        max.data(), max.size(),
-                        opts.offset,
-                        opts.count);
-    }
+template <typename Output>
+void zrevrange(Connection &connection,
+                const StringView &key,
+                long long start,
+                long long stop) {
+    detail::score_command<Output>(detail::zrevrange, connection, key, start, stop);
+}
+
+template <typename Interval, typename Output>
+void zrevrangebyscore(Connection &connection,
+                        const StringView &key,
+                        const Interval &interval,
+                        const LimitOptions &opts) {
+    detail::score_command<Output>(detail::zrevrangebyscore<Interval>,
+                                    connection,
+                                    key,
+                                    interval,
+                                    opts);
 }
 
 }

@@ -262,6 +262,13 @@ struct IsInserter : std::false_type {};
 template <typename T>
 struct IsInserter<T, Void<typename T::container_type>> : std::true_type {};
 
+template <typename T, typename U = Void<>>
+struct IsKvPairIter : IsKvPair<typename T::value_type> {};
+
+template <typename T>
+struct IsKvPairIter<T, Void<typename T::container_type>> :
+                    IsKvPair<typename T::container_type::value_type> {};
+
 }
 
 }
