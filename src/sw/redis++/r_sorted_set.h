@@ -53,6 +53,18 @@ public:
 
     double zincrby(double increment, const StringView &member);
 
+    template <typename Input>
+    long long zinterstore(const StringView &destination,
+                            Input first,
+                            Input last,
+                            AggregationType type = AggregationType::SUM);
+
+    template <typename Input>
+    long long zunionstore(const StringView &destination,
+                            Input first,
+                            Input last,
+                            AggregationType type = AggregationType::SUM);
+
     template <typename Interval>
     long long zlexcount(const Interval &interval);
 
@@ -125,6 +137,34 @@ long long RSortedSet::zadd(Input first, Input last, bool changed, UpdateType typ
 template <typename Interval>
 long long RSortedSet::zcount(const Interval &interval) {
     auto reply = _redis.command(cmd::zcount<Interval>, _key, interval);
+
+    return reply::to_integer(*reply);
+}
+
+template <typename Input>
+long long RSortedSet::zinterstore(const StringView &destination,
+                                    Input first,
+                                    Input last,
+                                    AggregationType type) {
+    auto reply = _redis.command(cmd::zinterstore<Input>,
+                                destination,
+                                first,
+                                last,
+                                type);
+
+    return reply::to_integer(*reply);
+}
+
+template <typename Input>
+long long RSortedSet::zunionstore(const StringView &destination,
+                                    Input first,
+                                    Input last,
+                                    AggregationType type) {
+    auto reply = _redis.command(cmd::zunionstore<Input>,
+                                destination,
+                                first,
+                                last,
+                                type);
 
     return reply::to_integer(*reply);
 }

@@ -77,7 +77,14 @@ public:
     public:
         CmdArgs& operator<<(const StringView &arg);
 
-        CmdArgs& operator<<(double d);
+        template <typename T,
+                     typename std::enable_if<std::is_integral<T>::value
+                                                || std::is_floating_point<T>::value,
+                                            int>::type = 0>
+        CmdArgs& operator<<(T arg) {
+            _numbers.push_back(std::to_string(arg));
+            return operator<<(_numbers.back());
+        }
 
         template <typename Iter>
         CmdArgs& operator<<(const std::pair<Iter, Iter> &range);
@@ -104,7 +111,7 @@ public:
         std::vector<const char *> _argv;
         std::vector<std::size_t> _argv_len;
 
-        std::list<std::string> _doubles;
+        std::list<std::string> _numbers;
     };
 
     void send(CmdArgs &args);

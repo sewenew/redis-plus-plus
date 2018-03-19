@@ -93,6 +93,27 @@ void set_update_type(Connection::CmdArgs &args, UpdateType type) {
     }
 }
 
+void set_aggregation_type(Connection::CmdArgs &args, AggregationType type) {
+    args << "AGGREGATE";
+
+    switch (type) {
+    case AggregationType::SUM:
+        args << "SUM";
+        break;
+
+    case AggregationType::MIN:
+        args << "MIN";
+        break;
+
+    case AggregationType::MAX:
+        args << "MAX";
+        break;
+
+    default:
+        throw RException("Unknown aggregation type.");
+    }
+}
+
 }
 
 }

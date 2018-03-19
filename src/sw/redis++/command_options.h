@@ -174,6 +174,12 @@ struct LimitOptions {
     long long count = -1;
 };
 
+enum class AggregationType {
+    SUM,
+    MIN,
+    MAX
+};
+
 }
 
 }

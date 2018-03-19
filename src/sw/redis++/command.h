@@ -620,6 +620,20 @@ inline void zincrby(Connection &connection,
                     member.data(), member.size());
 }
 
+template <typename Input>
+void zinterstore(Connection &connection,
+                    const StringView &destination,
+                    Input first,
+                    Input last,
+                    AggregationType aggr);
+
+template <typename Input>
+void zunionstore(Connection &connection,
+                    const StringView &destination,
+                    Input first,
+                    Input last,
+                    AggregationType aggr);
+
 template <typename Interval>
 inline void zlexcount(Connection &connection,
                         const StringView &key,
@@ -875,6 +889,90 @@ inline void zrevrangebyscore(Connection &connection,
     }
 }
 
+void set_aggregation_type(Connection::CmdArgs &args, AggregationType type);
+
+template <typename Input>
+void zinterstore(std::false_type,
+                    Connection &connection,
+                    const StringView &destination,
+                    Input first,
+                    Input last,
+                    AggregationType aggr) {
+    Connection::CmdArgs args;
+    args << "ZINTERSTORE" << destination << std::distance(first, last)
+        << std::make_pair(first, last);
+
+    set_aggregation_type(args, aggr);
+
+    connection.send(args);
+}
+
+template <typename Input>
+void zinterstore(std::true_type,
+                    Connection &connection,
+                    const StringView &destination,
+                    Input first,
+                    Input last,
+                    AggregationType aggr) {
+    Connection::CmdArgs args;
+    args << "ZINTERSTORE" << destination << std::distance(first, last);
+
+    for (auto iter = first; iter != last; ++iter) {
+        args << iter->first;
+    }
+
+    args << "WEIGHTS";
+
+    for (auto iter = first; iter != last; ++iter) {
+        args << iter->second;
+    }
+
+    set_aggregation_type(args, aggr);
+
+    connection.send(args);
+}
+
+template <typename Input>
+void zunionstore(std::false_type,
+                    Connection &connection,
+                    const StringView &destination,
+                    Input first,
+                    Input last,
+                    AggregationType aggr) {
+    Connection::CmdArgs args;
+    args << "ZUNIONSTORE" << destination << std::distance(first, last)
+        << std::make_pair(first, last);
+
+    set_aggregation_type(args, aggr);
+
+    connection.send(args);
+}
+
+template <typename Input>
+void zunionstore(std::true_type,
+                    Connection &connection,
+                    const StringView &destination,
+                    Input first,
+                    Input last,
+                    AggregationType aggr) {
+    Connection::CmdArgs args;
+    args << "ZUNIONSTORE" << destination << std::distance(first, last);
+
+    for (auto iter = first; iter != last; ++iter) {
+        args << iter->first;
+    }
+
+    args << "WEIGHTS";
+
+    for (auto iter = first; iter != last; ++iter) {
+        args << iter->second;
+    }
+
+    set_aggregation_type(args, aggr);
+
+    connection.send(args);
+}
+
 }
 
 }
@@ -945,6 +1043,34 @@ void zrevrangebyscore(Connection &connection,
                                     key,
                                     interval,
                                     opts);
+}
+
+template <typename Input>
+void zinterstore(Connection &connection,
+                    const StringView &destination,
+                    Input first,
+                    Input last,
+                    AggregationType aggr) {
+    detail::zinterstore(typename IsKvPairIter<Input>::type(),
+                        connection,
+                        destination,
+                        first,
+                        last,
+                        aggr);
+}
+
+template <typename Input>
+void zunionstore(Connection &connection,
+                    const StringView &destination,
+                    Input first,
+                    Input last,
+                    AggregationType aggr) {
+    detail::zunionstore(typename IsKvPairIter<Input>::type(),
+                        connection,
+                        destination,
+                        first,
+                        last,
+                        aggr);
 }
 
 }
