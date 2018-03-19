@@ -123,7 +123,7 @@ template <typename T>
 struct IsInserter<T, Void<typename T::container_type>> : std::true_type {};
 
 template <typename T, typename U = Void<>>
-struct IsKvPairIter : IsKvPair<typename T::value_type> {};
+struct IsKvPairIter : IsKvPair<typename std::decay<decltype(*std::declval<T>())>::type> {};
 
 template <typename T>
 struct IsKvPairIter<T, Void<typename T::container_type>> :
