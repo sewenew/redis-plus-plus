@@ -644,14 +644,14 @@ void zinterstore(Connection &connection,
                     const StringView &destination,
                     Input first,
                     Input last,
-                    AggregationType aggr);
+                    Aggregation aggr);
 
 template <typename Input>
 void zunionstore(Connection &connection,
                     const StringView &destination,
                     Input first,
                     Input last,
-                    AggregationType aggr);
+                    Aggregation aggr);
 
 template <typename Interval>
 inline void zlexcount(Connection &connection,
@@ -908,7 +908,7 @@ inline void zrevrangebyscore(Connection &connection,
     }
 }
 
-void set_aggregation_type(Connection::CmdArgs &args, AggregationType type);
+void set_aggregation_type(Connection::CmdArgs &args, Aggregation type);
 
 template <typename Input>
 void zinterstore(std::false_type,
@@ -916,7 +916,7 @@ void zinterstore(std::false_type,
                     const StringView &destination,
                     Input first,
                     Input last,
-                    AggregationType aggr) {
+                    Aggregation aggr) {
     Connection::CmdArgs args;
     args << "ZINTERSTORE" << destination << std::distance(first, last)
         << std::make_pair(first, last);
@@ -932,7 +932,7 @@ void zinterstore(std::true_type,
                     const StringView &destination,
                     Input first,
                     Input last,
-                    AggregationType aggr) {
+                    Aggregation aggr) {
     Connection::CmdArgs args;
     args << "ZINTERSTORE" << destination << std::distance(first, last);
 
@@ -957,7 +957,7 @@ void zunionstore(std::false_type,
                     const StringView &destination,
                     Input first,
                     Input last,
-                    AggregationType aggr) {
+                    Aggregation aggr) {
     Connection::CmdArgs args;
     args << "ZUNIONSTORE" << destination << std::distance(first, last)
         << std::make_pair(first, last);
@@ -973,7 +973,7 @@ void zunionstore(std::true_type,
                     const StringView &destination,
                     Input first,
                     Input last,
-                    AggregationType aggr) {
+                    Aggregation aggr) {
     Connection::CmdArgs args;
     args << "ZUNIONSTORE" << destination << std::distance(first, last);
 
@@ -1103,7 +1103,7 @@ void zinterstore(Connection &connection,
                     const StringView &destination,
                     Input first,
                     Input last,
-                    AggregationType aggr) {
+                    Aggregation aggr) {
     detail::zinterstore(typename IsKvPairIter<Input>::type(),
                         connection,
                         destination,
@@ -1117,7 +1117,7 @@ void zunionstore(Connection &connection,
                     const StringView &destination,
                     Input first,
                     Input last,
-                    AggregationType aggr) {
+                    Aggregation aggr) {
     detail::zunionstore(typename IsKvPairIter<Input>::type(),
                         connection,
                         destination,

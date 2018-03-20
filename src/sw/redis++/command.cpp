@@ -93,19 +93,19 @@ void set_update_type(Connection::CmdArgs &args, UpdateType type) {
     }
 }
 
-void set_aggregation_type(Connection::CmdArgs &args, AggregationType type) {
+void set_aggregation_type(Connection::CmdArgs &args, Aggregation aggr) {
     args << "AGGREGATE";
 
-    switch (type) {
-    case AggregationType::SUM:
+    switch (aggr) {
+    case Aggregation::SUM:
         args << "SUM";
         break;
 
-    case AggregationType::MIN:
+    case Aggregation::MIN:
         args << "MIN";
         break;
 
-    case AggregationType::MAX:
+    case Aggregation::MAX:
         args << "MAX";
         break;
 

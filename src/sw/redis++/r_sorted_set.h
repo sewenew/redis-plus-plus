@@ -57,13 +57,13 @@ public:
     long long zinterstore(const StringView &destination,
                             Input first,
                             Input last,
-                            AggregationType type = AggregationType::SUM);
+                            Aggregation type = Aggregation::SUM);
 
     template <typename Input>
     long long zunionstore(const StringView &destination,
                             Input first,
                             Input last,
-                            AggregationType type = AggregationType::SUM);
+                            Aggregation type = Aggregation::SUM);
 
     template <typename Interval>
     long long zlexcount(const Interval &interval);
@@ -145,7 +145,7 @@ template <typename Input>
 long long RSortedSet::zinterstore(const StringView &destination,
                                     Input first,
                                     Input last,
-                                    AggregationType type) {
+                                    Aggregation type) {
     auto reply = _redis.command(cmd::zinterstore<Input>,
                                 destination,
                                 first,
@@ -159,7 +159,7 @@ template <typename Input>
 long long RSortedSet::zunionstore(const StringView &destination,
                                     Input first,
                                     Input last,
-                                    AggregationType type) {
+                                    Aggregation type) {
     auto reply = _redis.command(cmd::zunionstore<Input>,
                                 destination,
                                 first,
