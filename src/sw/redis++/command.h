@@ -834,6 +834,52 @@ inline void zscore(Connection &connection,
                     member.data(), member.size());
 }
 
+// HYPERLOGLOG commands.
+
+inline void pfadd(Connection &connection,
+                    const StringView &key,
+                    const StringView &element) {
+    connection.send("PFADD %b %b",
+                    key.data(), key.size(),
+                    element.data(), element.size());
+}
+
+template <typename Input>
+inline void pfadd_range(Connection &connection,
+                        const StringView &key,
+                        Input first,
+                        Input last) {
+    Connection::CmdArgs args;
+    args << "PFADD" << key << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+inline void pfcount(Connection &connection, const StringView &key) {
+    connection.send("PFCOUNT %b", key.data(), key.size());
+}
+
+template <typename Input>
+inline void pfcount_range(Connection &connection,
+                            Input first,
+                            Input last) {
+    Connection::CmdArgs args;
+    args << "PFCOUNT" << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Input>
+inline void pfmerge(Connection &connection,
+                    const StringView &destination,
+                    Input first,
+                    Input last) {
+    Connection::CmdArgs args;
+    args << "PFMERGE" << destination << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
 namespace detail {
 
 void set_update_type(Connection::CmdArgs &args, UpdateType type);

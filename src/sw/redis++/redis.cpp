@@ -24,6 +24,7 @@
 #include "r_hash.h"
 #include "r_set.h"
 #include "r_sorted_set.h"
+#include "r_hyperloglog.h"
 
 namespace sw {
 
@@ -46,6 +47,10 @@ RSet Redis::set(const std::string &key) {
 }
 
 RSortedSet Redis::sorted_set(const std::string &key) {
+    return {key, *this};
+}
+
+RHyperLogLog Redis::hyperloglog(const std::string &key) {
     return {key, *this};
 }
 

@@ -32,6 +32,7 @@ class RList;
 class RHash;
 class RSet;
 class RSortedSet;
+class RHyperLogLog;
 class Pipeline;
 
 class Redis {
@@ -48,6 +49,8 @@ public:
     RSet set(const std::string &key);
 
     RSortedSet sorted_set(const std::string &key);
+
+    RHyperLogLog hyperloglog(const std::string &key);
 
     Pipeline pipeline();
 

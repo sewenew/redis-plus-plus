@@ -14,17 +14,26 @@
    limitations under the License.
  *************************************************************************/
 
-#ifndef SEWENEW_REDISPLUSPLUS_REDISPLUSPLUS_H
-#define SEWENEW_REDISPLUSPLUS_REDISPLUSPLUS_H
-
-#include "redis.h"
-#include "r_string.h"
-#include "r_list.h"
-#include "r_hash.h"
-#include "r_set.h"
-#include "r_sorted_set.h"
 #include "r_hyperloglog.h"
-#include "pipeline.h"
-#include "p_string.h"
+#include "command.h"
+#include "exceptions.h"
 
-#endif // end SEWENEW_REDISPLUSPLUS_REDISPLUSPLUS_H
+namespace sw {
+
+namespace redis {
+
+bool RHyperLogLog::pfadd(const StringView &element) {
+    auto reply = _redis.command(cmd::pfadd, _key, element);
+
+    return reply::to_bool(*reply);
+}
+
+long long RHyperLogLog::pfcount(const StringView &key) {
+    auto reply = _redis.command(cmd::pfcount, key);
+
+    return reply::to_integer(*reply);
+}
+
+}
+
+}
