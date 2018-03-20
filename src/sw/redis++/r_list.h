@@ -36,6 +36,20 @@ public:
         return _key;
     }
 
+    template <typename Input>
+    OptionalStringPair blpop(Input first,
+                                Input last,
+                                const std::chrono::seconds &timeout = std::chrono::seconds{0});
+
+    template <typename Input>
+    OptionalStringPair brpop(Input first,
+                                Input last,
+                                const std::chrono::seconds &timeout = std::chrono::seconds{0});
+
+    OptionalString brpoplpush(const StringView &source,
+                                const StringView &destination,
+                                const std::chrono::seconds &timeout = std::chrono::seconds{0});
+
     OptionalString lpop();
 
     OptionalString lindex(long long index);
@@ -80,6 +94,24 @@ private:
 
     Redis &_redis;
 };
+
+template <typename Input>
+OptionalStringPair RList::blpop(Input first,
+                                Input last,
+                                const std::chrono::seconds &timeout) {
+    auto reply = _redis.command(cmd::blpop<Input>, first, last, timeout);
+
+    return reply::to_optional_string_pair(*reply);
+}
+
+template <typename Input>
+OptionalStringPair RList::brpop(Input first,
+                                Input last,
+                                const std::chrono::seconds &timeout) {
+    auto reply = _redis.command(cmd::brpop<Input>, first, last, timeout);
+
+    return reply::to_optional_string_pair(*reply);
+}
 
 template <typename Iter>
 inline long long RList::lpush(Iter first, Iter last) {

@@ -42,6 +42,14 @@ long long RList::llen() {
     return reply::to_integer(*reply);
 }
 
+OptionalString RList::brpoplpush(const StringView &source,
+                                    const StringView &destination,
+                                    const std::chrono::seconds &timeout) {
+    auto reply = _redis.command(cmd::brpoplpush, source, destination, timeout);
+
+    return reply::to_optional_string(*reply);
+}
+
 OptionalString RList::lpop() {
     auto reply = _redis.command(cmd::lpop, _key);
 

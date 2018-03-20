@@ -107,6 +107,8 @@ using OptionalLongLong = Optional<long long>;
 
 using OptionalDouble = Optional<double>;
 
+using OptionalStringPair = Optional<std::pair<std::string, std::string>>;
+
 template <typename ...>
 struct IsKvPair : std::false_type {};
 

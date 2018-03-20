@@ -66,6 +66,24 @@ OptionalString to_optional_string(redisReply &reply) {
     return OptionalString(reply::to_string(reply));
 }
 
+OptionalStringPair to_optional_string_pair(redisReply &reply) {
+    if (reply::is_nil(reply)) {
+        return {};
+    }
+
+    if (reply.elements != 2) {
+        throw RException("Not a string pair");
+    }
+
+    auto *key = reply.element[0];
+    auto *val = reply.element[1];
+    if (key == nullptr || val == nullptr) {
+        throw RException("Null string pair");
+    }
+
+    return OptionalStringPair(reply::to_string(*key), reply::to_string(*val));
+}
+
 long long to_integer(redisReply &reply) {
     if (!reply::is_integer(reply)) {
         throw RException("Expect INTEGER reply.");

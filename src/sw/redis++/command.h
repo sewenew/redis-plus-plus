@@ -18,6 +18,7 @@
 #define SEWENEW_REDISPLUSPLUS_COMMAND_H
 
 #include <string>
+#include <chrono>
 #include "connection.h"
 #include "command_options.h"
 #include "utils.h"
@@ -219,6 +220,38 @@ inline void strlen(Connection &connection, const StringView &key) {
 }
 
 // LIST commands.
+
+template <typename Input>
+inline void blpop(Connection &connection,
+                    Input first,
+                    Input last,
+                    const std::chrono::seconds &timeout) {
+    Connection::CmdArgs args;
+    args << "BLPOP" << std::make_pair(first, last) << timeout.count();
+
+    connection.send(args);
+}
+
+template <typename Input>
+inline void brpop(Connection &connection,
+                    Input first,
+                    Input last,
+                    const std::chrono::seconds &timeout) {
+    Connection::CmdArgs args;
+    args << "BRPOP" << std::make_pair(first, last) << timeout.count();
+
+    connection.send(args);
+}
+
+inline void brpoplpush(Connection &connection,
+                        const StringView &source,
+                        const StringView &destination,
+                        const std::chrono::seconds &timeout) {
+    connection.send("BRPOPLPUSH %b %b %lld",
+                    source.data(), source.size(),
+                    destination.data(), destination.size(),
+                    timeout.count());
+}
 
 inline void lindex(Connection &connection, const StringView &key, long long index) {
     connection.send("LINDEX %b %lld",

@@ -110,6 +110,8 @@ std::string to_string(redisReply &reply);
 
 OptionalString to_optional_string(redisReply &reply);
 
+OptionalStringPair to_optional_string_pair(redisReply &reply);
+
 long long to_integer(redisReply &reply);
 
 OptionalLongLong to_optional_integer(redisReply &reply);
