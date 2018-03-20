@@ -175,8 +175,9 @@ template <typename Output,
             typename std::enable_if<!IsInserter<Output>::value, int>::type = 0>
 void to_pair(redisReply &key, redisReply &val, Output output) {
     // Normal iterator
-    to_pair(std::is_same<typename Output::value_type::second_type,
-                                double>(),
+    to_pair(std::is_same<
+                typename std::decay<decltype(*std::declval<Output>())>::type::second_type,
+                        double>(),
             key,
             val,
             output);

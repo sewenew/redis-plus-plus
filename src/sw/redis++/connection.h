@@ -205,7 +205,7 @@ inline void Connection::send(const char *format, Args &&...args) {
 
 template <typename Iter>
 auto Connection::CmdArgs::operator<<(const std::pair<Iter, Iter> &range) -> CmdArgs& {
-    return _append(IsKvPair<typename std::decay<decltype(*(range.first))>::type>(), range);
+    return _append(IsKvPair<typename std::decay<decltype(*std::declval<Iter>())>::type>(), range);
 }
 
 template <typename Iter>
