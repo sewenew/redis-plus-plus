@@ -180,6 +180,13 @@ enum class AggregationType {
     MAX
 };
 
+enum class BitOp {
+    AND,
+    OR,
+    XOR,
+    NOT
+};
+
 }
 
 }

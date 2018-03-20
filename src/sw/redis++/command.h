@@ -62,6 +62,25 @@ inline void bitcount(Connection &connection,
                     start, end);
 }
 
+template <typename Input>
+void bitop(Connection &connection,
+            BitOp op,
+            const StringView &destination,
+            Input first,
+            Input last);
+
+inline void bitpos(Connection &connection,
+                    const StringView &key,
+                    long long bit,
+                    long long start,
+                    long long end) {
+    connection.send("BITPOS %b %lld %lld %lld",
+                    key.data(), key.size(),
+                    bit,
+                    start,
+                    end);
+}
+
 inline void decr(Connection &connection, const StringView &key) {
     connection.send("DECR %b", key.data(), key.size());
 }
@@ -986,6 +1005,40 @@ namespace sw {
 namespace redis {
 
 namespace cmd {
+
+template <typename Input>
+void bitop(Connection &connection,
+            BitOp op,
+            const StringView &destination,
+            Input first,
+            Input last) {
+    Connection::CmdArgs args;
+    args << "BITOP";
+    switch (op) {
+    case BitOp::AND:
+        args << "AND";
+        break;
+
+    case BitOp::OR:
+        args << "OR";
+        break;
+
+    case BitOp::XOR:
+        args << "XOR";
+        break;
+
+    case BitOp::NOT:
+        args << "NOT";
+        break;
+
+    default:
+        throw RException("Unknown bit operations");
+    }
+
+    args << destination << std::make_pair(first, last);
+
+    connection.send(args);
+}
 
 template <typename Iter>
 void zadd_range(Connection &connection,

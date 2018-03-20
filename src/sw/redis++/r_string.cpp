@@ -34,6 +34,12 @@ long long RString::bitcount(long long start, long long end) {
     return reply::to_integer(*reply);
 }
 
+long long RString::bitpos(long long bit, long long start, long long end) {
+    auto reply = _redis.command(cmd::bitpos, _key, bit, start, end);
+
+    return reply::to_integer(*reply);
+}
+
 long long RString::decr() {
     auto reply = _redis.command(cmd::decr, _key);
 

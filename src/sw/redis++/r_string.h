@@ -40,6 +40,11 @@ public:
 
     long long bitcount(long long start = 0, long long end = -1);
 
+    template <typename Input>
+    long long bitop(BitOp op, const StringView &destination, Input first, Input last);
+
+    long long bitpos(long long bit, long long start = 0, long long end = -1);
+
     long long decr();
 
     long long decrby(long long decrement);
@@ -93,6 +98,13 @@ private:
 
     Redis &_redis;
 };
+
+template <typename Input>
+long long RString::bitop(BitOp op, const StringView &destination, Input first, Input last) {
+    auto reply = _redis.command(cmd::bitop<Input>, op, destination, first, last);
+
+    return reply::to_integer(*reply);
+}
 
 template <typename Input, typename Output>
 void RString::mget(Input first, Input last, Output output) {
