@@ -261,9 +261,9 @@ inline void lindex(Connection &connection, const StringView &key, long long inde
 
 void linsert(Connection &connection,
                 const StringView &key,
-                const StringView &val,
                 InsertPosition position,
-                const StringView &pivot);
+                const StringView &pivot,
+                const StringView &val);
 
 inline void llen(Connection &connection,
                     const StringView &key) {
@@ -310,8 +310,8 @@ inline void lrange(Connection &connection,
 
 inline void lrem(Connection &connection,
                     const StringView &key,
-                    const StringView &val,
-                    long long count) {
+                    long long count,
+                    const StringView &val) {
     connection.send("LREM %b %lld %b",
                     key.data(), key.size(),
                     count,
@@ -340,6 +340,14 @@ inline void ltrim(Connection &connection,
 
 inline void rpop(Connection &connection, const StringView &key) {
     connection.send("RPOP %b", key.data(), key.size());
+}
+
+inline void rpoplpush(Connection &connection,
+                        const StringView &source,
+                        const StringView &destination) {
+    connection.send("RPOPLPUSH %b %b",
+                    source.data(), source.size(),
+                    destination.data(), destination.size());
 }
 
 inline void rpush(Connection &connection, const StringView &key, const StringView &val) {

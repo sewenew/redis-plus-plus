@@ -19,7 +19,6 @@
 
 #include "redis.h"
 #include "redis.hpp"
-#include "r_list.h"
 #include "r_hash.h"
 #include "r_set.h"
 #include "r_sorted_set.h"

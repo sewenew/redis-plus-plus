@@ -27,7 +27,6 @@ namespace sw {
 namespace redis {
 
 class StringView;
-class RList;
 class RHash;
 class RSet;
 class RSortedSet;
@@ -38,8 +37,6 @@ class Redis {
 public:
     Redis(const ConnectionPoolOptions &pool_opts,
             const ConnectionOptions &connection_opts) : _pool(pool_opts, connection_opts) {}
-
-    RList list(const std::string &key);
 
     RHash hash(const std::string &key);
 
@@ -123,6 +120,60 @@ public:
     long long setrange(const StringView &key, long long offset, const StringView &val);
 
     long long strlen(const StringView &key);
+
+    // LIST commands.
+
+    template <typename Input>
+    OptionalStringPair blpop(Input first,
+                                Input last,
+                                const std::chrono::seconds &timeout = std::chrono::seconds{0});
+
+    template <typename Input>
+    OptionalStringPair brpop(Input first,
+                                Input last,
+                                const std::chrono::seconds &timeout = std::chrono::seconds{0});
+
+    OptionalString brpoplpush(const StringView &source,
+                                const StringView &destination,
+                                const std::chrono::seconds &timeout = std::chrono::seconds{0});
+
+    OptionalString lindex(const StringView &key, long long index);
+
+    long long linsert(const StringView &key,
+                        InsertPosition position,
+                        const StringView &pivot,
+                        const StringView &val);
+
+    long long llen(const StringView &key);
+
+    OptionalString lpop(const StringView &key);
+
+    long long lpush(const StringView &key, const StringView &val);
+
+    template <typename Iter>
+    long long lpush(const StringView &key, Iter first, Iter last);
+
+    long long lpushx(const StringView &key, const StringView &val);
+
+    template <typename Iter>
+    void lrange(const StringView &key, long long start, long long stop, Iter output);
+
+    long long lrem(const StringView &key, long long count, const StringView &val);
+
+    void lset(const StringView &key, long long index, const StringView &val);
+
+    void ltrim(const StringView &key, long long start, long long stop);
+
+    OptionalString rpop(const StringView &key);
+
+    OptionalString rpoplpush(const StringView &source, const StringView &destination);
+
+    long long rpush(const StringView &key, const StringView &val);
+
+    template <typename Iter>
+    long long rpush(const StringView &key, Iter first, Iter last);
+
+    long long rpushx(const StringView &key, const StringView &val);
 
 private:
     class ConnectionPoolGuard {

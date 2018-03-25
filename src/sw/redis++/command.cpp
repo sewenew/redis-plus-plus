@@ -48,9 +48,9 @@ void set(Connection &connection,
 
 void linsert(Connection &connection,
                 const StringView &key,
-                const StringView &val,
                 InsertPosition position,
-                const StringView &pivot) {
+                const StringView &pivot,
+                const StringView &val) {
     std::string pos;
     switch (position) {
     case InsertPosition::BEFORE:

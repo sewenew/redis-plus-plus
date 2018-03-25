@@ -20,7 +20,6 @@
 #include "command.h"
 #include "exceptions.h"
 #include "pipeline.h"
-#include "r_list.h"
 #include "r_hash.h"
 #include "r_set.h"
 #include "r_sorted_set.h"
@@ -36,10 +35,6 @@ Redis::ConnectionPoolGuard::ConnectionPoolGuard(ConnectionPool &pool, Connection
 
 Redis::ConnectionPoolGuard::~ConnectionPoolGuard() {
     _pool.release(std::move(_connection));
-}
-
-RList Redis::list(const std::string &key) {
-    return {key, *this};
 }
 
 RHash Redis::hash(const std::string &key) {
@@ -233,6 +228,101 @@ long long Redis::setrange(const StringView &key, long long offset, const StringV
 
 long long Redis::strlen(const StringView &key) {
     auto reply = command(cmd::strlen, key);
+
+    return reply::to_integer(*reply);
+}
+
+// LIST commands.
+
+OptionalString Redis::brpoplpush(const StringView &source,
+                                    const StringView &destination,
+                                    const std::chrono::seconds &timeout) {
+    auto reply = command(cmd::brpoplpush, source, destination, timeout);
+
+    return reply::to_optional_string(*reply);
+}
+
+OptionalString Redis::lindex(const StringView &key, long long index) {
+    auto reply = command(cmd::lindex, key, index);
+
+    return reply::to_optional_string(*reply);
+}
+
+long long Redis::linsert(const StringView &key,
+                            InsertPosition position,
+                            const StringView &pivot,
+                            const StringView &val) {
+    auto reply = command(cmd::linsert, key, position, pivot, val);
+
+    return reply::to_integer(*reply);
+}
+
+long long Redis::llen(const StringView &key) {
+    auto reply = command(cmd::llen, key);
+
+    return reply::to_integer(*reply);
+}
+
+OptionalString Redis::lpop(const StringView &key) {
+    auto reply = command(cmd::lpop, key);
+
+    return reply::to_optional_string(*reply);
+}
+
+long long Redis::lpush(const StringView &key, const StringView &val) {
+    auto reply = command(cmd::lpush, key, val);
+
+    return reply::to_integer(*reply);
+}
+
+long long Redis::lpushx(const StringView &key, const StringView &val) {
+    auto reply = command(cmd::lpushx, key, val);
+
+    return reply::to_integer(*reply);
+}
+
+long long Redis::lrem(const StringView &key, long long count, const StringView &val) {
+    auto reply = command(cmd::lrem, key, count, val);
+
+    return reply::to_integer(*reply);
+}
+
+void Redis::lset(const StringView &key, long long index, const StringView &val) {
+    auto reply = command(cmd::lset, key, index, val);
+
+    if (!reply::status_ok(*reply)) {
+        throw RException("Invalid status reply: " + reply::to_status(*reply));
+    }
+}
+
+void Redis::ltrim(const StringView &key, long long start, long long stop) {
+    auto reply = command(cmd::ltrim, key, start, stop);
+
+    if (!reply::status_ok(*reply)) {
+        throw RException("Invalid status reply: " + reply::to_status(*reply));
+    }
+}
+
+OptionalString Redis::rpop(const StringView &key) {
+    auto reply = command(cmd::rpop, key);
+
+    return reply::to_optional_string(*reply);
+}
+
+OptionalString Redis::rpoplpush(const StringView &source, const StringView &destination) {
+    auto reply = command(cmd::rpoplpush, source, destination);
+
+    return reply::to_optional_string(*reply);
+}
+
+long long Redis::rpush(const StringView &key, const StringView &val) {
+    auto reply = command(cmd::rpush, key, val);
+
+    return reply::to_integer(*reply);
+}
+
+long long Redis::rpushx(const StringView &key, const StringView &val) {
+    auto reply = command(cmd::rpushx, key, val);
 
     return reply::to_integer(*reply);
 }

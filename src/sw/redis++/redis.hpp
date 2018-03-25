@@ -70,6 +70,47 @@ bool Redis::msetnx(Input first, Input last) {
     return reply::to_bool(*reply);
 }
 
+// LIST commands.
+
+template <typename Input>
+OptionalStringPair Redis::blpop(Input first,
+                                Input last,
+                                const std::chrono::seconds &timeout) {
+    auto reply = command(cmd::blpop<Input>, first, last, timeout);
+
+    return reply::to_optional_string_pair(*reply);
+}
+
+template <typename Input>
+OptionalStringPair Redis::brpop(Input first,
+                                Input last,
+                                const std::chrono::seconds &timeout) {
+    auto reply = command(cmd::brpop<Input>, first, last, timeout);
+
+    return reply::to_optional_string_pair(*reply);
+}
+
+template <typename Iter>
+inline long long Redis::lpush(const StringView &key, Iter first, Iter last) {
+    auto reply = command(cmd::lpush_range<Iter>, key, first, last);
+
+    return reply::to_integer(*reply);
+}
+
+template <typename Iter>
+inline void Redis::lrange(const StringView &key, long long start, long long stop, Iter output) {
+    auto reply = command(cmd::lrange, key, start, stop);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Iter>
+inline long long Redis::rpush(const StringView &key, Iter first, Iter last) {
+    auto reply = command(cmd::rpush_range<Iter>, key, first, last);
+
+    return reply::to_integer(*reply);
+}
+
 }
 
 }
