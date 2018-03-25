@@ -240,6 +240,163 @@ long long Redis::sunionstore(const StringView &destination, Input first, Input l
     return reply::to_integer(*reply);
 }
 
+// SORTED SET commands.
+
+template <typename Input>
+long long Redis::zadd(const StringView &key,
+                        Input first,
+                        Input last,
+                        bool changed,
+                        UpdateType type) {
+    auto reply = command(cmd::zadd_range<Input>, key, first, last, changed, type);
+
+    return reply::to_integer(*reply);
+}
+
+template <typename Interval>
+long long Redis::zcount(const StringView &key, const Interval &interval) {
+    auto reply = command(cmd::zcount<Interval>, key, interval);
+
+    return reply::to_integer(*reply);
+}
+
+template <typename Input>
+long long Redis::zinterstore(const StringView &destination,
+                                Input first,
+                                Input last,
+                                Aggregation type) {
+    auto reply = command(cmd::zinterstore<Input>,
+                            destination,
+                            first,
+                            last,
+                            type);
+
+    return reply::to_integer(*reply);
+}
+
+template <typename Input>
+long long Redis::zunionstore(const StringView &destination,
+                                    Input first,
+                                    Input last,
+                                    Aggregation type) {
+    auto reply = command(cmd::zunionstore<Input>,
+                            destination,
+                            first,
+                            last,
+                            type);
+
+    return reply::to_integer(*reply);
+}
+
+template <typename Interval>
+long long Redis::zlexcount(const StringView &key, const Interval &interval) {
+    auto reply = command(cmd::zlexcount<Interval>, key, interval);
+
+    return reply::to_integer(*reply);
+}
+
+template <typename Output>
+void Redis::zrange(const StringView &key, long long start, long long stop, Output output) {
+    auto reply = command(cmd::zrange<Output>, key, start, stop);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Interval, typename Output>
+void Redis::zrangebylex(const StringView &key, const Interval &interval, Output output) {
+    zrangebylex(key, interval, {}, output);
+}
+
+template <typename Interval, typename Output>
+void Redis::zrangebylex(const StringView &key,
+                        const Interval &interval,
+                        const LimitOptions &opts,
+                        Output output) {
+    auto reply = command(cmd::zrangebylex<Interval>, key, interval, opts);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Interval, typename Output>
+void Redis::zrangebyscore(const StringView &key,
+                            const Interval &interval,
+                            Output output) {
+    zrangebyscore(key, interval, {}, output);
+}
+
+template <typename Interval, typename Output>
+void Redis::zrangebyscore(const StringView &key,
+                            const Interval &interval,
+                            const LimitOptions &opts,
+                            Output output) {
+    auto reply = command(cmd::zrangebyscore<Interval, Output>,
+                            key,
+                            interval,
+                            opts);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Input>
+long long Redis::zrem(const StringView &key, Input first, Input last) {
+    auto reply = command(cmd::zrem_range<Input>, key, first, last);
+
+    return reply::to_integer(*reply);
+}
+
+template <typename Interval>
+long long Redis::zremrangebylex(const StringView &key, const Interval &interval) {
+    auto reply = command(cmd::zremrangebylex<Interval>, key, interval);
+
+    return reply::to_integer(*reply);
+}
+
+template <typename Interval>
+long long Redis::zremrangebyscore(const StringView &key, const Interval &interval) {
+    auto reply = command(cmd::zremrangebyscore, key, interval);
+
+    return reply::to_integer(*reply);
+}
+
+template <typename Output>
+void Redis::zrevrange(const StringView &key, long long start, long long stop, Output output) {
+    auto reply = command(cmd::zrevrange<Output>, key, start, stop);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Interval, typename Output>
+inline void Redis::zrevrangebylex(const StringView &key,
+                                    const Interval &interval,
+                                    Output output) {
+    zrevrangebylex(key, interval, {}, output);
+}
+
+template <typename Interval, typename Output>
+void Redis::zrevrangebylex(const StringView &key,
+                            const Interval &interval,
+                            const LimitOptions &opts,
+                            Output output) {
+    auto reply = command(cmd::zrevrangebylex<Interval>, key, interval, opts);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Interval, typename Output>
+void Redis::zrevrangebyscore(const StringView &key, const Interval &interval, Output output) {
+    zrevrangebyscore(key, interval, {}, output);
+}
+
+template <typename Interval, typename Output>
+void Redis::zrevrangebyscore(const StringView &key,
+                                const Interval &interval,
+                                const LimitOptions &opts,
+                                Output output) {
+    auto reply = command(cmd::zrevrangebyscore<Interval, Output>, key, interval, opts);
+
+    reply::to_array(*reply, output);
+}
+
 }
 
 }

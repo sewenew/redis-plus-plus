@@ -20,7 +20,6 @@
 #include "command.h"
 #include "exceptions.h"
 #include "pipeline.h"
-#include "r_sorted_set.h"
 #include "r_hyperloglog.h"
 
 namespace sw {
@@ -33,10 +32,6 @@ Redis::ConnectionPoolGuard::ConnectionPoolGuard(ConnectionPool &pool, Connection
 
 Redis::ConnectionPoolGuard::~ConnectionPoolGuard() {
     _pool.release(std::move(_connection));
-}
-
-RSortedSet Redis::sorted_set(const std::string &key) {
-    return {key, *this};
 }
 
 RHyperLogLog Redis::hyperloglog(const std::string &key) {
@@ -415,6 +410,60 @@ long long Redis::srem(const StringView &key, const StringView &member) {
     auto reply = command(cmd::srem, key, member);
 
     return reply::to_integer(*reply);
+}
+
+// SORTED SET commands.
+
+long long Redis::zadd(const StringView &key,
+                        double score,
+                        const StringView &member,
+                        bool changed,
+                        UpdateType type) {
+    auto reply = command(cmd::zadd, key, score, member, changed, type);
+
+    return reply::to_integer(*reply);
+}
+
+long long Redis::zcard(const StringView &key) {
+    auto reply = command(cmd::zcard, key);
+
+    return reply::to_integer(*reply);
+}
+
+double Redis::zincrby(const StringView &key, double increment, const StringView &member) {
+    auto reply = command(cmd::zincrby, key, increment, member);
+
+    return reply::to_double(*reply);
+}
+
+OptionalLongLong Redis::zrank(const StringView &key, const StringView &member) {
+    auto reply = command(cmd::zrank, key, member);
+
+    return reply::to_optional_integer(*reply);
+}
+
+long long Redis::zrem(const StringView &key, const StringView &member) {
+    auto reply = command(cmd::zrem, key, member);
+
+    return reply::to_integer(*reply);
+}
+
+long long Redis::zremrangebyrank(const StringView &key, long long start, long long stop) {
+    auto reply = command(cmd::zremrangebyrank, key, start, stop);
+
+    return reply::to_integer(*reply);
+}
+
+OptionalLongLong Redis::zrevrank(const StringView &key, const StringView &member) {
+    auto reply = command(cmd::zrevrank, key, member);
+
+    return reply::to_optional_integer(*reply);
+}
+
+OptionalDouble Redis::zscore(const StringView &key, const StringView &member) {
+    auto reply = command(cmd::zscore, key, member);
+
+    return reply::to_optional_double(*reply);
 }
 
 }

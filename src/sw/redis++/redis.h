@@ -27,7 +27,6 @@ namespace sw {
 namespace redis {
 
 class StringView;
-class RSortedSet;
 class RHyperLogLog;
 class Pipeline;
 
@@ -35,8 +34,6 @@ class Redis {
 public:
     Redis(const ConnectionPoolOptions &pool_opts,
             const ConnectionOptions &connection_opts) : _pool(pool_opts, connection_opts) {}
-
-    RSortedSet sorted_set(const std::string &key);
 
     RHyperLogLog hyperloglog(const std::string &key);
 
@@ -261,6 +258,105 @@ public:
 
     template <typename Input>
     long long sunionstore(const StringView &destination, Input first, Input last);
+
+    // SORTED SET commands.
+
+    // We don't support the INCR option, since you can always use ZINCRBY instead.
+    long long zadd(const StringView &key,
+                    double score,
+                    const StringView &member,
+                    bool changed = false,
+                    UpdateType type = UpdateType::ALWAYS);
+
+    template <typename Input>
+    long long zadd(const StringView &key,
+                    Input first,
+                    Input last,
+                    bool changed = false,
+                    UpdateType type = UpdateType::ALWAYS);
+
+    long long zcard(const StringView &key);
+
+    template <typename Interval>
+    long long zcount(const StringView &key, const Interval &interval);
+
+    double zincrby(const StringView &key, double increment, const StringView &member);
+
+    template <typename Input>
+    long long zinterstore(const StringView &destination,
+                            Input first,
+                            Input last,
+                            Aggregation type = Aggregation::SUM);
+
+    template <typename Input>
+    long long zunionstore(const StringView &destination,
+                            Input first,
+                            Input last,
+                            Aggregation type = Aggregation::SUM);
+
+    template <typename Interval>
+    long long zlexcount(const StringView &key, const Interval &interval);
+
+    template <typename Output>
+    void zrange(const StringView &key, long long start, long long stop, Output output);
+
+    template <typename Interval, typename Output>
+    void zrangebylex(const StringView &key, const Interval &interval, Output output);
+
+    template <typename Interval, typename Output>
+    void zrangebylex(const StringView &key,
+                        const Interval &interval,
+                        const LimitOptions &opts,
+                        Output output);
+
+    template <typename Interval, typename Output>
+    void zrangebyscore(const StringView &key, const Interval &interval, Output output);
+
+    template <typename Interval, typename Output>
+    void zrangebyscore(const StringView &key,
+                        const Interval &interval,
+                        const LimitOptions &opts,
+                        Output output);
+
+    OptionalLongLong zrank(const StringView &key, const StringView &member);
+
+    long long zrem(const StringView &key, const StringView &member);
+
+    template <typename Input>
+    long long zrem(const StringView &key, Input first, Input last);
+
+    template <typename Interval>
+    long long zremrangebylex(const StringView &key, const Interval &interval);
+
+    long long zremrangebyrank(const StringView &key, long long start, long long stop);
+
+    template <typename Interval>
+    long long zremrangebyscore(const StringView &key, const Interval &interval);
+
+    template <typename Output>
+    void zrevrange(const StringView &key, long long start, long long stop, Output output);
+
+    template <typename Interval, typename Output>
+    void zrevrangebylex(const StringView &key, const Interval &interval, Output output);
+
+    template <typename Interval, typename Output>
+    void zrevrangebylex(const StringView &key,
+                        const Interval &interval,
+                        const LimitOptions &opts,
+                        Output output);
+
+    template <typename Interval, typename Output>
+    void zrevrangebyscore(const StringView &key, const Interval &interval, Output output);
+
+    template <typename Interval, typename Output>
+    void zrevrangebyscore(const StringView &key,
+                            const Interval &interval,
+                            const LimitOptions &opts,
+                            Output output);
+
+    OptionalLongLong zrevrank(const StringView &key, const StringView &member);
+
+    OptionalDouble zscore(const StringView &key, const StringView &member);
 
 private:
     class ConnectionPoolGuard {
