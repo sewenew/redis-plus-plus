@@ -18,7 +18,7 @@
 #define SEWENEW_REDISPLUSPLUS_REDISPLUSPLUS_H
 
 #include "redis.h"
-#include "r_string.h"
+#include "redis.hpp"
 #include "r_list.h"
 #include "r_hash.h"
 #include "r_set.h"

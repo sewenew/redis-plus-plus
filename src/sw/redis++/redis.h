@@ -21,13 +21,13 @@
 #include "connection_pool.h"
 #include "reply.h"
 #include "utils.h"
+#include "command_options.h"
 
 namespace sw {
 
 namespace redis {
 
 class StringView;
-class RString;
 class RList;
 class RHash;
 class RSet;
@@ -39,8 +39,6 @@ class Redis {
 public:
     Redis(const ConnectionPoolOptions &pool_opts,
             const ConnectionOptions &connection_opts) : _pool(pool_opts, connection_opts) {}
-
-    RString string(const std::string &key);
 
     RList list(const std::string &key);
 
@@ -64,6 +62,68 @@ public:
     std::string ping();
 
     std::string ping(const StringView &msg);
+
+    // STRING commands.
+
+    long long append(const StringView &key, const StringView &str);
+
+    long long bitcount(const StringView &key, long long start = 0, long long end = -1);
+
+    template <typename Input>
+    long long bitop(BitOp op, const StringView &destination, Input first, Input last);
+
+    long long bitpos(const StringView &key,
+                        long long bit,
+                        long long start = 0,
+                        long long end = -1);
+
+    long long decr(const StringView &key);
+
+    long long decrby(const StringView &key, long long decrement);
+
+    OptionalString get(const StringView &key);
+
+    long long getbit(const StringView &key, long long offset);
+
+    std::string getrange(const StringView &key, long long start, long long end);
+
+    OptionalString getset(const StringView &key, const StringView &val);
+
+    long long incr(const StringView &key);
+
+    long long incrby(const StringView &key, long long increment);
+
+    double incrbyfloat(const StringView &key, double increment);
+
+    template <typename Input, typename Output>
+    void mget(Input first, Input last, Output output);
+
+    template <typename Input>
+    void mset(Input first, Input last);
+
+    template <typename Input>
+    bool msetnx(Input first, Input last);
+
+    void psetex(const StringView &key,
+                const std::chrono::milliseconds &ttl,
+                const StringView &val);
+
+    bool set(const StringView &key,
+                const StringView &val,
+                const std::chrono::milliseconds &ttl = std::chrono::milliseconds(0),
+                UpdateType type = UpdateType::ALWAYS);
+
+    long long setbit(const StringView &key, long long offset, long long value);
+
+    bool setnx(const StringView &key, const StringView &val);
+
+    void setex(const StringView &key,
+                const std::chrono::seconds &ttl,
+                const StringView &val);
+
+    long long setrange(const StringView &key, long long offset, const StringView &val);
+
+    long long strlen(const StringView &key);
 
 private:
     ConnectionPool _pool;

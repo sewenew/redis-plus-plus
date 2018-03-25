@@ -163,8 +163,8 @@ inline void msetnx(Connection &connection, Input first, Input last) {
 
 inline void psetex(Connection &connection,
                     const StringView &key,
-                    const StringView &val,
-                    const std::chrono::milliseconds &ttl) {
+                    const std::chrono::milliseconds &ttl,
+                    const StringView &val) {
     connection.send("PSETEX %b %lld %b",
                     key.data(), key.size(),
                     ttl.count(),
@@ -197,8 +197,8 @@ inline void setnx(Connection &connection,
 
 inline void setex(Connection &connection,
                     const StringView &key,
-                    const StringView &val,
-                    const std::chrono::seconds &ttl) {
+                    const std::chrono::seconds &ttl,
+                    const StringView &val) {
     connection.send("SETEX %b %lld %b",
                     key.data(), key.size(),
                     ttl.count(),

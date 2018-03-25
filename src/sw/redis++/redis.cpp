@@ -19,7 +19,6 @@
 #include "command.h"
 #include "exceptions.h"
 #include "pipeline.h"
-#include "r_string.h"
 #include "r_list.h"
 #include "r_hash.h"
 #include "r_set.h"
@@ -29,10 +28,6 @@
 namespace sw {
 
 namespace redis {
-
-RString Redis::string(const std::string &key) {
-    return {key, *this};
-}
 
 RList Redis::list(const std::string &key) {
     return {key, *this};
@@ -82,6 +77,155 @@ std::string Redis::ping(const StringView &msg) {
     auto reply = command<void (*)(Connection &, const StringView &)>(cmd::ping, msg);
 
     return reply::to_string(*reply);
+}
+
+// STRING commands.
+
+long long Redis::append(const StringView &key, const StringView &val) {
+    auto reply = command(cmd::append, key, val);
+
+    return reply::to_integer(*reply);
+}
+
+long long Redis::bitcount(const StringView &key, long long start, long long end) {
+    auto reply = command(cmd::bitcount, key, start, end);
+
+    return reply::to_integer(*reply);
+}
+
+long long Redis::bitpos(const StringView &key,
+                            long long bit,
+                            long long start,
+                            long long end) {
+    auto reply = command(cmd::bitpos, key, bit, start, end);
+
+    return reply::to_integer(*reply);
+}
+
+long long Redis::decr(const StringView &key) {
+    auto reply = command(cmd::decr, key);
+
+    return reply::to_integer(*reply);
+}
+
+long long Redis::decrby(const StringView &key, long long decrement) {
+    auto reply = command(cmd::decrby, key, decrement);
+
+    return reply::to_integer(*reply);
+}
+
+OptionalString Redis::get(const StringView &key) {
+    auto reply = command(cmd::get, key);
+
+    return reply::to_optional_string(*reply);
+}
+
+long long Redis::getbit(const StringView &key, long long offset) {
+    auto reply = command(cmd::getbit, key, offset);
+
+    return reply::to_integer(*reply);
+}
+
+std::string Redis::getrange(const StringView &key, long long start, long long end) {
+    auto reply = command(cmd::getrange, key, start, end);
+
+    return reply::to_string(*reply);
+}
+
+OptionalString Redis::getset(const StringView &key, const StringView &val) {
+    auto reply = command(cmd::getset, key, val);
+
+    return reply::to_optional_string(*reply);
+}
+
+long long Redis::incr(const StringView &key) {
+    auto reply = command(cmd::incr, key);
+
+    return reply::to_integer(*reply);
+}
+
+long long Redis::incrby(const StringView &key, long long increment) {
+    auto reply = command(cmd::incrby, key, increment);
+
+    return reply::to_integer(*reply);
+}
+
+double Redis::incrbyfloat(const StringView &key, double increment) {
+    auto reply = command(cmd::incrbyfloat, key, increment);
+
+    return reply::to_double(*reply);
+}
+
+void Redis::psetex(const StringView &key,
+                        const std::chrono::milliseconds &ttl,
+                        const StringView &val) {
+    if (ttl <= std::chrono::milliseconds(0)) {
+        throw RException("TTL must be positive.");
+    }
+
+    auto reply = command(cmd::psetex, key, ttl, val);
+
+    if (!reply::status_ok(*reply)) {
+        throw RException("Invalid status reply: " + reply::to_status(*reply));
+    }
+}
+
+bool Redis::set(const StringView &key,
+                    const StringView &val,
+                    const std::chrono::milliseconds &ttl,
+                    UpdateType type) {
+    auto reply = command(cmd::set, key, val, ttl, type);
+
+    if (reply::is_nil(*reply)) {
+        // Failed to set.
+        return false;
+    }
+
+    assert(reply::is_status(*reply));
+
+    if (!reply::status_ok(*reply)) {
+        throw RException("Invalid status reply: " + reply::to_status(*reply));
+    }
+
+    return true;
+}
+
+long long Redis::setbit(const StringView &key, long long offset, long long value) {
+    auto reply = command(cmd::setbit, key, offset, value);
+
+    return reply::to_integer(*reply);
+}
+
+void Redis::setex(const StringView &key,
+                    const std::chrono::seconds &ttl,
+                    const StringView &val) {
+    if (ttl <= std::chrono::seconds(0)) {
+        throw RException("TTL must be positive.");
+    }
+
+    auto reply = command(cmd::setex, key, ttl, val);
+
+    if (!reply::status_ok(*reply)) {
+        throw RException("Invalid status reply: " + reply::to_status(*reply));
+    }
+}
+
+bool Redis::setnx(const StringView &key, const StringView &val) {
+    auto reply = command(cmd::setnx, key, val);
+
+    return reply::to_bool(*reply);
+}
+
+long long Redis::setrange(const StringView &key, long long offset, const StringView &val) {
+    auto reply = command(cmd::setrange, key, offset, val);
+
+    return reply::to_integer(*reply);
+}
+
+long long Redis::strlen(const StringView &key) {
+    auto reply = command(cmd::strlen, key);
+
+    return reply::to_integer(*reply);
 }
 
 }
