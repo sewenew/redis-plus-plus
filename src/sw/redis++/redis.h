@@ -20,7 +20,6 @@
 #include <string>
 #include "connection_pool.h"
 #include "reply.h"
-#include "utils.h"
 #include "command_options.h"
 
 namespace sw {

@@ -20,5 +20,5 @@ install(TARGETS ${PROJECT_NAME}
 
 #Install headers.
 set(HEADER_PATH "sw/redis++")
-file(GLOB HEADERS "${PROJECT_SOURCE_DIR}/*.h")
+file(GLOB HEADERS "${PROJECT_SOURCE_DIR}/*.h*")
 install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${HEADER_PATH})

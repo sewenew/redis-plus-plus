@@ -15,6 +15,7 @@
  *************************************************************************/
 
 #include "redis.h"
+#include "redis.hpp"
 #include <hiredis/hiredis.h>
 #include "command.h"
 #include "exceptions.h"

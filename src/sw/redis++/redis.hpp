@@ -18,6 +18,8 @@
 #define SEWENEW_REDISPLUSPLUS_REDIS_HPP
 
 #include "command.h"
+#include "reply.h"
+#include "utils.h"
 
 namespace sw {
 
