@@ -19,7 +19,6 @@
 
 #include "redis.h"
 #include "redis.hpp"
-#include "r_hyperloglog.h"
 #include "pipeline.h"
 #include "p_string.h"
 

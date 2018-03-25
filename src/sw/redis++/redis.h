@@ -27,15 +27,12 @@ namespace sw {
 namespace redis {
 
 class StringView;
-class RHyperLogLog;
 class Pipeline;
 
 class Redis {
 public:
     Redis(const ConnectionPoolOptions &pool_opts,
             const ConnectionOptions &connection_opts) : _pool(pool_opts, connection_opts) {}
-
-    RHyperLogLog hyperloglog(const std::string &key);
 
     Pipeline pipeline();
 
@@ -357,6 +354,21 @@ public:
                             Input first,
                             Input last,
                             Aggregation type = Aggregation::SUM);
+
+    // HYPERLOGLOG commands.
+
+    bool pfadd(const StringView &key, const StringView &element);
+
+    template <typename Input>
+    bool pfadd(const StringView &key, Input first, Input last);
+
+    long long pfcount(const StringView &key);
+
+    template <typename Input>
+    long long pfcount(Input first, Input last);
+
+    template <typename Input>
+    void pfmerge(const StringView &destination, Input first, Input last);
 
 private:
     class ConnectionPoolGuard {

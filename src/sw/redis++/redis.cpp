@@ -20,7 +20,6 @@
 #include "command.h"
 #include "exceptions.h"
 #include "pipeline.h"
-#include "r_hyperloglog.h"
 
 namespace sw {
 
@@ -32,10 +31,6 @@ Redis::ConnectionPoolGuard::ConnectionPoolGuard(ConnectionPool &pool, Connection
 
 Redis::ConnectionPoolGuard::~ConnectionPoolGuard() {
     _pool.release(std::move(_connection));
-}
-
-RHyperLogLog Redis::hyperloglog(const std::string &key) {
-    return {key, *this};
 }
 
 Pipeline Redis::pipeline() {
@@ -464,6 +459,20 @@ OptionalDouble Redis::zscore(const StringView &key, const StringView &member) {
     auto reply = command(cmd::zscore, key, member);
 
     return reply::to_optional_double(*reply);
+}
+
+// HYPERLOGLOG commands.
+
+bool Redis::pfadd(const StringView &key, const StringView &element) {
+    auto reply = command(cmd::pfadd, key, element);
+
+    return reply::to_bool(*reply);
+}
+
+long long Redis::pfcount(const StringView &key) {
+    auto reply = command(cmd::pfcount, key);
+
+    return reply::to_integer(*reply);
 }
 
 }

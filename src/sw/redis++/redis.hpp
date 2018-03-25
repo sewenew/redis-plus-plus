@@ -397,6 +397,33 @@ long long Redis::zunionstore(const StringView &destination,
     return reply::to_integer(*reply);
 }
 
+// HYPERLOGLOG commands.
+
+template <typename Input>
+bool Redis::pfadd(const StringView &key, Input first, Input last) {
+    auto reply = command(cmd::pfadd_range<Input>, key, first, last);
+
+    return reply::to_bool(*reply);
+}
+
+template <typename Input>
+long long Redis::pfcount(Input first, Input last) {
+    auto reply = command(cmd::pfcount_range<Input>, first, last);
+
+    return reply::to_integer(*reply);
+}
+
+template <typename Input>
+void Redis::pfmerge(const StringView &destination,
+                    Input first,
+                    Input last) {
+    auto reply = command(cmd::pfmerge, destination, first, last);
+
+    if (!reply::status_ok(*reply)) {
+        throw RException("Invalid status reply: " + reply::to_status(*reply));
+    }
+}
+
 }
 
 }
