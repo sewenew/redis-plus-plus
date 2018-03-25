@@ -27,7 +27,6 @@ namespace sw {
 namespace redis {
 
 class StringView;
-class RSet;
 class RSortedSet;
 class RHyperLogLog;
 class Pipeline;
@@ -36,8 +35,6 @@ class Redis {
 public:
     Redis(const ConnectionPoolOptions &pool_opts,
             const ConnectionOptions &connection_opts) : _pool(pool_opts, connection_opts) {}
-
-    RSet set(const std::string &key);
 
     RSortedSet sorted_set(const std::string &key);
 
@@ -209,6 +206,61 @@ public:
 
     template <typename Iter>
     void hvals(const StringView &key, Iter output);
+
+    // SET commands.
+
+    long long sadd(const StringView &key, const StringView &member);
+
+    template <typename Iter>
+    long long sadd(const StringView &key, Iter first, Iter last);
+
+    long long scard(const StringView &key);
+
+    template <typename Input, typename Output>
+    void sdiff(Input first, Input last, Output output);
+
+    template <typename Input>
+    long long sdiffstore(const StringView &destination,
+                            Input first,
+                            Input last);
+
+    template <typename Input, typename Output>
+    void sinter(Input first, Input last, Output output);
+
+    template <typename Input>
+    long long sinterstore(const StringView &destination,
+                            Input first,
+                            Input last);
+
+    bool sismember(const StringView &key, const StringView &member);
+
+    template <typename Iter>
+    void smembers(const StringView &key, Iter output);
+
+    bool smove(const StringView &source,
+                const StringView &destination,
+                const StringView &member);
+
+    OptionalString spop(const StringView &key);
+
+    template <typename Iter>
+    void spop(const StringView &key, long long count, Iter output);
+
+    OptionalString srandmember(const StringView &key);
+
+    template <typename Iter>
+    void srandmember(const StringView &key, long long count, Iter output);
+
+    long long srem(const StringView &key, const StringView &member);
+
+    template <typename Iter>
+    long long srem(const StringView &key, Iter first, Iter last);
+
+    template <typename Input, typename Output>
+    void sunion(Input first, Input last, Output output);
+
+    template <typename Input>
+    long long sunionstore(const StringView &destination, Input first, Input last);
 
 private:
     class ConnectionPoolGuard {

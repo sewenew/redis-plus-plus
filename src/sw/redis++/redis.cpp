@@ -20,7 +20,6 @@
 #include "command.h"
 #include "exceptions.h"
 #include "pipeline.h"
-#include "r_set.h"
 #include "r_sorted_set.h"
 #include "r_hyperloglog.h"
 
@@ -34,10 +33,6 @@ Redis::ConnectionPoolGuard::ConnectionPoolGuard(ConnectionPool &pool, Connection
 
 Redis::ConnectionPoolGuard::~ConnectionPoolGuard() {
     _pool.release(std::move(_connection));
-}
-
-RSet Redis::set(const std::string &key) {
-    return {key, *this};
 }
 
 RSortedSet Redis::sorted_set(const std::string &key) {
@@ -372,6 +367,52 @@ bool Redis::hsetnx(const StringView &key, const StringView &field, const StringV
 
 long long Redis::hstrlen(const StringView &key, const StringView &field) {
     auto reply = command(cmd::hstrlen, key, field);
+
+    return reply::to_integer(*reply);
+}
+
+// SET commands.
+
+long long Redis::sadd(const StringView &key, const StringView &member) {
+    auto reply = command(cmd::sadd, key, member);
+
+    return reply::to_integer(*reply);
+}
+
+long long Redis::scard(const StringView &key) {
+    auto reply = command(cmd::scard, key);
+
+    return reply::to_integer(*reply);
+}
+
+bool Redis::sismember(const StringView &key, const StringView &member) {
+    auto reply = command(cmd::sismember, key, member);
+
+    return reply::to_bool(*reply);
+}
+
+bool Redis::smove(const StringView &source,
+                    const StringView &destination,
+                    const StringView &member) {
+    auto reply = command(cmd::smove, source, destination, member);
+
+    return reply::to_bool(*reply);
+}
+
+OptionalString Redis::spop(const StringView &key) {
+    auto reply = command(cmd::spop, key);
+
+    return reply::to_optional_string(*reply);
+}
+
+OptionalString Redis::srandmember(const StringView &key) {
+    auto reply = command(cmd::srandmember, key);
+
+    return reply::to_optional_string(*reply);
+}
+
+long long Redis::srem(const StringView &key, const StringView &member) {
+    auto reply = command(cmd::srem, key, member);
 
     return reply::to_integer(*reply);
 }

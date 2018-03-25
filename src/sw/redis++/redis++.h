@@ -19,7 +19,6 @@
 
 #include "redis.h"
 #include "redis.hpp"
-#include "r_set.h"
 #include "r_sorted_set.h"
 #include "r_hyperloglog.h"
 #include "pipeline.h"

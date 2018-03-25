@@ -157,6 +157,89 @@ inline void Redis::hvals(const StringView &key, Iter output) {
     reply::to_array(*reply, output);
 }
 
+// SET commands.
+
+template <typename Iter>
+long long Redis::sadd(const StringView &key, Iter first, Iter last) {
+    auto reply = command(cmd::sadd_range<Iter>, key, first, last);
+
+    return reply::to_integer(*reply);
+}
+
+template <typename Input, typename Output>
+void Redis::sdiff(Input first, Input last, Output output) {
+    auto reply = command(cmd::sdiff<Input>, first, last);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Input>
+long long Redis::sdiffstore(const StringView &destination,
+                            Input first,
+                            Input last) {
+    auto reply = command(cmd::sdiffstore<Input>, destination, first, last);
+
+    reply::to_integer(*reply);
+}
+
+template <typename Input, typename Output>
+void Redis::sinter(Input first, Input last, Output output) {
+    auto reply = command(cmd::sinter<Input>, first, last);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Input>
+long long Redis::sinterstore(const StringView &destination,
+                            Input first,
+                            Input last) {
+    auto reply = command(cmd::sinterstore<Input>, destination, first, last);
+
+    reply::to_integer(*reply);
+}
+
+template <typename Iter>
+void Redis::smembers(const StringView &key, Iter output) {
+    auto reply = command(cmd::smembers, key);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Iter>
+void Redis::spop(const StringView &key, long long count, Iter output) {
+    auto reply = command(cmd::spop_range, key, count);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Iter>
+void Redis::srandmember(const StringView &key, long long count, Iter output) {
+    auto reply = command(cmd::srandmember_range, key, count);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Iter>
+long long Redis::srem(const StringView &key, Iter first, Iter last) {
+    auto reply = command(cmd::srem_range<Iter>, key, first, last);
+
+    reply::to_integer(*reply);
+}
+
+template <typename Input, typename Output>
+void Redis::sunion(Input first, Input last, Output output) {
+    auto reply = command(cmd::sunion<Input>, first, last);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Input>
+long long Redis::sunionstore(const StringView &destination, Input first, Input last) {
+    auto reply = command(cmd::sunionstore<Input>, destination, first, last);
+
+    return reply::to_integer(*reply);
+}
+
 }
 
 }
