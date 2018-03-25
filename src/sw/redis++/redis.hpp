@@ -17,9 +17,24 @@
 #ifndef SEWENEW_REDISPLUSPLUS_REDIS_HPP
 #define SEWENEW_REDISPLUSPLUS_REDIS_HPP
 
+#include "command.h"
+
 namespace sw {
 
 namespace redis {
+
+template <typename Cmd, typename ...Args>
+ReplyUPtr Redis::command(Cmd cmd, Args &&...args) {
+    auto connection = _pool.fetch();
+
+    ConnectionPoolGuard guard(_pool, connection);
+
+    cmd(connection, std::forward<Args>(args)...);
+
+    auto reply = connection.recv();
+
+    return reply;
+}
 
 // STRING commands.
 

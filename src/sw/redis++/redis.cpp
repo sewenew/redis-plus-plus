@@ -29,6 +29,14 @@ namespace sw {
 
 namespace redis {
 
+Redis::ConnectionPoolGuard::ConnectionPoolGuard(ConnectionPool &pool, Connection &connection) :
+                                                _pool(pool),
+                                                _connection(connection) {}
+
+Redis::ConnectionPoolGuard::~ConnectionPoolGuard() {
+    _pool.release(std::move(_connection));
+}
+
 RList Redis::list(const std::string &key) {
     return {key, *this};
 }

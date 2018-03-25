@@ -126,23 +126,18 @@ public:
     long long strlen(const StringView &key);
 
 private:
+    class ConnectionPoolGuard {
+    public:
+        ConnectionPoolGuard(ConnectionPool &pool, Connection &connection);
+        ~ConnectionPoolGuard();
+
+    private:
+        ConnectionPool &_pool;
+        Connection &_connection;
+    };
+
     ConnectionPool _pool;
 };
-
-// Inline implementations.
-
-template <typename Cmd, typename ...Args>
-ReplyUPtr Redis::command(Cmd cmd, Args &&...args) {
-    auto connection = _pool.fetch();
-
-    cmd(connection, std::forward<Args>(args)...);
-
-    auto reply = connection.recv();
-
-    _pool.release(std::move(connection));
-
-    return reply;
-}
 
 }
 
