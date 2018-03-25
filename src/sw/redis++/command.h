@@ -687,13 +687,6 @@ void zinterstore(Connection &connection,
                     Input last,
                     Aggregation aggr);
 
-template <typename Input>
-void zunionstore(Connection &connection,
-                    const StringView &destination,
-                    Input first,
-                    Input last,
-                    Aggregation aggr);
-
 template <typename Interval>
 inline void zlexcount(Connection &connection,
                         const StringView &key,
@@ -841,6 +834,13 @@ inline void zscore(Connection &connection,
                     key.data(), key.size(),
                     member.data(), member.size());
 }
+
+template <typename Input>
+void zunionstore(Connection &connection,
+                    const StringView &destination,
+                    Input first,
+                    Input last,
+                    Aggregation aggr);
 
 // HYPERLOGLOG commands.
 

@@ -274,20 +274,6 @@ long long Redis::zinterstore(const StringView &destination,
     return reply::to_integer(*reply);
 }
 
-template <typename Input>
-long long Redis::zunionstore(const StringView &destination,
-                                    Input first,
-                                    Input last,
-                                    Aggregation type) {
-    auto reply = command(cmd::zunionstore<Input>,
-                            destination,
-                            first,
-                            last,
-                            type);
-
-    return reply::to_integer(*reply);
-}
-
 template <typename Interval>
 long long Redis::zlexcount(const StringView &key, const Interval &interval) {
     auto reply = command(cmd::zlexcount<Interval>, key, interval);
@@ -395,6 +381,20 @@ void Redis::zrevrangebyscore(const StringView &key,
     auto reply = command(cmd::zrevrangebyscore<Interval, Output>, key, interval, opts);
 
     reply::to_array(*reply, output);
+}
+
+template <typename Input>
+long long Redis::zunionstore(const StringView &destination,
+                                    Input first,
+                                    Input last,
+                                    Aggregation type) {
+    auto reply = command(cmd::zunionstore<Input>,
+                            destination,
+                            first,
+                            last,
+                            type);
+
+    return reply::to_integer(*reply);
 }
 
 }

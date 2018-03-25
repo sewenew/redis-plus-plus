@@ -288,12 +288,6 @@ public:
                             Input last,
                             Aggregation type = Aggregation::SUM);
 
-    template <typename Input>
-    long long zunionstore(const StringView &destination,
-                            Input first,
-                            Input last,
-                            Aggregation type = Aggregation::SUM);
-
     template <typename Interval>
     long long zlexcount(const StringView &key, const Interval &interval);
 
@@ -357,6 +351,12 @@ public:
     OptionalLongLong zrevrank(const StringView &key, const StringView &member);
 
     OptionalDouble zscore(const StringView &key, const StringView &member);
+
+    template <typename Input>
+    long long zunionstore(const StringView &destination,
+                            Input first,
+                            Input last,
+                            Aggregation type = Aggregation::SUM);
 
 private:
     class ConnectionPoolGuard {
