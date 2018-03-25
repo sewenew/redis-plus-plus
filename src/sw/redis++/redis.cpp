@@ -20,7 +20,6 @@
 #include "command.h"
 #include "exceptions.h"
 #include "pipeline.h"
-#include "r_hash.h"
 #include "r_set.h"
 #include "r_sorted_set.h"
 #include "r_hyperloglog.h"
@@ -35,10 +34,6 @@ Redis::ConnectionPoolGuard::ConnectionPoolGuard(ConnectionPool &pool, Connection
 
 Redis::ConnectionPoolGuard::~ConnectionPoolGuard() {
     _pool.release(std::move(_connection));
-}
-
-RHash Redis::hash(const std::string &key) {
-    return {key, *this};
 }
 
 RSet Redis::set(const std::string &key) {
@@ -323,6 +318,60 @@ long long Redis::rpush(const StringView &key, const StringView &val) {
 
 long long Redis::rpushx(const StringView &key, const StringView &val) {
     auto reply = command(cmd::rpushx, key, val);
+
+    return reply::to_integer(*reply);
+}
+
+long long Redis::hdel(const StringView &key, const StringView &field) {
+    auto reply = command(cmd::hdel, key, field);
+
+    return reply::to_integer(*reply);
+}
+
+bool Redis::hexists(const StringView &key, const StringView &field) {
+    auto reply = command(cmd::hexists, key, field);
+
+    return reply::to_bool(*reply);
+}
+
+OptionalString Redis::hget(const StringView &key, const StringView &field) {
+    auto reply = command(cmd::hget, key, field);
+
+    return reply::to_optional_string(*reply);
+}
+
+long long Redis::hincrby(const StringView &key, const StringView &field, long long increment) {
+    auto reply = command(cmd::hincrby, key, field, increment);
+
+    return reply::to_integer(*reply);
+}
+
+double Redis::hincrbyfloat(const StringView &key, const StringView &field, double increment) {
+    auto reply = command(cmd::hincrby, key, field, increment);
+
+    return reply::to_double(*reply);
+}
+
+long long Redis::hlen(const StringView &key) {
+    auto reply = command(cmd::hlen, key);
+
+    return reply::to_integer(*reply);
+}
+
+bool Redis::hset(const StringView &key, const StringView &field, const StringView &val) {
+    auto reply = command(cmd::hset, key, field, val);
+
+    return reply::to_bool(*reply);
+}
+
+bool Redis::hsetnx(const StringView &key, const StringView &field, const StringView &val) {
+    auto reply = command(cmd::hsetnx, key, field, val);
+
+    return reply::to_bool(*reply);
+}
+
+long long Redis::hstrlen(const StringView &key, const StringView &field) {
+    auto reply = command(cmd::hstrlen, key, field);
 
     return reply::to_integer(*reply);
 }

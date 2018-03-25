@@ -111,6 +111,52 @@ inline long long Redis::rpush(const StringView &key, Iter first, Iter last) {
     return reply::to_integer(*reply);
 }
 
+// HASH commands.
+
+template <typename Iter>
+inline long long Redis::hdel(const StringView &key, Iter first, Iter last) {
+    auto reply = command(cmd::hdel_range<Iter>, key, first, last);
+
+    return reply::to_integer(*reply);
+}
+
+template <typename Iter>
+inline void Redis::hgetall(const StringView &key, Iter output) {
+    auto reply = command(cmd::hgetall, key);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Iter>
+inline void Redis::hkeys(const StringView &key, Iter output) {
+    auto reply = command(cmd::hkeys, key);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Input, typename Output>
+inline void Redis::hmget(const StringView &key, Input first, Input last, Output output) {
+    auto reply = command(cmd::hmget<Input>, key, first, last);
+
+    reply::to_optional_string_array(*reply, output);
+}
+
+template <typename Iter>
+inline void Redis::hmset(const StringView &key, Iter first, Iter last) {
+    auto reply = command(cmd::hmset<Iter>, key, first, last);
+
+    if (!reply::status_ok(*reply)) {
+        throw RException("Invalid status reply: " + reply::to_status(*reply));
+    }
+}
+
+template <typename Iter>
+inline void Redis::hvals(const StringView &key, Iter output) {
+    auto reply = command(cmd::hvals, key);
+
+    reply::to_array(*reply, output);
+}
+
 }
 
 }

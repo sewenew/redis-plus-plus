@@ -27,7 +27,6 @@ namespace sw {
 namespace redis {
 
 class StringView;
-class RHash;
 class RSet;
 class RSortedSet;
 class RHyperLogLog;
@@ -37,8 +36,6 @@ class Redis {
 public:
     Redis(const ConnectionPoolOptions &pool_opts,
             const ConnectionOptions &connection_opts) : _pool(pool_opts, connection_opts) {}
-
-    RHash hash(const std::string &key);
 
     RSet set(const std::string &key);
 
@@ -174,6 +171,44 @@ public:
     long long rpush(const StringView &key, Iter first, Iter last);
 
     long long rpushx(const StringView &key, const StringView &val);
+
+    // HASH commands.
+
+    long long hdel(const StringView &key, const StringView &field);
+
+    template <typename Iter>
+    long long hdel(const StringView &key, Iter first, Iter last);
+
+    bool hexists(const StringView &key, const StringView &field);
+
+    OptionalString hget(const StringView &key, const StringView &field);
+
+    template <typename Iter>
+    void hgetall(const StringView &key, Iter output);
+
+    long long hincrby(const StringView &key, const StringView &field, long long increment);
+
+    double hincrbyfloat(const StringView &key, const StringView &field, double increment);
+
+    template <typename Iter>
+    void hkeys(const StringView &key, Iter output);
+
+    long long hlen(const StringView &key);
+
+    template <typename Input, typename Output>
+    void hmget(const StringView &key, Input first, Input last, Output output);
+
+    template <typename Iter>
+    void hmset(const StringView &key, Iter first, Iter last);
+
+    bool hset(const StringView &key, const StringView &field, const StringView &val);
+
+    bool hsetnx(const StringView &key, const StringView &field, const StringView &val);
+
+    long long hstrlen(const StringView &key, const StringView &field);
+
+    template <typename Iter>
+    void hvals(const StringView &key, Iter output);
 
 private:
     class ConnectionPoolGuard {
