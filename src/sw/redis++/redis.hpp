@@ -424,6 +424,24 @@ void Redis::pfmerge(const StringView &destination,
     }
 }
 
+// GEO commands.
+
+template <typename Input>
+inline long long Redis::geoadd(const StringView &key,
+                                Input first,
+                                Input last) {
+    auto reply = command(cmd::geoadd_range<Input>, key, first, last);
+
+    return reply::to_integer(*reply);
+}
+
+template <typename Input, typename Output>
+void Redis::geohash(const StringView &key, Input first, Input last, Output output) {
+    auto reply = command(cmd::geohash_range<Input>, key, first, last);
+
+    reply::to_optional_string_array(*reply, output);
+}
+
 }
 
 }

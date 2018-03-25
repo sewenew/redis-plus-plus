@@ -888,6 +888,56 @@ inline void pfmerge(Connection &connection,
     connection.send(args);
 }
 
+// GEO commands.
+
+inline void geoadd(Connection &connection,
+                    const StringView &key,
+                    const std::tuple<double, double, std::string> &member) {
+    const auto &mem = std::get<2>(member);
+
+    connection.send("GEOADD %b %f %f %b",
+                    key.data(), key.size(),
+                    std::get<0>(member),
+                    std::get<1>(member),
+                    mem.data(), mem.size());
+}
+
+template <typename Input>
+inline void geoadd_range(Connection &connection,
+                            const StringView &key,
+                            Input first,
+                            Input last) {
+    Connection::CmdArgs args;
+    args << "GEOADD" << key << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+void geodist(Connection &connection,
+                const StringView &key,
+                const StringView &member1,
+                const StringView &member2,
+                GeoUnit unit);
+
+inline void geohash(Connection &connection,
+                    const StringView &key,
+                    const StringView &member) {
+    connection.send("GEOHASH %b %b",
+                    key.data(), key.size(),
+                    member.data(), member.size());
+}
+
+template <typename Input>
+inline void geohash_range(Connection &connection,
+                            const StringView &key,
+                            Input first,
+                            Input last) {
+    Connection::CmdArgs args;
+    args << "GEOHASH" << key << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
 namespace detail {
 
 void set_update_type(Connection::CmdArgs &args, UpdateType type);
@@ -1078,6 +1128,8 @@ void zunionstore(std::true_type,
 
     connection.send(args);
 }
+
+void set_geo_unit(Connection::CmdArgs &args, GeoUnit unit);
 
 }
 

@@ -187,6 +187,13 @@ enum class BitOp {
     NOT
 };
 
+enum class GeoUnit {
+    M,
+    KM,
+    MI,
+    FT
+};
+
 }
 
 }

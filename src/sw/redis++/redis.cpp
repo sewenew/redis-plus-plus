@@ -475,6 +475,30 @@ long long Redis::pfcount(const StringView &key) {
     return reply::to_integer(*reply);
 }
 
+// GEO commands.
+
+long long Redis::geoadd(const StringView &key,
+                        const std::tuple<double, double, std::string> &member) {
+    auto reply = command(cmd::geoadd, key, member);
+
+    return reply::to_integer(*reply);
+}
+
+OptionalDouble Redis::geodist(const StringView &key,
+                                const StringView &member1,
+                                const StringView &member2,
+                                GeoUnit unit) {
+    auto reply = command(cmd::geodist, key, member1, member2, unit);
+
+    return reply::to_optional_double(*reply);
+}
+
+OptionalString Redis::geohash(const StringView &key, const StringView &member) {
+    auto reply = command(cmd::geohash, key, member);
+
+    return reply::to_optional_string(*reply);
+}
+
 }
 
 }

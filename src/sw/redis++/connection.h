@@ -89,6 +89,16 @@ public:
         template <typename Iter>
         CmdArgs& operator<<(const std::pair<Iter, Iter> &range);
 
+        template <std::size_t N, typename ...Args>
+        auto operator<<(const std::tuple<Args...> &) ->
+            typename std::enable_if<N == sizeof...(Args), CmdArgs&>::type {
+            return *this;
+        }
+
+        template <std::size_t N = 0, typename ...Args>
+        auto operator<<(const std::tuple<Args...> &arg) ->
+            typename std::enable_if<N < sizeof...(Args), CmdArgs&>::type;
+
         const char** argv() {
             return _argv.data();
         }
@@ -206,6 +216,14 @@ inline void Connection::send(const char *format, Args &&...args) {
 template <typename Iter>
 auto Connection::CmdArgs::operator<<(const std::pair<Iter, Iter> &range) -> CmdArgs& {
     return _append(IsKvPair<typename std::decay<decltype(*std::declval<Iter>())>::type>(), range);
+}
+
+template <std::size_t N, typename ...Args>
+auto Connection::CmdArgs::operator<<(const std::tuple<Args...> &arg) ->
+    typename std::enable_if<N < sizeof...(Args), CmdArgs&>::type {
+    operator<<(std::get<N>(arg));
+
+    return operator<<<N + 1, Args...>(arg);
 }
 
 template <typename Iter>

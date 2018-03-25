@@ -370,6 +370,26 @@ public:
     template <typename Input>
     void pfmerge(const StringView &destination, Input first, Input last);
 
+    // GEO commands.
+
+    long long geoadd(const StringView &key,
+                        const std::tuple<double, double, std::string> &member);
+
+    template <typename Input>
+    long long geoadd(const StringView &key,
+                        Input first,
+                        Input last);
+
+    OptionalDouble geodist(const StringView &key,
+                            const StringView &member1,
+                            const StringView &member2,
+                            GeoUnit unit = GeoUnit::M);
+
+    OptionalString geohash(const StringView &key, const StringView &member);
+
+    template <typename Input, typename Output>
+    void geohash(const StringView &key, Input first, Input last, Output output);
+
 private:
     class ConnectionPoolGuard {
     public:

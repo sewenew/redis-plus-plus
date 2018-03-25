@@ -72,6 +72,19 @@ void linsert(Connection &connection,
                     val.data(), val.size());
 }
 
+void geodist(Connection &connection,
+                const StringView &key,
+                const StringView &member1,
+                const StringView &member2,
+                GeoUnit unit) {
+    Connection::CmdArgs args;
+    args << "GEODIST" << key << member1 << member2;
+
+    detail::set_geo_unit(args, unit);
+
+    connection.send(args);
+}
+
 namespace detail {
 
 void set_update_type(Connection::CmdArgs &args, UpdateType type) {
@@ -111,6 +124,30 @@ void set_aggregation_type(Connection::CmdArgs &args, Aggregation aggr) {
 
     default:
         throw RException("Unknown aggregation type.");
+    }
+}
+
+void set_geo_unit(Connection::CmdArgs &args, GeoUnit unit) {
+    switch (unit) {
+    case GeoUnit::M:
+        args << "M";
+        break;
+
+    case GeoUnit::KM:
+        args << "KM";
+        break;
+
+    case GeoUnit::MI:
+        args << "MI";
+        break;
+
+    case GeoUnit::FT:
+        args << "FT";
+        break;
+
+    default:
+        throw RException("Unknown geo unit type");
+        break;
     }
 }
 
