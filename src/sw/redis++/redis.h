@@ -18,6 +18,7 @@
 #define SEWENEW_REDISPLUSPLUS_REDIS_H
 
 #include <string>
+#include <chrono>
 #include "connection_pool.h"
 #include "reply.h"
 #include "command_options.h"
@@ -62,6 +63,51 @@ public:
     long long exists(Input first, Input last);
 
     bool expire(const StringView &key, const std::chrono::seconds &timeout);
+
+    bool expireat(const StringView &key, long long timestamp);
+
+    bool expireat(const StringView &key,
+                    const std::chrono::time_point<std::chrono::system_clock,
+                                                    std::chrono::seconds> &tp);
+
+    template <typename Output>
+    void keys(const StringView &pattern, Output output);
+
+    bool move(const StringView &key, long long db);
+
+    bool persist(const StringView &key);
+
+    bool pexpire(const StringView &key, const std::chrono::milliseconds &timeout);
+
+    bool pexpireat(const StringView &key, long long timestamp);
+
+    bool pexpireat(const StringView &key,
+                    const std::chrono::time_point<std::chrono::system_clock,
+                                                    std::chrono::milliseconds> &tp);
+
+    long long pttl(const StringView &key);
+
+    OptionalString randomkey();
+
+    void rename(const StringView &key, const StringView &newkey);
+
+    bool renamenx(const StringView &key, const StringView &newkey);
+
+    long long touch(const StringView &key);
+
+    template <typename Input>
+    long long touch(Input first, Input last);
+
+    long long ttl(const StringView &key);
+
+    std::string type(const StringView &key);
+
+    long long unlink(const StringView &key);
+
+    template <typename Input>
+    long long unlink(Input first, Input last);
+
+    long long wait(long long numslaves, const std::chrono::milliseconds &timeout);
 
     // STRING commands.
 

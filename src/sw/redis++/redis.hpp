@@ -54,6 +54,39 @@ long long Redis::exists(Input first, Input last) {
     return reply::to_integer(*reply);
 }
 
+inline bool Redis::expireat(const StringView &key,
+                                    const std::chrono::time_point<std::chrono::system_clock,
+                                                                    std::chrono::seconds> &tp) {
+    return expireat(key, tp.time_since_epoch().count());
+}
+
+template <typename Output>
+void Redis::keys(const StringView &pattern, Output output) {
+    auto reply = command(cmd::keys, pattern);
+
+    reply::to_array(*reply, output);
+}
+
+inline bool Redis::pexpireat(const StringView &key,
+                                const std::chrono::time_point<std::chrono::system_clock,
+                                                                std::chrono::milliseconds> &tp) {
+    return pexpireat(key, tp.time_since_epoch().count());
+}
+
+template <typename Input>
+long long Redis::touch(Input first, Input last) {
+    auto reply = command(cmd::touch_range<Input>, first, last);
+
+    return reply::to_integer(*reply);
+}
+
+template <typename Input>
+long long Redis::unlink(Input first, Input last) {
+    auto reply = command(cmd::unlink_range, first, last);
+
+    return reply::to_integer(*reply);
+}
+
 // STRING commands.
 
 template <typename Input>

@@ -89,6 +89,92 @@ bool Redis::expire(const StringView &key, const std::chrono::seconds &timeout) {
     return reply::to_bool(*reply);
 }
 
+bool Redis::expireat(const StringView &key, long long timestamp) {
+    auto reply = command(cmd::expireat, key, timestamp);
+
+    return reply::to_bool(*reply);
+}
+
+bool Redis::move(const StringView &key, long long db) {
+    auto reply = command(cmd::move, key, db);
+
+    return reply::to_bool(*reply);
+}
+
+bool Redis::persist(const StringView &key) {
+    auto reply = command(cmd::persist, key);
+
+    return reply::to_bool(*reply);
+}
+
+bool Redis::pexpire(const StringView &key, const std::chrono::milliseconds &timeout) {
+    auto reply = command(cmd::pexpire, key, timeout);
+
+    return reply::to_bool(*reply);
+}
+
+bool Redis::pexpireat(const StringView &key, long long timestamp) {
+    auto reply = command(cmd::pexpireat, key, timestamp);
+
+    return reply::to_bool(*reply);
+}
+
+long long Redis::pttl(const StringView &key) {
+    auto reply = command(cmd::pttl, key);
+
+    return reply::to_integer(*reply);
+}
+
+OptionalString Redis::randomkey() {
+    auto reply = command(cmd::randomkey);
+
+    return reply::to_optional_string(*reply);
+}
+
+void Redis::rename(const StringView &key, const StringView &newkey) {
+    auto reply = command(cmd::rename, key, newkey);
+
+    if (!reply::status_ok(*reply)) {
+        throw RException("Invalid status reply: " + reply::to_status(*reply));
+    }
+}
+
+bool Redis::renamenx(const StringView &key, const StringView &newkey) {
+    auto reply = command(cmd::renamenx, key, newkey);
+
+    return reply::to_bool(*reply);
+}
+
+long long Redis::touch(const StringView &key) {
+    auto reply = command(cmd::touch, key);
+
+    return reply::to_integer(*reply);
+}
+
+long long Redis::ttl(const StringView &key) {
+    auto reply = command(cmd::ttl, key);
+
+    return reply::to_integer(*reply);
+}
+
+std::string Redis::type(const StringView &key) {
+    auto reply = command(cmd::type, key);
+
+    return reply::to_string(*reply);
+}
+
+long long Redis::unlink(const StringView &key) {
+    auto reply = command(cmd::unlink, key);
+
+    return reply::to_integer(*reply);
+}
+
+long long Redis::wait(long long numslaves, const std::chrono::milliseconds &timeout) {
+    auto reply = command(cmd::wait, numslaves, timeout);
+
+    return reply::to_integer(*reply);
+}
+
 // STRING commands.
 
 long long Redis::append(const StringView &key, const StringView &val) {

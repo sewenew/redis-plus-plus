@@ -17,6 +17,7 @@
 #ifndef SEWENEW_REDISPLUSPLUS_COMMAND_H
 #define SEWENEW_REDISPLUSPLUS_COMMAND_H
 
+#include <ctime>
 #include <string>
 #include <chrono>
 #include "connection.h"
@@ -81,6 +82,108 @@ inline void expire(Connection &connection,
                     const std::chrono::seconds &timeout) {
     connection.send("EXPIRE %b %lld",
                     key.data(), key.size(),
+                    timeout.count());
+}
+
+inline void expireat(Connection &connection,
+                        const StringView &key,
+                        long long timestamp) {
+    connection.send("EXPIREAT %b %lld",
+                    key.data(), key.size(),
+                    timestamp);
+}
+
+inline void keys(Connection &connection, const StringView &pattern) {
+    connection.send("KEYS %b", pattern.data(), pattern.size());
+}
+
+inline void move(Connection &connection, const StringView &key, long long db) {
+    connection.send("MOVE %b %lld",
+                    key.data(), key.size(),
+                    db);
+}
+
+inline void persist(Connection &connection, const StringView &key) {
+    connection.send("PERSIST %b", key.data(), key.size());
+}
+
+inline void pexpire(Connection &connection,
+                    const StringView &key,
+                    const std::chrono::milliseconds &timeout) {
+    connection.send("PEXPIRE %b %lld",
+                    key.data(), key.size(),
+                    timeout.count());
+}
+
+inline void pexpireat(Connection &connection,
+                        const StringView &key,
+                        long long timestamp) {
+    connection.send("PEXPIRE %b %lld",
+                    key.data(), key.size(),
+                    timestamp);
+}
+
+inline void pttl(Connection &connection, const StringView &key) {
+    connection.send("PTTL %b", key.data(), key.size());
+}
+
+inline void randomkey(Connection &connection) {
+    connection.send("RANDOMKEY");
+}
+
+inline void rename(Connection &connection,
+                    const StringView &key,
+                    const StringView &newkey) {
+    connection.send("RENAME %b %b",
+                    key.data(), key.size(),
+                    newkey.data(), newkey.size());
+}
+
+inline void renamenx(Connection &connection,
+                        const StringView &key,
+                        const StringView &newkey) {
+    connection.send("RENAMENX %b %b",
+                    key.data(), key.size(),
+                    newkey.data(), newkey.size());
+}
+
+inline void touch(Connection &connection, const StringView &key) {
+    connection.send("TOUCH %b", key.data(), key.size());
+}
+
+template <typename Input>
+inline void touch_range(Connection &connection, Input first, Input last) {
+    Connection::CmdArgs args;
+    args << "TOUCH" << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+inline void ttl(Connection &connection, const StringView &key) {
+    connection.send("TTL %b", key.data(), key.size());
+}
+
+inline void type(Connection &connection, const StringView &key) {
+    connection.send("TYPE %b", key.data(), key.size());
+}
+
+inline void unlink(Connection &connection, const StringView &key) {
+    connection.send("UNLINK %b", key.data(), key.size());
+}
+
+template <typename Input>
+inline void unlink_range(Connection &connection, Input first, Input last) {
+    Connection::CmdArgs args;
+    args << "UNLINK" << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+inline void wait(Connection &connection,
+                    long long numslave,
+                    const std::chrono::milliseconds &timeout) {
+    connection.send("WAIT %lld %lld",
+                    numslave,
                     timeout.count());
 }
 
