@@ -20,9 +20,27 @@
 #include <cstring>
 #include <string>
 
+#ifdef HAVE_STRING_VIEW
+
+#include <string_view>
+
+#endif
+
+#ifdef HAVE_OPTIONAL
+
+#include <optional>
+
+#endif
+
 namespace sw {
 
 namespace redis {
+
+#ifdef HAVE_STRING_VIEW
+
+using StringView = std::string_view;
+
+#else
 
 // By now, not all compilers support std::string_view,
 // so we make our own implementation.
@@ -52,6 +70,15 @@ private:
     const char *_data = nullptr;
     std::size_t _size = 0;
 };
+
+#endif
+
+#ifdef HAVE_OPTIONAL
+
+template <typename T>
+using Optional = std::optional<T>;
+
+#else
 
 template <typename T>
 class Optional {
@@ -100,6 +127,8 @@ public:
 private:
     std::pair<bool, T> _value;
 };
+
+#endif
 
 using OptionalString = Optional<std::string>;
 

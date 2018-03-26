@@ -12,9 +12,15 @@ file(GLOB PROJECT_SOURCE_FILES "${PROJECT_SOURCE_DIR}/*.cpp")
 
 add_library(${PROJECT_NAME} ${PROJECT_SOURCE_FILES})
 
+# Some special headers.
+include(CheckIncludeFileCXX)
+check_include_file_cxx(string_view HAVE_STRING_VIEW)
+check_include_file_cxx(optional HAVE_OPTIONAL)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${PROJECT_SOURCE_DIR}/config.h)
+
 message("install path: ${CMAKE_INSTALL_PREFIX}")
 
-#Install static lib.
+# Install static lib.
 install(TARGETS ${PROJECT_NAME}
         ARCHIVE DESTINATION lib)
 

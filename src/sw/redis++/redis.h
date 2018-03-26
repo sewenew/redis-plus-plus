@@ -21,12 +21,12 @@
 #include "connection_pool.h"
 #include "reply.h"
 #include "command_options.h"
+#include "utils.h"
 
 namespace sw {
 
 namespace redis {
 
-class StringView;
 class Pipeline;
 
 class Redis {

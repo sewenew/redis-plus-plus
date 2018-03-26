@@ -19,12 +19,11 @@
 
 #include <string>
 #include "pipeline.h"
+#include "utils.h"
 
 namespace sw {
 
 namespace redis {
-
-class StringView;
 
 // Redis' STRING type for pipeline.
 class PString {
