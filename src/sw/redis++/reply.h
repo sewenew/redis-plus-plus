@@ -19,6 +19,7 @@
 
 #include <cassert>
 #include <string>
+#include <memory>
 #include <functional>
 #include <hiredis/hiredis.h>
 #include "exceptions.h"

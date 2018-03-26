@@ -195,7 +195,7 @@ long long Redis::sdiffstore(const StringView &destination,
                             Input last) {
     auto reply = command(cmd::sdiffstore<Input>, destination, first, last);
 
-    reply::to_integer(*reply);
+    return reply::to_integer(*reply);
 }
 
 template <typename Input, typename Output>
@@ -211,7 +211,7 @@ long long Redis::sinterstore(const StringView &destination,
                             Input last) {
     auto reply = command(cmd::sinterstore<Input>, destination, first, last);
 
-    reply::to_integer(*reply);
+    return reply::to_integer(*reply);
 }
 
 template <typename Iter>
@@ -239,7 +239,7 @@ template <typename Iter>
 long long Redis::srem(const StringView &key, Iter first, Iter last) {
     auto reply = command(cmd::srem_range<Iter>, key, first, last);
 
-    reply::to_integer(*reply);
+    return reply::to_integer(*reply);
 }
 
 template <typename Input, typename Output>
