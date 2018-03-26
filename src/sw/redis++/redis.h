@@ -47,6 +47,22 @@ public:
 
     std::string ping(const StringView &msg);
 
+    // KEY commands.
+
+    long long del(const StringView &key);
+
+    template <typename Input>
+    long long del(Input first, Input last);
+
+    OptionalString dump(const StringView &key);
+
+    long long exists(const StringView &key);
+
+    template <typename Input>
+    long long exists(Input first, Input last);
+
+    bool expire(const StringView &key, const std::chrono::seconds &timeout);
+
     // STRING commands.
 
     long long append(const StringView &key, const StringView &str);

@@ -38,6 +38,22 @@ ReplyUPtr Redis::command(Cmd cmd, Args &&...args) {
     return reply;
 }
 
+// KEY commands.
+
+template <typename Input>
+long long Redis::del(Input first, Input last) {
+    auto reply = command(cmd::del_range<Input>, first, last);
+
+    return reply::to_integer(*reply);
+}
+
+template <typename Input>
+long long Redis::exists(Input first, Input last) {
+    auto reply = command(cmd::exists_range<Input>, first, last);
+
+    return reply::to_integer(*reply);
+}
+
 // STRING commands.
 
 template <typename Input>

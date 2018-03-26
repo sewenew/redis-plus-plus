@@ -63,6 +63,32 @@ std::string Redis::ping(const StringView &msg) {
     return reply::to_string(*reply);
 }
 
+// KEY commands.
+
+long long Redis::del(const StringView &key) {
+    auto reply = command(cmd::del, key);
+
+    return reply::to_integer(*reply);
+}
+
+OptionalString Redis::dump(const StringView &key) {
+    auto reply = command(cmd::dump, key);
+
+    return reply::to_optional_string(*reply);
+}
+
+long long Redis::exists(const StringView &key) {
+    auto reply = command(cmd::exists, key);
+
+    return reply::to_integer(*reply);
+}
+
+bool Redis::expire(const StringView &key, const std::chrono::seconds &timeout) {
+    auto reply = command(cmd::expire, key, timeout);
+
+    return reply::to_bool(*reply);
+}
+
 // STRING commands.
 
 long long Redis::append(const StringView &key, const StringView &val) {

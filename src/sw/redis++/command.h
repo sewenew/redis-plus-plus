@@ -46,6 +46,44 @@ inline void ping(Connection &connection, const StringView &msg) {
     connection.send("PING %b", msg.data(), msg.size());
 }
 
+// KEY commands.
+
+inline void del(Connection &connection, const StringView &key) {
+    connection.send("DEL %b", key.data(), key.size());
+}
+
+template <typename Input>
+inline void del_range(Connection &connection, Input first, Input last) {
+    Connection::CmdArgs args;
+    args << "DEL" << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+inline void dump(Connection &connection, const StringView &key) {
+    connection.send("DUMP %b", key.data(), key.size());
+}
+
+inline void exists(Connection &connection, const StringView &key) {
+    connection.send("EXISTS %b", key.data(), key.size());
+}
+
+template <typename Input>
+inline void exists_range(Connection &connection, Input first, Input last) {
+    Connection::CmdArgs args;
+    args << "EXISTS" << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+inline void expire(Connection &connection,
+                    const StringView &key,
+                    const std::chrono::seconds &timeout) {
+    connection.send("EXPIRE %b %lld",
+                    key.data(), key.size(),
+                    timeout.count());
+}
+
 // STRING commands.
 
 inline void append(Connection &connection, const StringView &key, const StringView &str) {
