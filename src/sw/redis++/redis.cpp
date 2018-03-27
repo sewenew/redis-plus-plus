@@ -42,9 +42,7 @@ Pipeline Redis::pipeline() {
 void Redis::auth(const StringView &password) {
     auto reply = command(cmd::auth, password);
 
-    if (!reply::status_ok(*reply)) {
-        throw RException("Invalid status reply: " + reply::to_status(*reply));
-    }
+    reply::expect_ok_status(*reply);
 }
 
 std::string Redis::echo(const StringView &msg) {
@@ -68,25 +66,19 @@ std::string Redis::ping(const StringView &msg) {
 void Redis::quit() {
     auto reply = command(cmd::quit);
 
-    if (!reply::status_ok(*reply)) {
-        throw RException("Invalid status reply: " + reply::to_status(*reply));
-    }
+    reply::expect_ok_status(*reply);
 }
 
 void Redis::select(long long idx) {
     auto reply = command(cmd::select, idx);
 
-    if (!reply::status_ok(*reply)) {
-        throw RException("Invalid status reply: " + reply::to_status(*reply));
-    }
+    reply::expect_ok_status(*reply);
 }
 
 void Redis::swapdb(long long idx1, long long idx2) {
     auto reply = command(cmd::swapdb, idx1, idx2);
 
-    if (!reply::status_ok(*reply)) {
-        throw RException("Invalid status reply: " + reply::to_status(*reply));
-    }
+    reply::expect_ok_status(*reply);
 }
 
 // SERVER commands.
@@ -168,9 +160,7 @@ OptionalString Redis::randomkey() {
 void Redis::rename(const StringView &key, const StringView &newkey) {
     auto reply = command(cmd::rename, key, newkey);
 
-    if (!reply::status_ok(*reply)) {
-        throw RException("Invalid status reply: " + reply::to_status(*reply));
-    }
+    reply::expect_ok_status(*reply);
 }
 
 bool Redis::renamenx(const StringView &key, const StringView &newkey) {
@@ -295,9 +285,7 @@ void Redis::psetex(const StringView &key,
 
     auto reply = command(cmd::psetex, key, ttl, val);
 
-    if (!reply::status_ok(*reply)) {
-        throw RException("Invalid status reply: " + reply::to_status(*reply));
-    }
+    reply::expect_ok_status(*reply);
 }
 
 bool Redis::set(const StringView &key,
@@ -313,9 +301,7 @@ bool Redis::set(const StringView &key,
 
     assert(reply::is_status(*reply));
 
-    if (!reply::status_ok(*reply)) {
-        throw RException("Invalid status reply: " + reply::to_status(*reply));
-    }
+    reply::expect_ok_status(*reply);
 
     return true;
 }
@@ -335,9 +321,7 @@ void Redis::setex(const StringView &key,
 
     auto reply = command(cmd::setex, key, ttl, val);
 
-    if (!reply::status_ok(*reply)) {
-        throw RException("Invalid status reply: " + reply::to_status(*reply));
-    }
+    reply::expect_ok_status(*reply);
 }
 
 bool Redis::setnx(const StringView &key, const StringView &val) {
@@ -416,17 +400,13 @@ long long Redis::lrem(const StringView &key, long long count, const StringView &
 void Redis::lset(const StringView &key, long long index, const StringView &val) {
     auto reply = command(cmd::lset, key, index, val);
 
-    if (!reply::status_ok(*reply)) {
-        throw RException("Invalid status reply: " + reply::to_status(*reply));
-    }
+    reply::expect_ok_status(*reply);
 }
 
 void Redis::ltrim(const StringView &key, long long start, long long stop) {
     auto reply = command(cmd::ltrim, key, start, stop);
 
-    if (!reply::status_ok(*reply)) {
-        throw RException("Invalid status reply: " + reply::to_status(*reply));
-    }
+    reply::expect_ok_status(*reply);
 }
 
 OptionalString Redis::rpop(const StringView &key) {

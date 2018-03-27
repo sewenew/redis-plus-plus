@@ -131,7 +131,7 @@ void to_optional_string_array(redisReply &reply, Iter output);
 
 bool to_bool(redisReply &reply);
 
-bool status_ok(redisReply &reply);
+void expect_ok_status(redisReply &reply);
 
 }
 

@@ -120,7 +120,7 @@ bool to_bool(redisReply &reply) {
     }
 }
 
-bool status_ok(redisReply &reply) {
+void expect_ok_status(redisReply &reply) {
     if (!reply::is_status(reply)) {
         throw RException("Expect STATUS reply.");
     }
@@ -131,7 +131,10 @@ bool status_ok(redisReply &reply) {
 
     static const std::string OK = "OK";
 
-    return OK.compare(0, OK.size(), reply.str, reply.len) == 0;
+    if (reply.len != OK.size()
+            || OK.compare(0, OK.size(), reply.str, reply.len) != 0) {
+        throw RException("NOT ok status reply: " + reply::to_status(reply));
+    }
 }
 
 }

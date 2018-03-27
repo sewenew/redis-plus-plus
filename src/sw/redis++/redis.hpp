@@ -115,9 +115,7 @@ template <typename Input>
 void Redis::mset(Input first, Input last) {
     auto reply = command(cmd::mset<Input>, first, last);
 
-    if (!reply::status_ok(*reply)) {
-        throw RException("Invalid status reply: " + reply::to_status(*reply));
-    }
+    reply::expect_ok_status(*reply);
 }
 
 template <typename Input>
@@ -202,9 +200,7 @@ template <typename Iter>
 inline void Redis::hmset(const StringView &key, Iter first, Iter last) {
     auto reply = command(cmd::hmset<Iter>, key, first, last);
 
-    if (!reply::status_ok(*reply)) {
-        throw RException("Invalid status reply: " + reply::to_status(*reply));
-    }
+    reply::expect_ok_status(*reply);
 }
 
 template <typename Iter>
@@ -476,9 +472,7 @@ void Redis::pfmerge(const StringView &destination,
                     Input last) {
     auto reply = command(cmd::pfmerge, destination, first, last);
 
-    if (!reply::status_ok(*reply)) {
-        throw RException("Invalid status reply: " + reply::to_status(*reply));
-    }
+    reply::expect_ok_status(*reply);
 }
 
 // GEO commands.

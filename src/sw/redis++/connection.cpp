@@ -227,10 +227,7 @@ void Connector::_auth(Connection &connection) const {
 
     auto reply = connection.recv();
 
-    if (!reply::status_ok(*reply)) {
-        throw RException("Failed to set auth password, "
-                + reply::to_status(*reply));
-    }
+    reply::expect_ok_status(*reply);
 }
 
 timeval Connector::_to_timeval(const std::chrono::steady_clock::duration &dur) const {
