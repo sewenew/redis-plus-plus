@@ -19,6 +19,7 @@
 
 #include <cstring>
 #include <string>
+#include "config.h"
 
 #ifdef HAVE_STRING_VIEW
 

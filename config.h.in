@@ -1,0 +1,2 @@
+#cmakedefine HAVE_STRING_VIEW
+#cmakedefine HAVE_OPTIONAL
