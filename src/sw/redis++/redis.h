@@ -109,6 +109,11 @@ public:
 
     bool renamenx(const StringView &key, const StringView &newkey);
 
+    void restore(const StringView &key,
+                    long long ttl,
+                    const StringView &val,
+                    bool replace = false);
+
     long long touch(const StringView &key);
 
     template <typename Input>

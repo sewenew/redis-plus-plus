@@ -166,6 +166,12 @@ inline void renamenx(Connection &connection,
                     newkey.data(), newkey.size());
 }
 
+void restore(Connection &connection,
+                const StringView &key,
+                long long ttl,
+                const StringView &val,
+                bool replace);
+
 inline void touch(Connection &connection, const StringView &key) {
     connection.send("TOUCH %b", key.data(), key.size());
 }

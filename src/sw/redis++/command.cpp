@@ -23,6 +23,23 @@ namespace redis {
 
 namespace cmd {
 
+// KEY commands.
+
+void restore(Connection &connection,
+                const StringView &key,
+                long long ttl,
+                const StringView &val,
+                bool replace) {
+    Connection::CmdArgs args;
+    args << "RESTORE" << key << ttl << val;
+
+    if (replace) {
+        args << "REPLACE";
+    }
+
+    connection.send(args);
+}
+
 // STRING commands.
 
 void set(Connection &connection,
@@ -71,6 +88,8 @@ void linsert(Connection &connection,
                     pivot.data(), pivot.size(),
                     val.data(), val.size());
 }
+
+// GEO commands.
 
 void geodist(Connection &connection,
                 const StringView &key,

@@ -169,6 +169,15 @@ bool Redis::renamenx(const StringView &key, const StringView &newkey) {
     return reply::to_bool(*reply);
 }
 
+void Redis::restore(const StringView &key,
+                    long long ttl,
+                    const StringView &val,
+                    bool replace) {
+    auto reply = command(cmd::restore, key, ttl, val, replace);
+
+    expect_ok_status(*reply);
+}
+
 long long Redis::touch(const StringView &key) {
     auto reply = command(cmd::touch, key);
 
