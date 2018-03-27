@@ -58,7 +58,19 @@ public:
 
     // SERVER commands.
 
+    long long dbsize();
+
+    void flushall(bool async = false);
+
+    void flushdb(bool async = false);
+
     std::string info();
+
+    std::string info(const StringView &section);
+
+    long long lastsave();
+
+    void save();
 
     // KEY commands.
 

@@ -62,8 +62,40 @@ inline void swapdb(Connection &connection, long long idx1, long long idx2) {
 
 // SERVER commands.
 
+inline void dbsize(Connection &connection) {
+    connection.send("DBSIZE");
+}
+
+inline void flushall(Connection &connection, bool async) {
+    if (async) {
+        connection.send("FLUSHALL ASYNC");
+    } else {
+        connection.send("FLUSHALL");
+    }
+}
+
+inline void flushdb(Connection &connection, bool async) {
+    if (async) {
+        connection.send("FLUSHDB ASYNC");
+    } else {
+        connection.send("FLUSHDB");
+    }
+}
+
 inline void info(Connection &connection) {
     connection.send("INFO");
+}
+
+inline void info(Connection &connection, const StringView &section) {
+    connection.send("INFO %b", section.data(), section.size());
+}
+
+inline void lastsave(Connection &connection) {
+    connection.send("LASTSAVE");
+}
+
+inline void save(Connection &connection) {
+    connection.send("SAVE");
 }
 
 // KEY commands.

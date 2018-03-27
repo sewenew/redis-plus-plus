@@ -83,10 +83,46 @@ void Redis::swapdb(long long idx1, long long idx2) {
 
 // SERVER commands.
 
+long long Redis::dbsize() {
+    auto reply = command(cmd::dbsize);
+
+    return reply::to_integer(*reply);
+}
+
+void Redis::flushall(bool async) {
+    auto reply = command(cmd::flushall, async);
+
+    reply::expect_ok_status(*reply);
+}
+
+void Redis::flushdb(bool async) {
+    auto reply = command(cmd::flushdb, async);
+
+    reply::expect_ok_status(*reply);
+}
+
 std::string Redis::info() {
-    auto reply = command(cmd::info);
+    auto reply = command<void (*)(Connection &)>(cmd::info);
 
     return reply::to_string(*reply);
+}
+
+std::string Redis::info(const StringView &section) {
+    auto reply = command<void (*)(Connection &, const StringView &)>(cmd::info, section);
+
+    return reply::to_string(*reply);
+}
+
+long long Redis::lastsave() {
+    auto reply = command(cmd::lastsave);
+
+    return reply::to_integer(*reply);
+}
+
+void Redis::save() {
+    auto reply = command(cmd::save);
+
+    reply::expect_ok_status(*reply);
 }
 
 // KEY commands.
