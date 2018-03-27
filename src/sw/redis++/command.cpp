@@ -45,14 +45,14 @@ void restore(Connection &connection,
 void set(Connection &connection,
             const StringView &key,
             const StringView &val,
-            const std::chrono::milliseconds &ttl,
+            long long ttl,
             UpdateType type) {
     Connection::CmdArgs args;
     args << "SET" << key << val;
 
     std::string ttl_options;
-    if (ttl > std::chrono::milliseconds(0)) {
-        ttl_options = std::to_string(ttl.count());
+    if (ttl > 0) {
+        ttl_options = std::to_string(ttl);
         args << "PX" << ttl_options;
     }
 

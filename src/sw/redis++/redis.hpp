@@ -81,6 +81,13 @@ inline bool Redis::pexpireat(const StringView &key,
     return pexpireat(key, tp.time_since_epoch().count());
 }
 
+inline void Redis::restore(const StringView &key,
+                            const std::chrono::milliseconds &ttl,
+                            const StringView &val,
+                            bool replace) {
+    return restore(key, ttl.count(), val, replace);
+}
+
 template <typename Input>
 long long Redis::touch(Input first, Input last) {
     auto reply = command(cmd::touch_range<Input>, first, last);
@@ -93,6 +100,10 @@ long long Redis::unlink(Input first, Input last) {
     auto reply = command(cmd::unlink_range, first, last);
 
     return reply::to_integer(*reply);
+}
+
+inline long long Redis::wait(long long numslaves, const std::chrono::milliseconds &timeout) {
+    return wait(numslaves, timeout.count());
 }
 
 // STRING commands.
@@ -125,13 +136,44 @@ bool Redis::msetnx(Input first, Input last) {
     return reply::to_bool(*reply);
 }
 
+inline void Redis::psetex(const StringView &key,
+                            const std::chrono::milliseconds &ttl,
+                            const StringView &val) {
+    return psetex(key, ttl.count(), val);
+}
+
+inline bool Redis::set(const StringView &key,
+                        const StringView &val,
+                        const std::chrono::milliseconds &ttl,
+                        UpdateType type) {
+    return set(key, val, ttl.count(), type);
+}
+
+inline void Redis::setex(const StringView &key,
+                            const std::chrono::seconds &ttl,
+                            const StringView &val) {
+    setex(key, ttl.count(), val);
+}
+
 // LIST commands.
+
+template <typename Input>
+OptionalStringPair Redis::blpop(Input first, Input last, long long timeout) {
+    auto reply = command(cmd::blpop<Input>, first, last, timeout);
+
+    return reply::to_optional_string_pair(*reply);
+}
 
 template <typename Input>
 OptionalStringPair Redis::blpop(Input first,
                                 Input last,
                                 const std::chrono::seconds &timeout) {
-    auto reply = command(cmd::blpop<Input>, first, last, timeout);
+    return blpop(first, last, timeout.count());
+}
+
+template <typename Input>
+OptionalStringPair Redis::brpop(Input first, Input last, long long timeout) {
+    auto reply = command(cmd::brpop<Input>, first, last, timeout);
 
     return reply::to_optional_string_pair(*reply);
 }
@@ -140,9 +182,13 @@ template <typename Input>
 OptionalStringPair Redis::brpop(Input first,
                                 Input last,
                                 const std::chrono::seconds &timeout) {
-    auto reply = command(cmd::brpop<Input>, first, last, timeout);
+    return brpop(first, last, timeout.count());
+}
 
-    return reply::to_optional_string_pair(*reply);
+inline OptionalString Redis::brpoplpush(const StringView &source,
+                                        const StringView &destination,
+                                        const std::chrono::seconds &timeout) {
+    return brpoplpush(source, destination, timeout.count());
 }
 
 template <typename Iter>

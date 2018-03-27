@@ -204,12 +204,8 @@ inline void unlink_range(Connection &connection, Input first, Input last) {
     connection.send(args);
 }
 
-inline void wait(Connection &connection,
-                    long long numslave,
-                    const std::chrono::milliseconds &timeout) {
-    connection.send("WAIT %lld %lld",
-                    numslave,
-                    timeout.count());
+inline void wait(Connection &connection, long long numslave, long long timeout) {
+    connection.send("WAIT %lld %lld", numslave, timeout);
 }
 
 // STRING commands.
@@ -329,18 +325,18 @@ inline void msetnx(Connection &connection, Input first, Input last) {
 
 inline void psetex(Connection &connection,
                     const StringView &key,
-                    const std::chrono::milliseconds &ttl,
+                    long long ttl,
                     const StringView &val) {
     connection.send("PSETEX %b %lld %b",
                     key.data(), key.size(),
-                    ttl.count(),
+                    ttl,
                     val.data(), val.size());
 }
 
 void set(Connection &connection,
             const StringView &key,
             const StringView &val,
-            const std::chrono::milliseconds &ttl,
+            long long ttl,
             UpdateType type);
 
 inline void setbit(Connection &connection,
@@ -363,11 +359,11 @@ inline void setnx(Connection &connection,
 
 inline void setex(Connection &connection,
                     const StringView &key,
-                    const std::chrono::seconds &ttl,
+                    long long ttl,
                     const StringView &val) {
     connection.send("SETEX %b %lld %b",
                     key.data(), key.size(),
-                    ttl.count(),
+                    ttl,
                     val.data(), val.size());
 }
 
@@ -391,9 +387,9 @@ template <typename Input>
 inline void blpop(Connection &connection,
                     Input first,
                     Input last,
-                    const std::chrono::seconds &timeout) {
+                    long long timeout) {
     Connection::CmdArgs args;
-    args << "BLPOP" << std::make_pair(first, last) << timeout.count();
+    args << "BLPOP" << std::make_pair(first, last) << timeout;
 
     connection.send(args);
 }
@@ -402,9 +398,9 @@ template <typename Input>
 inline void brpop(Connection &connection,
                     Input first,
                     Input last,
-                    const std::chrono::seconds &timeout) {
+                    long long timeout) {
     Connection::CmdArgs args;
-    args << "BRPOP" << std::make_pair(first, last) << timeout.count();
+    args << "BRPOP" << std::make_pair(first, last) << timeout;
 
     connection.send(args);
 }
@@ -412,11 +408,11 @@ inline void brpop(Connection &connection,
 inline void brpoplpush(Connection &connection,
                         const StringView &source,
                         const StringView &destination,
-                        const std::chrono::seconds &timeout) {
+                        long long timeout) {
     connection.send("BRPOPLPUSH %b %b %lld",
                     source.data(), source.size(),
                     destination.data(), destination.size(),
-                    timeout.count());
+                    timeout);
 }
 
 inline void lindex(Connection &connection, const StringView &key, long long index) {

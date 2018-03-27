@@ -114,6 +114,11 @@ public:
                     const StringView &val,
                     bool replace = false);
 
+    void restore(const StringView &key,
+                    const std::chrono::milliseconds &ttl,
+                    const StringView &val,
+                    bool replace = false);
+
     long long touch(const StringView &key);
 
     template <typename Input>
@@ -127,6 +132,8 @@ public:
 
     template <typename Input>
     long long unlink(Input first, Input last);
+
+    long long wait(long long numslaves, long long timeout);
 
     long long wait(long long numslaves, const std::chrono::milliseconds &timeout);
 
@@ -172,8 +179,17 @@ public:
     bool msetnx(Input first, Input last);
 
     void psetex(const StringView &key,
+                long long ttl,
+                const StringView &val);
+
+    void psetex(const StringView &key,
                 const std::chrono::milliseconds &ttl,
                 const StringView &val);
+
+    bool set(const StringView &key,
+                const StringView &val,
+                long long ttl = 0,
+                UpdateType type = UpdateType::ALWAYS);
 
     bool set(const StringView &key,
                 const StringView &val,
@@ -183,6 +199,10 @@ public:
     long long setbit(const StringView &key, long long offset, long long value);
 
     bool setnx(const StringView &key, const StringView &val);
+
+    void setex(const StringView &key,
+                long long ttl,
+                const StringView &val);
 
     void setex(const StringView &key,
                 const std::chrono::seconds &ttl,
@@ -195,14 +215,24 @@ public:
     // LIST commands.
 
     template <typename Input>
+    OptionalStringPair blpop(Input first, Input last, long long timeout = 0);
+
+    template <typename Input>
     OptionalStringPair blpop(Input first,
                                 Input last,
                                 const std::chrono::seconds &timeout = std::chrono::seconds{0});
 
     template <typename Input>
+    OptionalStringPair brpop(Input first, Input last, long long timeout = 0);
+
+    template <typename Input>
     OptionalStringPair brpop(Input first,
                                 Input last,
                                 const std::chrono::seconds &timeout = std::chrono::seconds{0});
+
+    OptionalString brpoplpush(const StringView &source,
+                                const StringView &destination,
+                                long long timeout = 0);
 
     OptionalString brpoplpush(const StringView &source,
                                 const StringView &destination,

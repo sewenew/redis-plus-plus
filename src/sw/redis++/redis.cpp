@@ -175,7 +175,7 @@ void Redis::restore(const StringView &key,
                     bool replace) {
     auto reply = command(cmd::restore, key, ttl, val, replace);
 
-    expect_ok_status(*reply);
+    reply::expect_ok_status(*reply);
 }
 
 long long Redis::touch(const StringView &key) {
@@ -202,7 +202,7 @@ long long Redis::unlink(const StringView &key) {
     return reply::to_integer(*reply);
 }
 
-long long Redis::wait(long long numslaves, const std::chrono::milliseconds &timeout) {
+long long Redis::wait(long long numslaves, long long timeout) {
     auto reply = command(cmd::wait, numslaves, timeout);
 
     return reply::to_integer(*reply);
@@ -286,9 +286,9 @@ double Redis::incrbyfloat(const StringView &key, double increment) {
 }
 
 void Redis::psetex(const StringView &key,
-                        const std::chrono::milliseconds &ttl,
+                        long long ttl,
                         const StringView &val) {
-    if (ttl <= std::chrono::milliseconds(0)) {
+    if (ttl <= 0) {
         throw RException("TTL must be positive.");
     }
 
@@ -299,7 +299,7 @@ void Redis::psetex(const StringView &key,
 
 bool Redis::set(const StringView &key,
                     const StringView &val,
-                    const std::chrono::milliseconds &ttl,
+                    long long ttl,
                     UpdateType type) {
     auto reply = command(cmd::set, key, val, ttl, type);
 
@@ -322,9 +322,9 @@ long long Redis::setbit(const StringView &key, long long offset, long long value
 }
 
 void Redis::setex(const StringView &key,
-                    const std::chrono::seconds &ttl,
+                    long long ttl,
                     const StringView &val) {
-    if (ttl <= std::chrono::seconds(0)) {
+    if (ttl <= 0) {
         throw RException("TTL must be positive.");
     }
 
@@ -355,7 +355,7 @@ long long Redis::strlen(const StringView &key) {
 
 OptionalString Redis::brpoplpush(const StringView &source,
                                     const StringView &destination,
-                                    const std::chrono::seconds &timeout) {
+                                    long long timeout) {
     auto reply = command(cmd::brpoplpush, source, destination, timeout);
 
     return reply::to_optional_string(*reply);
