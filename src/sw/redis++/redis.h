@@ -40,13 +40,25 @@ public:
     template <typename Cmd, typename ...Args>
     ReplyUPtr command(Cmd cmd, Args &&...args);
 
+    // CONNECTION commands.
+
     void auth(const StringView &password);
 
-    std::string info();
+    std::string echo(const StringView &msg);
 
     std::string ping();
 
     std::string ping(const StringView &msg);
+
+    void quit();
+
+    void select(long long idx);
+
+    void swapdb(long long idx1, long long idx2);
+
+    // SERVER commands.
+
+    std::string info();
 
     // KEY commands.
 

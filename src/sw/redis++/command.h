@@ -30,21 +30,40 @@ namespace redis {
 
 namespace cmd {
 
+// CONNECTION command.
 inline void auth(Connection &connection, const StringView &password) {
     connection.send("AUTH %b", password.data(), password.size());
 }
 
-inline void info(Connection &connection) {
-    connection.send("INFO");
+inline void echo(Connection &connection, const StringView &msg) {
+    connection.send("ECHO %b", msg.data(), msg.size());
 }
 
 inline void ping(Connection &connection) {
     connection.send("PING");
 }
 
+inline void quit(Connection &connection) {
+    connection.send("QUIT");
+}
+
 inline void ping(Connection &connection, const StringView &msg) {
     // If *msg* is empty, Redis returns am empty reply of REDIS_REPLY_STRING type.
     connection.send("PING %b", msg.data(), msg.size());
+}
+
+inline void select(Connection &connection, long long idx) {
+    connection.send("SELECT %lld", idx);
+}
+
+inline void swapdb(Connection &connection, long long idx1, long long idx2) {
+    connection.send("SWAPDB %lld %lld", idx1, idx2);
+}
+
+// SERVER commands.
+
+inline void info(Connection &connection) {
+    connection.send("INFO");
 }
 
 // KEY commands.

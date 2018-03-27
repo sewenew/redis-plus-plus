@@ -37,6 +37,8 @@ Pipeline Redis::pipeline() {
     return Pipeline(_pool);
 }
 
+// CONNECTION commands.
+
 void Redis::auth(const StringView &password) {
     auto reply = command(cmd::auth, password);
 
@@ -45,8 +47,8 @@ void Redis::auth(const StringView &password) {
     }
 }
 
-std::string Redis::info() {
-    auto reply = command(cmd::info);
+std::string Redis::echo(const StringView &msg) {
+    auto reply = command(cmd::echo, msg);
 
     return reply::to_string(*reply);
 }
@@ -59,6 +61,38 @@ std::string Redis::ping() {
 
 std::string Redis::ping(const StringView &msg) {
     auto reply = command<void (*)(Connection &, const StringView &)>(cmd::ping, msg);
+
+    return reply::to_string(*reply);
+}
+
+void Redis::quit() {
+    auto reply = command(cmd::quit);
+
+    if (!reply::status_ok(*reply)) {
+        throw RException("Invalid status reply: " + reply::to_status(*reply));
+    }
+}
+
+void Redis::select(long long idx) {
+    auto reply = command(cmd::select, idx);
+
+    if (!reply::status_ok(*reply)) {
+        throw RException("Invalid status reply: " + reply::to_status(*reply));
+    }
+}
+
+void Redis::swapdb(long long idx1, long long idx2) {
+    auto reply = command(cmd::swapdb, idx1, idx2);
+
+    if (!reply::status_ok(*reply)) {
+        throw RException("Invalid status reply: " + reply::to_status(*reply));
+    }
+}
+
+// SERVER commands.
+
+std::string Redis::info() {
+    auto reply = command(cmd::info);
 
     return reply::to_string(*reply);
 }
