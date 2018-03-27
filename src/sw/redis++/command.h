@@ -79,10 +79,10 @@ inline void exists_range(Connection &connection, Input first, Input last) {
 
 inline void expire(Connection &connection,
                     const StringView &key,
-                    const std::chrono::seconds &timeout) {
+                    long long timeout) {
     connection.send("EXPIRE %b %lld",
                     key.data(), key.size(),
-                    timeout.count());
+                    timeout);
 }
 
 inline void expireat(Connection &connection,
@@ -109,10 +109,10 @@ inline void persist(Connection &connection, const StringView &key) {
 
 inline void pexpire(Connection &connection,
                     const StringView &key,
-                    const std::chrono::milliseconds &timeout) {
+                    long long timeout) {
     connection.send("PEXPIRE %b %lld",
                     key.data(), key.size(),
-                    timeout.count());
+                    timeout);
 }
 
 inline void pexpireat(Connection &connection,

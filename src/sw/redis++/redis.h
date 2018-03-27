@@ -62,6 +62,8 @@ public:
     template <typename Input>
     long long exists(Input first, Input last);
 
+    bool expire(const StringView &key, long long timeout);
+
     bool expire(const StringView &key, const std::chrono::seconds &timeout);
 
     bool expireat(const StringView &key, long long timestamp);
@@ -76,6 +78,8 @@ public:
     bool move(const StringView &key, long long db);
 
     bool persist(const StringView &key);
+
+    bool pexpire(const StringView &key, long long timeout);
 
     bool pexpire(const StringView &key, const std::chrono::milliseconds &timeout);
 

@@ -54,6 +54,10 @@ long long Redis::exists(Input first, Input last) {
     return reply::to_integer(*reply);
 }
 
+inline bool Redis::expire(const StringView &key, const std::chrono::seconds &timeout) {
+    return expire(key, timeout.count());
+}
+
 inline bool Redis::expireat(const StringView &key,
                                     const std::chrono::time_point<std::chrono::system_clock,
                                                                     std::chrono::seconds> &tp) {
@@ -65,6 +69,10 @@ void Redis::keys(const StringView &pattern, Output output) {
     auto reply = command(cmd::keys, pattern);
 
     reply::to_array(*reply, output);
+}
+
+inline bool Redis::pexpire(const StringView &key, const std::chrono::milliseconds &timeout) {
+    return expire(key, timeout.count());
 }
 
 inline bool Redis::pexpireat(const StringView &key,

@@ -83,7 +83,7 @@ long long Redis::exists(const StringView &key) {
     return reply::to_integer(*reply);
 }
 
-bool Redis::expire(const StringView &key, const std::chrono::seconds &timeout) {
+bool Redis::expire(const StringView &key, long long timeout) {
     auto reply = command(cmd::expire, key, timeout);
 
     return reply::to_bool(*reply);
@@ -107,7 +107,7 @@ bool Redis::persist(const StringView &key) {
     return reply::to_bool(*reply);
 }
 
-bool Redis::pexpire(const StringView &key, const std::chrono::milliseconds &timeout) {
+bool Redis::pexpire(const StringView &key, long long timeout) {
     auto reply = command(cmd::pexpire, key, timeout);
 
     return reply::to_bool(*reply);
