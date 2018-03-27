@@ -200,11 +200,6 @@ public:
 
     bool set(const StringView &key,
                 const StringView &val,
-                long long ttl = 0,
-                UpdateType type = UpdateType::ALWAYS);
-
-    bool set(const StringView &key,
-                const StringView &val,
                 const std::chrono::milliseconds &ttl = std::chrono::milliseconds(0),
                 UpdateType type = UpdateType::ALWAYS);
 

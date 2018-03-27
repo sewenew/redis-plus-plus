@@ -335,9 +335,9 @@ void Redis::psetex(const StringView &key,
 
 bool Redis::set(const StringView &key,
                     const StringView &val,
-                    long long ttl,
+                    const std::chrono::milliseconds &ttl,
                     UpdateType type) {
-    auto reply = command(cmd::set, key, val, ttl, type);
+    auto reply = command(cmd::set, key, val, ttl.count(), type);
 
     if (reply::is_nil(*reply)) {
         // Failed to set.

@@ -142,13 +142,6 @@ inline void Redis::psetex(const StringView &key,
     return psetex(key, ttl.count(), val);
 }
 
-inline bool Redis::set(const StringView &key,
-                        const StringView &val,
-                        const std::chrono::milliseconds &ttl,
-                        UpdateType type) {
-    return set(key, val, ttl.count(), type);
-}
-
 inline void Redis::setex(const StringView &key,
                             const std::chrono::seconds &ttl,
                             const StringView &val) {
