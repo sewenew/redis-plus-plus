@@ -1132,6 +1132,50 @@ inline void geohash_range(Connection &connection,
     connection.send(args);
 }
 
+// SCRIPTING commands.
+
+template <typename KeyIter, typename ArgIter>
+inline void eval(Connection &connection,
+                    const StringView &script,
+                    KeyIter key_first,
+                    KeyIter key_last,
+                    ArgIter arg_first,
+                    ArgIter arg_last) {
+    Connection::CmdArgs args;
+    args << "EVAL" << script
+            << std::make_pair(key_first, key_last)
+            << std::make_pair(arg_first, arg_last);
+
+    connection.send(args);
+}
+
+template <typename KeyIter, typename ArgIter>
+inline void evalsha(Connection &connection,
+                    const StringView &script,
+                    KeyIter key_first,
+                    KeyIter key_last,
+                    ArgIter arg_first,
+                    ArgIter arg_last) {
+    Connection::CmdArgs args;
+    args << "EVALSHA" << script
+            << std::make_pair(key_first, key_last)
+            << std::make_pair(arg_first, arg_last);
+
+    connection.send(args);
+}
+
+inline void script_flush(Connection &connection) {
+    connection.send("SCRIPT FLUSH");
+}
+
+inline void script_kill(Connection &connection) {
+    connection.send("SCRIPT KILL");
+}
+
+inline void script_load(Connection &connection, const StringView &script) {
+    connection.send("SCRIPT LOAD %b", script.data(), script.size());
+}
+
 namespace detail {
 
 void set_update_type(Connection::CmdArgs &args, UpdateType type);

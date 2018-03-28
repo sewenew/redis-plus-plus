@@ -670,6 +670,26 @@ OptionalString Redis::geohash(const StringView &key, const StringView &member) {
     return reply::to_optional_string(*reply);
 }
 
+// SCRIPTING commands.
+
+void Redis::script_flush() {
+    auto reply = command(cmd::script_flush);
+
+    reply::expect_ok_status(*reply);
+}
+
+void Redis::script_kill() {
+    auto reply = command(cmd::script_kill);
+
+    reply::expect_ok_status(*reply);
+}
+
+std::string Redis::script_load(const StringView &script) {
+    auto reply = command(cmd::script_load, script);
+
+    return reply::to_string(*reply);
+}
+
 }
 
 }

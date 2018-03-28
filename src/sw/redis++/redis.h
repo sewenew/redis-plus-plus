@@ -510,6 +510,14 @@ public:
     template <typename Input, typename Output>
     void geohash(const StringView &key, Input first, Input last, Output output);
 
+    // SCRIPTING commands.
+
+    void script_flush();
+
+    void script_kill();
+
+    std::string script_load(const StringView &script);
+
 private:
     class ConnectionPoolGuard {
     public:
