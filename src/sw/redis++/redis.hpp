@@ -44,14 +44,14 @@ template <typename Input>
 long long Redis::del(Input first, Input last) {
     auto reply = command(cmd::del_range<Input>, first, last);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 template <typename Input>
 long long Redis::exists(Input first, Input last) {
     auto reply = command(cmd::exists_range<Input>, first, last);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 inline bool Redis::expire(const StringView &key, const std::chrono::seconds &timeout) {
@@ -92,14 +92,14 @@ template <typename Input>
 long long Redis::touch(Input first, Input last) {
     auto reply = command(cmd::touch_range<Input>, first, last);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 template <typename Input>
 long long Redis::unlink(Input first, Input last) {
     auto reply = command(cmd::unlink_range, first, last);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 inline long long Redis::wait(long long numslaves, const std::chrono::milliseconds &timeout) {
@@ -112,14 +112,14 @@ template <typename Input>
 long long Redis::bitop(BitOp op, const StringView &destination, Input first, Input last) {
     auto reply = command(cmd::bitop<Input>, op, destination, first, last);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 template <typename Input, typename Output>
 void Redis::mget(Input first, Input last, Output output) {
     auto reply = command(cmd::mget<Input>, first, last);
 
-    reply::to_optional_string_array(*reply, output);
+    reply::to_array(*reply, output);
 }
 
 template <typename Input>
@@ -133,7 +133,7 @@ template <typename Input>
 bool Redis::msetnx(Input first, Input last) {
     auto reply = command(cmd::msetnx<Input>, first, last);
 
-    return reply::to_bool(*reply);
+    return reply::parse<bool>(*reply);
 }
 
 inline void Redis::psetex(const StringView &key,
@@ -154,7 +154,7 @@ template <typename Input>
 OptionalStringPair Redis::blpop(Input first, Input last, long long timeout) {
     auto reply = command(cmd::blpop<Input>, first, last, timeout);
 
-    return reply::to_optional_string_pair(*reply);
+    return reply::parse<OptionalStringPair>(*reply);
 }
 
 template <typename Input>
@@ -168,7 +168,7 @@ template <typename Input>
 OptionalStringPair Redis::brpop(Input first, Input last, long long timeout) {
     auto reply = command(cmd::brpop<Input>, first, last, timeout);
 
-    return reply::to_optional_string_pair(*reply);
+    return reply::parse<OptionalStringPair>(*reply);
 }
 
 template <typename Input>
@@ -188,7 +188,7 @@ template <typename Iter>
 inline long long Redis::lpush(const StringView &key, Iter first, Iter last) {
     auto reply = command(cmd::lpush_range<Iter>, key, first, last);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 template <typename Iter>
@@ -202,7 +202,7 @@ template <typename Iter>
 inline long long Redis::rpush(const StringView &key, Iter first, Iter last) {
     auto reply = command(cmd::rpush_range<Iter>, key, first, last);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 // HASH commands.
@@ -211,7 +211,7 @@ template <typename Iter>
 inline long long Redis::hdel(const StringView &key, Iter first, Iter last) {
     auto reply = command(cmd::hdel_range<Iter>, key, first, last);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 template <typename Iter>
@@ -232,7 +232,7 @@ template <typename Input, typename Output>
 inline void Redis::hmget(const StringView &key, Input first, Input last, Output output) {
     auto reply = command(cmd::hmget<Input>, key, first, last);
 
-    reply::to_optional_string_array(*reply, output);
+    reply::to_array(*reply, output);
 }
 
 template <typename Iter>
@@ -255,7 +255,7 @@ template <typename Iter>
 long long Redis::sadd(const StringView &key, Iter first, Iter last) {
     auto reply = command(cmd::sadd_range<Iter>, key, first, last);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 template <typename Input, typename Output>
@@ -271,7 +271,7 @@ long long Redis::sdiffstore(const StringView &destination,
                             Input last) {
     auto reply = command(cmd::sdiffstore<Input>, destination, first, last);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 template <typename Input, typename Output>
@@ -287,7 +287,7 @@ long long Redis::sinterstore(const StringView &destination,
                             Input last) {
     auto reply = command(cmd::sinterstore<Input>, destination, first, last);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 template <typename Iter>
@@ -315,7 +315,7 @@ template <typename Iter>
 long long Redis::srem(const StringView &key, Iter first, Iter last) {
     auto reply = command(cmd::srem_range<Iter>, key, first, last);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 template <typename Input, typename Output>
@@ -329,7 +329,7 @@ template <typename Input>
 long long Redis::sunionstore(const StringView &destination, Input first, Input last) {
     auto reply = command(cmd::sunionstore<Input>, destination, first, last);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 // SORTED SET commands.
@@ -342,14 +342,14 @@ long long Redis::zadd(const StringView &key,
                         UpdateType type) {
     auto reply = command(cmd::zadd_range<Input>, key, first, last, changed, type);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 template <typename Interval>
 long long Redis::zcount(const StringView &key, const Interval &interval) {
     auto reply = command(cmd::zcount<Interval>, key, interval);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 template <typename Input>
@@ -363,14 +363,14 @@ long long Redis::zinterstore(const StringView &destination,
                             last,
                             type);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 template <typename Interval>
 long long Redis::zlexcount(const StringView &key, const Interval &interval) {
     auto reply = command(cmd::zlexcount<Interval>, key, interval);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 template <typename Output>
@@ -419,21 +419,21 @@ template <typename Input>
 long long Redis::zrem(const StringView &key, Input first, Input last) {
     auto reply = command(cmd::zrem_range<Input>, key, first, last);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 template <typename Interval>
 long long Redis::zremrangebylex(const StringView &key, const Interval &interval) {
     auto reply = command(cmd::zremrangebylex<Interval>, key, interval);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 template <typename Interval>
 long long Redis::zremrangebyscore(const StringView &key, const Interval &interval) {
     auto reply = command(cmd::zremrangebyscore, key, interval);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 template <typename Output>
@@ -486,7 +486,7 @@ long long Redis::zunionstore(const StringView &destination,
                             last,
                             type);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 // HYPERLOGLOG commands.
@@ -495,14 +495,14 @@ template <typename Input>
 bool Redis::pfadd(const StringView &key, Input first, Input last) {
     auto reply = command(cmd::pfadd_range<Input>, key, first, last);
 
-    return reply::to_bool(*reply);
+    return reply::parse<bool>(*reply);
 }
 
 template <typename Input>
 long long Redis::pfcount(Input first, Input last) {
     auto reply = command(cmd::pfcount_range<Input>, first, last);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 template <typename Input>
@@ -522,14 +522,14 @@ inline long long Redis::geoadd(const StringView &key,
                                 Input last) {
     auto reply = command(cmd::geoadd_range<Input>, key, first, last);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 template <typename Input, typename Output>
 void Redis::geohash(const StringView &key, Input first, Input last, Output output) {
     auto reply = command(cmd::geohash_range<Input>, key, first, last);
 
-    reply::to_optional_string_array(*reply, output);
+    reply::to_array(*reply, output);
 }
 
 }

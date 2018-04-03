@@ -132,46 +132,11 @@ std::string to_error(redisReply &reply);
 
 std::string to_status(redisReply &reply);
 
-inline std::string to_string(redisReply &reply) {
-    return parse<std::string>(reply);
-}
-
-inline OptionalString to_optional_string(redisReply &reply) {
-    return parse<OptionalString>(reply);
-}
-
-inline OptionalStringPair to_optional_string_pair(redisReply &reply) {
-    return parse<OptionalStringPair>(reply);
-}
-
-inline long long to_integer(redisReply &reply) {
-    return parse<long long>(reply);
-}
-
-inline OptionalLongLong to_optional_integer(redisReply &reply) {
-    return parse<OptionalLongLong>(reply);
-}
-
-inline double to_double(redisReply &reply) {
-    return parse<double>(reply);
-}
-
-inline OptionalDouble to_optional_double(redisReply &reply) {
-    return parse<OptionalDouble>(reply);
-}
-
 template<typename Iter>
 void to_score_array(redisReply &reply, Iter output);
 
 template <typename Output>
 void to_array(redisReply &reply, Output output);
-
-template <typename Iter>
-void to_optional_string_array(redisReply &reply, Iter output);
-
-inline bool to_bool(redisReply &reply) {
-    return parse<bool>(reply);
-}
 
 void expect_ok_status(redisReply &reply);
 
@@ -184,11 +149,11 @@ inline void StatusReplyFunctor::operator()(redisReply &reply) {
 }
 
 inline void StringReplyFunctor::operator()(redisReply &reply) {
-    _callback(reply::to_string(reply));
+    _callback(reply::parse<std::string>(reply));
 }
 
 inline void IntegerReplyFunctor::operator()(redisReply &reply) {
-    _callback(reply::to_integer(reply));
+    _callback(reply::parse<long long>(reply));
 }
 
 namespace reply {
@@ -255,11 +220,6 @@ void to_score_array(redisReply &reply, Iter output) {
     }
 
     detail::to_score_array(typename IsKvPairIter<Iter>::type(), reply, output);
-}
-
-template <typename Iter>
-void to_optional_string_array(redisReply &reply, Iter output) {
-    to_array(reply, output);
 }
 
 template <typename T>

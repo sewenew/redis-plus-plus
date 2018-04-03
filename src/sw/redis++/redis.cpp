@@ -48,7 +48,7 @@ void Redis::auth(const StringView &password) {
 std::string Redis::echo(const StringView &msg) {
     auto reply = command(cmd::echo, msg);
 
-    return reply::to_string(*reply);
+    return reply::parse<std::string>(*reply);
 }
 
 std::string Redis::ping() {
@@ -60,7 +60,7 @@ std::string Redis::ping() {
 std::string Redis::ping(const StringView &msg) {
     auto reply = command<void (*)(Connection &, const StringView &)>(cmd::ping, msg);
 
-    return reply::to_string(*reply);
+    return reply::parse<std::string>(*reply);
 }
 
 void Redis::quit() {
@@ -86,7 +86,7 @@ void Redis::swapdb(long long idx1, long long idx2) {
 long long Redis::dbsize() {
     auto reply = command(cmd::dbsize);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 void Redis::flushall(bool async) {
@@ -104,19 +104,19 @@ void Redis::flushdb(bool async) {
 std::string Redis::info() {
     auto reply = command<void (*)(Connection &)>(cmd::info);
 
-    return reply::to_string(*reply);
+    return reply::parse<std::string>(*reply);
 }
 
 std::string Redis::info(const StringView &section) {
     auto reply = command<void (*)(Connection &, const StringView &)>(cmd::info, section);
 
-    return reply::to_string(*reply);
+    return reply::parse<std::string>(*reply);
 }
 
 long long Redis::lastsave() {
     auto reply = command(cmd::lastsave);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 void Redis::save() {
@@ -130,67 +130,67 @@ void Redis::save() {
 long long Redis::del(const StringView &key) {
     auto reply = command(cmd::del, key);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 OptionalString Redis::dump(const StringView &key) {
     auto reply = command(cmd::dump, key);
 
-    return reply::to_optional_string(*reply);
+    return reply::parse<OptionalString>(*reply);
 }
 
 long long Redis::exists(const StringView &key) {
     auto reply = command(cmd::exists, key);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 bool Redis::expire(const StringView &key, long long timeout) {
     auto reply = command(cmd::expire, key, timeout);
 
-    return reply::to_bool(*reply);
+    return reply::parse<bool>(*reply);
 }
 
 bool Redis::expireat(const StringView &key, long long timestamp) {
     auto reply = command(cmd::expireat, key, timestamp);
 
-    return reply::to_bool(*reply);
+    return reply::parse<bool>(*reply);
 }
 
 bool Redis::move(const StringView &key, long long db) {
     auto reply = command(cmd::move, key, db);
 
-    return reply::to_bool(*reply);
+    return reply::parse<bool>(*reply);
 }
 
 bool Redis::persist(const StringView &key) {
     auto reply = command(cmd::persist, key);
 
-    return reply::to_bool(*reply);
+    return reply::parse<bool>(*reply);
 }
 
 bool Redis::pexpire(const StringView &key, long long timeout) {
     auto reply = command(cmd::pexpire, key, timeout);
 
-    return reply::to_bool(*reply);
+    return reply::parse<bool>(*reply);
 }
 
 bool Redis::pexpireat(const StringView &key, long long timestamp) {
     auto reply = command(cmd::pexpireat, key, timestamp);
 
-    return reply::to_bool(*reply);
+    return reply::parse<bool>(*reply);
 }
 
 long long Redis::pttl(const StringView &key) {
     auto reply = command(cmd::pttl, key);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 OptionalString Redis::randomkey() {
     auto reply = command(cmd::randomkey);
 
-    return reply::to_optional_string(*reply);
+    return reply::parse<OptionalString>(*reply);
 }
 
 void Redis::rename(const StringView &key, const StringView &newkey) {
@@ -202,7 +202,7 @@ void Redis::rename(const StringView &key, const StringView &newkey) {
 bool Redis::renamenx(const StringView &key, const StringView &newkey) {
     auto reply = command(cmd::renamenx, key, newkey);
 
-    return reply::to_bool(*reply);
+    return reply::parse<bool>(*reply);
 }
 
 void Redis::restore(const StringView &key,
@@ -217,31 +217,31 @@ void Redis::restore(const StringView &key,
 long long Redis::touch(const StringView &key) {
     auto reply = command(cmd::touch, key);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 long long Redis::ttl(const StringView &key) {
     auto reply = command(cmd::ttl, key);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 std::string Redis::type(const StringView &key) {
     auto reply = command(cmd::type, key);
 
-    return reply::to_string(*reply);
+    return reply::parse<std::string>(*reply);
 }
 
 long long Redis::unlink(const StringView &key) {
     auto reply = command(cmd::unlink, key);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 long long Redis::wait(long long numslaves, long long timeout) {
     auto reply = command(cmd::wait, numslaves, timeout);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 // STRING commands.
@@ -249,13 +249,13 @@ long long Redis::wait(long long numslaves, long long timeout) {
 long long Redis::append(const StringView &key, const StringView &val) {
     auto reply = command(cmd::append, key, val);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 long long Redis::bitcount(const StringView &key, long long start, long long end) {
     auto reply = command(cmd::bitcount, key, start, end);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 long long Redis::bitpos(const StringView &key,
@@ -264,61 +264,61 @@ long long Redis::bitpos(const StringView &key,
                             long long end) {
     auto reply = command(cmd::bitpos, key, bit, start, end);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 long long Redis::decr(const StringView &key) {
     auto reply = command(cmd::decr, key);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 long long Redis::decrby(const StringView &key, long long decrement) {
     auto reply = command(cmd::decrby, key, decrement);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 OptionalString Redis::get(const StringView &key) {
     auto reply = command(cmd::get, key);
 
-    return reply::to_optional_string(*reply);
+    return reply::parse<OptionalString>(*reply);
 }
 
 long long Redis::getbit(const StringView &key, long long offset) {
     auto reply = command(cmd::getbit, key, offset);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 std::string Redis::getrange(const StringView &key, long long start, long long end) {
     auto reply = command(cmd::getrange, key, start, end);
 
-    return reply::to_string(*reply);
+    return reply::parse<std::string>(*reply);
 }
 
 OptionalString Redis::getset(const StringView &key, const StringView &val) {
     auto reply = command(cmd::getset, key, val);
 
-    return reply::to_optional_string(*reply);
+    return reply::parse<OptionalString>(*reply);
 }
 
 long long Redis::incr(const StringView &key) {
     auto reply = command(cmd::incr, key);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 long long Redis::incrby(const StringView &key, long long increment) {
     auto reply = command(cmd::incrby, key, increment);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 double Redis::incrbyfloat(const StringView &key, double increment) {
     auto reply = command(cmd::incrbyfloat, key, increment);
 
-    return reply::to_double(*reply);
+    return reply::parse<double>(*reply);
 }
 
 void Redis::psetex(const StringView &key,
@@ -354,7 +354,7 @@ bool Redis::set(const StringView &key,
 long long Redis::setbit(const StringView &key, long long offset, long long value) {
     auto reply = command(cmd::setbit, key, offset, value);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 void Redis::setex(const StringView &key,
@@ -372,19 +372,19 @@ void Redis::setex(const StringView &key,
 bool Redis::setnx(const StringView &key, const StringView &val) {
     auto reply = command(cmd::setnx, key, val);
 
-    return reply::to_bool(*reply);
+    return reply::parse<bool>(*reply);
 }
 
 long long Redis::setrange(const StringView &key, long long offset, const StringView &val) {
     auto reply = command(cmd::setrange, key, offset, val);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 long long Redis::strlen(const StringView &key) {
     auto reply = command(cmd::strlen, key);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 // LIST commands.
@@ -394,13 +394,13 @@ OptionalString Redis::brpoplpush(const StringView &source,
                                     long long timeout) {
     auto reply = command(cmd::brpoplpush, source, destination, timeout);
 
-    return reply::to_optional_string(*reply);
+    return reply::parse<OptionalString>(*reply);
 }
 
 OptionalString Redis::lindex(const StringView &key, long long index) {
     auto reply = command(cmd::lindex, key, index);
 
-    return reply::to_optional_string(*reply);
+    return reply::parse<OptionalString>(*reply);
 }
 
 long long Redis::linsert(const StringView &key,
@@ -409,37 +409,37 @@ long long Redis::linsert(const StringView &key,
                             const StringView &val) {
     auto reply = command(cmd::linsert, key, position, pivot, val);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 long long Redis::llen(const StringView &key) {
     auto reply = command(cmd::llen, key);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 OptionalString Redis::lpop(const StringView &key) {
     auto reply = command(cmd::lpop, key);
 
-    return reply::to_optional_string(*reply);
+    return reply::parse<OptionalString>(*reply);
 }
 
 long long Redis::lpush(const StringView &key, const StringView &val) {
     auto reply = command(cmd::lpush, key, val);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 long long Redis::lpushx(const StringView &key, const StringView &val) {
     auto reply = command(cmd::lpushx, key, val);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 long long Redis::lrem(const StringView &key, long long count, const StringView &val) {
     auto reply = command(cmd::lrem, key, count, val);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 void Redis::lset(const StringView &key, long long index, const StringView &val) {
@@ -457,79 +457,79 @@ void Redis::ltrim(const StringView &key, long long start, long long stop) {
 OptionalString Redis::rpop(const StringView &key) {
     auto reply = command(cmd::rpop, key);
 
-    return reply::to_optional_string(*reply);
+    return reply::parse<OptionalString>(*reply);
 }
 
 OptionalString Redis::rpoplpush(const StringView &source, const StringView &destination) {
     auto reply = command(cmd::rpoplpush, source, destination);
 
-    return reply::to_optional_string(*reply);
+    return reply::parse<OptionalString>(*reply);
 }
 
 long long Redis::rpush(const StringView &key, const StringView &val) {
     auto reply = command(cmd::rpush, key, val);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 long long Redis::rpushx(const StringView &key, const StringView &val) {
     auto reply = command(cmd::rpushx, key, val);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 long long Redis::hdel(const StringView &key, const StringView &field) {
     auto reply = command(cmd::hdel, key, field);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 bool Redis::hexists(const StringView &key, const StringView &field) {
     auto reply = command(cmd::hexists, key, field);
 
-    return reply::to_bool(*reply);
+    return reply::parse<bool>(*reply);
 }
 
 OptionalString Redis::hget(const StringView &key, const StringView &field) {
     auto reply = command(cmd::hget, key, field);
 
-    return reply::to_optional_string(*reply);
+    return reply::parse<OptionalString>(*reply);
 }
 
 long long Redis::hincrby(const StringView &key, const StringView &field, long long increment) {
     auto reply = command(cmd::hincrby, key, field, increment);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 double Redis::hincrbyfloat(const StringView &key, const StringView &field, double increment) {
     auto reply = command(cmd::hincrby, key, field, increment);
 
-    return reply::to_double(*reply);
+    return reply::parse<double>(*reply);
 }
 
 long long Redis::hlen(const StringView &key) {
     auto reply = command(cmd::hlen, key);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 bool Redis::hset(const StringView &key, const StringView &field, const StringView &val) {
     auto reply = command(cmd::hset, key, field, val);
 
-    return reply::to_bool(*reply);
+    return reply::parse<bool>(*reply);
 }
 
 bool Redis::hsetnx(const StringView &key, const StringView &field, const StringView &val) {
     auto reply = command(cmd::hsetnx, key, field, val);
 
-    return reply::to_bool(*reply);
+    return reply::parse<bool>(*reply);
 }
 
 long long Redis::hstrlen(const StringView &key, const StringView &field) {
     auto reply = command(cmd::hstrlen, key, field);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 // SET commands.
@@ -537,19 +537,19 @@ long long Redis::hstrlen(const StringView &key, const StringView &field) {
 long long Redis::sadd(const StringView &key, const StringView &member) {
     auto reply = command(cmd::sadd, key, member);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 long long Redis::scard(const StringView &key) {
     auto reply = command(cmd::scard, key);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 bool Redis::sismember(const StringView &key, const StringView &member) {
     auto reply = command(cmd::sismember, key, member);
 
-    return reply::to_bool(*reply);
+    return reply::parse<bool>(*reply);
 }
 
 bool Redis::smove(const StringView &source,
@@ -557,25 +557,25 @@ bool Redis::smove(const StringView &source,
                     const StringView &member) {
     auto reply = command(cmd::smove, source, destination, member);
 
-    return reply::to_bool(*reply);
+    return reply::parse<bool>(*reply);
 }
 
 OptionalString Redis::spop(const StringView &key) {
     auto reply = command(cmd::spop, key);
 
-    return reply::to_optional_string(*reply);
+    return reply::parse<OptionalString>(*reply);
 }
 
 OptionalString Redis::srandmember(const StringView &key) {
     auto reply = command(cmd::srandmember, key);
 
-    return reply::to_optional_string(*reply);
+    return reply::parse<OptionalString>(*reply);
 }
 
 long long Redis::srem(const StringView &key, const StringView &member) {
     auto reply = command(cmd::srem, key, member);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 // SORTED SET commands.
@@ -587,49 +587,49 @@ long long Redis::zadd(const StringView &key,
                         UpdateType type) {
     auto reply = command(cmd::zadd, key, score, member, changed, type);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 long long Redis::zcard(const StringView &key) {
     auto reply = command(cmd::zcard, key);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 double Redis::zincrby(const StringView &key, double increment, const StringView &member) {
     auto reply = command(cmd::zincrby, key, increment, member);
 
-    return reply::to_double(*reply);
+    return reply::parse<double>(*reply);
 }
 
 OptionalLongLong Redis::zrank(const StringView &key, const StringView &member) {
     auto reply = command(cmd::zrank, key, member);
 
-    return reply::to_optional_integer(*reply);
+    return reply::parse<OptionalLongLong>(*reply);
 }
 
 long long Redis::zrem(const StringView &key, const StringView &member) {
     auto reply = command(cmd::zrem, key, member);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 long long Redis::zremrangebyrank(const StringView &key, long long start, long long stop) {
     auto reply = command(cmd::zremrangebyrank, key, start, stop);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 OptionalLongLong Redis::zrevrank(const StringView &key, const StringView &member) {
     auto reply = command(cmd::zrevrank, key, member);
 
-    return reply::to_optional_integer(*reply);
+    return reply::parse<OptionalLongLong>(*reply);
 }
 
 OptionalDouble Redis::zscore(const StringView &key, const StringView &member) {
     auto reply = command(cmd::zscore, key, member);
 
-    return reply::to_optional_double(*reply);
+    return reply::parse<OptionalDouble>(*reply);
 }
 
 // HYPERLOGLOG commands.
@@ -637,13 +637,13 @@ OptionalDouble Redis::zscore(const StringView &key, const StringView &member) {
 bool Redis::pfadd(const StringView &key, const StringView &element) {
     auto reply = command(cmd::pfadd, key, element);
 
-    return reply::to_bool(*reply);
+    return reply::parse<bool>(*reply);
 }
 
 long long Redis::pfcount(const StringView &key) {
     auto reply = command(cmd::pfcount, key);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 // GEO commands.
@@ -652,7 +652,7 @@ long long Redis::geoadd(const StringView &key,
                         const std::tuple<double, double, std::string> &member) {
     auto reply = command(cmd::geoadd, key, member);
 
-    return reply::to_integer(*reply);
+    return reply::parse<long long>(*reply);
 }
 
 OptionalDouble Redis::geodist(const StringView &key,
@@ -661,13 +661,13 @@ OptionalDouble Redis::geodist(const StringView &key,
                                 GeoUnit unit) {
     auto reply = command(cmd::geodist, key, member1, member2, unit);
 
-    return reply::to_optional_double(*reply);
+    return reply::parse<OptionalDouble>(*reply);
 }
 
 OptionalString Redis::geohash(const StringView &key, const StringView &member) {
     auto reply = command(cmd::geohash, key, member);
 
-    return reply::to_optional_string(*reply);
+    return reply::parse<OptionalString>(*reply);
 }
 
 // SCRIPTING commands.
@@ -687,7 +687,7 @@ void Redis::script_kill() {
 std::string Redis::script_load(const StringView &script) {
     auto reply = command(cmd::script_load, script);
 
-    return reply::to_string(*reply);
+    return reply::parse<std::string>(*reply);
 }
 
 }

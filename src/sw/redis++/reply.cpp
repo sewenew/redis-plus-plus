@@ -67,11 +67,11 @@ long long parse(ParseTag<long long>, redisReply &reply) {
 }
 
 double parse(ParseTag<double>, redisReply &reply) {
-    return std::stod(to_string(reply));
+    return std::stod(parse<std::string>(reply));
 }
 
 bool parse(ParseTag<bool>, redisReply &reply) {
-    auto ret = reply::to_integer(reply);
+    auto ret = parse<long long>(reply);
 
     if (ret == 1) {
         return true;
