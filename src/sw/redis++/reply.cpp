@@ -46,7 +46,7 @@ std::string to_status(redisReply &reply) {
     return {reply.str, reply.len};
 }
 
-std::string to_string(redisReply &reply) {
+std::string parse(ParseTag<std::string>, redisReply &reply) {
     if (!reply::is_string(reply)) {
         throw RException("Expect STRING reply.");
     }
@@ -58,33 +58,7 @@ std::string to_string(redisReply &reply) {
     return {reply.str, reply.len};
 }
 
-OptionalString to_optional_string(redisReply &reply) {
-    if (reply::is_nil(reply)) {
-        return {};
-    }
-
-    return OptionalString(reply::to_string(reply));
-}
-
-OptionalStringPair to_optional_string_pair(redisReply &reply) {
-    if (reply::is_nil(reply)) {
-        return {};
-    }
-
-    if (reply.elements != 2) {
-        throw RException("Not a string pair");
-    }
-
-    auto *key = reply.element[0];
-    auto *val = reply.element[1];
-    if (key == nullptr || val == nullptr) {
-        throw RException("Null string pair");
-    }
-
-    return OptionalStringPair(reply::to_string(*key), reply::to_string(*val));
-}
-
-long long to_integer(redisReply &reply) {
+long long parse(ParseTag<long long>, redisReply &reply) {
     if (!reply::is_integer(reply)) {
         throw RException("Expect INTEGER reply.");
     }
@@ -92,23 +66,11 @@ long long to_integer(redisReply &reply) {
     return reply.integer;
 }
 
-OptionalLongLong to_optional_integer(redisReply &reply) {
-    if (reply::is_nil(reply)) {
-        return {};
-    }
-
-    return OptionalLongLong(reply::to_integer(reply));
+double parse(ParseTag<double>, redisReply &reply) {
+    return std::stod(to_string(reply));
 }
 
-OptionalDouble to_optional_double(redisReply &reply) {
-    if (reply::is_nil(reply)) {
-        return {};
-    }
-
-    return OptionalDouble(reply::to_double(reply));
-}
-
-bool to_bool(redisReply &reply) {
+bool parse(ParseTag<bool>, redisReply &reply) {
     auto ret = reply::to_integer(reply);
 
     if (ret == 1) {

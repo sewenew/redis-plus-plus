@@ -161,6 +161,16 @@ template <typename T>
 struct IsKvPairIter<T, Void<typename T::container_type>> :
                     IsKvPair<typename T::container_type::value_type> {};
 
+template <typename Iter, typename T = Void<>>
+struct IterType {
+    using type = typename std::decay<decltype(*std::declval<Iter>())>::type;
+};
+
+template <typename Iter>
+struct IterType<Iter, Void<typename Iter::container_type>> {
+    using type = typename std::decay<typename Iter::container_type::value_type>::type;
+};
+
 }
 
 }

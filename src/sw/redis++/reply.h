@@ -79,6 +79,31 @@ private:
 
 namespace reply {
 
+template <typename T>
+struct ParseTag {};
+
+template <typename T>
+inline T parse(redisReply &reply) {
+    return parse(ParseTag<T>(), reply);
+}
+
+std::string parse(ParseTag<std::string>, redisReply &reply);
+
+long long parse(ParseTag<long long>, redisReply &reply);
+
+double parse(ParseTag<double>, redisReply &reply);
+
+bool parse(ParseTag<bool>, redisReply &reply);
+
+template <typename T>
+Optional<T> parse(ParseTag<Optional<T>>, redisReply &reply);
+
+template <typename T, typename U>
+std::pair<T, U> parse(ParseTag<std::pair<T, U>>, redisReply &reply);
+
+template <typename ...Args>
+std::tuple<Args...> parse(ParseTag<std::tuple<Args...>>, redisReply &reply);
+
 inline bool is_error(redisReply &reply) {
     return reply.type == REDIS_REPLY_ERROR;
 }
@@ -107,29 +132,46 @@ std::string to_error(redisReply &reply);
 
 std::string to_status(redisReply &reply);
 
-std::string to_string(redisReply &reply);
-
-OptionalString to_optional_string(redisReply &reply);
-
-OptionalStringPair to_optional_string_pair(redisReply &reply);
-
-long long to_integer(redisReply &reply);
-
-OptionalLongLong to_optional_integer(redisReply &reply);
-
-inline double to_double(redisReply &reply) {
-    return std::stod(to_string(reply));
+inline std::string to_string(redisReply &reply) {
+    return parse<std::string>(reply);
 }
 
-OptionalDouble to_optional_double(redisReply &reply);
+inline OptionalString to_optional_string(redisReply &reply) {
+    return parse<OptionalString>(reply);
+}
+
+inline OptionalStringPair to_optional_string_pair(redisReply &reply) {
+    return parse<OptionalStringPair>(reply);
+}
+
+inline long long to_integer(redisReply &reply) {
+    return parse<long long>(reply);
+}
+
+inline OptionalLongLong to_optional_integer(redisReply &reply) {
+    return parse<OptionalLongLong>(reply);
+}
+
+inline double to_double(redisReply &reply) {
+    return parse<double>(reply);
+}
+
+inline OptionalDouble to_optional_double(redisReply &reply) {
+    return parse<OptionalDouble>(reply);
+}
 
 template<typename Iter>
-void to_array(redisReply &reply, Iter output);
+void to_score_array(redisReply &reply, Iter output);
+
+template <typename Output>
+void to_array(redisReply &reply, Output output);
 
 template <typename Iter>
 void to_optional_string_array(redisReply &reply, Iter output);
 
-bool to_bool(redisReply &reply);
+inline bool to_bool(redisReply &reply) {
+    return parse<bool>(reply);
+}
 
 void expect_ok_status(redisReply &reply);
 
@@ -153,43 +195,14 @@ namespace reply {
 
 namespace detail {
 
-template <typename Output>
-void to_pair(std::true_type, redisReply &key, redisReply &val, Output output) {
-    *output = std::make_pair(to_string(key), to_double(val));
-}
-
-template <typename Output>
-void to_pair(std::false_type, redisReply &key, redisReply &val, Output output) {
-    *output = std::make_pair(to_string(key), to_string(val));
-}
-
-template <typename Output,
-            typename std::enable_if<IsInserter<Output>::value, int>::type = 0>
-void to_pair(redisReply &key, redisReply &val, Output output) {
-    // std::inserter or std::back_inserter
-    to_pair(std::is_same<typename Output::container_type::value_type::second_type,
-                                double>(),
-            key,
-            val,
-            output);
-}
-
-template <typename Output,
-            typename std::enable_if<!IsInserter<Output>::value, int>::type = 0>
-void to_pair(redisReply &key, redisReply &val, Output output) {
-    // Normal iterator
-    to_pair(std::is_same<
-                typename std::decay<decltype(*std::declval<Output>())>::type::second_type,
-                        double>(),
-            key,
-            val,
-            output);
-}
-
 template <typename Iter>
-void to_array(std::true_type, redisReply &reply, Iter output) {
+void to_score_array(std::true_type, redisReply &reply, Iter output) {
     if (reply.elements % 2 != 0) {
         throw RException("Not string pair array reply");
+    }
+
+    if (reply.element == nullptr) {
+        throw RException("Null reply.");
     }
 
     for (std::size_t idx = 0; idx != reply.elements; idx += 2) {
@@ -199,41 +212,106 @@ void to_array(std::true_type, redisReply &reply, Iter output) {
             throw RException("Null string array reply.");
         }
 
-        to_pair(*key_reply, *val_reply, output);
+        using Pair = typename IterType<Iter>::type;
+        *output = std::make_pair(parse<typename Pair::first_type>(*key_reply),
+                                    parse<typename Pair::second_type>(*val_reply));
 
         ++output;
     }
 }
 
 template <typename Iter>
-void to_array(std::false_type, redisReply &reply, Iter output) {
-    for (std::size_t idx = 0; idx != reply.elements; ++idx) {
-        auto *sub_reply = reply.element[idx];
-        if (sub_reply == nullptr) {
-            throw RException("Null string array reply.");
-        }
+void to_score_array(std::false_type, redisReply &reply, Iter output) {
+    to_array(reply, output);
+}
 
-        *output = to_string(*sub_reply);
+template <typename T>
+std::tuple<T> parse_tuple(redisReply **reply, std::size_t idx) {
+    assert(reply != nullptr);
 
-        ++output;
+    auto *sub_reply = reply[idx];
+    if (sub_reply == nullptr) {
+        throw RException("Null reply.");
     }
+
+    return make_tuple(parse<T>(*sub_reply));
+}
+
+template <typename T, typename ...Args>
+auto parse_tuple(redisReply **reply, std::size_t idx) ->
+    typename std::enable_if<sizeof...(Args) != 0, std::tuple<T, Args...>>::type {
+    assert(reply != nullptr);
+
+    return std::tuple_cat(parse_tuple<T>(reply, idx),
+                            parse_tuple<Args...>(reply, idx + 1));
 }
 
 }
 
 template<typename Iter>
-void to_array(redisReply &reply, Iter output) {
+void to_score_array(redisReply &reply, Iter output) {
     if (!reply::is_array(reply)) {
         throw RException("Expect ARRAY reply.");
     }
 
-    detail::to_array(typename IsKvPairIter<Iter>::type(), reply, output);
+    detail::to_score_array(typename IsKvPairIter<Iter>::type(), reply, output);
 }
 
 template <typename Iter>
 void to_optional_string_array(redisReply &reply, Iter output) {
+    to_array(reply, output);
+}
+
+template <typename T>
+Optional<T> parse(ParseTag<Optional<T>>, redisReply &reply) {
+    if (reply::is_nil(reply)) {
+        return {};
+    }
+
+    return Optional<T>(parse<T>(reply));
+}
+
+template <typename T, typename U>
+std::pair<T, U> parse(ParseTag<std::pair<T, U>>, redisReply &reply) {
+    if (reply.elements != 2) {
+        throw RException("Expect PAIR reply.");
+    }
+
+    if (reply.element == nullptr) {
+        throw RException("Null reply.");
+    }
+
+    auto *first = reply.element[0];
+    auto *second = reply.element[1];
+    if (first == nullptr || second == nullptr) {
+        throw RException("Null pair reply.");
+    }
+
+    return std::make_pair(parse<T>(*first), parse<U>(*second));
+}
+
+template <typename ...Args>
+std::tuple<Args...> parse(ParseTag<std::tuple<Args...>>, redisReply &reply) {
+    constexpr auto size = sizeof...(Args);
+    if (reply.elements != size) {
+        throw RException("Expect tuple reply with " + std::to_string(size) + "elements");
+    }
+
+    if (reply.element == nullptr) {
+        throw RException("Null reply.");
+    }
+
+    return detail::parse_tuple<Args...>(reply.element, 0);
+}
+
+template <typename Output>
+void to_array(redisReply &reply, Output output) {
     if (!reply::is_array(reply)) {
         throw RException("Expect ARRAY reply.");
+    }
+
+    if (reply.element == nullptr) {
+        throw RException("Null ARRAY reply.");
     }
 
     for (std::size_t idx = 0; idx != reply.elements; ++idx) {
@@ -242,7 +320,7 @@ void to_optional_string_array(redisReply &reply, Iter output) {
             throw RException("Null string array reply.");
         }
 
-        *output = to_optional_string(*sub_reply);
+        *output = parse<typename IterType<Output>::type>(*sub_reply);
 
         ++output;
     }
