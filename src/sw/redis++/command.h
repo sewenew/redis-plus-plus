@@ -62,6 +62,14 @@ inline void swapdb(Connection &connection, long long idx1, long long idx2) {
 
 // SERVER commands.
 
+inline void bgrewriteaof(Connection &connection) {
+    connection.send("BGREWRITEAOF");
+}
+
+inline void bgsave(Connection &connection) {
+    connection.send("BGSAVE");
+}
+
 inline void dbsize(Connection &connection) {
     connection.send("DBSIZE");
 }

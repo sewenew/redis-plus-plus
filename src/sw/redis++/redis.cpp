@@ -83,6 +83,18 @@ void Redis::swapdb(long long idx1, long long idx2) {
 
 // SERVER commands.
 
+void Redis::bgrewriteaof() {
+    auto reply = command(cmd::bgrewriteaof);
+
+    reply::expect_ok_status(*reply);
+}
+
+void Redis::bgsave() {
+    auto reply = command(cmd::bgsave);
+
+    reply::expect_ok_status(*reply);
+}
+
 long long Redis::dbsize() {
     auto reply = command(cmd::dbsize);
 

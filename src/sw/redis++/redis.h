@@ -58,7 +58,9 @@ public:
 
     // SERVER commands.
 
-    // TODO: bgrewriteaof, bgsave
+    void bgrewriteaof();
+
+    void bgsave();
 
     long long dbsize();
 
@@ -72,11 +74,7 @@ public:
 
     long long lastsave();
 
-    // TODO: role
-
     void save();
-
-    // TODO: shutdown
 
     // KEY commands.
 
