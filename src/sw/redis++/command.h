@@ -381,14 +381,6 @@ inline void setbit(Connection &connection,
                     value);
 }
 
-inline void setnx(Connection &connection,
-                    const StringView &key,
-                    const StringView &val) {
-    connection.send("SETNX %b %b",
-                    key.data(), key.size(),
-                    val.data(), val.size());
-}
-
 inline void setex(Connection &connection,
                     const StringView &key,
                     long long ttl,
@@ -396,6 +388,14 @@ inline void setex(Connection &connection,
     connection.send("SETEX %b %lld %b",
                     key.data(), key.size(),
                     ttl,
+                    val.data(), val.size());
+}
+
+inline void setnx(Connection &connection,
+                    const StringView &key,
+                    const StringView &val) {
+    connection.send("SETNX %b %b",
+                    key.data(), key.size(),
                     val.data(), val.size());
 }
 

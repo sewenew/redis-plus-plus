@@ -58,6 +58,8 @@ public:
 
     // SERVER commands.
 
+    // TODO: bgrewriteaof, bgsave
+
     long long dbsize();
 
     void flushall(bool async = false);
@@ -70,7 +72,11 @@ public:
 
     long long lastsave();
 
+    // TODO: role
+
     void save();
+
+    // TODO: shutdown
 
     // KEY commands.
 
@@ -98,6 +104,8 @@ public:
 
     template <typename Output>
     void keys(const StringView &pattern, Output output);
+
+    // TODO: migrate
 
     bool move(const StringView &key, long long db);
 
@@ -130,6 +138,8 @@ public:
                     const std::chrono::milliseconds &ttl,
                     const StringView &val,
                     bool replace = false);
+
+    // TODO: sort
 
     long long touch(const StringView &key);
 
@@ -205,8 +215,6 @@ public:
 
     long long setbit(const StringView &key, long long offset, long long value);
 
-    bool setnx(const StringView &key, const StringView &val);
-
     void setex(const StringView &key,
                 long long ttl,
                 const StringView &val);
@@ -214,6 +222,8 @@ public:
     void setex(const StringView &key,
                 const std::chrono::seconds &ttl,
                 const StringView &val);
+
+    bool setnx(const StringView &key, const StringView &val);
 
     long long setrange(const StringView &key, long long offset, const StringView &val);
 
@@ -510,7 +520,11 @@ public:
     template <typename Input, typename Output>
     void geohash(const StringView &key, Input first, Input last, Output output);
 
+    // TODO: geopos, georadius, georadiusbymember
+
     // SCRIPTING commands.
+
+    // TODO: eval, evalsha, script_exists
 
     void script_flush();
 
