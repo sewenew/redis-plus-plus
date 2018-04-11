@@ -199,7 +199,7 @@ std::tuple<T> parse_tuple(redisReply **reply, std::size_t idx) {
         throw RException("Null reply.");
     }
 
-    return make_tuple(parse<T>(*sub_reply));
+    return std::make_tuple(parse<T>(*sub_reply));
 }
 
 template <typename T, typename ...Args>

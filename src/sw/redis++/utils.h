@@ -171,6 +171,18 @@ struct IterType<Iter, Void<typename Iter::container_type>> {
     using type = typename std::decay<typename Iter::container_type::value_type>::type;
 };
 
+template <typename T, typename Tuple>
+struct TupleWithType : std::false_type {};
+
+template <typename T>
+struct TupleWithType<T, std::tuple<>> : std::false_type {};
+
+template <typename T, typename U, typename ...Args>
+struct TupleWithType<T, std::tuple<U, Args...>> : TupleWithType<T, std::tuple<Args...>> {};
+
+template <typename T, typename ...Args>
+struct TupleWithType<T, std::tuple<T, Args...>> : std::true_type {};
+
 }
 
 }

@@ -1140,6 +1140,61 @@ inline void geohash_range(Connection &connection,
     connection.send(args);
 }
 
+inline void geopos(Connection &connection,
+                    const StringView &key,
+                    const StringView &member) {
+    connection.send("GEOPOS %b %b",
+                    key.data(), key.size(),
+                    member.data(), member.size());
+}
+
+template <typename Input>
+inline void geopos_range(Connection &connection,
+                            const StringView &key,
+                            Input first,
+                            Input last) {
+    Connection::CmdArgs args;
+    args << "GEOPOS" << key << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Output>
+void georadius(Connection &connection,
+                const StringView &key,
+                const std::pair<double, double> &loc,
+                double radius,
+                GeoUnit unit,
+                long long count,
+                bool asc);
+
+void georadius_store(Connection &connection,
+                        const StringView &key,
+                        const std::pair<double, double> &loc,
+                        double radius,
+                        GeoUnit unit,
+                        const StringView &destination,
+                        bool store_dist,
+                        long long count);
+
+template <typename Output>
+void georadiusbymember(Connection &connection,
+                        const StringView &key,
+                        const StringView &member,
+                        double radius,
+                        GeoUnit unit,
+                        long long count,
+                        bool asc);
+
+void georadiusbymember_store(Connection &connection,
+                                const StringView &key,
+                                const StringView &member,
+                                double radius,
+                                GeoUnit unit,
+                                const StringView &destination,
+                                bool store_dist,
+                                long long count);
+
 // SCRIPTING commands.
 
 template <typename KeyIter, typename ArgIter>
@@ -1377,6 +1432,53 @@ void zunionstore(std::true_type,
 
 void set_geo_unit(Connection::CmdArgs &args, GeoUnit unit);
 
+void set_georadius_store_parameters(Connection::CmdArgs &args,
+                                    double radius,
+                                    GeoUnit unit,
+                                    const StringView &destination,
+                                    bool store_dist,
+                                    long long count);
+
+template <typename T>
+struct WithCoord : TupleWithType<std::pair<double, double>, T> {};
+
+template <typename T>
+struct WithDist : TupleWithType<double, T> {};
+
+template <typename T>
+struct WithHash : TupleWithType<long long, T> {};
+
+template <typename Output>
+void set_georadius_parameters(Connection::CmdArgs &args,
+                                double radius,
+                                GeoUnit unit,
+                                long long count,
+                                bool asc) {
+    args << radius;
+
+    detail::set_geo_unit(args, unit);
+
+    if (detail::WithCoord<typename IterType<Output>::type>::value) {
+        args << "WITHCOORD";
+    }
+
+    if (detail::WithDist<typename IterType<Output>::type>::value) {
+        args << "WITHDIST";
+    }
+
+    if (detail::WithHash<typename IterType<Output>::type>::value) {
+        args << "WITHHASH";
+    }
+
+    args << "COUNT" << count;
+
+    if (asc) {
+        args << "ASC";
+    } else {
+        args << "DESC";
+    }
+}
+
 }
 
 }
@@ -1509,6 +1611,38 @@ void zunionstore(Connection &connection,
                         first,
                         last,
                         aggr);
+}
+
+template <typename Output>
+void georadius(Connection &connection,
+                const StringView &key,
+                const std::pair<double, double> &loc,
+                double radius,
+                GeoUnit unit,
+                long long count,
+                bool asc) {
+    Connection::CmdArgs args;
+    args << "GEORADIUS" << key << loc.first << loc.second;
+
+    detail::set_georadius_parameters<Output>(args, radius, unit, count, asc);
+
+    connection.send(args);
+}
+
+template <typename Output>
+void georadiusbymember(Connection &connection,
+                        const StringView &key,
+                        const StringView &member,
+                        double radius,
+                        GeoUnit unit,
+                        long long count,
+                        bool asc) {
+    Connection::CmdArgs args;
+    args << "GEORADIUSBYMEMBER" << key << member;
+
+    detail::set_georadius_parameters<Output>(args, radius, unit, count, asc);
+
+    connection.send(args);
 }
 
 }

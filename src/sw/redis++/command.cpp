@@ -104,6 +104,48 @@ void geodist(Connection &connection,
     connection.send(args);
 }
 
+void georadius_store(Connection &connection,
+                        const StringView &key,
+                        const std::pair<double, double> &loc,
+                        double radius,
+                        GeoUnit unit,
+                        const StringView &destination,
+                        bool store_dist,
+                        long long count) {
+    Connection::CmdArgs args;
+    args << "GEORADIUS" << key << loc.first << loc.second;
+
+    detail::set_georadius_store_parameters(args,
+                                            radius,
+                                            unit,
+                                            destination,
+                                            store_dist,
+                                            count);
+
+    connection.send(args);
+}
+
+void georadiusbymember_store(Connection &connection,
+                                const StringView &key,
+                                const StringView &member,
+                                double radius,
+                                GeoUnit unit,
+                                const StringView &destination,
+                                bool store_dist,
+                                long long count) {
+    Connection::CmdArgs args;
+    args << "GEORADIUSBYMEMBER" << key << member;
+
+    detail::set_georadius_store_parameters(args,
+                                            radius,
+                                            unit,
+                                            destination,
+                                            store_dist,
+                                            count);
+
+    connection.send(args);
+}
+
 namespace detail {
 
 void set_update_type(Connection::CmdArgs &args, UpdateType type) {
@@ -149,25 +191,46 @@ void set_aggregation_type(Connection::CmdArgs &args, Aggregation aggr) {
 void set_geo_unit(Connection::CmdArgs &args, GeoUnit unit) {
     switch (unit) {
     case GeoUnit::M:
-        args << "M";
+        args << "m";
         break;
 
     case GeoUnit::KM:
-        args << "KM";
+        args << "km";
         break;
 
     case GeoUnit::MI:
-        args << "MI";
+        args << "mi";
         break;
 
     case GeoUnit::FT:
-        args << "FT";
+        args << "ft";
         break;
 
     default:
         throw RException("Unknown geo unit type");
         break;
     }
+}
+
+void set_georadius_store_parameters(Connection::CmdArgs &args,
+                                    double radius,
+                                    GeoUnit unit,
+                                    const StringView &destination,
+                                    bool store_dist,
+                                    long long count) {
+    args << radius;
+
+    detail::set_geo_unit(args, unit);
+
+    args << "COUNT" << count;
+
+    if (store_dist) {
+        args << "STOREDIST";
+    } else {
+        args << "STORE";
+    }
+
+    args << destination;
 }
 
 }

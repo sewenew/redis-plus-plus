@@ -518,7 +518,49 @@ public:
     template <typename Input, typename Output>
     void geohash(const StringView &key, Input first, Input last, Output output);
 
-    // TODO: geopos, georadius, georadiusbymember
+    auto geopos(const StringView &key, const StringView &member) ->
+        Optional<std::pair<double, double>>;
+
+    template <typename Input, typename Output>
+    void geopos(const StringView &key, Input first, Input last, Output output);
+
+    // TODO:
+    // 1. since we have different overloads for georadius and georadius-store,
+    //    we might use the GEORADIUS_RO command in the future.
+    // 2. there're too many parameters for this method, we might refactor it.
+    OptionalLongLong georadius(const StringView &key,
+                                const std::pair<double, double> &loc,
+                                double radius,
+                                GeoUnit unit,
+                                const StringView &destination,
+                                bool store_dist,
+                                long long count);
+
+    template <typename Output>
+    void georadius(const StringView &key,
+                    const std::pair<double, double> &loc,
+                    double radius,
+                    GeoUnit unit,
+                    long long count,
+                    bool asc,
+                    Output output);
+
+    OptionalLongLong georadiusbymember(const StringView &key,
+                                        const StringView &member,
+                                        double radius,
+                                        GeoUnit unit,
+                                        const StringView &destination,
+                                        bool store_dist,
+                                        long long count);
+
+    template <typename Output>
+    void georadiusbymember(const StringView &key,
+                            const StringView &member,
+                            double radius,
+                            GeoUnit unit,
+                            long long count,
+                            bool asc,
+                            Output output);
 
     // SCRIPTING commands.
 

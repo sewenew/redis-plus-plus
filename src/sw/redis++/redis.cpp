@@ -682,6 +682,72 @@ OptionalString Redis::geohash(const StringView &key, const StringView &member) {
     return reply::parse<OptionalString>(*reply);
 }
 
+auto Redis::geopos(const StringView &key, const StringView &member) ->
+    Optional<std::pair<double, double>> {
+    auto reply = command(cmd::geopos, key, member);
+
+    if (reply->elements != 1 || reply->element == nullptr) {
+        throw RException("Should return one and only one array element");
+    }
+
+    auto *sub_reply = reply->element[0];
+    if (sub_reply == nullptr) {
+        throw RException("Null reply.");
+    }
+
+    return reply::parse<Optional<std::pair<double, double>>>(*sub_reply);
+}
+
+OptionalLongLong Redis::georadius(const StringView &key,
+                                    const std::pair<double, double> &loc,
+                                    double radius,
+                                    GeoUnit unit,
+                                    const StringView &destination,
+                                    bool store_dist,
+                                    long long count) {
+    auto reply = command(cmd::georadius_store,
+                            key,
+                            loc,
+                            radius,
+                            unit,
+                            destination,
+                            store_dist,
+                            count);
+
+    try {
+        return reply::parse<OptionalLongLong>(*reply);
+    } catch (const RException &) {
+        // TODO: if *key* doesn't exist, Redis returns an array reply.
+        // That's a strage behavior.
+        return {};
+    }
+}
+
+OptionalLongLong Redis::georadiusbymember(const StringView &key,
+                                            const StringView &member,
+                                            double radius,
+                                            GeoUnit unit,
+                                            const StringView &destination,
+                                            bool store_dist,
+                                            long long count) {
+    auto reply = command(cmd::georadiusbymember_store,
+                            key,
+                            member,
+                            radius,
+                            unit,
+                            destination,
+                            store_dist,
+                            count);
+
+    try {
+        return reply::parse<OptionalLongLong>(*reply);
+    } catch (const RException &) {
+        // TODO: if *key* doesn't exist, Redis returns an array reply.
+        // That's a strage behavior.
+        return {};
+    }
+}
+
 // SCRIPTING commands.
 
 void Redis::script_flush() {

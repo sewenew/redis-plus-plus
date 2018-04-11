@@ -532,6 +532,39 @@ void Redis::geohash(const StringView &key, Input first, Input last, Output outpu
     reply::to_array(*reply, output);
 }
 
+template <typename Input, typename Output>
+void Redis::geopos(const StringView &key, Input first, Input last, Output output) {
+    auto reply = command(cmd::geopos_range<Input>, key, first, last);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Output>
+void Redis::georadius(const StringView &key,
+                        const std::pair<double, double> &loc,
+                        double radius,
+                        GeoUnit unit,
+                        long long count,
+                        bool asc,
+                        Output output) {
+    auto reply = command(cmd::georadius<Output>, key, loc, radius, unit, count, asc);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Output>
+void Redis::georadiusbymember(const StringView &key,
+                                const StringView &member,
+                                double radius,
+                                GeoUnit unit,
+                                long long count,
+                                bool asc,
+                                Output output) {
+    auto reply = command(cmd::georadiusbymember<Output>, key, member, radius, unit, count, asc);
+
+    reply::to_array(*reply, output);
+}
+
 }
 
 }
