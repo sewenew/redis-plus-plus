@@ -1205,7 +1205,10 @@ inline void eval(Connection &connection,
                     ArgIter arg_first,
                     ArgIter arg_last) {
     Connection::CmdArgs args;
-    args << "EVAL" << script
+
+    auto key_num = std::distance(key_first, key_last);
+
+    args << "EVAL" << script << key_num
             << std::make_pair(key_first, key_last)
             << std::make_pair(arg_first, arg_last);
 
@@ -1220,9 +1223,24 @@ inline void evalsha(Connection &connection,
                     ArgIter arg_first,
                     ArgIter arg_last) {
     Connection::CmdArgs args;
-    args << "EVALSHA" << script
+
+    auto key_num = std::distance(key_first, key_last);
+
+    args << "EVALSHA" << script << key_num
             << std::make_pair(key_first, key_last)
             << std::make_pair(arg_first, arg_last);
+
+    connection.send(args);
+}
+
+inline void script_exists(Connection &connection, const StringView &sha) {
+    connection.send("SCRIPT EXISTS %b", sha.data(), sha.size());
+}
+
+template <typename Input>
+inline void script_exists_range(Connection &connection, Input first, Input last) {
+    Connection::CmdArgs args;
+    args << "SCRIPT" << "EXISTS" << std::make_pair(first, last);
 
     connection.send(args);
 }

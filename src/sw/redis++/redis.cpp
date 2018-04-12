@@ -750,6 +750,21 @@ OptionalLongLong Redis::georadiusbymember(const StringView &key,
 
 // SCRIPTING commands.
 
+bool Redis::script_exists(const StringView &sha) {
+    auto reply = command(cmd::script_exists, sha);
+
+    if (reply->elements != 1 || reply->element == nullptr) {
+        throw RException("Should return one and only one array element");
+    }
+
+    auto *sub_reply = reply->element[0];
+    if (sub_reply == nullptr) {
+        throw RException("Null reply.");
+    }
+
+    return reply::parse<bool>(*sub_reply);
+}
+
 void Redis::script_flush() {
     auto reply = command(cmd::script_flush);
 

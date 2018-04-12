@@ -565,6 +565,47 @@ void Redis::georadiusbymember(const StringView &key,
     reply::to_array(*reply, output);
 }
 
+// SCRIPTING commands.
+
+template <typename Result, typename KeyIter, typename ArgIter>
+Result Redis::eval(const StringView &script,
+                    KeyIter key_first,
+                    KeyIter key_last,
+                    ArgIter arg_first,
+                    ArgIter arg_last) {
+    auto reply = command(cmd::eval<KeyIter, ArgIter>,
+                            script,
+                            key_first,
+                            key_last,
+                            arg_first,
+                            arg_last);
+
+    return reply::parse<Result>(*reply);
+}
+
+template <typename Result, typename KeyIter, typename ArgIter>
+Result Redis::evalsha(const StringView &script,
+                        KeyIter key_first,
+                        KeyIter key_last,
+                        ArgIter arg_first,
+                        ArgIter arg_last) {
+    auto reply = command(cmd::evalsha<KeyIter, ArgIter>,
+                            script,
+                            key_first,
+                            key_last,
+                            arg_first,
+                            arg_last);
+
+    return reply::parse<Result>(*reply);
+}
+
+template <typename Input, typename Output>
+void Redis::script_exists(Input first, Input last, Output output) {
+    auto reply = command(cmd::script_exists_range<Input>, first, last);
+
+    reply::to_array(*reply, output);
+}
+
 }
 
 }

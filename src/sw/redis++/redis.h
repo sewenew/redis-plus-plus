@@ -564,7 +564,27 @@ public:
 
     // SCRIPTING commands.
 
-    // TODO: eval, evalsha, script_exists
+    // TODO:
+    // 1. There might be no key or no argument.
+    // 2. The result might be an array.
+    template <typename Result, typename KeyIter, typename ArgIter>
+    Result eval(const StringView &script,
+                KeyIter key_first,
+                KeyIter key_last,
+                ArgIter arg_first,
+                ArgIter arg_last);
+
+    template <typename Result, typename KeyIter, typename ArgIter>
+    Result evalsha(const StringView &script,
+                    KeyIter key_first,
+                    KeyIter key_last,
+                    ArgIter arg_first,
+                    ArgIter arg_last);
+
+    bool script_exists(const StringView &sha);
+
+    template <typename Input, typename Output>
+    void script_exists(Input first, Input last, Output output);
 
     void script_flush();
 
