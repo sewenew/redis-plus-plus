@@ -25,6 +25,35 @@ namespace sw {
 
 namespace redis {
 
+namespace detail {
+
+template <typename Output>
+long long parse_scan_reply(redisReply &reply, Output output) {
+    if (reply.elements != 2 || reply.element == nullptr) {
+        throw RException("Invalid scan reply");
+    }
+
+    auto *cursor_reply = reply.element[0];
+    auto *data_reply = reply.element[1];
+    if (cursor_reply == nullptr || data_reply == nullptr) {
+        throw RException("Invalid cursor reply or data reply.");
+    }
+
+    auto cursor_str = reply::parse<std::string>(*cursor_reply);
+    auto new_cursor = 0;
+    try {
+        new_cursor = std::stoll(cursor_str);
+    } catch (const std::exception &e) {
+        throw RException("Invalid cursor reply: " + cursor_str);
+    }
+
+    reply::to_array(*data_reply, output);
+
+    return new_cursor;
+}
+
+}
+
 template <typename Cmd, typename ...Args>
 ReplyUPtr Redis::command(Cmd cmd, Args &&...args) {
     auto connection = _pool.fetch();
@@ -86,6 +115,36 @@ inline void Redis::restore(const StringView &key,
                             const StringView &val,
                             bool replace) {
     return restore(key, ttl.count(), val, replace);
+}
+
+template <typename Output>
+long long Redis::scan(long long cursor,
+                    const StringView &pattern,
+                    long long count,
+                    Output output) {
+    auto reply = command(cmd::scan, cursor, pattern, count);
+
+    return detail::parse_scan_reply(*reply, output);
+}
+
+template <typename Output>
+inline long long Redis::scan(long long cursor,
+                                const StringView &pattern,
+                                Output output) {
+    return scan(cursor, pattern, 10, output);
+}
+
+template <typename Output>
+inline long long Redis::scan(long long cursor,
+                                long long count,
+                                Output output) {
+    return scan(cursor, "*", count, output);
+}
+
+template <typename Output>
+inline long long Redis::scan(long long cursor,
+                                Output output) {
+    return scan(cursor, "*", 10, output);
 }
 
 template <typename Input>
@@ -242,6 +301,40 @@ inline void Redis::hmset(const StringView &key, Iter first, Iter last) {
     reply::expect_ok_status(*reply);
 }
 
+template <typename Output>
+long long Redis::hscan(const StringView &key,
+                        long long cursor,
+                        const StringView &pattern,
+                        long long count,
+                        Output output) {
+    auto reply = command(cmd::hscan, key, cursor, pattern, count);
+
+    return detail::parse_scan_reply(*reply, output);
+}
+
+template <typename Output>
+inline long long Redis::hscan(const StringView &key,
+                                long long cursor,
+                                const StringView &pattern,
+                                Output output) {
+    return hscan(key, cursor, pattern, 10, output);
+}
+
+template <typename Output>
+inline long long Redis::hscan(const StringView &key,
+                                long long cursor,
+                                long long count,
+                                Output output) {
+    return hscan(key, cursor, "*", count, output);
+}
+
+template <typename Output>
+inline long long Redis::hscan(const StringView &key,
+                                long long cursor,
+                                Output output) {
+    return hscan(key, cursor, "*", 10, output);
+}
+
 template <typename Iter>
 inline void Redis::hvals(const StringView &key, Iter output) {
     auto reply = command(cmd::hvals, key);
@@ -316,6 +409,40 @@ long long Redis::srem(const StringView &key, Iter first, Iter last) {
     auto reply = command(cmd::srem_range<Iter>, key, first, last);
 
     return reply::parse<long long>(*reply);
+}
+
+template <typename Output>
+long long Redis::sscan(const StringView &key,
+                        long long cursor,
+                        const StringView &pattern,
+                        long long count,
+                        Output output) {
+    auto reply = command(cmd::sscan, key, cursor, pattern, count);
+
+    return detail::parse_scan_reply(*reply, output);
+}
+
+template <typename Output>
+inline long long Redis::sscan(const StringView &key,
+                                long long cursor,
+                                const StringView &pattern,
+                                Output output) {
+    return sscan(key, cursor, pattern, 10, output);
+}
+
+template <typename Output>
+inline long long Redis::sscan(const StringView &key,
+                                long long cursor,
+                                long long count,
+                                Output output) {
+    return sscan(key, cursor, "*", count, output);
+}
+
+template <typename Output>
+inline long long Redis::sscan(const StringView &key,
+                                long long cursor,
+                                Output output) {
+    return sscan(key, cursor, "*", 10, output);
 }
 
 template <typename Input, typename Output>
@@ -473,6 +600,40 @@ void Redis::zrevrangebyscore(const StringView &key,
     auto reply = command(cmd::zrevrangebyscore<Interval, Output>, key, interval, opts);
 
     reply::to_score_array(*reply, output);
+}
+
+template <typename Output>
+long long Redis::zscan(const StringView &key,
+                        long long cursor,
+                        const StringView &pattern,
+                        long long count,
+                        Output output) {
+    auto reply = command(cmd::zscan, key, cursor, pattern, count);
+
+    return detail::parse_scan_reply(*reply, output);
+}
+
+template <typename Output>
+inline long long Redis::zscan(const StringView &key,
+                                long long cursor,
+                                const StringView &pattern,
+                                Output output) {
+    return zscan(key, cursor, pattern, 10, output);
+}
+
+template <typename Output>
+inline long long Redis::zscan(const StringView &key,
+                                long long cursor,
+                                long long count,
+                                Output output) {
+    return zscan(key, cursor, "*", count, output);
+}
+
+template <typename Output>
+inline long long Redis::zscan(const StringView &key,
+                                long long cursor,
+                                Output output) {
+    return zscan(key, cursor, "*", 10, output);
 }
 
 template <typename Input>

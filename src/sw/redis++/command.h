@@ -212,6 +212,16 @@ void restore(Connection &connection,
                 const StringView &val,
                 bool replace);
 
+inline void scan(Connection &connection,
+                    long long cursor,
+                    const StringView &pattern,
+                    long long count) {
+    connection.send("SCAN %lld MATCH %b COUNT %lld",
+                    cursor,
+                    pattern.data(), pattern.size(),
+                    count);
+}
+
 inline void touch(Connection &connection, const StringView &key) {
     connection.send("TOUCH %b", key.data(), key.size());
 }
@@ -660,6 +670,18 @@ inline void hmset(Connection &connection,
     connection.send(args);
 }
 
+inline void hscan(Connection &connection,
+                    const StringView &key,
+                    long long cursor,
+                    const StringView &pattern,
+                    long long count) {
+    connection.send("HSCAN %b %lld MATCH %b COUNT %lld",
+                    key.data(), key.size(),
+                    cursor,
+                    pattern.data(), pattern.size(),
+                    count);
+}
+
 inline void hset(Connection &connection,
                     const StringView &key,
                     const StringView &field,
@@ -816,6 +838,18 @@ inline void srem_range(Connection &connection,
     args << "SREM" << key << std::make_pair(first, last);
 
     connection.send(args);
+}
+
+inline void sscan(Connection &connection,
+                    const StringView &key,
+                    long long cursor,
+                    const StringView &pattern,
+                    long long count) {
+    connection.send("SSCAN %b %lld MATCH %b COUNT %lld",
+                    key.data(), key.size(),
+                    cursor,
+                    pattern.data(), pattern.size(),
+                    count);
 }
 
 template <typename Input>
@@ -1027,6 +1061,18 @@ inline void zrevrank(Connection &connection,
     connection.send("ZREVRANK %b %b",
                     key.data(), key.size(),
                     member.data(), member.size());
+}
+
+inline void zscan(Connection &connection,
+                    const StringView &key,
+                    long long cursor,
+                    const StringView &pattern,
+                    long long count) {
+    connection.send("ZSCAN %b %lld MATCH %b COUNT %lld",
+                    key.data(), key.size(),
+                    cursor,
+                    pattern.data(), pattern.size(),
+                    count);
 }
 
 inline void zscore(Connection &connection,

@@ -137,6 +137,26 @@ public:
 
     // TODO: sort
 
+    template <typename Output>
+    long long scan(long long cursor,
+                    const StringView &pattern,
+                    long long count,
+                    Output output);
+
+    template <typename Output>
+    long long scan(long long cursor,
+                    Output output);
+
+    template <typename Output>
+    long long scan(long long cursor,
+                    const StringView &pattern,
+                    Output output);
+
+    template <typename Output>
+    long long scan(long long cursor,
+                    long long count,
+                    Output output);
+
     long long touch(const StringView &key);
 
     template <typename Input>
@@ -318,6 +338,30 @@ public:
     template <typename Iter>
     void hmset(const StringView &key, Iter first, Iter last);
 
+    template <typename Output>
+    long long hscan(const StringView &key,
+                    long long cursor,
+                    const StringView &pattern,
+                    long long count,
+                    Output output);
+
+    template <typename Output>
+    long long hscan(const StringView &key,
+                    long long cursor,
+                    const StringView &pattern,
+                    Output output);
+
+    template <typename Output>
+    long long hscan(const StringView &key,
+                    long long cursor,
+                    long long count,
+                    Output output);
+
+    template <typename Output>
+    long long hscan(const StringView &key,
+                    long long cursor,
+                    Output output);
+
     bool hset(const StringView &key, const StringView &field, const StringView &val);
 
     bool hsetnx(const StringView &key, const StringView &field, const StringView &val);
@@ -375,6 +419,30 @@ public:
 
     template <typename Iter>
     long long srem(const StringView &key, Iter first, Iter last);
+
+    template <typename Output>
+    long long sscan(const StringView &key,
+                    long long cursor,
+                    const StringView &pattern,
+                    long long count,
+                    Output output);
+
+    template <typename Output>
+    long long sscan(const StringView &key,
+                    long long cursor,
+                    const StringView &pattern,
+                    Output output);
+
+    template <typename Output>
+    long long sscan(const StringView &key,
+                    long long cursor,
+                    long long count,
+                    Output output);
+
+    template <typename Output>
+    long long sscan(const StringView &key,
+                    long long cursor,
+                    Output output);
 
     template <typename Input, typename Output>
     void sunion(Input first, Input last, Output output);
@@ -472,6 +540,30 @@ public:
                             Output output);
 
     OptionalLongLong zrevrank(const StringView &key, const StringView &member);
+
+    template <typename Output>
+    long long zscan(const StringView &key,
+                    long long cursor,
+                    const StringView &pattern,
+                    long long count,
+                    Output output);
+
+    template <typename Output>
+    long long zscan(const StringView &key,
+                    long long cursor,
+                    const StringView &pattern,
+                    Output output);
+
+    template <typename Output>
+    long long zscan(const StringView &key,
+                    long long cursor,
+                    long long count,
+                    Output output);
+
+    template <typename Output>
+    long long zscan(const StringView &key,
+                    long long cursor,
+                    Output output);
 
     OptionalDouble zscore(const StringView &key, const StringView &member);
 
