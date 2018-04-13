@@ -103,8 +103,6 @@ public:
     template <typename Output>
     void keys(const StringView &pattern, Output output);
 
-    // TODO: migrate
-
     bool move(const StringView &key, long long db);
 
     bool persist(const StringView &key);
@@ -564,22 +562,16 @@ public:
 
     // SCRIPTING commands.
 
-    // TODO:
-    // 1. There might be no key or no argument.
-    // 2. The result might be an array.
-    template <typename Result, typename KeyIter, typename ArgIter>
+    // TODO: The result might be an array.
+    template <typename Result>
     Result eval(const StringView &script,
-                KeyIter key_first,
-                KeyIter key_last,
-                ArgIter arg_first,
-                ArgIter arg_last);
+                std::initializer_list<StringView> keys,
+                std::initializer_list<StringView> args);
 
-    template <typename Result, typename KeyIter, typename ArgIter>
+    template <typename Result>
     Result evalsha(const StringView &script,
-                    KeyIter key_first,
-                    KeyIter key_last,
-                    ArgIter arg_first,
-                    ArgIter arg_last);
+                    std::initializer_list<StringView> keys,
+                    std::initializer_list<StringView> args);
 
     bool script_exists(const StringView &sha);
 

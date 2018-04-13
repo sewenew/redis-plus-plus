@@ -567,34 +567,20 @@ void Redis::georadiusbymember(const StringView &key,
 
 // SCRIPTING commands.
 
-template <typename Result, typename KeyIter, typename ArgIter>
+template <typename Result>
 Result Redis::eval(const StringView &script,
-                    KeyIter key_first,
-                    KeyIter key_last,
-                    ArgIter arg_first,
-                    ArgIter arg_last) {
-    auto reply = command(cmd::eval<KeyIter, ArgIter>,
-                            script,
-                            key_first,
-                            key_last,
-                            arg_first,
-                            arg_last);
+                    std::initializer_list<StringView> keys,
+                    std::initializer_list<StringView> args) {
+    auto reply = command(cmd::eval, script, keys, args);
 
     return reply::parse<Result>(*reply);
 }
 
-template <typename Result, typename KeyIter, typename ArgIter>
+template <typename Result>
 Result Redis::evalsha(const StringView &script,
-                        KeyIter key_first,
-                        KeyIter key_last,
-                        ArgIter arg_first,
-                        ArgIter arg_last) {
-    auto reply = command(cmd::evalsha<KeyIter, ArgIter>,
-                            script,
-                            key_first,
-                            key_last,
-                            arg_first,
-                            arg_last);
+                        std::initializer_list<StringView> keys,
+                        std::initializer_list<StringView> args) {
+    auto reply = command(cmd::evalsha, script, keys, args);
 
     return reply::parse<Result>(*reply);
 }

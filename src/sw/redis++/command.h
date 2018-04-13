@@ -1197,40 +1197,30 @@ void georadiusbymember_store(Connection &connection,
 
 // SCRIPTING commands.
 
-template <typename KeyIter, typename ArgIter>
 inline void eval(Connection &connection,
                     const StringView &script,
-                    KeyIter key_first,
-                    KeyIter key_last,
-                    ArgIter arg_first,
-                    ArgIter arg_last) {
-    Connection::CmdArgs args;
+                    std::initializer_list<StringView> keys,
+                    std::initializer_list<StringView> args) {
+    Connection::CmdArgs cmd_args;
 
-    auto key_num = std::distance(key_first, key_last);
+    cmd_args << "EVAL" << script << keys.size()
+            << std::make_pair(keys.begin(), keys.end())
+            << std::make_pair(args.begin(), args.end());
 
-    args << "EVAL" << script << key_num
-            << std::make_pair(key_first, key_last)
-            << std::make_pair(arg_first, arg_last);
-
-    connection.send(args);
+    connection.send(cmd_args);
 }
 
-template <typename KeyIter, typename ArgIter>
 inline void evalsha(Connection &connection,
                     const StringView &script,
-                    KeyIter key_first,
-                    KeyIter key_last,
-                    ArgIter arg_first,
-                    ArgIter arg_last) {
-    Connection::CmdArgs args;
+                    std::initializer_list<StringView> keys,
+                    std::initializer_list<StringView> args) {
+    Connection::CmdArgs cmd_args;
 
-    auto key_num = std::distance(key_first, key_last);
+    cmd_args << "EVALSHA" << script << keys.size()
+            << std::make_pair(keys.begin(), keys.end())
+            << std::make_pair(args.begin(), args.end());
 
-    args << "EVALSHA" << script << key_num
-            << std::make_pair(key_first, key_last)
-            << std::make_pair(arg_first, arg_last);
-
-    connection.send(args);
+    connection.send(cmd_args);
 }
 
 inline void script_exists(Connection &connection, const StringView &sha) {
