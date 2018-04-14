@@ -783,6 +783,14 @@ std::string Redis::script_load(const StringView &script) {
     return reply::parse<std::string>(*reply);
 }
 
+// PUBSUB commands.
+
+long long Redis::publish(const StringView &channel, const StringView &message) {
+    auto reply = command(cmd::publish, channel, message);
+
+    return reply::parse<long long>(*reply);
+}
+
 }
 
 }

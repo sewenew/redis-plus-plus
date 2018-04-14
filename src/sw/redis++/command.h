@@ -1293,6 +1293,72 @@ inline void script_load(Connection &connection, const StringView &script) {
     connection.send("SCRIPT LOAD %b", script.data(), script.size());
 }
 
+// PUBSUB commands.
+
+inline void psubscribe(Connection &connection, const StringView &pattern) {
+    connection.send("PSUBSCRIBE %b", pattern.data(), pattern.size());
+}
+
+template <typename Input>
+inline void psubscribe_range(Connection &connection, Input first, Input last) {
+    Connection::CmdArgs args;
+    args << "PSUBSCRIBE" << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+inline void publish(Connection &connection,
+                    const StringView &channel,
+                    const StringView &message) {
+    connection.send("PUBLISH %b %b",
+                    channel.data(), channel.size(),
+                    message.data(), message.size());
+}
+
+inline void punsubscribe(Connection &connection) {
+    connection.send("PUNSUBSCRIBE");
+}
+
+inline void punsubscribe(Connection &connection, const StringView &pattern) {
+    connection.send("PUNSUBSCRIBE %b", pattern.data(), pattern.size());
+}
+
+template <typename Input>
+inline void punsubscribe_range(Connection &connection, Input first, Input last) {
+    Connection::CmdArgs args;
+    args << "PUNSUBSCRIBE" << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+inline void subscribe(Connection &connection, const StringView &channel) {
+    connection.send("SUBSCRIBE %b", channel.data(), channel.size());
+}
+
+template <typename Input>
+inline void subscribe(Connection &connection, Input first, Input last) {
+    Connection::CmdArgs args;
+    args << "SUBSCRIBE" << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+inline void unsubscribe(Connection &connection) {
+    connection.send("UNSUBSCRIBE");
+}
+
+inline void unsubscribe(Connection &connection, const StringView &channel) {
+    connection.send("UNSUBSCRIBE %b", channel.data(), channel.size());
+}
+
+template <typename Input>
+inline void unsubscribe_range(Connection &connection, Input first, Input last) {
+    Connection::CmdArgs args;
+    args << "UNSUBSCRIBE" << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
 namespace detail {
 
 void set_update_type(Connection::CmdArgs &args, UpdateType type);

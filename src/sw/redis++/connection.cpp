@@ -175,6 +175,7 @@ redisContext* Connector::_connect_tcp() const {
                     _to_timeval(_opts.connect_timeout));
     } else {
         return redisConnect(_opts.host.c_str(), _opts.port);
+        //return redisConnectNonBlock(_opts.host.c_str(), _opts.port);
     }
 }
 
