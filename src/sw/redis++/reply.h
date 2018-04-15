@@ -23,6 +23,7 @@
 #include <functional>
 #include <hiredis/hiredis.h>
 #include "exceptions.h"
+#include "errors.h"
 #include "utils.h"
 
 namespace sw {

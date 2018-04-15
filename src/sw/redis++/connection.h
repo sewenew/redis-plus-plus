@@ -27,6 +27,7 @@
 #include <chrono>
 #include <hiredis/hiredis.h>
 #include "exceptions.h"
+#include "errors.h"
 #include "reply.h"
 #include "utils.h"
 

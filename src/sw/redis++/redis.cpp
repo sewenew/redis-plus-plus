@@ -19,6 +19,7 @@
 #include <hiredis/hiredis.h>
 #include "command.h"
 #include "exceptions.h"
+#include "errors.h"
 #include "pipeline.h"
 
 namespace sw {

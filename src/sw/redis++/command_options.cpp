@@ -16,6 +16,7 @@
 
 #include "command_options.h"
 #include "exceptions.h"
+#include "errors.h"
 
 namespace {
 
