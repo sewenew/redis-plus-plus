@@ -16,6 +16,7 @@
 
 #include "errors.h"
 #include <cassert>
+#include <cerrno>
 
 namespace sw {
 
@@ -32,7 +33,11 @@ void throw_error(const redisContext &context, const std::string &err_info) {
 
     switch (err_code) {
     case REDIS_ERR_IO:
-        throw IoError(err_msg);
+        if (errno == EAGAIN) {
+            throw TimeoutError(err_msg);
+        } else {
+            throw IoError(err_msg);
+        }
         break;
 
     case REDIS_ERR_EOF:

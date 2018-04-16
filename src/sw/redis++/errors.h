@@ -58,6 +58,19 @@ public:
     virtual ~IoError() = default;
 };
 
+class TimeoutError : public IoError {
+public:
+    explicit TimeoutError(const std::string &msg) : IoError(msg) {}
+
+    TimeoutError(const TimeoutError &) = default;
+    TimeoutError& operator=(const TimeoutError &) = default;
+
+    TimeoutError(TimeoutError &&) = default;
+    TimeoutError& operator=(TimeoutError &&) = default;
+
+    virtual ~TimeoutError() = default;
+};
+
 class ClosedError : public Error {
 public:
     explicit ClosedError(const std::string &msg) : Error(msg) {}
