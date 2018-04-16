@@ -26,7 +26,6 @@
 #include <sstream>
 #include <chrono>
 #include <hiredis/hiredis.h>
-#include "exceptions.h"
 #include "errors.h"
 #include "reply.h"
 #include "utils.h"
@@ -55,8 +54,6 @@ public:
     }
 
     void reconnect();
-
-    std::string error_message() const;
 
     redisContext* context() {
         _last_active = std::chrono::steady_clock::now();
@@ -208,7 +205,7 @@ inline void Connection::send(const char *format, Args &&...args) {
     if (redisAppendCommand(_context.get(),
                 format,
                 std::forward<Args>(args)...) != REDIS_OK) {
-        throw RException("Failed to send command, " + error_message());
+        throw_error(*_context, "Failed to send command");
     }
 
     assert(!broken());

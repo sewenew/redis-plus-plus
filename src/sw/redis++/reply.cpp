@@ -22,25 +22,13 @@ namespace redis {
 
 namespace reply {
 
-std::string to_error(redisReply &reply) {
-    if (!reply::is_error(reply)) {
-        throw RException("Expect ERROR reply.");
-    }
-
-    if (reply.str == nullptr) {
-        throw RException("A null error reply");
-    }
-
-    return {reply.str, reply.len};
-}
-
 std::string to_status(redisReply &reply) {
     if (!reply::is_status(reply)) {
-        throw RException("Expect STATUS reply.");
+        throw ProtoError("Expect STATUS reply");
     }
 
     if (reply.str == nullptr) {
-        throw RException("A null status reply");
+        throw ProtoError("A null status reply");
     }
 
     return {reply.str, reply.len};
@@ -48,11 +36,11 @@ std::string to_status(redisReply &reply) {
 
 std::string parse(ParseTag<std::string>, redisReply &reply) {
     if (!reply::is_string(reply)) {
-        throw RException("Expect STRING reply.");
+        throw ProtoError("Expect STRING reply");
     }
 
     if (reply.str == nullptr) {
-        throw RException("A null string reply");
+        throw ProtoError("A null string reply");
     }
 
     return {reply.str, reply.len};
@@ -60,7 +48,7 @@ std::string parse(ParseTag<std::string>, redisReply &reply) {
 
 long long parse(ParseTag<long long>, redisReply &reply) {
     if (!reply::is_integer(reply)) {
-        throw RException("Expect INTEGER reply.");
+        throw ProtoError("Expect INTEGER reply");
     }
 
     return reply.integer;
@@ -78,24 +66,24 @@ bool parse(ParseTag<bool>, redisReply &reply) {
     } else if (ret == 0) {
         return false;
     } else {
-        throw RException("Invalid bool reply: " + std::to_string(ret));
+        throw ProtoError("Invalid bool reply: " + std::to_string(ret));
     }
 }
 
 void expect_ok_status(redisReply &reply) {
     if (!reply::is_status(reply)) {
-        throw RException("Expect STATUS reply.");
+        throw ProtoError("Expect STATUS reply");
     }
 
     if (reply.str == nullptr) {
-        throw RException("A null status reply");
+        throw ProtoError("A null status reply");
     }
 
     static const std::string OK = "OK";
 
     if (reply.len != OK.size()
             || OK.compare(0, OK.size(), reply.str, reply.len) != 0) {
-        throw RException("NOT ok status reply: " + reply::to_status(reply));
+        throw ProtoError("NOT ok status reply: " + reply::to_status(reply));
     }
 }
 

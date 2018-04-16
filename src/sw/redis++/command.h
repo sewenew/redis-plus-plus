@@ -1639,7 +1639,7 @@ void bitop(Connection &connection,
         break;
 
     default:
-        throw RException("Unknown bit operations");
+        throw Error("Unknown bit operations");
     }
 
     args << destination << std::make_pair(first, last);

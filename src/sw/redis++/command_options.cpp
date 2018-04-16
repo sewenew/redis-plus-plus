@@ -15,7 +15,6 @@
  *************************************************************************/
 
 #include "command_options.h"
-#include "exceptions.h"
 #include "errors.h"
 
 namespace {
@@ -66,7 +65,7 @@ BoundedInterval<double>::BoundedInterval(double min, double max, BoundType type)
         break;
 
     default:
-        throw RException("Unknow BoundType");
+        throw Error("Unknow BoundType");
     }
 }
 
@@ -82,7 +81,7 @@ LeftBoundedInterval<double>::LeftBoundedInterval(double min, BoundType type) :
         break;
 
     default:
-        throw RException("Bound type can only be OPEN or RIGHT_OPEN");
+        throw Error("Bound type can only be OPEN or RIGHT_OPEN");
     }
 }
 
@@ -102,7 +101,7 @@ RightBoundedInterval<double>::RightBoundedInterval(double max, BoundType type) :
         break;
 
     default:
-        throw RException("Bound type can only be OPEN or LEFT_OPEN");
+        throw Error("Bound type can only be OPEN or LEFT_OPEN");
     }
 }
 
@@ -139,7 +138,7 @@ BoundedInterval<std::string>::BoundedInterval(const std::string &min,
         break;
 
     default:
-        throw RException("Unknow BoundType");
+        throw Error("Unknow BoundType");
     }
 }
 
@@ -154,7 +153,7 @@ LeftBoundedInterval<std::string>::LeftBoundedInterval(const std::string &min, Bo
         break;
 
     default:
-        throw RException("Bound type can only be OPEN or RIGHT_OPEN");
+        throw Error("Bound type can only be OPEN or RIGHT_OPEN");
     }
 }
 
@@ -173,7 +172,7 @@ RightBoundedInterval<std::string>::RightBoundedInterval(const std::string &max, 
         break;
 
     default:
-        throw RException("Bound type can only be OPEN or LEFT_OPEN");
+        throw Error("Bound type can only be OPEN or LEFT_OPEN");
     }
 }
 

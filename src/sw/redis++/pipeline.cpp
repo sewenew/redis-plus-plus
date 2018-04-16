@@ -47,7 +47,7 @@ void Pipeline::transport() {
             // TODO: what if _connection.broken() is true?
             auto reply = _connection.recv();
             reply_callback(*reply);
-        } catch (const RException &e) {
+        } catch (const Error &e) {
             error_callback(e);
         }
     }

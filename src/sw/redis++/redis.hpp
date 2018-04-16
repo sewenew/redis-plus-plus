@@ -30,13 +30,13 @@ namespace detail {
 template <typename Output>
 long long parse_scan_reply(redisReply &reply, Output output) {
     if (reply.elements != 2 || reply.element == nullptr) {
-        throw RException("Invalid scan reply");
+        throw ProtoError("Invalid scan reply");
     }
 
     auto *cursor_reply = reply.element[0];
     auto *data_reply = reply.element[1];
     if (cursor_reply == nullptr || data_reply == nullptr) {
-        throw RException("Invalid cursor reply or data reply.");
+        throw ProtoError("Invalid cursor reply or data reply");
     }
 
     auto cursor_str = reply::parse<std::string>(*cursor_reply);
@@ -44,7 +44,7 @@ long long parse_scan_reply(redisReply &reply, Output output) {
     try {
         new_cursor = std::stoll(cursor_str);
     } catch (const std::exception &e) {
-        throw RException("Invalid cursor reply: " + cursor_str);
+        throw ProtoError("Invalid cursor reply: " + cursor_str);
     }
 
     reply::to_array(*data_reply, output);

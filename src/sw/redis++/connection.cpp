@@ -28,7 +28,7 @@ Connection::Connection(redisContext *context) :
         _context(context),
         _last_active(std::chrono::steady_clock::now()) {
     if (!_context) {
-        throw RException("CANNOT create connection with null context.");
+        throw Error("CANNOT create connection with null context");
     }
 }
 
@@ -36,26 +36,8 @@ void Connection::reconnect() {
     assert(_context);
 
     if (redisReconnect(_context.get()) != REDIS_OK) {
-        throw RException("Failed to reconnect to Redis, " + error_message());
+        throw_error(*_context, "Failed to reconnect to Redis");
     }
-}
-
-std::string Connection::error_message() const {
-    assert(_context);
-
-    std::ostringstream oss;
-    oss << "Server: " << _server_info();
-
-    oss << ", error code: " << _context->err
-        << ", error message: " << _context->errstr;
-
-    if (_context->err == REDIS_ERR_IO) {
-        auto err = errno;
-        oss << ", IO error, errno: " << err
-            << ", strerror: " << std::strerror(err);
-    }
-
-    return oss.str();
 }
 
 void Connection::send(int argc, const char **argv, const std::size_t *argv_len) {
@@ -65,7 +47,7 @@ void Connection::send(int argc, const char **argv, const std::size_t *argv_len) 
                                 argc,
                                 argv,
                                 argv_len) != REDIS_OK) {
-        throw RException("Failed to send command, " + error_message());
+        throw_error(*_context, "Failed to send command");
     }
 
     assert(!broken());
@@ -85,7 +67,7 @@ void Connection::send(CmdArgs &args) {
                                 args.size(),
                                 args.argv(),
                                 args.argv_len()) != REDIS_OK) {
-        throw RException("Failed to send command, " + error_message());
+        throw_error(*_context, "Failed to send command");
     }
 
     assert(!broken());
@@ -104,7 +86,7 @@ std::string Connection::_server_info() const {
         return _context->unix_sock.path;
 
     default:
-        throw RException("Unknown connection type: "
+        throw Error("Unknown connection type: "
                 + std::to_string(connection_type));
     }
 }
@@ -122,9 +104,13 @@ Connection Connector::connect() const {
 }
 
 ReplyUPtr Connection::recv() {
+    auto *ctx = context();
+
+    assert(ctx != nullptr);
+
     void *r = nullptr;
-    if (redisGetReply(context(), &r) != REDIS_OK) {
-        throw RException("Failed to get reply, " + error_message());
+    if (redisGetReply(ctx, &r) != REDIS_OK) {
+        throw_error(*ctx, "Failed to get reply");
     }
 
     assert(!broken());
@@ -132,8 +118,7 @@ ReplyUPtr Connection::recv() {
     auto reply = ReplyUPtr(static_cast<redisReply*>(r));
 
     if (reply::is_error(*reply)) {
-        throw RException("Get error reply, "
-                + reply::to_error(*reply));
+        throw_error(*reply);
     }
 
     return reply;
@@ -152,17 +137,16 @@ Connection Connector::_connect() const {
 
     default:
         // Never goes here.
-        throw RException("Unkonw connection type.");
+        throw Error("Unkonw connection type");
     }
 
     if (context == nullptr) {
-        throw RException("Failed to allocate memory for connection.");
+        throw Error("Failed to allocate memory for connection.");
     }
 
     Connection connection(context);
     if (connection.broken()) {
-        throw RException("Failed to connect to Redis, "
-                + connection.error_message());
+        throw_error(*context, "Failed to connect to Redis");
     }
 
     return connection;
@@ -194,13 +178,12 @@ void Connector::_set_socket_timeout(Connection &connection) const {
         return;
     }
 
-    auto context = connection.context();
+    auto *context = connection.context();
 
     assert(context != nullptr);
 
     if (redisSetTimeout(context, _to_timeval(_opts.socket_timeout)) != REDIS_OK) {
-        throw RException("Failed to set socket timeout, "
-                + connection.error_message());
+        throw_error(*context, "Failed to set socket timeout");
     }
 }
 
@@ -209,13 +192,12 @@ void Connector::_enable_keep_alive(Connection &connection) const {
         return;
     }
 
-    auto context = connection.context();
+    auto *context = connection.context();
 
     assert(context != nullptr);
 
     if (redisEnableKeepAlive(context) != REDIS_OK) {
-        throw RException("Failed to enable keep alive option, "
-                + connection.error_message());
+        throw_error(*context, "Failed to enable keep alive option");
     }
 }
 

@@ -163,7 +163,7 @@ void set_update_type(Connection::CmdArgs &args, UpdateType type) {
         break;
 
     default:
-        throw RException("Unknown update type.");
+        throw Error("Unknown update type");
     }
 }
 
@@ -184,7 +184,7 @@ void set_aggregation_type(Connection::CmdArgs &args, Aggregation aggr) {
         break;
 
     default:
-        throw RException("Unknown aggregation type.");
+        throw Error("Unknown aggregation type");
     }
 }
 
@@ -207,7 +207,7 @@ void set_geo_unit(Connection::CmdArgs &args, GeoUnit unit) {
         break;
 
     default:
-        throw RException("Unknown geo unit type");
+        throw Error("Unknown geo unit type");
         break;
     }
 }

@@ -18,7 +18,6 @@
 #include "redis.hpp"
 #include <hiredis/hiredis.h>
 #include "command.h"
-#include "exceptions.h"
 #include "errors.h"
 #include "pipeline.h"
 
@@ -338,7 +337,7 @@ void Redis::psetex(const StringView &key,
                         long long ttl,
                         const StringView &val) {
     if (ttl <= 0) {
-        throw RException("TTL must be positive.");
+        throw Error("TTL must be positive.");
     }
 
     auto reply = command(cmd::psetex, key, ttl, val);
@@ -374,7 +373,7 @@ void Redis::setex(const StringView &key,
                     long long ttl,
                     const StringView &val) {
     if (ttl <= 0) {
-        throw RException("TTL must be positive.");
+        throw Error("TTL must be positive.");
     }
 
     auto reply = command(cmd::setex, key, ttl, val);
@@ -688,12 +687,12 @@ auto Redis::geopos(const StringView &key, const StringView &member) ->
     auto reply = command(cmd::geopos, key, member);
 
     if (reply->elements != 1 || reply->element == nullptr) {
-        throw RException("Should return one and only one array element");
+        throw ProtoError("Should return one and only one array element");
     }
 
     auto *sub_reply = reply->element[0];
     if (sub_reply == nullptr) {
-        throw RException("Null reply.");
+        throw ProtoError("Null reply");
     }
 
     return reply::parse<Optional<std::pair<double, double>>>(*sub_reply);
@@ -717,7 +716,7 @@ OptionalLongLong Redis::georadius(const StringView &key,
 
     try {
         return reply::parse<OptionalLongLong>(*reply);
-    } catch (const RException &) {
+    } catch (const Error &) {
         // TODO: if *key* doesn't exist, Redis returns an array reply.
         // That's a strage behavior.
         return {};
@@ -742,7 +741,7 @@ OptionalLongLong Redis::georadiusbymember(const StringView &key,
 
     try {
         return reply::parse<OptionalLongLong>(*reply);
-    } catch (const RException &) {
+    } catch (const Error &) {
         // TODO: if *key* doesn't exist, Redis returns an array reply.
         // That's a strage behavior.
         return {};
@@ -755,12 +754,12 @@ bool Redis::script_exists(const StringView &sha) {
     auto reply = command(cmd::script_exists, sha);
 
     if (reply->elements != 1 || reply->element == nullptr) {
-        throw RException("Should return one and only one array element");
+        throw ProtoError("Should return one and only one array element");
     }
 
     auto *sub_reply = reply->element[0];
     if (sub_reply == nullptr) {
-        throw RException("Null reply.");
+        throw ProtoError("Null reply");
     }
 
     return reply::parse<bool>(*sub_reply);

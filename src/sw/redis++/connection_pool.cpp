@@ -26,7 +26,7 @@ ConnectionPool::ConnectionPool(const ConnectionPoolOptions &pool_opts,
             _connector(connection_opts),
             _pool_opts(pool_opts) {
     if (_pool_opts.size == 0) {
-        throw RException("CANNOT create an empty pool.");
+        throw Error("CANNOT create an empty pool");
     }
 
     for (std::size_t idx = 0; idx != _pool_opts.size; ++idx) {
@@ -85,7 +85,7 @@ void ConnectionPool::_wait_for_connection(std::unique_lock<std::mutex> &lock) {
         if (!_cv.wait_for(lock,
                     timeout,
                     [this] { return !(this->_pool).empty(); })) {
-            throw RException("Failed to fetch a connection in "
+            throw Error("Failed to fetch a connection in "
                     + std::to_string(timeout.count()) + " milliseconds");
         }
     } else {

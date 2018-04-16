@@ -78,7 +78,7 @@ private:
     Connection _connection;
 
     using ReplyCallback = std::function<void (redisReply &)>;
-    using ReplyErrorCallback = std::function<void (const RException &)>;
+    using ReplyErrorCallback = std::function<void (const Error &)>;
 
     std::queue<std::pair<ReplyCallback, ReplyErrorCallback>> _callbacks;
 };
