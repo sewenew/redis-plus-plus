@@ -30,12 +30,16 @@ namespace redis {
 
 class Pipeline;
 
+class Subscriber;
+
 class Redis {
 public:
     Redis(const ConnectionPoolOptions &pool_opts,
             const ConnectionOptions &connection_opts) : _pool(pool_opts, connection_opts) {}
 
     Pipeline pipeline();
+
+    Subscriber subscriber();
 
     template <typename Cmd, typename ...Args>
     ReplyUPtr command(Cmd cmd, Args &&...args);

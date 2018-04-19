@@ -19,6 +19,7 @@
 
 #include "redis.h"
 #include "redis.hpp"
+#include "subscriber.h"
 #include "pipeline.h"
 #include "p_string.h"
 

@@ -20,6 +20,7 @@
 #include "command.h"
 #include "errors.h"
 #include "pipeline.h"
+#include "subscriber.h"
 
 namespace sw {
 
@@ -35,6 +36,10 @@ Redis::ConnectionPoolGuard::~ConnectionPoolGuard() {
 
 Pipeline Redis::pipeline() {
     return Pipeline(_pool);
+}
+
+Subscriber Redis::subscriber() {
+    return Subscriber(_pool);
 }
 
 // CONNECTION commands.

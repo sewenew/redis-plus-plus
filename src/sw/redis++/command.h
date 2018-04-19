@@ -1336,7 +1336,7 @@ inline void subscribe(Connection &connection, const StringView &channel) {
 }
 
 template <typename Input>
-inline void subscribe(Connection &connection, Input first, Input last) {
+inline void subscribe_range(Connection &connection, Input first, Input last) {
     Connection::CmdArgs args;
     args << "SUBSCRIBE" << std::make_pair(first, last);
 
