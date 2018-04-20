@@ -73,12 +73,37 @@ public:
     template <typename Input>
     void unsubscribe(Input first, Input last);
 
+    template <typename MsgCb,
+                typename SubCb = IgnoreMeta,
+                typename UnsubCb = IgnoreMeta>
+    void psubscribe(const StringView &pattern,
+                    MsgCb msg_callback,
+                    SubCb sub_callback = IgnoreMeta{},
+                    UnsubCb unsub_callback = IgnoreMeta{});
+
+    template <typename Input,
+                typename MsgCb,
+                typename SubCb = IgnoreMeta,
+                typename UnsubCb = IgnoreMeta>
+    void psubscribe(Input first,
+                    Input last,
+                    MsgCb msg_callback,
+                    SubCb sub_callback = IgnoreMeta{},
+                    UnsubCb unsub_callback = IgnoreMeta{});
+
+    void punsubscribe();
+
+    void punsubscribe(const StringView &channel);
+
+    template <typename Input>
+    void punsubscribe(Input first, Input last);
+
     void stop();
 
 private:
     friend class Redis;
 
-    Subscriber(ConnectionPool &pool);
+    explicit Subscriber(ConnectionPool &pool);
 
     enum class MsgType {
         SUBSCRIBE,
@@ -196,7 +221,71 @@ template <typename Input>
 void Subscriber::unsubscribe(Input first, Input last) {
     std::lock_guard<std::mutex> lock(*_mutex);
 
+    for (auto iter = first; iter != last; ++iter) {
+        if (_channel_callbacks.find(*iter) == _channel_callbacks.end()) {
+            throw Error("Try to unsubscribe unsubscribed channel");
+        }
+    }
+
     cmd::unsubscribe_range(_connection, first, last);
+}
+
+template <typename MsgCb, typename SubCb, typename UnsubCb>
+void Subscriber::psubscribe(const StringView &pattern,
+                            MsgCb msg_callback,
+                            SubCb sub_callback,
+                            UnsubCb unsub_callback) {
+    std::lock_guard<std::mutex> lock(*_mutex);
+
+    _lazy_start_subscribe();
+
+    PatternCallbacks callbacks = {msg_callback, sub_callback, unsub_callback};
+    if (!_pattern_callbacks.emplace(pattern, callbacks).second) {
+        throw Error("Channel has already been subscribed");
+    }
+
+    cmd::psubscribe(_connection, pattern);
+}
+
+template <typename Input, typename MsgCb, typename SubCb, typename UnsubCb>
+void Subscriber::psubscribe(Input first,
+                            Input last,
+                            MsgCb msg_callback,
+                            SubCb sub_callback,
+                            UnsubCb unsub_callback) {
+    if (first == last) {
+        return;
+    }
+
+    std::lock_guard<std::mutex> lock(*_mutex);
+
+    _lazy_start_subscribe();
+
+    for (auto iter = first; iter != last; ++iter) {
+        if (_pattern_callbacks.find(*iter) != _pattern_callbacks.end()) {
+            throw Error("Pattern has already been subscribed");
+        }
+    }
+
+    PatternCallbacks callbacks = {msg_callback, sub_callback, unsub_callback};
+    for (auto iter = first; iter != last; ++iter) {
+        _pattern_callbacks.emplace(*first, callbacks);
+    }
+
+    cmd::psubscribe_range(_connection, first, last);
+}
+
+template <typename Input>
+void Subscriber::punsubscribe(Input first, Input last) {
+    std::lock_guard<std::mutex> lock(*_mutex);
+
+    for (auto iter = first; iter != last; ++iter) {
+        if (_pattern_callbacks.find(*iter) == _pattern_callbacks.end()) {
+            throw Error("Try to unsubscribe unsubscribed pattern");
+        }
+    }
+
+    cmd::punsubscribe_range(_connection, first, last);
 }
 
 }

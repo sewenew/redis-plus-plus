@@ -51,13 +51,43 @@ Subscriber::~Subscriber() {
 void Subscriber::unsubscribe() {
     std::lock_guard<std::mutex> lock(*_mutex);
 
+    if (_channel_callbacks.empty()) {
+        throw Error("No channel has been subscribed");
+    }
+
     cmd::unsubscribe(_connection);
 }
 
 void Subscriber::unsubscribe(const StringView &channel) {
     std::lock_guard<std::mutex> lock(*_mutex);
 
+    if (_channel_callbacks.find(std::string(channel.data(), channel.size()))
+            == _channel_callbacks.end()) {
+        throw Error("Channel has NOT been subscribed");
+    }
+
     cmd::unsubscribe(_connection, channel);
+}
+
+void Subscriber::punsubscribe() {
+    std::lock_guard<std::mutex> lock(*_mutex);
+
+    if (_pattern_callbacks.empty()) {
+        throw Error("No pattern has been subscribed");
+    }
+
+    cmd::punsubscribe(_connection);
+}
+
+void Subscriber::punsubscribe(const StringView &pattern) {
+    std::lock_guard<std::mutex> lock(*_mutex);
+
+    if (_pattern_callbacks.find(std::string(pattern.data(), pattern.size()))
+            == _pattern_callbacks.end()) {
+        throw Error("Pattern has NOT been subscribed");
+    }
+
+    cmd::punsubscribe(_connection, pattern);
 }
 
 void Subscriber::stop() {
@@ -86,6 +116,7 @@ Subscriber::MsgType Subscriber::_msg_type(redisReply *reply) const {
 
 void Subscriber::_lazy_start_subscribe() {
     if (!_future.valid()) {
+        *_stop = false;
         _future = std::async(&Subscriber::_consume, this);
     }
 }
@@ -185,7 +216,6 @@ bool Subscriber::_handle_subscribe(redisReply &reply) {
 }
 
 bool Subscriber::_handle_unsubscribe(redisReply &reply) {
-    // TODO: remove callback handler before calling customer callbacks.
     auto meta = _parse_meta_reply(reply);
 
     auto iter = _channel_callbacks.find(meta.first);
@@ -193,7 +223,11 @@ bool Subscriber::_handle_unsubscribe(redisReply &reply) {
         throw Error("Unknown channel");
     }
 
-    return iter->second.unsub_callback(meta.first, meta.second);
+    auto ret = iter->second.unsub_callback(meta.first, meta.second);
+
+    _channel_callbacks.erase(iter);
+
+    return ret;
 }
 
 bool Subscriber::_handle_psubscribe(redisReply &reply) {
@@ -201,7 +235,7 @@ bool Subscriber::_handle_psubscribe(redisReply &reply) {
 
     auto iter = _pattern_callbacks.find(meta.first);
     if (iter == _pattern_callbacks.end()) {
-        throw Error("Unknown channel");
+        throw Error("Unknown pattern");
     }
 
     return iter->second.sub_callback(meta.first, meta.second);
@@ -212,10 +246,14 @@ bool Subscriber::_handle_punsubscribe(redisReply &reply) {
 
     auto iter = _pattern_callbacks.find(meta.first);
     if (iter == _pattern_callbacks.end()) {
-        throw Error("Unknown channel");
+        throw Error("Unknown pattern");
     }
 
-    return iter->second.unsub_callback(meta.first, meta.second);
+    auto ret = iter->second.unsub_callback(meta.first, meta.second);
+
+    _pattern_callbacks.erase(iter);
+
+    return ret;
 }
 
 void Subscriber::_consume() {
