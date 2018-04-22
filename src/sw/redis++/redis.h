@@ -684,10 +684,6 @@ public:
 
     long long publish(const StringView &channel, const StringView &message);
 
-    Connection connection() {
-        return _pool.fetch();
-    }
-
 private:
     class ConnectionPoolGuard {
     public:
