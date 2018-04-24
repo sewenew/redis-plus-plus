@@ -16,7 +16,6 @@
 
 #include "connection.h"
 #include <cassert>
-#include <iostream>
 #include "reply.h"
 #include "command.h"
 

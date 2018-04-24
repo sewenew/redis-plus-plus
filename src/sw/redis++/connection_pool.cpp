@@ -16,6 +16,7 @@
 
 #include "connection_pool.h"
 #include <cassert>
+#include "errors.h"
 
 namespace sw {
 
@@ -49,7 +50,7 @@ Connection ConnectionPool::fetch() {
     if (_need_reconnect(connection)) {
         try {
             connection.reconnect();
-        } catch (const std::exception &e) {
+        } catch (const Error &e) {
             // Failed to reconnect, return it to the pool.
             release(std::move(connection));
             throw;

@@ -20,6 +20,7 @@
 #include "command.h"
 #include "reply.h"
 #include "utils.h"
+#include "errors.h"
 
 namespace sw {
 
@@ -57,6 +58,8 @@ long long parse_scan_reply(redisReply &reply, Output output) {
 template <typename Cmd, typename ...Args>
 ReplyUPtr Redis::command(Cmd cmd, Args &&...args) {
     auto connection = _pool.fetch();
+
+    assert(!connection.broken());
 
     ConnectionPoolGuard guard(_pool, connection);
 
