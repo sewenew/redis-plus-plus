@@ -31,14 +31,6 @@ Connection::Connection(redisContext *context) :
     }
 }
 
-void Connection::reconnect() {
-    assert(_context);
-
-    if (redisReconnect(_context.get()) != REDIS_OK) {
-        throw_error(*_context, "Failed to reconnect to Redis");
-    }
-}
-
 void Connection::send(int argc, const char **argv, const std::size_t *argv_len) {
     assert(_context);
 

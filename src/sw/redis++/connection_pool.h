@@ -47,6 +47,8 @@ public:
 
     void release(Connection connection);
 
+    void reconnect(Connection &connection);
+
 private:
     // NOT thread-safe
     Connection _fetch();

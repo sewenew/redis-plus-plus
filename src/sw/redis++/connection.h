@@ -48,12 +48,10 @@ public:
 
     // Check if the connection is broken. Client needs to do this check
     // before sending some command to the connection. If it's broken,
-    // client needs to call *reconnect()*.
+    // client needs to reconnect it.
     bool broken() const noexcept {
         return _context->err != REDIS_OK;
     }
-
-    void reconnect();
 
     redisContext* context() {
         _last_active = std::chrono::steady_clock::now();
