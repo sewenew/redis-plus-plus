@@ -18,6 +18,7 @@
 #define SEWENEW_REDISPLUSPLUS_SUBSCRIBER_H
 
 #include <unordered_map>
+#include <chrono>
 #include <string>
 #include <functional>
 #include <atomic>
@@ -98,7 +99,16 @@ public:
     template <typename Input>
     void punsubscribe(Input first, Input last);
 
+    // Stop the subscribing thread.
     void stop();
+
+    // Wait the subscribing thread exits, i.e. something bad happens,
+    // and throws exception.
+    void wait();
+
+    // Wait the subscribing thread exits or timeout.
+    // Return false if the timeout expired, otherwise, true.
+    bool wait_for(const std::chrono::steady_clock::duration &timeout);
 
 private:
     friend class Redis;
@@ -115,6 +125,8 @@ private:
     };
 
     MsgType _msg_type(redisReply *reply) const;
+
+    bool _wait_for(const std::chrono::steady_clock::duration &timeout);
 
     void _lazy_start_subscribe();
 
@@ -133,6 +145,8 @@ private:
     bool _handle_punsubscribe(redisReply &reply);
 
     void _consume();
+
+    void _stop_subscribe();
 
     ConnectionPool &_pool;
 
@@ -179,6 +193,8 @@ void Subscriber::subscribe(const StringView &channel,
                             UnsubCb unsub_callback) {
     std::lock_guard<std::mutex> lock(*_mutex);
 
+    // TODO: check if _connection is broken.
+
     _lazy_start_subscribe();
 
     ChannelCallbacks callbacks = {msg_callback, sub_callback, unsub_callback};
@@ -186,6 +202,11 @@ void Subscriber::subscribe(const StringView &channel,
         throw Error("Channel has already been subscribed");
     }
 
+    // TODO: cmd::subscribe DOES NOT send the subscribe message to Redis.
+    // In fact, it puts the command to network buffer.
+    // So we need a queue to record these sub or unsub commands, and
+    // ensure that before stopping the subscriber, all these commands
+    // have really been sent to Redis.
     cmd::subscribe(_connection, channel);
 }
 

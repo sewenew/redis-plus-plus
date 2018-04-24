@@ -45,6 +45,7 @@ Subscriber::~Subscriber() {
         // In case that stop() throws exception,
         // or failed to release connection.
         // Avoid throwing exception from destructor.
+        // TODO: if _pool.release() throws, we'll get connection leak problem.
     }
 }
 
@@ -93,10 +94,33 @@ void Subscriber::punsubscribe(const StringView &pattern) {
 void Subscriber::stop() {
     *_stop = true;
 
-    if (_future.valid()) {
-        // Might throw exception
+    wait();
+}
+
+void Subscriber::wait() {
+    if (!_future.valid()) {
+        // Subscribing thread is NOT running.
+        return;
+    }
+
+    // Wait until subscribing thread exits, and get possible exceptions.
+    _future.get();
+}
+
+bool Subscriber::wait_for(const std::chrono::steady_clock::duration &timeout) {
+    if (!_future.valid()) {
+        // Subscribing thread is NOT running.
+        return true;
+    }
+
+    // Wait until subscribing thread exits or timeout.
+    auto ready = _wait_for(timeout);
+    if (ready) {
+        // Get possible exceptions.
         _future.get();
     }
+
+    return ready;
 }
 
 Subscriber::MsgType Subscriber::_msg_type(redisReply *reply) const {
@@ -112,6 +136,20 @@ Subscriber::MsgType Subscriber::_msg_type(redisReply *reply) const {
     }
 
     return iter->second;
+}
+
+bool Subscriber::_wait_for(const std::chrono::steady_clock::duration &timeout) {
+    assert(_future.valid());
+
+    auto status = _future.wait_for(timeout);
+    if (status == std::future_status::timeout) {
+        return false;
+    } else if (status == std::future_status::ready) {
+        return true;
+    } else {
+        // The subscribing thread should NOT be deferred.
+        assert(false);
+    }
 }
 
 void Subscriber::_lazy_start_subscribe() {
@@ -257,8 +295,14 @@ bool Subscriber::_handle_punsubscribe(redisReply &reply) {
 }
 
 void Subscriber::_consume() {
-    while (!*_stop) {
+    while (true) {
+        // TODO: Narrow down the scope of the lock.
         std::lock_guard<std::mutex> lock(*_mutex);
+
+        if (*_stop) {
+            _stop_subscribe();
+            break;
+        }
 
         try {
             auto reply = _connection.recv();
@@ -302,17 +346,33 @@ void Subscriber::_consume() {
 
             if (!ret) {
                 // Stop consuming.
+                _stop_subscribe();
                 break;
             }
         } catch (const TimeoutError &e) {
             // Try latter.
             continue;
         } catch (...) {
+            // TODO: should we allow an error_callback to handle the exception?
+            _stop_subscribe();
             throw;
         }
     }
+}
 
-    // TODO: should we unsubscribe?
+void Subscriber::_stop_subscribe() {
+    *_stop = true;
+
+    _channel_callbacks.clear();
+    _pattern_callbacks.clear();
+
+    // Reset connection.
+    try {
+        _pool.reconnect(_connection);
+    } catch (const Error &e) {
+        // At least we make the connection broken.
+        return;
+    }
 }
 
 }
