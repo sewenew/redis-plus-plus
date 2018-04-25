@@ -52,6 +52,8 @@ Subscriber::~Subscriber() {
 void Subscriber::unsubscribe() {
     std::lock_guard<std::mutex> lock(*_mutex);
 
+    _check_connection();
+
     if (_channel_callbacks.empty()) {
         throw Error("No channel has been subscribed");
     }
@@ -61,6 +63,8 @@ void Subscriber::unsubscribe() {
 
 void Subscriber::unsubscribe(const StringView &channel) {
     std::lock_guard<std::mutex> lock(*_mutex);
+
+    _check_connection();
 
     if (_channel_callbacks.find(std::string(channel.data(), channel.size()))
             == _channel_callbacks.end()) {
@@ -73,6 +77,8 @@ void Subscriber::unsubscribe(const StringView &channel) {
 void Subscriber::punsubscribe() {
     std::lock_guard<std::mutex> lock(*_mutex);
 
+    _check_connection();
+
     if (_pattern_callbacks.empty()) {
         throw Error("No pattern has been subscribed");
     }
@@ -82,6 +88,8 @@ void Subscriber::punsubscribe() {
 
 void Subscriber::punsubscribe(const StringView &pattern) {
     std::lock_guard<std::mutex> lock(*_mutex);
+
+    _check_connection();
 
     if (_pattern_callbacks.find(std::string(pattern.data(), pattern.size()))
             == _pattern_callbacks.end()) {
@@ -136,6 +144,12 @@ Subscriber::MsgType Subscriber::_msg_type(redisReply *reply) const {
     }
 
     return iter->second;
+}
+
+void Subscriber::_check_connection() {
+    if (_connection.broken()) {
+        throw Error("Connection is broken");
+    }
 }
 
 bool Subscriber::_wait_for(const std::chrono::steady_clock::duration &timeout) {
@@ -299,6 +313,8 @@ void Subscriber::_consume() {
         // TODO: Narrow down the scope of the lock.
         std::lock_guard<std::mutex> lock(*_mutex);
 
+        _check_connection();
+
         if (*_stop) {
             _stop_subscribe();
             break;
@@ -367,10 +383,11 @@ void Subscriber::_stop_subscribe() {
     _pattern_callbacks.clear();
 
     // Reset connection.
+    // TODO: Maybe unsubscribe all channels should be better.
     try {
         _pool.reconnect(_connection);
     } catch (const Error &e) {
-        // At least we make the connection broken.
+        // At least we broke the connection.
         return;
     }
 }

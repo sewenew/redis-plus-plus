@@ -126,6 +126,8 @@ private:
 
     MsgType _msg_type(redisReply *reply) const;
 
+    void _check_connection();
+
     bool _wait_for(const std::chrono::steady_clock::duration &timeout);
 
     void _lazy_start_subscribe();
@@ -193,7 +195,7 @@ void Subscriber::subscribe(const StringView &channel,
                             UnsubCb unsub_callback) {
     std::lock_guard<std::mutex> lock(*_mutex);
 
-    // TODO: check if _connection is broken.
+    _check_connection();
 
     _lazy_start_subscribe();
 
@@ -222,6 +224,8 @@ void Subscriber::subscribe(Input first,
 
     std::lock_guard<std::mutex> lock(*_mutex);
 
+    _check_connection();
+
     _lazy_start_subscribe();
 
     for (auto iter = first; iter != last; ++iter) {
@@ -242,6 +246,8 @@ template <typename Input>
 void Subscriber::unsubscribe(Input first, Input last) {
     std::lock_guard<std::mutex> lock(*_mutex);
 
+    _check_connection();
+
     for (auto iter = first; iter != last; ++iter) {
         if (_channel_callbacks.find(*iter) == _channel_callbacks.end()) {
             throw Error("Try to unsubscribe unsubscribed channel");
@@ -257,6 +263,8 @@ void Subscriber::psubscribe(const StringView &pattern,
                             SubCb sub_callback,
                             UnsubCb unsub_callback) {
     std::lock_guard<std::mutex> lock(*_mutex);
+
+    _check_connection();
 
     _lazy_start_subscribe();
 
@@ -280,6 +288,8 @@ void Subscriber::psubscribe(Input first,
 
     std::lock_guard<std::mutex> lock(*_mutex);
 
+    _check_connection();
+
     _lazy_start_subscribe();
 
     for (auto iter = first; iter != last; ++iter) {
@@ -299,6 +309,8 @@ void Subscriber::psubscribe(Input first,
 template <typename Input>
 void Subscriber::punsubscribe(Input first, Input last) {
     std::lock_guard<std::mutex> lock(*_mutex);
+
+    _check_connection();
 
     for (auto iter = first; iter != last; ++iter) {
         if (_pattern_callbacks.find(*iter) == _pattern_callbacks.end()) {
