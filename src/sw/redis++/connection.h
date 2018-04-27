@@ -160,9 +160,6 @@ struct ConnectionOptions {
 
     std::string password;
 
-    // TODO: implement async interfaces.
-    bool async = false;
-
     bool keep_alive = false;
 
     std::chrono::steady_clock::duration connect_timeout{0};
