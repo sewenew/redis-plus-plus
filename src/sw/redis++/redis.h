@@ -19,6 +19,7 @@
 
 #include <string>
 #include <chrono>
+#include <tuple>
 #include "connection_pool.h"
 #include "reply.h"
 #include "command_options.h"
@@ -34,8 +35,18 @@ class Subscriber;
 
 class Redis {
 public:
-    Redis(const ConnectionPoolOptions &pool_opts,
-            const ConnectionOptions &connection_opts) : _pool(pool_opts, connection_opts) {}
+    Redis(const ConnectionOptions &connection_opts,
+            const ConnectionPoolOptions &pool_opts = {}) : _pool(pool_opts, connection_opts) {}
+
+    // Construct Redis instance with URI:
+    // "tcp://127.0.0.1", "tcp://127.0.0.1:6379", or "unix://path/to/socket"
+    explicit Redis(const std::string &uri);
+
+    Redis(const Redis &) = delete;
+    Redis& operator=(const Redis &) = delete;
+
+    Redis(Redis &&) = delete;
+    Redis& operator=(Redis &&) = delete;
 
     Pipeline pipeline();
 
@@ -694,6 +705,15 @@ private:
         ConnectionPool &_pool;
         Connection &_connection;
     };
+
+    ConnectionOptions _parse_options(const std::string &uri) const;
+
+    ConnectionOptions _parse_tcp_options(const std::string &path) const;
+
+    ConnectionOptions _parse_unix_options(const std::string &path) const;
+
+    auto _split_string(const std::string &str, const std::string &delimiter) const ->
+            std::pair<std::string, std::string>;
 
     ConnectionPool _pool;
 };
