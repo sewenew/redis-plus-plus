@@ -35,7 +35,7 @@ std::string to_status(redisReply &reply) {
 }
 
 std::string parse(ParseTag<std::string>, redisReply &reply) {
-    if (!reply::is_string(reply)) {
+    if (!reply::is_string(reply) && !reply::is_status(reply)) {
         throw ProtoError("Expect STRING reply");
     }
 
