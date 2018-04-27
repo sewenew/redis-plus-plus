@@ -162,7 +162,7 @@ bool Subscriber::_wait_for(const std::chrono::steady_clock::duration &timeout) {
         return true;
     } else {
         // The subscribing thread should NOT be deferred.
-        assert(false);
+        throw Error("Subscribing thread has been deferred");
     }
 }
 
