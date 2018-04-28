@@ -160,6 +160,8 @@ struct ConnectionOptions {
 
     std::string password;
 
+    int db = 0;
+
     bool keep_alive = false;
 
     std::chrono::steady_clock::duration connect_timeout{0};
@@ -185,6 +187,8 @@ private:
     void _enable_keep_alive(Connection &connection) const;
 
     void _auth(Connection &connection) const;
+
+    void _select_db(Connection &connection) const;
 
     timeval _to_timeval(const std::chrono::steady_clock::duration &dur) const;
 

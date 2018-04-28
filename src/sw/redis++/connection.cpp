@@ -91,6 +91,8 @@ Connection Connector::connect() const {
 
     _auth(connection);
 
+    _select_db(connection);
+
     return connection;
 }
 
@@ -198,6 +200,18 @@ void Connector::_auth(Connection &connection) const {
     }
 
     cmd::auth(connection, _opts.password);
+
+    auto reply = connection.recv();
+
+    reply::expect_ok_status(*reply);
+}
+
+void Connector::_select_db(Connection &connection) const {
+    if (_opts.db == 0) {
+        return;
+    }
+
+    cmd::select(connection, _opts.db);
 
     auto reply = connection.recv();
 

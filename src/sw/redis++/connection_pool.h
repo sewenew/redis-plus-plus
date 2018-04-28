@@ -47,6 +47,7 @@ public:
 
     void release(Connection connection);
 
+    // TODO: this method might be deprecated in the future.
     void reconnect(Connection &connection);
 
 private:
