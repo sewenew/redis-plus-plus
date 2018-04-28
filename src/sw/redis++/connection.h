@@ -152,7 +152,7 @@ enum class ConnectionType {
 struct ConnectionOptions {
     ConnectionType type = ConnectionType::TCP;
 
-    std::string host = "127.0.0.1";
+    std::string host;
 
     int port = 6379;
 
