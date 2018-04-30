@@ -1378,7 +1378,7 @@ inline void unwatch(Connection &connection, const StringView &key) {
 }
 
 template <typename Input>
-inline void unwatch(Connection &connection, Input first, Input last) {
+inline void unwatch_range(Connection &connection, Input first, Input last) {
     Connection::CmdArgs args;
     args << "UNWATCH" << std::make_pair(first, last);
 
@@ -1390,7 +1390,7 @@ inline void watch(Connection &connection, const StringView &key) {
 }
 
 template <typename Input>
-inline void watch(Connection &connection, Input first, Input last) {
+inline void watch_range(Connection &connection, Input first, Input last) {
     Connection::CmdArgs args;
     args << "WATCH" << std::make_pair(first, last);
 
