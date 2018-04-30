@@ -1359,6 +1359,44 @@ inline void unsubscribe_range(Connection &connection, Input first, Input last) {
     connection.send(args);
 }
 
+// Transaction commands.
+
+inline void discard(Connection &connection) {
+    connection.send("DISCARD");
+}
+
+inline void exec(Connection &connection) {
+    connection.send("EXEC");
+}
+
+inline void multi(Connection &connection) {
+    connection.send("MULTI");
+}
+
+inline void unwatch(Connection &connection, const StringView &key) {
+    connection.send("UNWATCH %b", key.data(), key.size());
+}
+
+template <typename Input>
+inline void unwatch(Connection &connection, Input first, Input last) {
+    Connection::CmdArgs args;
+    args << "UNWATCH" << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+inline void watch(Connection &connection, const StringView &key) {
+    connection.send("WATCH %b", key.data(), key.size());
+}
+
+template <typename Input>
+inline void watch(Connection &connection, Input first, Input last) {
+    Connection::CmdArgs args;
+    args << "WATCH" << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
 namespace detail {
 
 void set_update_type(Connection::CmdArgs &args, UpdateType type);
