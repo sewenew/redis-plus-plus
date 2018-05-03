@@ -24,12 +24,11 @@
 #include "reply.h"
 #include "command_options.h"
 #include "utils.h"
+#include "pipeline.h"
 
 namespace sw {
 
 namespace redis {
-
-class Pipeline;
 
 class Subscriber;
 

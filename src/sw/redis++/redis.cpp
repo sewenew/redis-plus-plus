@@ -19,7 +19,6 @@
 #include <hiredis/hiredis.h>
 #include "command.h"
 #include "errors.h"
-#include "pipeline.h"
 #include "subscriber.h"
 
 namespace sw {

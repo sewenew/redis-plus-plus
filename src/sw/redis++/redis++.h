@@ -21,6 +21,5 @@
 #include "redis.hpp"
 #include "subscriber.h"
 #include "pipeline.h"
-#include "p_string.h"
 
 #endif // end SEWENEW_REDISPLUSPLUS_REDISPLUSPLUS_H

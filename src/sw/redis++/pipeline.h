@@ -17,121 +17,35 @@
 #ifndef SEWENEW_REDISPLUSPLUS_PIPELINE_H
 #define SEWENEW_REDISPLUSPLUS_PIPELINE_H
 
-#include <functional>
-#include <queue>
+#include <cassert>
+#include "queued_redis.h"
 #include "connection_pool.h"
-#include "reply.h"
-#include "command.h"
-#include "utils.h"
 
 namespace sw {
 
 namespace redis {
 
-class PString;
+namespace detail {
 
-class Pipeline {
+class PipelinePolicy {
 public:
-    explicit Pipeline(ConnectionPool &pool);
+    template <typename Cmd, typename ...Args>
+    void command(Connection &connection, Cmd cmd, Args &&...args) {
+        assert(!connection.broken());
 
-    Pipeline(const Pipeline &) = delete;
-    Pipeline& operator=(const Pipeline &) = delete;
+        cmd(connection, std::forward<Args>(args)...);
+    }
 
-    Pipeline(Pipeline &&) = default;
-    Pipeline& operator=(Pipeline &&) = default;
+    void exec(Connection &) {}
 
-    ~Pipeline();
-
-    void transport();
-
-    PString string(const std::string &key);
-
-    template <typename Cmd,
-             typename ReplyFunctor,
-             typename ErrorCallback,
-             typename ...Args>
-    Pipeline& command(Cmd cmd,
-            ReplyFunctor reply_functor,
-            ErrorCallback error_callback,
-            Args &&...args);
-
-    template <typename ErrorCallback>
-    Pipeline& auth(const StringView &password,
-            ErrorCallback error_callback);
-
-    template <typename StringReplyCallback, typename ErrorCallback>
-    Pipeline& info(StringReplyCallback reply_callback,
-            ErrorCallback error_callback);
-
-    template <typename StringReplyCallback, typename ErrorCallback>
-    Pipeline& ping(StringReplyCallback reply_callback,
-            ErrorCallback error_callback);
-
-    template <typename StringReplyCallback, typename ErrorCallback>
-    Pipeline& ping(const StringView &msg,
-            StringReplyCallback reply_callback,
-            ErrorCallback error_callback);
-
-private:
-    ConnectionPool &_pool;
-
-    Connection _connection;
-
-    using ReplyCallback = std::function<void (redisReply &)>;
-    using ReplyErrorCallback = std::function<void (const Error &)>;
-
-    std::queue<std::pair<ReplyCallback, ReplyErrorCallback>> _callbacks;
+    void discard(ConnectionPool &pool, Connection &connection) {
+        pool.reconnect(connection);
+    }
 };
 
-template <typename Cmd,
-         typename ReplyFunctor,
-         typename ErrorCallback,
-         typename ...Args>
-inline Pipeline& Pipeline::command(Cmd cmd,
-        ReplyFunctor reply_functor,
-        ErrorCallback error_callback,
-        Args &&...args) {
-    cmd(_connection, std::forward<Args>(args)...);
-
-    _callbacks.emplace(reply_functor, error_callback);
-
-    return *this;
 }
 
-template <typename ErrorCallback>
-inline Pipeline& Pipeline::auth(const StringView &password,
-        ErrorCallback error_callback) {
-    return command(cmd::auth,
-                DummyReplyFunctor{},
-                error_callback,
-                password);
-}
-
-template <typename StringReplyCallback, typename ErrorCallback>
-inline Pipeline& Pipeline::info(StringReplyCallback reply_callback,
-        ErrorCallback error_callback) {
-    return command(cmd::info,
-                StringReplyFunctor(reply_callback),
-                error_callback);
-}
-
-template <typename StringReplyCallback, typename ErrorCallback>
-inline Pipeline& Pipeline::ping(StringReplyCallback reply_callback,
-        ErrorCallback error_callback) {
-    return command<void (*)(Connection &)>(cmd::ping,
-                StatusReplyFunctor(reply_callback),
-                error_callback);
-}
-
-template <typename StringReplyCallback, typename ErrorCallback>
-inline Pipeline& Pipeline::ping(const StringView &msg,
-        StringReplyCallback reply_callback,
-        ErrorCallback error_callback) {
-    return command<void (*)(Connection &, const StringView &)>(cmd::ping,
-                StringReplyFunctor(reply_callback),
-                error_callback,
-                msg);
-}
+using Pipeline = QueuedRedis<detail::PipelinePolicy>;
 
 }
 
