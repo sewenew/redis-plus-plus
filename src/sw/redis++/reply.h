@@ -79,12 +79,18 @@ private:
 
 namespace reply {
 
+void expect_ok_status(redisReply &reply);
+
 template <typename T>
 struct ParseTag {};
 
 template <typename T>
 inline T parse(redisReply &reply) {
     return parse(ParseTag<T>(), reply);
+}
+
+inline void parse(ParseTag<void>, redisReply &reply) {
+    expect_ok_status(reply);
 }
 
 std::string parse(ParseTag<std::string>, redisReply &reply);
@@ -135,8 +141,6 @@ void to_score_array(redisReply &reply, Iter output);
 
 template <typename Output>
 void to_array(redisReply &reply, Output output);
-
-void expect_ok_status(redisReply &reply);
 
 }
 
