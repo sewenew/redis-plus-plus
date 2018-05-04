@@ -561,7 +561,7 @@ long long Redis::zremrangebylex(const StringView &key, const Interval &interval)
 
 template <typename Interval>
 long long Redis::zremrangebyscore(const StringView &key, const Interval &interval) {
-    auto reply = command(cmd::zremrangebyscore, key, interval);
+    auto reply = command(cmd::zremrangebyscore<Interval>, key, interval);
 
     return reply::parse<long long>(*reply);
 }
@@ -673,7 +673,7 @@ template <typename Input>
 void Redis::pfmerge(const StringView &destination,
                     Input first,
                     Input last) {
-    auto reply = command(cmd::pfmerge, destination, first, last);
+    auto reply = command(cmd::pfmerge<Input>, destination, first, last);
 
     reply::expect_ok_status(*reply);
 }
