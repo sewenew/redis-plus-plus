@@ -27,7 +27,7 @@ namespace redis {
 
 namespace detail {
 
-class PipelinePolicy {
+class PipelineImpl {
 public:
     template <typename Cmd, typename ...Args>
     void command(Connection &connection, Cmd cmd, Args &&...args) {
@@ -45,7 +45,7 @@ public:
 
 }
 
-using Pipeline = QueuedRedis<detail::PipelinePolicy>;
+using Pipeline = QueuedRedis<detail::PipelineImpl>;
 
 }
 
