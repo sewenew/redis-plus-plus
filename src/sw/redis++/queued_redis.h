@@ -1024,6 +1024,9 @@ public:
         return command(cmd::georadiusbymember, key, member, radius, unit, count, asc);
     }
 
+    // TODO:
+    // SCRIPTING commands.
+
     // PUBSUB commands.
 
     QueuedRedis& publish(const StringView &channel, const StringView &message) {

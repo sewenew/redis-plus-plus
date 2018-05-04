@@ -169,6 +169,7 @@ struct ConnectionOptions {
     std::chrono::steady_clock::duration socket_timeout{0};
 };
 
+// TODO: refactor Connection
 class Connector {
 public:
     explicit Connector(const ConnectionOptions &opts) : _opts(opts) {}
