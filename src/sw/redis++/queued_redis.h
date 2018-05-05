@@ -1013,6 +1013,9 @@ public:
 private:
     friend class Redis;
 
+    template <typename T, typename Result>
+    friend QueuedRedis<T>& operator>>(QueuedRedis<T> &queued_redis, Result &result);
+
     template <typename ...Args>
     QueuedRedis(ConnectionPool &pool, Args &&...args);
 

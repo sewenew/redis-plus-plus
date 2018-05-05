@@ -68,6 +68,15 @@ Result QueuedRedis<Impl>::get() {
     return reply::parse<Result>(*reply);
 }
 
+template <typename Impl, typename Result>
+QueuedRedis<Impl>& operator>>(QueuedRedis<Impl> &queued_redis, Result &result) {
+    auto reply = queued_redis._connection.recv();
+
+    result = reply::parse<Result>(*reply);
+
+    return queued_redis;
+}
+
 }
 
 }
