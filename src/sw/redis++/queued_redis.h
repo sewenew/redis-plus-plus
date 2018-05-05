@@ -37,40 +37,17 @@ public:
     QueuedRedis(QueuedRedis &&) = default;
     QueuedRedis& operator=(QueuedRedis &&) = default;
 
-    ~QueuedRedis() {
-        try {
-            discard();
-        } catch (const Error &e) {
-            // Avoid throwing from destructor.
-            return;
-        }
-    }
+    ~QueuedRedis();
 
     template <typename Cmd, typename ...Args>
-    QueuedRedis& command(Cmd cmd, Args &&...args) {
-        if (_connection.broken()) {
-            throw Error("Connection is broken");
-        }
+    QueuedRedis& command(Cmd cmd, Args &&...args);
 
-        _impl.command(_connection, cmd, std::forward<Args>(args)...);
+    void exec();
 
-        return *this;
-    }
-
-    void exec() {
-        _impl.exec(_connection);
-    }
-
-    void discard() {
-        _impl.discard(_pool, _connection);
-    }
+    void discard();
 
     template <typename Result>
-    Result get() {
-        auto reply = _connection.recv();
-
-        return reply::parse<Result>(*reply);
-    }
+    Result get();
 
     // CONNECTION commands.
 
@@ -1037,10 +1014,7 @@ private:
     friend class Redis;
 
     template <typename ...Args>
-    QueuedRedis(ConnectionPool &pool, Args &&...args) :
-                _pool(pool),
-                _connection(_pool.fetch()),
-                _impl(std::forward<Args>(args)...) {}
+    QueuedRedis(ConnectionPool &pool, Args &&...args);
 
     ConnectionPool &_pool;
 
@@ -1052,5 +1026,7 @@ private:
 }
 
 }
+
+#include "queued_redis.hpp"
 
 #endif // end SEWENEW_REDISPLUSPLUS_QUEUED_REDIS_H
