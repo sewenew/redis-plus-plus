@@ -18,6 +18,7 @@
 #define SEWENEW_REDISPLUSPLUS_PIPELINE_H
 
 #include <cassert>
+#include <deque>
 #include "queued_redis.h"
 #include "connection_pool.h"
 
@@ -36,7 +37,7 @@ public:
         cmd(connection, std::forward<Args>(args)...);
     }
 
-    void exec(Connection &) {}
+    void exec(Connection & /*connection*/, std::size_t /*cmd_num*/) {}
 
     void discard(ConnectionPool &pool, Connection &connection) {
         pool.reconnect(connection);

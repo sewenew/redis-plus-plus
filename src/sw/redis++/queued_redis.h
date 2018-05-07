@@ -19,6 +19,7 @@
 
 #include <cassert>
 #include <chrono>
+#include <deque>
 #include "connection_pool.h"
 #include "utils.h"
 #include "reply.h"
@@ -29,6 +30,8 @@ namespace sw {
 namespace redis {
 
 namespace chrono = std::chrono;
+
+class QueuedReplies;
 
 // TODO: If any command throws, how to ensure that QueuedRedis is still valid?
 template <typename Impl>
@@ -42,12 +45,9 @@ public:
     template <typename Cmd, typename ...Args>
     QueuedRedis& command(Cmd cmd, Args &&...args);
 
-    void exec();
+    QueuedReplies exec();
 
     void discard();
-
-    template <typename Result>
-    Result get();
 
     // CONNECTION commands.
 
@@ -1013,17 +1013,35 @@ public:
 private:
     friend class Redis;
 
-    template <typename T, typename Result>
-    friend QueuedRedis<T>& operator>>(QueuedRedis<T> &queued_redis, Result &result);
-
     template <typename ...Args>
     QueuedRedis(ConnectionPool &pool, Args &&...args);
+
+    QueuedReplies _get_queued_replies(Connection &connection, std::size_t cmd_num);
 
     ConnectionPool &_pool;
 
     Connection _connection;
 
     Impl _impl;
+
+    std::size_t _cmd_num = 0;
+};
+
+class QueuedReplies {
+public:
+    template <typename Result>
+    Result pop();
+
+    template <typename Output>
+    void pop(Output output);
+
+private:
+    template <typename Impl>
+    friend class QueuedRedis;
+
+    explicit QueuedReplies(std::deque<ReplyUPtr> replies) : _replies(std::move(replies)) {}
+
+    std::deque<ReplyUPtr> _replies;
 };
 
 }

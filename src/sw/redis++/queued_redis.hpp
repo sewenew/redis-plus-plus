@@ -47,34 +47,58 @@ QueuedRedis<Impl>& QueuedRedis<Impl>::command(Cmd cmd, Args &&...args) {
 
     _impl.command(_connection, cmd, std::forward<Args>(args)...);
 
+    ++_cmd_num;
+
     return *this;
 }
 
 template <typename Impl>
-void QueuedRedis<Impl>::exec() {
-    _impl.exec(_connection);
+QueuedReplies QueuedRedis<Impl>::exec() {
+    auto cmd_num = _cmd_num;
+
+    // Reset _cmd_num ASAP.
+    _cmd_num = 0;
+
+    _impl.exec(_connection, cmd_num);
+
+    return _get_queued_replies(_connection, cmd_num);
 }
 
 template <typename Impl>
 void QueuedRedis<Impl>::discard() {
+    _cmd_num = 0;
+
     _impl.discard(_pool, _connection);
 }
 
 template <typename Impl>
+QueuedReplies QueuedRedis<Impl>::_get_queued_replies(Connection &connection,
+                                                        std::size_t cmd_num) {
+    std::deque<ReplyUPtr> replies;
+    while (cmd_num > 0) {
+        replies.push_back(connection.recv());
+        --cmd_num;
+    }
+
+    return QueuedReplies(std::move(replies));
+}
+
 template <typename Result>
-Result QueuedRedis<Impl>::get() {
-    auto reply = _connection.recv();
+inline Result QueuedReplies::pop() {
+    auto reply = std::move(_replies.front());
+
+    _replies.pop_front();
 
     return reply::parse<Result>(*reply);
 }
 
-template <typename Impl, typename Result>
-QueuedRedis<Impl>& operator>>(QueuedRedis<Impl> &queued_redis, Result &result) {
-    auto reply = queued_redis._connection.recv();
+template <typename Output>
+inline void QueuedReplies::pop(Output output) {
+    auto reply = std::move(_replies.front());
 
-    result = reply::parse<Result>(*reply);
+    _replies.pop_front();
 
-    return queued_redis;
+    reply::to_array(*reply, output);
 }
 
 }
