@@ -25,6 +25,7 @@
 #include "command_options.h"
 #include "utils.h"
 #include "pipeline.h"
+#include "transaction.h"
 
 namespace sw {
 
@@ -48,6 +49,8 @@ public:
     Redis& operator=(Redis &&) = delete;
 
     Pipeline pipeline();
+
+    Transaction transaction(bool piped = false);
 
     Subscriber subscriber();
 

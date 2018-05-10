@@ -39,6 +39,10 @@ Pipeline Redis::pipeline() {
     return Pipeline(_pool);
 }
 
+Transaction Redis::transaction(bool piped) {
+    return Transaction(_pool, piped);
+}
+
 Subscriber Redis::subscriber() {
     return Subscriber(_pool);
 }
