@@ -74,6 +74,8 @@ std::string Redis::ping(const StringView &msg) {
 }
 
 void Redis::quit() {
+    // TODO: after sending QUIT, the connection will be close, so we CANNOT
+    // get the reply. Also, in this case, should we close all connections?
     auto reply = command(cmd::quit);
 
     reply::expect_ok_status(*reply);

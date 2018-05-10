@@ -154,6 +154,7 @@ private:
 
     Connection _connection;
 
+    // TODO: StringView might NOT be appropriate.
     using MsgCallback = std::function<bool (const StringView &channel, const StringView &msg)>;
 
     using PatternMsgCallback = std::function<bool (const StringView &pattern,
