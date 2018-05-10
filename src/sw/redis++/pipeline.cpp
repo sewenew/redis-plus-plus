@@ -14,12 +14,7 @@
    limitations under the License.
  *************************************************************************/
 
-#ifndef SEWENEW_REDISPLUSPLUS_PIPELINE_H
-#define SEWENEW_REDISPLUSPLUS_PIPELINE_H
-
-#include <cassert>
-#include <deque>
-#include "queued_redis.h"
+#include "pipeline.h"
 
 namespace sw {
 
@@ -27,28 +22,18 @@ namespace redis {
 
 namespace detail {
 
-class PipelineImpl {
-public:
-    template <typename Cmd, typename ...Args>
-    void command(Connection &connection, Cmd cmd, Args &&...args) {
-        assert(!connection.broken());
-
-        cmd(connection, std::forward<Args>(args)...);
+std::deque<ReplyUPtr> PipelineImpl::exec(Connection &connection, std::size_t cmd_num) {
+    std::deque<ReplyUPtr> replies;
+    while (cmd_num > 0) {
+        replies.push_back(connection.recv());
+        --cmd_num;
     }
 
-    std::deque<ReplyUPtr> exec(Connection &connection, std::size_t cmd_num);
-
-    void discard(Connection & /*connection*/) {
-        // TODO: we need an elegant way to discard pipeline execution.
-    }
-};
-
+    return replies;
 }
-
-using Pipeline = QueuedRedis<detail::PipelineImpl>;
 
 }
 
 }
 
-#endif // end SEWENEW_REDISPLUSPLUS_PIPELINE_H
+}

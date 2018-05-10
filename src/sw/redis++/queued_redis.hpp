@@ -45,7 +45,12 @@ QueuedRedis<Impl>& QueuedRedis<Impl>::command(Cmd cmd, Args &&...args) {
         throw Error("Connection is broken");
     }
 
-    _impl.command(_connection, cmd, std::forward<Args>(args)...);
+    try {
+        _impl.command(_connection, cmd, std::forward<Args>(args)...);
+    } catch (const Error &e) {
+        _reconnect();
+        throw;
+    }
 
     ++_cmd_num;
 
@@ -59,28 +64,29 @@ QueuedReplies QueuedRedis<Impl>::exec() {
     // Reset _cmd_num ASAP.
     _cmd_num = 0;
 
-    _impl.exec(_connection, cmd_num);
-
-    return _get_queued_replies(_connection, cmd_num);
+    try {
+        return QueuedReplies(_impl.exec(_connection, cmd_num));
+    } catch (const Error &e) {
+        _reconnect();
+        throw;
+    }
 }
 
 template <typename Impl>
 void QueuedRedis<Impl>::discard() {
     _cmd_num = 0;
 
-    _impl.discard(_pool, _connection);
+    try {
+        _impl.discard(_connection);
+    } catch (const Error &e) {
+        _reconnect();
+        throw;
+    }
 }
 
 template <typename Impl>
-QueuedReplies QueuedRedis<Impl>::_get_queued_replies(Connection &connection,
-                                                        std::size_t cmd_num) {
-    std::deque<ReplyUPtr> replies;
-    while (cmd_num > 0) {
-        replies.push_back(connection.recv());
-        --cmd_num;
-    }
-
-    return QueuedReplies(std::move(replies));
+void QueuedRedis<Impl>::_reconnect() {
+    _pool.reconnect(_connection);
 }
 
 template <typename Result>

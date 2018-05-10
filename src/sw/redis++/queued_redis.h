@@ -1016,7 +1016,7 @@ private:
     template <typename ...Args>
     QueuedRedis(ConnectionPool &pool, Args &&...args);
 
-    QueuedReplies _get_queued_replies(Connection &connection, std::size_t cmd_num);
+    void _reconnect();
 
     ConnectionPool &_pool;
 
