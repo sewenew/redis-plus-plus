@@ -23,101 +23,43 @@ namespace sw {
 
 namespace redis {
 
-Connection::Connection(redisContext *context) :
-        _context(context),
-        _last_active(std::chrono::steady_clock::now()) {
-    if (!_context) {
-        throw Error("CANNOT create connection with null context");
-    }
+class Connection::Connector {
+public:
+    explicit Connector(const ConnectionOptions &opts);
+
+    ContextUPtr connect() const;
+
+private:
+    ContextUPtr _connect() const;
+
+    redisContext* _connect_tcp() const;
+
+    redisContext* _connect_unix() const;
+
+    void _set_socket_timeout(redisContext &ctx) const;
+
+    void _enable_keep_alive(redisContext &ctx) const;
+
+    timeval _to_timeval(const std::chrono::steady_clock::duration &dur) const;
+
+    const ConnectionOptions &_opts;
+};
+
+Connection::Connector::Connector(const ConnectionOptions &opts) : _opts(opts) {}
+
+Connection::ContextUPtr Connection::Connector::connect() const {
+    auto ctx = _connect();
+
+    assert(ctx);
+
+    _set_socket_timeout(*ctx);
+
+    _enable_keep_alive(*ctx);
+
+    return ctx;
 }
 
-void Connection::send(int argc, const char **argv, const std::size_t *argv_len) {
-    assert(_context);
-
-    if (redisAppendCommandArgv(_context.get(),
-                                argc,
-                                argv,
-                                argv_len) != REDIS_OK) {
-        throw_error(*_context, "Failed to send command");
-    }
-
-    assert(!broken());
-}
-
-auto Connection::CmdArgs::operator<<(const StringView &arg) -> CmdArgs& {
-    _argv.push_back(arg.data());
-    _argv_len.push_back(arg.size());
-
-    return *this;
-}
-
-void Connection::send(CmdArgs &args) {
-    assert(_context);
-
-    if (redisAppendCommandArgv(_context.get(),
-                                args.size(),
-                                args.argv(),
-                                args.argv_len()) != REDIS_OK) {
-        throw_error(*_context, "Failed to send command");
-    }
-
-    assert(!broken());
-}
-
-std::string Connection::_server_info() const {
-    assert(_context);
-
-    auto connection_type = _context->connection_type;
-    switch (connection_type) {
-    case REDIS_CONN_TCP:
-        return std::string(_context->tcp.host)
-                    + ":" + std::to_string(_context->tcp.port);
-
-    case REDIS_CONN_UNIX:
-        return _context->unix_sock.path;
-
-    default:
-        throw Error("Unknown connection type: "
-                + std::to_string(connection_type));
-    }
-}
-
-Connection Connector::connect() const {
-    auto connection = _connect();
-
-    _set_socket_timeout(connection);
-
-    _enable_keep_alive(connection);
-
-    _auth(connection);
-
-    _select_db(connection);
-
-    return connection;
-}
-
-ReplyUPtr Connection::recv() {
-    auto *ctx = context();
-
-    assert(ctx != nullptr);
-
-    void *r = nullptr;
-    if (redisGetReply(ctx, &r) != REDIS_OK) {
-        throw_error(*ctx, "Failed to get reply");
-    }
-
-    assert(!broken());
-
-    auto reply = ReplyUPtr(static_cast<redisReply*>(r));
-
-    if (reply::is_error(*reply)) {
-        throw_error(*reply);
-    }
-
-    return reply;
-}
-
-Connection Connector::_connect() const {
+Connection::ContextUPtr Connection::Connector::_connect() const {
     redisContext *context = nullptr;
     switch (_opts.type) {
     case ConnectionType::TCP:
@@ -137,26 +79,20 @@ Connection Connector::_connect() const {
         throw Error("Failed to allocate memory for connection.");
     }
 
-    Connection connection(context);
-    if (connection.broken()) {
-        throw_error(*context, "Failed to connect to Redis");
-    }
-
-    return connection;
+    return ContextUPtr(context);
 }
 
-redisContext* Connector::_connect_tcp() const {
+redisContext* Connection::Connector::_connect_tcp() const {
     if (_opts.connect_timeout > std::chrono::steady_clock::duration(0)) {
         return redisConnectWithTimeout(_opts.host.c_str(),
                     _opts.port,
                     _to_timeval(_opts.connect_timeout));
     } else {
         return redisConnect(_opts.host.c_str(), _opts.port);
-        //return redisConnectNonBlock(_opts.host.c_str(), _opts.port);
     }
 }
 
-redisContext* Connector::_connect_unix() const {
+redisContext* Connection::Connector::_connect_unix() const {
     if (_opts.connect_timeout > std::chrono::steady_clock::duration(0)) {
         return redisConnectUnixWithTimeout(
                     _opts.path.c_str(),
@@ -166,59 +102,27 @@ redisContext* Connector::_connect_unix() const {
     }
 }
 
-void Connector::_set_socket_timeout(Connection &connection) const {
+void Connection::Connector::_set_socket_timeout(redisContext &ctx) const {
     if (_opts.socket_timeout <= std::chrono::steady_clock::duration(0)) {
         return;
     }
 
-    auto *context = connection.context();
-
-    assert(context != nullptr);
-
-    if (redisSetTimeout(context, _to_timeval(_opts.socket_timeout)) != REDIS_OK) {
-        throw_error(*context, "Failed to set socket timeout");
+    if (redisSetTimeout(&ctx, _to_timeval(_opts.socket_timeout)) != REDIS_OK) {
+        throw_error(ctx, "Failed to set socket timeout");
     }
 }
 
-void Connector::_enable_keep_alive(Connection &connection) const {
+void Connection::Connector::_enable_keep_alive(redisContext &ctx) const {
     if (!_opts.keep_alive) {
         return;
     }
 
-    auto *context = connection.context();
-
-    assert(context != nullptr);
-
-    if (redisEnableKeepAlive(context) != REDIS_OK) {
-        throw_error(*context, "Failed to enable keep alive option");
+    if (redisEnableKeepAlive(&ctx) != REDIS_OK) {
+        throw_error(ctx, "Failed to enable keep alive option");
     }
 }
 
-void Connector::_auth(Connection &connection) const {
-    if (_opts.password.empty()) {
-        return;
-    }
-
-    cmd::auth(connection, _opts.password);
-
-    auto reply = connection.recv();
-
-    reply::expect_ok_status(*reply);
-}
-
-void Connector::_select_db(Connection &connection) const {
-    if (_opts.db == 0) {
-        return;
-    }
-
-    cmd::select(connection, _opts.db);
-
-    auto reply = connection.recv();
-
-    reply::expect_ok_status(*reply);
-}
-
-timeval Connector::_to_timeval(const std::chrono::steady_clock::duration &dur) const {
+timeval Connection::Connector::_to_timeval(const std::chrono::steady_clock::duration &dur) const {
     auto sec = std::chrono::duration_cast<std::chrono::seconds>(dur);
     auto msec = std::chrono::duration_cast<std::chrono::microseconds>(dur - sec);
 
@@ -226,6 +130,137 @@ timeval Connector::_to_timeval(const std::chrono::steady_clock::duration &dur) c
             static_cast<std::time_t>(sec.count()),
             static_cast<suseconds_t>(msec.count())
     };
+}
+
+void swap(Connection &lhs, Connection &rhs) noexcept {
+    std::swap(lhs._ctx, rhs._ctx);
+    std::swap(lhs._last_active, rhs._last_active);
+    std::swap(lhs._opts, rhs._opts);
+}
+
+Connection::Connection(const ConnectionOptions &opts) :
+            _ctx(Connector(opts).connect()),
+            _last_active(std::chrono::steady_clock::now()),
+            _opts(opts) {
+    assert(!_ctx);
+
+    if (broken()) {
+        throw_error(*_ctx, "Failed to connect to Redis");
+    }
+
+    _set_options();
+}
+
+void Connection::reconnect() {
+    Connection connection(_opts);
+
+    swap(*this, connection);
+}
+
+void Connection::send(int argc, const char **argv, const std::size_t *argv_len) {
+    auto ctx = _context();
+
+    assert(ctx != nullptr);
+
+    if (redisAppendCommandArgv(ctx,
+                                argc,
+                                argv,
+                                argv_len) != REDIS_OK) {
+        throw_error(*ctx, "Failed to send command");
+    }
+
+    assert(!broken());
+}
+
+auto Connection::CmdArgs::operator<<(const StringView &arg) -> CmdArgs& {
+    _argv.push_back(arg.data());
+    _argv_len.push_back(arg.size());
+
+    return *this;
+}
+
+void Connection::send(CmdArgs &args) {
+    auto ctx = _context();
+
+    assert(ctx != nullptr);
+
+    if (redisAppendCommandArgv(ctx,
+                                args.size(),
+                                args.argv(),
+                                args.argv_len()) != REDIS_OK) {
+        throw_error(*ctx, "Failed to send command");
+    }
+
+    assert(!broken());
+}
+
+ReplyUPtr Connection::recv() {
+    auto *ctx = _context();
+
+    assert(ctx != nullptr);
+
+    void *r = nullptr;
+    if (redisGetReply(ctx, &r) != REDIS_OK) {
+        throw_error(*ctx, "Failed to get reply");
+    }
+
+    assert(!broken());
+
+    auto reply = ReplyUPtr(static_cast<redisReply*>(r));
+
+    if (reply::is_error(*reply)) {
+        throw_error(*reply);
+    }
+
+    return reply;
+}
+
+std::string Connection::_server_info() const {
+    assert(_ctx);
+
+    auto connection_type = _ctx->connection_type;
+    switch (connection_type) {
+    case REDIS_CONN_TCP:
+        return std::string(_ctx->tcp.host)
+                    + ":" + std::to_string(_ctx->tcp.port);
+
+    case REDIS_CONN_UNIX:
+        return _ctx->unix_sock.path;
+
+    default:
+        throw Error("Unknown connection type: "
+                + std::to_string(connection_type));
+    }
+}
+
+void Connection::_set_options() {
+    _auth();
+
+    _select_db();
+}
+
+void Connection::_auth() {
+    if (_opts.password.empty()) {
+        return;
+    }
+
+    cmd::auth(*this, _opts.password);
+
+    auto reply = recv();
+
+    reply::expect_ok_status(*reply);
+}
+
+void Connection::_select_db() {
+    if (_opts.db == 0) {
+        return;
+    }
+
+    cmd::select(*this, _opts.db);
+
+    auto reply = recv();
+
+    reply::expect_ok_status(*reply);
 }
 
 }

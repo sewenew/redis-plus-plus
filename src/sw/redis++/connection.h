@@ -34,9 +34,34 @@ namespace sw {
 
 namespace redis {
 
+enum class ConnectionType {
+    TCP = 0,
+    UNIX
+};
+
+struct ConnectionOptions {
+    ConnectionType type = ConnectionType::TCP;
+
+    std::string host;
+
+    int port = 6379;
+
+    std::string path;
+
+    std::string password;
+
+    int db = 0;
+
+    bool keep_alive = false;
+
+    std::chrono::steady_clock::duration connect_timeout{0};
+
+    std::chrono::steady_clock::duration socket_timeout{0};
+};
+
 class Connection {
 public:
-    explicit Connection(redisContext *context);
+    explicit Connection(const ConnectionOptions &opts);
 
     Connection(const Connection &) = delete;
     Connection& operator=(const Connection &) = delete;
@@ -50,14 +75,10 @@ public:
     // before sending some command to the connection. If it's broken,
     // client needs to reconnect it.
     bool broken() const noexcept {
-        return _context->err != REDIS_OK;
+        return _ctx->err != REDIS_OK;
     }
 
-    redisContext* context() {
-        _last_active = std::chrono::steady_clock::now();
-
-        return _context.get();
-    }
+    void reconnect();
 
     auto last_active() const
         -> std::chrono::time_point<std::chrono::steady_clock> {
@@ -69,6 +90,7 @@ public:
 
     void send(int argc, const char **argv, const std::size_t *argv_len);
 
+    // TODO: move CmdArgs to cmd namespace
     class CmdArgs {
     public:
         CmdArgs& operator<<(const StringView &arg);
@@ -124,8 +146,10 @@ public:
 
     ReplyUPtr recv();
 
+    friend void swap(Connection &lhs, Connection &rhs) noexcept;
+
 private:
-    std::string _server_info() const;
+    class Connector;
 
     struct ContextDeleter {
         void operator()(redisContext *context) const {
@@ -137,61 +161,21 @@ private:
 
     using ContextUPtr = std::unique_ptr<redisContext, ContextDeleter>;
 
-    ContextUPtr _context;
+    void _set_options();
+
+    void _auth();
+
+    void _select_db();
+
+    std::string _server_info() const;
+
+    redisContext* _context();
+
+    ContextUPtr _ctx;
 
     // The time that the connection is created or the time that
     // the connection is used, i.e. *context()* is called.
     std::chrono::time_point<std::chrono::steady_clock> _last_active{};
-};
-
-enum class ConnectionType {
-    TCP = 0,
-    UNIX
-};
-
-struct ConnectionOptions {
-    ConnectionType type = ConnectionType::TCP;
-
-    std::string host;
-
-    int port = 6379;
-
-    std::string path;
-
-    std::string password;
-
-    int db = 0;
-
-    bool keep_alive = false;
-
-    std::chrono::steady_clock::duration connect_timeout{0};
-
-    std::chrono::steady_clock::duration socket_timeout{0};
-};
-
-// TODO: refactor Connection
-class Connector {
-public:
-    explicit Connector(const ConnectionOptions &opts) : _opts(opts) {}
-
-    Connection connect() const;
-
-private:
-    Connection _connect() const;
-
-    redisContext* _connect_tcp() const;
-
-    redisContext* _connect_unix() const;
-
-    void _set_socket_timeout(Connection &connection) const;
-
-    void _enable_keep_alive(Connection &connection) const;
-
-    void _auth(Connection &connection) const;
-
-    void _select_db(Connection &connection) const;
-
-    timeval _to_timeval(const std::chrono::steady_clock::duration &dur) const;
 
     ConnectionOptions _opts;
 };
@@ -200,15 +184,23 @@ private:
 
 template <typename ...Args>
 inline void Connection::send(const char *format, Args &&...args) {
-    assert(_context);
+    auto ctx = _context();
 
-    if (redisAppendCommand(_context.get(),
+    assert(ctx != nullptr);
+
+    if (redisAppendCommand(ctx,
                 format,
                 std::forward<Args>(args)...) != REDIS_OK) {
-        throw_error(*_context, "Failed to send command");
+        throw_error(*ctx, "Failed to send command");
     }
 
     assert(!broken());
+}
+
+inline redisContext* Connection::_context() {
+    _last_active = std::chrono::steady_clock::now();
+
+    return _ctx.get();
 }
 
 template <typename Iter>

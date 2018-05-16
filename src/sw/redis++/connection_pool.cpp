@@ -24,14 +24,14 @@ namespace redis {
 
 ConnectionPool::ConnectionPool(const ConnectionPoolOptions &pool_opts,
         const ConnectionOptions &connection_opts) :
-            _connector(connection_opts),
+            _opts(connection_opts),
             _pool_opts(pool_opts) {
     if (_pool_opts.size == 0) {
         throw Error("CANNOT create an empty pool");
     }
 
     for (std::size_t idx = 0; idx != _pool_opts.size; ++idx) {
-        _pool.push_back(_connector.connect());
+        _pool.emplace_back(connection_opts);
     }
 }
 
@@ -71,7 +71,7 @@ void ConnectionPool::release(Connection connection) {
 }
 
 void ConnectionPool::reconnect(Connection &connection) {
-    connection = _connector.connect();
+    connection.reconnect();
 }
 
 Connection ConnectionPool::_fetch() {

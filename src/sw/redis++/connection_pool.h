@@ -58,7 +58,7 @@ private:
 
     bool _need_reconnect(const Connection &connection);
 
-    Connector _connector;
+    ConnectionOptions _opts;
 
     ConnectionPoolOptions _pool_opts;
 
