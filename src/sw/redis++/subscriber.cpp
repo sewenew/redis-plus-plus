@@ -385,7 +385,7 @@ void Subscriber::_stop_subscribe() {
     // Reset connection.
     // TODO: Maybe unsubscribe all channels should be better.
     try {
-        _pool.reconnect(_connection);
+        _connection.reconnect();
     } catch (const Error &e) {
         // At least we broke the connection.
         return;

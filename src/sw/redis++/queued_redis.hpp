@@ -86,7 +86,7 @@ void QueuedRedis<Impl>::discard() {
 
 template <typename Impl>
 void QueuedRedis<Impl>::_reconnect() {
-    _pool.reconnect(_connection);
+    _connection.reconnect();
 }
 
 template <typename Result>

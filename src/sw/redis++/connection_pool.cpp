@@ -49,7 +49,7 @@ Connection ConnectionPool::fetch() {
 
     if (_need_reconnect(connection)) {
         try {
-            reconnect(connection);
+            connection.reconnect();
         } catch (const Error &e) {
             // Failed to reconnect, return it to the pool, and retry latter.
             release(std::move(connection));
@@ -68,10 +68,6 @@ void ConnectionPool::release(Connection connection) {
     }
 
     _cv.notify_one();
-}
-
-void ConnectionPool::reconnect(Connection &connection) {
-    connection.reconnect();
 }
 
 Connection ConnectionPool::_fetch() {
