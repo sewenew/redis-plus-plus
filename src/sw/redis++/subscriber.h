@@ -44,7 +44,7 @@ public:
     ~Subscriber();
 
     struct IgnoreMeta {
-        bool operator()(const StringView &, long long) const {
+        bool operator()(const std::string &, long long) const {
             return true;
         }
     };
@@ -154,14 +154,14 @@ private:
 
     Connection _connection;
 
-    // TODO: StringView might NOT be appropriate.
-    using MsgCallback = std::function<bool (const StringView &channel, const StringView &msg)>;
+    using MsgCallback = std::function<bool (const std::string &channel,
+                                            const std::string &msg)>;
 
-    using PatternMsgCallback = std::function<bool (const StringView &pattern,
-                                                    const StringView &channel,
-                                                    const StringView &msg)>;
+    using PatternMsgCallback = std::function<bool (const std::string &pattern,
+                                                    const std::string &channel,
+                                                    const std::string &msg)>;
 
-    using MetaCallback = std::function<bool (const StringView &channel, long long num)>;
+    using MetaCallback = std::function<bool (const std::string &channel, long long num)>;
 
     struct ChannelCallbacks {
         MsgCallback msg_callback;
