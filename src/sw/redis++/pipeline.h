@@ -38,8 +38,9 @@ public:
 
     std::deque<ReplyUPtr> exec(Connection &connection, std::size_t cmd_num);
 
-    void discard(Connection & /*connection*/) {
-        // TODO: we need an elegant way to discard pipeline execution.
+    void discard(Connection &connection) {
+        // Reconnect to Redis to discard all commands.
+        connection.reconnect();
     }
 };
 
