@@ -740,6 +740,16 @@ Result Redis::eval(const StringView &script,
     return reply::parse<Result>(*reply);
 }
 
+template <typename Result, typename Output>
+void Redis::eval(const StringView &script,
+                    std::initializer_list<StringView> keys,
+                    std::initializer_list<StringView> args,
+                    Output output) {
+    auto reply = command(cmd::eval, script, keys, args);
+
+    reply::to_array(*reply, output);
+}
+
 template <typename Result>
 Result Redis::evalsha(const StringView &script,
                         std::initializer_list<StringView> keys,
@@ -747,6 +757,16 @@ Result Redis::evalsha(const StringView &script,
     auto reply = command(cmd::evalsha, script, keys, args);
 
     return reply::parse<Result>(*reply);
+}
+
+template <typename Result, typename Output>
+void Redis::evalsha(const StringView &script,
+                        std::initializer_list<StringView> keys,
+                        std::initializer_list<StringView> args,
+                        Output output) {
+    auto reply = command(cmd::evalsha, script, keys, args);
+
+    reply::to_array(*reply, output);
 }
 
 template <typename Input, typename Output>

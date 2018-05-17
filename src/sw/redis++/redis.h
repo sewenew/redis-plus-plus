@@ -692,16 +692,27 @@ public:
 
     // SCRIPTING commands.
 
-    // TODO: The result might be an array.
     template <typename Result>
     Result eval(const StringView &script,
                 std::initializer_list<StringView> keys,
                 std::initializer_list<StringView> args);
 
+    template <typename Result, typename Output>
+    void eval(const StringView &script,
+                std::initializer_list<StringView> keys,
+                std::initializer_list<StringView> args,
+                Output output);
+
     template <typename Result>
     Result evalsha(const StringView &script,
                     std::initializer_list<StringView> keys,
                     std::initializer_list<StringView> args);
+
+    template <typename Result, typename Output>
+    void evalsha(const StringView &script,
+                    std::initializer_list<StringView> keys,
+                    std::initializer_list<StringView> args,
+                    Output output);
 
     bool script_exists(const StringView &sha);
 
