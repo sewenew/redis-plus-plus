@@ -1004,8 +1004,42 @@ public:
         return command(cmd::georadiusbymember, key, member, radius, unit, count, asc);
     }
 
-    // TODO:
     // SCRIPTING commands.
+
+    template <typename Result>
+    QueuedRedis& eval(const StringView &script,
+                        std::initializer_list<StringView> keys,
+                        std::initializer_list<StringView> args) {
+        return command(cmd::eval, script, keys, args);
+    }
+
+    template <typename Result>
+    QueuedRedis& evalsha(const StringView &script,
+                            std::initializer_list<StringView> keys,
+                            std::initializer_list<StringView> args) {
+        return command(cmd::evalsha, script, keys, args);
+    }
+
+    QueuedRedis& script_exists(const StringView &sha) {
+        return command(cmd::script_exists, sha);
+    }
+
+    template <typename Input>
+    QueuedRedis& script_exists(Input first, Input last) {
+        return command(cmd::script_exists_range<Input>, first, last);
+    }
+
+    QueuedRedis& script_flush() {
+        return command(cmd::script_flush);
+    }
+
+    QueuedRedis& script_kill() {
+        return command(cmd::script_kill);
+    }
+
+    QueuedRedis& script_load(const StringView &script) {
+        return command(cmd::script_load, script);
+    }
 
     // PUBSUB commands.
 
