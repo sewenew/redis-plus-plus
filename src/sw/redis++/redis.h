@@ -67,9 +67,30 @@ public:
 
     std::string ping(const StringView &msg);
 
-    void quit();
+    // After sending QUIT, only the current connection will be close, while
+    // other connections in the pool is still open. This is a strange behavior.
+    // So we DO NOT support the QUIT command. If you want to quit connection to
+    // server, just destroy the Redis object.
+    //
+    // void quit();
 
-    void select(long long idx);
+    // We get a connection from the pool, and send the SELECT command to switch
+    // to a specified DB. However, when we try to send other commands to the
+    // given DB, we might get a different connection from the pool, and these
+    // commands, in fact, work on other DB. e.g.
+    //
+    // redis.select(1); // get a connection from the pool and switch to the 1th DB
+    // redis.get("key"); // might get another connection from the pool,
+    //                   // and try to get 'key' on the default DB
+    //
+    // Obviously, this is NOT what we expect. So we DO NOT support SELECT command.
+    // In order to select a DB, we can specify the DB index with the ConnectionOption.
+    //
+    // However, since Pipeline and Transaction always send multiple commands on a
+    // single connection, these two classes have a *select* method.
+    // See *QueuedRedis::select* doc for details.
+    //
+    // void select(long long idx);
 
     void swapdb(long long idx1, long long idx2);
 

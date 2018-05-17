@@ -67,10 +67,13 @@ public:
         return command<void (*)(Connection &, const StringView &)>(cmd::ping, msg);
     }
 
-    QueuedRedis& quit() {
-        return command(cmd::quit);
-    }
+    // We DO NOT support the QUIT command. See *Redis::quit* doc for details.
+    //
+    // QueuedRedis& quit();
 
+    // Before returning the underlying connection to pool, i.e. destroying *QueueRedis*
+    // object, we must call *select* to reset the DB index. Otherwise, the subsequent
+    // command might work on the wrong DB.
     QueuedRedis& select(long long idx) {
         return command(cmd::select, idx);
     }
