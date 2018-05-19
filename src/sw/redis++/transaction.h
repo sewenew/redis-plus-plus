@@ -33,19 +33,7 @@ public:
     explicit TransactionImpl(bool piped) : _piped(piped) {}
 
     template <typename Cmd, typename ...Args>
-    void command(Connection &connection, Cmd cmd, Args &&...args) {
-        assert(!connection.broken());
-
-        if (!_in_transaction) {
-            _open_transaction(connection);
-        }
-
-        cmd(connection, std::forward<Args>(args)...);
-
-        if (!_piped) {
-            _get_queued_reply(connection);
-        }
-    }
+    void command(Connection &connection, Cmd cmd, Args &&...args);
 
     std::deque<ReplyUPtr> exec(Connection &connection, std::size_t cmd_num);
 
@@ -62,6 +50,21 @@ private:
 
     bool _piped;
 };
+
+template <typename Cmd, typename ...Args>
+void TransactionImpl::command(Connection &connection, Cmd cmd, Args &&...args) {
+    assert(!connection.broken());
+
+    if (!_in_transaction) {
+        _open_transaction(connection);
+    }
+
+    cmd(connection, std::forward<Args>(args)...);
+
+    if (!_piped) {
+        _get_queued_reply(connection);
+    }
+}
 
 }
 

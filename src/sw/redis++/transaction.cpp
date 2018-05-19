@@ -28,8 +28,6 @@ std::deque<ReplyUPtr> TransactionImpl::exec(Connection &connection, std::size_t 
     if (_piped) {
         // Get all QUEUED reply
         while (cmd_num > 0) {
-            // TODO: if _get_queued_reply throws,
-            // we must ensure that QueuedRedis is still valid
             _get_queued_reply(connection);
 
             --cmd_num;
