@@ -33,7 +33,8 @@ namespace chrono = std::chrono;
 
 class QueuedReplies;
 
-// TODO: If any command throws, how to ensure that QueuedRedis is still valid?
+// If any command throws, QueuedRedis resets the connection, and becomes invalid.
+// In this case, the only thing we can do is to destory the QueuedRedis object.
 template <typename Impl>
 class QueuedRedis {
 public:
@@ -1053,7 +1054,9 @@ private:
     template <typename ...Args>
     QueuedRedis(ConnectionPool &pool, Args &&...args);
 
-    void _reconnect();
+    void _sanity_check() const;
+
+    void _reset();
 
     ConnectionPool &_pool;
 
@@ -1062,6 +1065,8 @@ private:
     Impl _impl;
 
     std::size_t _cmd_num = 0;
+
+    bool _valid = true;
 };
 
 class QueuedReplies {
