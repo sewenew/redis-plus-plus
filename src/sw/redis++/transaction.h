@@ -42,6 +42,8 @@ public:
 private:
     void _open_transaction(Connection &connection);
 
+    void _close_transaction();
+
     void _get_queued_reply(Connection &connection);
 
     std::deque<ReplyUPtr> _exec(Connection &connection);

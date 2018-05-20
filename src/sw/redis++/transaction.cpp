@@ -23,7 +23,7 @@ namespace redis {
 namespace detail {
 
 std::deque<ReplyUPtr> TransactionImpl::exec(Connection &connection, std::size_t cmd_num) {
-    _in_transaction = false;
+    _close_transaction();
 
     if (_piped) {
         // Get all QUEUED reply
@@ -38,7 +38,7 @@ std::deque<ReplyUPtr> TransactionImpl::exec(Connection &connection, std::size_t 
 }
 
 void TransactionImpl::discard(Connection &connection) {
-    _in_transaction = false;
+    _close_transaction();
 
     cmd::discard(connection);
     auto reply = connection.recv();
@@ -56,6 +56,14 @@ void TransactionImpl::_open_transaction(Connection &connection) {
     }
 
     _in_transaction = true;
+}
+
+void TransactionImpl::_close_transaction() {
+    if (!_in_transaction) {
+        throw Error("No command in transaction");
+    }
+
+    _in_transaction = false;
 }
 
 void TransactionImpl::_get_queued_reply(Connection &connection) {
