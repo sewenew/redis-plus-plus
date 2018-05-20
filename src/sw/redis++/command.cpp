@@ -30,7 +30,7 @@ void restore(Connection &connection,
                 long long ttl,
                 const StringView &val,
                 bool replace) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "RESTORE" << key << ttl << val;
 
     if (replace) {
@@ -47,7 +47,7 @@ void set(Connection &connection,
             const StringView &val,
             long long ttl,
             UpdateType type) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "SET" << key << val;
 
     std::string ttl_options;
@@ -96,7 +96,7 @@ void geodist(Connection &connection,
                 const StringView &member1,
                 const StringView &member2,
                 GeoUnit unit) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "GEODIST" << key << member1 << member2;
 
     detail::set_geo_unit(args, unit);
@@ -112,7 +112,7 @@ void georadius_store(Connection &connection,
                         const StringView &destination,
                         bool store_dist,
                         long long count) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "GEORADIUS" << key << loc.first << loc.second;
 
     detail::set_georadius_store_parameters(args,
@@ -133,7 +133,7 @@ void georadiusbymember_store(Connection &connection,
                                 const StringView &destination,
                                 bool store_dist,
                                 long long count) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "GEORADIUSBYMEMBER" << key << member;
 
     detail::set_georadius_store_parameters(args,
@@ -148,7 +148,7 @@ void georadiusbymember_store(Connection &connection,
 
 namespace detail {
 
-void set_update_type(Connection::CmdArgs &args, UpdateType type) {
+void set_update_type(CmdArgs &args, UpdateType type) {
     switch (type) {
     case UpdateType::EXIST:
         args << "XX";
@@ -167,7 +167,7 @@ void set_update_type(Connection::CmdArgs &args, UpdateType type) {
     }
 }
 
-void set_aggregation_type(Connection::CmdArgs &args, Aggregation aggr) {
+void set_aggregation_type(CmdArgs &args, Aggregation aggr) {
     args << "AGGREGATE";
 
     switch (aggr) {
@@ -188,7 +188,7 @@ void set_aggregation_type(Connection::CmdArgs &args, Aggregation aggr) {
     }
 }
 
-void set_geo_unit(Connection::CmdArgs &args, GeoUnit unit) {
+void set_geo_unit(CmdArgs &args, GeoUnit unit) {
     switch (unit) {
     case GeoUnit::M:
         args << "m";
@@ -212,7 +212,7 @@ void set_geo_unit(Connection::CmdArgs &args, GeoUnit unit) {
     }
 }
 
-void set_georadius_store_parameters(Connection::CmdArgs &args,
+void set_georadius_store_parameters(CmdArgs &args,
                                     double radius,
                                     GeoUnit unit,
                                     const StringView &destination,

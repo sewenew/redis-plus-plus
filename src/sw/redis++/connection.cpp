@@ -18,6 +18,7 @@
 #include <cassert>
 #include "reply.h"
 #include "command.h"
+#include "command_args.h"
 
 namespace sw {
 
@@ -170,13 +171,6 @@ void Connection::send(int argc, const char **argv, const std::size_t *argv_len) 
     }
 
     assert(!broken());
-}
-
-auto Connection::CmdArgs::operator<<(const StringView &arg) -> CmdArgs& {
-    _argv.push_back(arg.data());
-    _argv_len.push_back(arg.size());
-
-    return *this;
 }
 
 void Connection::send(CmdArgs &args) {

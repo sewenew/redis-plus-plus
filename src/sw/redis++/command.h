@@ -22,6 +22,7 @@
 #include <chrono>
 #include "connection.h"
 #include "command_options.h"
+#include "command_args.h"
 #include "utils.h"
 
 namespace sw {
@@ -114,7 +115,7 @@ inline void del(Connection &connection, const StringView &key) {
 
 template <typename Input>
 inline void del_range(Connection &connection, Input first, Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "DEL" << std::make_pair(first, last);
 
     connection.send(args);
@@ -130,7 +131,7 @@ inline void exists(Connection &connection, const StringView &key) {
 
 template <typename Input>
 inline void exists_range(Connection &connection, Input first, Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "EXISTS" << std::make_pair(first, last);
 
     connection.send(args);
@@ -228,7 +229,7 @@ inline void touch(Connection &connection, const StringView &key) {
 
 template <typename Input>
 inline void touch_range(Connection &connection, Input first, Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "TOUCH" << std::make_pair(first, last);
 
     connection.send(args);
@@ -248,7 +249,7 @@ inline void unlink(Connection &connection, const StringView &key) {
 
 template <typename Input>
 inline void unlink_range(Connection &connection, Input first, Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "UNLINK" << std::make_pair(first, last);
 
     connection.send(args);
@@ -351,7 +352,7 @@ inline void incrbyfloat(Connection &connection, const StringView &key, double in
 
 template <typename Input>
 inline void mget(Connection &connection, Input first, Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "MGET" << std::make_pair(first, last);
 
     connection.send(args);
@@ -359,7 +360,7 @@ inline void mget(Connection &connection, Input first, Input last) {
 
 template <typename Input>
 inline void mset(Connection &connection, Input first, Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "MSET" << std::make_pair(first, last);
 
     connection.send(args);
@@ -367,7 +368,7 @@ inline void mset(Connection &connection, Input first, Input last) {
 
 template <typename Input>
 inline void msetnx(Connection &connection, Input first, Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "MSETNX" << std::make_pair(first, last);
 
     connection.send(args);
@@ -438,7 +439,7 @@ inline void blpop(Connection &connection,
                     Input first,
                     Input last,
                     long long timeout) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "BLPOP" << std::make_pair(first, last) << timeout;
 
     connection.send(args);
@@ -449,7 +450,7 @@ inline void brpop(Connection &connection,
                     Input first,
                     Input last,
                     long long timeout) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "BRPOP" << std::make_pair(first, last) << timeout;
 
     connection.send(args);
@@ -498,7 +499,7 @@ inline void lpush_range(Connection &connection,
                         const StringView &key,
                         Iter first,
                         Iter last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "LPUSH" << key << std::make_pair(first, last);
 
     connection.send(args);
@@ -573,7 +574,7 @@ inline void rpush_range(Connection &connection,
                         const StringView &key,
                         Iter first,
                         Iter last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "RPUSH" << key << std::make_pair(first, last);
 
     connection.send(args);
@@ -598,7 +599,7 @@ inline void hdel_range(Connection &connection,
                         const StringView &key,
                         Iter first,
                         Iter last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "HDEL" << key << std::make_pair(first, last);
 
     connection.send(args);
@@ -653,7 +654,7 @@ inline void hmget(Connection &connection,
                     const StringView &key,
                     Iter first,
                     Iter last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "HMGET" << key << std::make_pair(first, last);
 
     connection.send(args);
@@ -664,7 +665,7 @@ inline void hmset(Connection &connection,
                     const StringView &key,
                     Iter first,
                     Iter last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "HMSET" << key << std::make_pair(first, last);
 
     connection.send(args);
@@ -729,7 +730,7 @@ inline void sadd_range(Connection &connection,
                         const StringView &key,
                         Iter first,
                         Iter last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "SADD" << key << std::make_pair(first, last);
 
     connection.send(args);
@@ -741,7 +742,7 @@ inline void scard(Connection &connection, const StringView &key) {
 
 template <typename Input>
 inline void sdiff(Connection &connection, Input first, Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "SDIFF" << std::make_pair(first, last);
 
     connection.send(args);
@@ -752,7 +753,7 @@ inline void sdiffstore(Connection &connection,
                         const StringView &destination,
                         Input first,
                         Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "SDIFFSTORE" << destination << std::make_pair(first, last);
 
     connection.send(args);
@@ -760,7 +761,7 @@ inline void sdiffstore(Connection &connection,
 
 template <typename Input>
 inline void sinter(Connection &connection, Input first, Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "SINTER" << std::make_pair(first, last);
 
     connection.send(args);
@@ -771,7 +772,7 @@ inline void sinterstore(Connection &connection,
                         const StringView &destination,
                         Input first,
                         Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "SINTERSTORE" << destination << std::make_pair(first, last);
 
     connection.send(args);
@@ -834,7 +835,7 @@ inline void srem_range(Connection &connection,
                     const StringView &key,
                     Iter first,
                     Iter last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "SREM" << key << std::make_pair(first, last);
 
     connection.send(args);
@@ -854,7 +855,7 @@ inline void sscan(Connection &connection,
 
 template <typename Input>
 inline void sunion(Connection &connection, Input first, Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "SUNION" << std::make_pair(first, last);
 
     connection.send(args);
@@ -865,7 +866,7 @@ inline void sunionstore(Connection &connection,
                         const StringView &destination,
                         Input first,
                         Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "SUNIONSTORE" << destination << std::make_pair(first, last);
 
     connection.send(args);
@@ -985,7 +986,7 @@ inline void zrem_range(Connection &connection,
                         const StringView &key,
                         Input first,
                         Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "ZREM" << key << std::make_pair(first, last);
 
     connection.send(args);
@@ -1105,7 +1106,7 @@ inline void pfadd_range(Connection &connection,
                         const StringView &key,
                         Input first,
                         Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "PFADD" << key << std::make_pair(first, last);
 
     connection.send(args);
@@ -1119,7 +1120,7 @@ template <typename Input>
 inline void pfcount_range(Connection &connection,
                             Input first,
                             Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "PFCOUNT" << std::make_pair(first, last);
 
     connection.send(args);
@@ -1130,7 +1131,7 @@ inline void pfmerge(Connection &connection,
                     const StringView &destination,
                     Input first,
                     Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "PFMERGE" << destination << std::make_pair(first, last);
 
     connection.send(args);
@@ -1155,7 +1156,7 @@ inline void geoadd_range(Connection &connection,
                             const StringView &key,
                             Input first,
                             Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "GEOADD" << key << std::make_pair(first, last);
 
     connection.send(args);
@@ -1180,7 +1181,7 @@ inline void geohash_range(Connection &connection,
                             const StringView &key,
                             Input first,
                             Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "GEOHASH" << key << std::make_pair(first, last);
 
     connection.send(args);
@@ -1199,7 +1200,7 @@ inline void geopos_range(Connection &connection,
                             const StringView &key,
                             Input first,
                             Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "GEOPOS" << key << std::make_pair(first, last);
 
     connection.send(args);
@@ -1247,7 +1248,7 @@ inline void eval(Connection &connection,
                     const StringView &script,
                     std::initializer_list<StringView> keys,
                     std::initializer_list<StringView> args) {
-    Connection::CmdArgs cmd_args;
+    CmdArgs cmd_args;
 
     cmd_args << "EVAL" << script << keys.size()
             << std::make_pair(keys.begin(), keys.end())
@@ -1260,7 +1261,7 @@ inline void evalsha(Connection &connection,
                     const StringView &script,
                     std::initializer_list<StringView> keys,
                     std::initializer_list<StringView> args) {
-    Connection::CmdArgs cmd_args;
+    CmdArgs cmd_args;
 
     cmd_args << "EVALSHA" << script << keys.size()
             << std::make_pair(keys.begin(), keys.end())
@@ -1275,7 +1276,7 @@ inline void script_exists(Connection &connection, const StringView &sha) {
 
 template <typename Input>
 inline void script_exists_range(Connection &connection, Input first, Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "SCRIPT" << "EXISTS" << std::make_pair(first, last);
 
     connection.send(args);
@@ -1301,7 +1302,7 @@ inline void psubscribe(Connection &connection, const StringView &pattern) {
 
 template <typename Input>
 inline void psubscribe_range(Connection &connection, Input first, Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "PSUBSCRIBE" << std::make_pair(first, last);
 
     connection.send(args);
@@ -1325,7 +1326,7 @@ inline void punsubscribe(Connection &connection, const StringView &pattern) {
 
 template <typename Input>
 inline void punsubscribe_range(Connection &connection, Input first, Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "PUNSUBSCRIBE" << std::make_pair(first, last);
 
     connection.send(args);
@@ -1337,7 +1338,7 @@ inline void subscribe(Connection &connection, const StringView &channel) {
 
 template <typename Input>
 inline void subscribe_range(Connection &connection, Input first, Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "SUBSCRIBE" << std::make_pair(first, last);
 
     connection.send(args);
@@ -1353,7 +1354,7 @@ inline void unsubscribe(Connection &connection, const StringView &channel) {
 
 template <typename Input>
 inline void unsubscribe_range(Connection &connection, Input first, Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "UNSUBSCRIBE" << std::make_pair(first, last);
 
     connection.send(args);
@@ -1379,7 +1380,7 @@ inline void unwatch(Connection &connection, const StringView &key) {
 
 template <typename Input>
 inline void unwatch_range(Connection &connection, Input first, Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "UNWATCH" << std::make_pair(first, last);
 
     connection.send(args);
@@ -1391,7 +1392,7 @@ inline void watch(Connection &connection, const StringView &key) {
 
 template <typename Input>
 inline void watch_range(Connection &connection, Input first, Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "WATCH" << std::make_pair(first, last);
 
     connection.send(args);
@@ -1399,7 +1400,7 @@ inline void watch_range(Connection &connection, Input first, Input last) {
 
 namespace detail {
 
-void set_update_type(Connection::CmdArgs &args, UpdateType type);
+void set_update_type(CmdArgs &args, UpdateType type);
 
 template <typename Cmd, typename ...Args>
 inline void score_command(std::true_type, Cmd cmd, Args &&... args) {
@@ -1504,7 +1505,7 @@ inline void zrevrangebyscore(Connection &connection,
     }
 }
 
-void set_aggregation_type(Connection::CmdArgs &args, Aggregation type);
+void set_aggregation_type(CmdArgs &args, Aggregation type);
 
 template <typename Input>
 void zinterstore(std::false_type,
@@ -1513,7 +1514,7 @@ void zinterstore(std::false_type,
                     Input first,
                     Input last,
                     Aggregation aggr) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "ZINTERSTORE" << destination << std::distance(first, last)
         << std::make_pair(first, last);
 
@@ -1529,7 +1530,7 @@ void zinterstore(std::true_type,
                     Input first,
                     Input last,
                     Aggregation aggr) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "ZINTERSTORE" << destination << std::distance(first, last);
 
     for (auto iter = first; iter != last; ++iter) {
@@ -1554,7 +1555,7 @@ void zunionstore(std::false_type,
                     Input first,
                     Input last,
                     Aggregation aggr) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "ZUNIONSTORE" << destination << std::distance(first, last)
         << std::make_pair(first, last);
 
@@ -1570,7 +1571,7 @@ void zunionstore(std::true_type,
                     Input first,
                     Input last,
                     Aggregation aggr) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "ZUNIONSTORE" << destination << std::distance(first, last);
 
     for (auto iter = first; iter != last; ++iter) {
@@ -1588,9 +1589,9 @@ void zunionstore(std::true_type,
     connection.send(args);
 }
 
-void set_geo_unit(Connection::CmdArgs &args, GeoUnit unit);
+void set_geo_unit(CmdArgs &args, GeoUnit unit);
 
-void set_georadius_store_parameters(Connection::CmdArgs &args,
+void set_georadius_store_parameters(CmdArgs &args,
                                     double radius,
                                     GeoUnit unit,
                                     const StringView &destination,
@@ -1607,7 +1608,7 @@ template <typename T>
 struct WithHash : TupleWithType<long long, T> {};
 
 template <typename Output>
-void set_georadius_parameters(Connection::CmdArgs &args,
+void set_georadius_parameters(CmdArgs &args,
                                 double radius,
                                 GeoUnit unit,
                                 long long count,
@@ -1657,7 +1658,7 @@ void bitop(Connection &connection,
             const StringView &destination,
             Input first,
             Input last) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "BITOP";
     switch (op) {
     case BitOp::AND:
@@ -1692,7 +1693,7 @@ void zadd_range(Connection &connection,
                 Iter last,
                 bool changed,
                 UpdateType type) {
-    Connection::CmdArgs args;
+    CmdArgs args;
 
     args << "ZADD" << key;
 
@@ -1779,7 +1780,7 @@ void georadius(Connection &connection,
                 GeoUnit unit,
                 long long count,
                 bool asc) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "GEORADIUS" << key << loc.first << loc.second;
 
     detail::set_georadius_parameters<Output>(args, radius, unit, count, asc);
@@ -1795,7 +1796,7 @@ void georadiusbymember(Connection &connection,
                         GeoUnit unit,
                         long long count,
                         bool asc) {
-    Connection::CmdArgs args;
+    CmdArgs args;
     args << "GEORADIUSBYMEMBER" << key << member;
 
     detail::set_georadius_parameters<Output>(args, radius, unit, count, asc);

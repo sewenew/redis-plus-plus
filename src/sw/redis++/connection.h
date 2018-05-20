@@ -20,8 +20,6 @@
 #include <cerrno>
 #include <cstring>
 #include <memory>
-#include <vector>
-#include <list>
 #include <string>
 #include <sstream>
 #include <chrono>
@@ -59,6 +57,8 @@ struct ConnectionOptions {
     std::chrono::steady_clock::duration socket_timeout{0};
 };
 
+class CmdArgs;
+
 class Connection {
 public:
     explicit Connection(const ConnectionOptions &opts);
@@ -89,58 +89,6 @@ public:
     void send(const char *format, Args &&...args);
 
     void send(int argc, const char **argv, const std::size_t *argv_len);
-
-    // TODO: move CmdArgs to cmd namespace
-    class CmdArgs {
-    public:
-        CmdArgs& operator<<(const StringView &arg);
-
-        template <typename T,
-                     typename std::enable_if<std::is_integral<T>::value
-                                                || std::is_floating_point<T>::value,
-                                            int>::type = 0>
-        CmdArgs& operator<<(T arg) {
-            _numbers.push_back(std::to_string(arg));
-            return operator<<(_numbers.back());
-        }
-
-        template <typename Iter>
-        CmdArgs& operator<<(const std::pair<Iter, Iter> &range);
-
-        template <std::size_t N, typename ...Args>
-        auto operator<<(const std::tuple<Args...> &) ->
-            typename std::enable_if<N == sizeof...(Args), CmdArgs&>::type {
-            return *this;
-        }
-
-        template <std::size_t N = 0, typename ...Args>
-        auto operator<<(const std::tuple<Args...> &arg) ->
-            typename std::enable_if<N < sizeof...(Args), CmdArgs&>::type;
-
-        const char** argv() {
-            return _argv.data();
-        }
-
-        const std::size_t* argv_len() {
-            return _argv_len.data();
-        }
-
-        std::size_t size() const {
-            return _argv.size();
-        }
-
-    private:
-        template <typename Iter>
-        CmdArgs& _append(std::true_type, const std::pair<Iter, Iter> &range);
-
-        template <typename Iter>
-        CmdArgs& _append(std::false_type, const std::pair<Iter, Iter> &range);
-
-        std::vector<const char *> _argv;
-        std::vector<std::size_t> _argv_len;
-
-        std::list<std::string> _numbers;
-    };
 
     void send(CmdArgs &args);
 
@@ -201,45 +149,6 @@ inline redisContext* Connection::_context() {
     _last_active = std::chrono::steady_clock::now();
 
     return _ctx.get();
-}
-
-template <typename Iter>
-auto Connection::CmdArgs::operator<<(const std::pair<Iter, Iter> &range) -> CmdArgs& {
-    return _append(IsKvPair<typename std::decay<decltype(*std::declval<Iter>())>::type>(), range);
-}
-
-template <std::size_t N, typename ...Args>
-auto Connection::CmdArgs::operator<<(const std::tuple<Args...> &arg) ->
-    typename std::enable_if<N < sizeof...(Args), CmdArgs&>::type {
-    operator<<(std::get<N>(arg));
-
-    return operator<<<N + 1, Args...>(arg);
-}
-
-template <typename Iter>
-auto Connection::CmdArgs::_append(std::false_type,
-                                    const std::pair<Iter, Iter> &range) -> CmdArgs& {
-    auto first = range.first;
-    auto last = range.second;
-    while (first != last) {
-        *this << *first;
-        ++first;
-    }
-
-    return *this;
-}
-
-template <typename Iter>
-auto Connection::CmdArgs::_append(std::true_type,
-                                    const std::pair<Iter, Iter> &range) -> CmdArgs& {
-    auto first = range.first;
-    auto last = range.second;
-    while (first != last) {
-        *this << first->first << first->second;
-        ++first;
-    }
-
-    return *this;
 }
 
 }
