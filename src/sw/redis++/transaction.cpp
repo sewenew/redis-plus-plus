@@ -74,8 +74,10 @@ std::deque<ReplyUPtr> TransactionImpl::_exec(Connection &connection) {
         throw ProtoError("Expect ARRAY reply");
     }
 
-    // TODO: how to deal with empty array reply? reply::to_array might be buggy.
     if (reply->element == nullptr || reply->elements == 0) {
+        // In fact, this should never happen
+        assert(false);
+
         return {};
     }
 

@@ -164,12 +164,13 @@ namespace detail {
 
 template <typename Iter>
 void to_score_array(std::true_type, redisReply &reply, Iter output) {
-    if (reply.elements % 2 != 0) {
-        throw ProtoError("Not string pair array reply");
+    if (reply.element == nullptr) {
+        // Empty array.
+        return;
     }
 
-    if (reply.element == nullptr) {
-        throw ProtoError("Null reply");
+    if (reply.elements % 2 != 0) {
+        throw ProtoError("Not string pair array reply");
     }
 
     for (std::size_t idx = 0; idx != reply.elements; idx += 2) {
@@ -217,7 +218,7 @@ auto parse_tuple(redisReply **reply, std::size_t idx) ->
 
 template<typename Iter>
 void to_score_array(redisReply &reply, Iter output) {
-    if (!reply::is_array(reply)) {
+    if (!is_array(reply)) {
         throw ProtoError("Expect ARRAY reply");
     }
 
@@ -235,12 +236,16 @@ Optional<T> parse(ParseTag<Optional<T>>, redisReply &reply) {
 
 template <typename T, typename U>
 std::pair<T, U> parse(ParseTag<std::pair<T, U>>, redisReply &reply) {
+    if (!is_array(reply)) {
+        throw ProtoError("Expect ARRAY reply");
+    }
+
     if (reply.elements != 2) {
-        throw ProtoError("Expect PAIR reply");
+        throw ProtoError("NOT key-value PAIR reply");
     }
 
     if (reply.element == nullptr) {
-        throw ProtoError("Null reply");
+        throw ProtoError("Null PAIR reply");
     }
 
     auto *first = reply.element[0];
@@ -255,12 +260,19 @@ std::pair<T, U> parse(ParseTag<std::pair<T, U>>, redisReply &reply) {
 template <typename ...Args>
 std::tuple<Args...> parse(ParseTag<std::tuple<Args...>>, redisReply &reply) {
     constexpr auto size = sizeof...(Args);
+
+    static_assert(size > 0, "DO NOT support parsing tuple with 0 element");
+
+    if (!is_array(reply)) {
+        throw ProtoError("Expect ARRAY reply");
+    }
+
     if (reply.elements != size) {
         throw ProtoError("Expect tuple reply with " + std::to_string(size) + "elements");
     }
 
     if (reply.element == nullptr) {
-        throw ProtoError("Null reply");
+        throw ProtoError("Null TUPLE reply");
     }
 
     return detail::parse_tuple<Args...>(reply.element, 0);
@@ -268,18 +280,19 @@ std::tuple<Args...> parse(ParseTag<std::tuple<Args...>>, redisReply &reply) {
 
 template <typename Output>
 void to_array(redisReply &reply, Output output) {
-    if (!reply::is_array(reply)) {
+    if (!is_array(reply)) {
         throw ProtoError("Expect ARRAY reply");
     }
 
     if (reply.element == nullptr) {
-        throw ProtoError("Null ARRAY reply");
+        // Empty array.
+        return;
     }
 
     for (std::size_t idx = 0; idx != reply.elements; ++idx) {
         auto *sub_reply = reply.element[idx];
         if (sub_reply == nullptr) {
-            throw ProtoError("Null string array reply");
+            throw ProtoError("Null array element reply");
         }
 
         *output = parse<typename IterType<Output>::type>(*sub_reply);
