@@ -339,7 +339,7 @@ inline void incr(Connection &connection, const StringView &key) {
 }
 
 inline void incrby(Connection &connection, const StringView &key, long long increment) {
-    connection.send("INCRBY %b",
+    connection.send("INCRBY %b %lld",
                     key.data(), key.size(),
                     increment);
 }
