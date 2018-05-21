@@ -143,7 +143,7 @@ Connection::Connection(const ConnectionOptions &opts) :
             _ctx(Connector(opts).connect()),
             _last_active(std::chrono::steady_clock::now()),
             _opts(opts) {
-    assert(!_ctx);
+    assert(_ctx);
 
     if (broken()) {
         throw_error(*_ctx, "Failed to connect to Redis");
