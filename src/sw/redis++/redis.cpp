@@ -36,15 +36,15 @@ Redis::ConnectionPoolGuard::~ConnectionPoolGuard() {
 }
 
 Pipeline Redis::pipeline() {
-    return Pipeline(_pool);
+    return Pipeline(_pool.create());
 }
 
 Transaction Redis::transaction(bool piped) {
-    return Transaction(_pool, piped);
+    return Transaction(_pool.create(), piped);
 }
 
 Subscriber Redis::subscriber() {
-    return Subscriber(_pool);
+    return Subscriber(_pool.create());
 }
 
 // CONNECTION commands.

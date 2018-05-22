@@ -60,6 +60,10 @@ Connection ConnectionPool::fetch() {
     return connection;
 }
 
+Connection ConnectionPool::create() const {
+    return Connection(_opts);
+}
+
 void ConnectionPool::release(Connection connection) {
     {
         std::lock_guard<std::mutex> lock(_mutex);

@@ -23,20 +23,9 @@ namespace redis {
 
 template <typename Impl>
 template <typename ...Args>
-QueuedRedis<Impl>::QueuedRedis(ConnectionPool &pool, Args &&...args) :
-            _pool(pool),
-            _connection(_pool.fetch()),
+QueuedRedis<Impl>::QueuedRedis(Connection connection, Args &&...args) :
+            _connection(std::move(connection)),
             _impl(std::forward<Args>(args)...) {}
-
-template <typename Impl>
-QueuedRedis<Impl>::~QueuedRedis() {
-    try {
-        discard();
-    } catch (const Error &e) {
-        // Avoid throwing from destructor.
-        return;
-    }
-}
 
 template <typename Impl>
 template <typename Cmd, typename ...Args>
@@ -101,8 +90,6 @@ inline void QueuedRedis<Impl>::_reset() {
     _cmd_num = 0;
 
     _valid = false;
-
-    _connection.reconnect();
 }
 
 template <typename Result>

@@ -24,7 +24,7 @@
 #include <atomic>
 #include <mutex>
 #include <future>
-#include "connection_pool.h"
+#include "connection.h"
 #include "reply.h"
 #include "command.h"
 #include "utils.h"
@@ -113,7 +113,7 @@ public:
 private:
     friend class Redis;
 
-    explicit Subscriber(ConnectionPool &pool);
+    explicit Subscriber(Connection connection);
 
     enum class MsgType {
         SUBSCRIBE,
@@ -149,8 +149,6 @@ private:
     void _consume();
 
     void _stop_subscribe();
-
-    ConnectionPool &_pool;
 
     Connection _connection;
 

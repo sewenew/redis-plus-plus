@@ -43,7 +43,11 @@ public:
     explicit ConnectionPool(const ConnectionPoolOptions &pool_opts,
             const ConnectionOptions &connection_opts);
 
+    // Fetch a connection from pool.
     Connection fetch();
+
+    // Create a new connection.
+    Connection create() const;
 
     void release(Connection connection);
 

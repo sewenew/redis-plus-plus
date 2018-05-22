@@ -20,7 +20,7 @@
 #include <cassert>
 #include <chrono>
 #include <deque>
-#include "connection_pool.h"
+#include "connection.h"
 #include "utils.h"
 #include "reply.h"
 #include "command.h"
@@ -41,7 +41,9 @@ public:
     QueuedRedis(QueuedRedis &&) = default;
     QueuedRedis& operator=(QueuedRedis &&) = default;
 
-    ~QueuedRedis();
+    // When it destructs, the underlying *Connection* will be closed,
+    // and any command that has NOT been executed will be ignored.
+    ~QueuedRedis() = default;
 
     template <typename Cmd, typename ...Args>
     QueuedRedis& command(Cmd cmd, Args &&...args);
@@ -1052,13 +1054,11 @@ private:
     friend class Redis;
 
     template <typename ...Args>
-    QueuedRedis(ConnectionPool &pool, Args &&...args);
+    QueuedRedis(Connection connection, Args &&...args);
 
     void _sanity_check() const;
 
     void _reset();
-
-    ConnectionPool &_pool;
 
     Connection _connection;
 

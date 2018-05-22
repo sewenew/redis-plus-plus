@@ -30,22 +30,16 @@ const Subscriber::TypeIndex Subscriber::_msg_type_index = {
     {"punsubscribe", MsgType::PUNSUBSCRIBE}
 };
 
-Subscriber::Subscriber(ConnectionPool &pool) :
-        _pool(pool),
-        _connection(_pool.fetch()),
+Subscriber::Subscriber(Connection connection) :
+        _connection(std::move(connection)),
         _stop(std::unique_ptr<std::atomic<bool>>(new std::atomic<bool>(false))),
         _mutex(std::unique_ptr<std::mutex>(new std::mutex)) {}
 
 Subscriber::~Subscriber() {
     try {
         stop();
-
-        _pool.release(std::move(_connection));
     } catch (...) {
-        // In case that stop() throws exception,
-        // or failed to release connection.
         // Avoid throwing exception from destructor.
-        // TODO: if _pool.release() throws, we'll get connection leak problem.
     }
 }
 
