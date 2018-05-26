@@ -17,12 +17,12 @@ add_library(${STATIC_LIB} STATIC ${PROJECT_SOURCE_FILES})
 add_library(${SHARED_LIB} SHARED ${PROJECT_SOURCE_FILES})
 
 # hiredis dependency
-find_path(HIREDIS_HEADER_PATH hiredis)
-target_include_directories(${STATIC_LIB} PUBLIC ${HIREDIS_HEADER_PATH})
-target_include_directories(${SHARED_LIB} PUBLIC ${HIREDIS_HEADER_PATH})
+find_path(HIREDIS_HEADER hiredis)
+target_include_directories(${STATIC_LIB} PUBLIC ${HIREDIS_HEADER})
+target_include_directories(${SHARED_LIB} PUBLIC ${HIREDIS_HEADER})
 
-find_library(HIREDIS_LIB_PATH hiredis)
-target_link_libraries(${SHARED_LIB} ${HIREDIS_LIB_PATH})
+find_library(HIREDIS_LIB hiredis)
+target_link_libraries(${SHARED_LIB} ${HIREDIS_LIB})
 
 set_target_properties(${STATIC_LIB} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
 set_target_properties(${SHARED_LIB} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
@@ -35,6 +35,8 @@ include(CheckIncludeFileCXX)
 check_include_file_cxx(string_view HAVE_STRING_VIEW)
 check_include_file_cxx(optional HAVE_OPTIONAL)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${PROJECT_SOURCE_DIR}/config.h)
+
+add_subdirectory(test)
 
 # Install static lib.
 install(TARGETS ${STATIC_LIB}
