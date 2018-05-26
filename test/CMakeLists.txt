@@ -11,6 +11,9 @@ file(GLOB PROJECT_SOURCE_FILES "${PROJECT_SOURCE_DIR}/*.cpp")
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCE_FILES})
 
 # hiredis dependency
+find_path(HIREDIS_HEADER hiredis)
+target_include_directories(${PROJECT_NAME} PUBLIC ${HIREDIS_HEADER})
+
 find_library(HIREDIS_STATIC_LIB libhiredis.a)
 target_link_libraries(${PROJECT_NAME} ${HIREDIS_STATIC_LIB})
 
