@@ -246,45 +246,45 @@ inline OptionalString Redis::brpoplpush(const StringView &source,
     return brpoplpush(source, destination, timeout.count());
 }
 
-template <typename Iter>
-inline long long Redis::lpush(const StringView &key, Iter first, Iter last) {
-    auto reply = command(cmd::lpush_range<Iter>, key, first, last);
+template <typename Input>
+inline long long Redis::lpush(const StringView &key, Input first, Input last) {
+    auto reply = command(cmd::lpush_range<Input>, key, first, last);
 
     return reply::parse<long long>(*reply);
 }
 
-template <typename Iter>
-inline void Redis::lrange(const StringView &key, long long start, long long stop, Iter output) {
+template <typename Output>
+inline void Redis::lrange(const StringView &key, long long start, long long stop, Output output) {
     auto reply = command(cmd::lrange, key, start, stop);
 
     reply::to_array(*reply, output);
 }
 
-template <typename Iter>
-inline long long Redis::rpush(const StringView &key, Iter first, Iter last) {
-    auto reply = command(cmd::rpush_range<Iter>, key, first, last);
+template <typename Input>
+inline long long Redis::rpush(const StringView &key, Input first, Input last) {
+    auto reply = command(cmd::rpush_range<Input>, key, first, last);
 
     return reply::parse<long long>(*reply);
 }
 
 // HASH commands.
 
-template <typename Iter>
-inline long long Redis::hdel(const StringView &key, Iter first, Iter last) {
-    auto reply = command(cmd::hdel_range<Iter>, key, first, last);
+template <typename Input>
+inline long long Redis::hdel(const StringView &key, Input first, Input last) {
+    auto reply = command(cmd::hdel_range<Input>, key, first, last);
 
     return reply::parse<long long>(*reply);
 }
 
-template <typename Iter>
-inline void Redis::hgetall(const StringView &key, Iter output) {
+template <typename Output>
+inline void Redis::hgetall(const StringView &key, Output output) {
     auto reply = command(cmd::hgetall, key);
 
     reply::to_array(*reply, output);
 }
 
-template <typename Iter>
-inline void Redis::hkeys(const StringView &key, Iter output) {
+template <typename Output>
+inline void Redis::hkeys(const StringView &key, Output output) {
     auto reply = command(cmd::hkeys, key);
 
     reply::to_array(*reply, output);
@@ -297,9 +297,9 @@ inline void Redis::hmget(const StringView &key, Input first, Input last, Output 
     reply::to_array(*reply, output);
 }
 
-template <typename Iter>
-inline void Redis::hmset(const StringView &key, Iter first, Iter last) {
-    auto reply = command(cmd::hmset<Iter>, key, first, last);
+template <typename Input>
+inline void Redis::hmset(const StringView &key, Input first, Input last) {
+    auto reply = command(cmd::hmset<Input>, key, first, last);
 
     reply::expect_ok_status(*reply);
 }
@@ -338,8 +338,8 @@ inline long long Redis::hscan(const StringView &key,
     return hscan(key, cursor, "*", 10, output);
 }
 
-template <typename Iter>
-inline void Redis::hvals(const StringView &key, Iter output) {
+template <typename Output>
+inline void Redis::hvals(const StringView &key, Output output) {
     auto reply = command(cmd::hvals, key);
 
     reply::to_array(*reply, output);
@@ -347,9 +347,9 @@ inline void Redis::hvals(const StringView &key, Iter output) {
 
 // SET commands.
 
-template <typename Iter>
-long long Redis::sadd(const StringView &key, Iter first, Iter last) {
-    auto reply = command(cmd::sadd_range<Iter>, key, first, last);
+template <typename Input>
+long long Redis::sadd(const StringView &key, Input first, Input last) {
+    auto reply = command(cmd::sadd_range<Input>, key, first, last);
 
     return reply::parse<long long>(*reply);
 }
@@ -386,30 +386,30 @@ long long Redis::sinterstore(const StringView &destination,
     return reply::parse<long long>(*reply);
 }
 
-template <typename Iter>
-void Redis::smembers(const StringView &key, Iter output) {
+template <typename Output>
+void Redis::smembers(const StringView &key, Output output) {
     auto reply = command(cmd::smembers, key);
 
     reply::to_array(*reply, output);
 }
 
-template <typename Iter>
-void Redis::spop(const StringView &key, long long count, Iter output) {
+template <typename Output>
+void Redis::spop(const StringView &key, long long count, Output output) {
     auto reply = command(cmd::spop_range, key, count);
 
     reply::to_array(*reply, output);
 }
 
-template <typename Iter>
-void Redis::srandmember(const StringView &key, long long count, Iter output) {
+template <typename Output>
+void Redis::srandmember(const StringView &key, long long count, Output output) {
     auto reply = command(cmd::srandmember_range, key, count);
 
     reply::to_array(*reply, output);
 }
 
-template <typename Iter>
-long long Redis::srem(const StringView &key, Iter first, Iter last) {
-    auto reply = command(cmd::srem_range<Iter>, key, first, last);
+template <typename Input>
+long long Redis::srem(const StringView &key, Input first, Input last) {
+    auto reply = command(cmd::srem_range<Input>, key, first, last);
 
     return reply::parse<long long>(*reply);
 }

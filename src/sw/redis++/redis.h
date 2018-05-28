@@ -19,6 +19,7 @@
 
 #include <string>
 #include <chrono>
+#include <initializer_list>
 #include <tuple>
 #include "connection_pool.h"
 #include "reply.h"
@@ -121,12 +122,22 @@ public:
     template <typename Input>
     long long del(Input first, Input last);
 
+    template <typename T>
+    long long del(std::initializer_list<T> il) {
+        return del(il.begin(), il.end());
+    }
+
     OptionalString dump(const StringView &key);
 
     long long exists(const StringView &key);
 
     template <typename Input>
     long long exists(Input first, Input last);
+
+    template <typename T>
+    long long exists(std::initializer_list<T> il) {
+        return exists(il.begin(), il.end());
+    }
 
     bool expire(const StringView &key, long long timeout);
 
@@ -200,6 +211,11 @@ public:
     template <typename Input>
     long long touch(Input first, Input last);
 
+    template <typename T>
+    long long touch(std::initializer_list<T> il) {
+        return touch(il.begin(), il.end());
+    }
+
     long long ttl(const StringView &key);
 
     std::string type(const StringView &key);
@@ -208,6 +224,11 @@ public:
 
     template <typename Input>
     long long unlink(Input first, Input last);
+
+    template <typename T>
+    long long unlink(std::initializer_list<T> il) {
+        return unlink(il.begin(), il.end());
+    }
 
     long long wait(long long numslaves, long long timeout);
 
@@ -221,6 +242,11 @@ public:
 
     template <typename Input>
     long long bitop(BitOp op, const StringView &destination, Input first, Input last);
+
+    template <typename T>
+    long long bitop(BitOp op, const StringView &destination, std::initializer_list<T> il) {
+        return bitop(op, destination, il.begin(), il.end());
+    }
 
     long long bitpos(const StringView &key,
                         long long bit,
@@ -248,11 +274,26 @@ public:
     template <typename Input, typename Output>
     void mget(Input first, Input last, Output output);
 
+    template <typename T, typename Output>
+    void mget(std::initializer_list<T> il, Output output) {
+        mget(il.begin(), il.end(), output);
+    }
+
     template <typename Input>
     void mset(Input first, Input last);
 
+    template <typename T>
+    void mset(std::initializer_list<T> il) {
+        mset(il.begin(), il.end());
+    }
+
     template <typename Input>
     bool msetnx(Input first, Input last);
+
+    template <typename T>
+    bool msetnx(std::initializer_list<T> il) {
+        return msetnx(il.begin(), il.end());
+    }
 
     void psetex(const StringView &key,
                 long long ttl,
@@ -288,18 +329,40 @@ public:
     template <typename Input>
     OptionalStringPair blpop(Input first, Input last, long long timeout = 0);
 
+    template <typename T>
+    OptionalStringPair blpop(std::initializer_list<T> il, long long timeout = 0) {
+        return blpop(il.begin(), il.end(), timeout);
+    }
+
     template <typename Input>
     OptionalStringPair blpop(Input first,
                                 Input last,
                                 const std::chrono::seconds &timeout = std::chrono::seconds{0});
 
+    template <typename T>
+    OptionalStringPair blpop(std::initializer_list<T> il,
+                                const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+        return blpop(il.begin(), il.end(), timeout);
+    }
+
     template <typename Input>
     OptionalStringPair brpop(Input first, Input last, long long timeout = 0);
+
+    template <typename T>
+    OptionalStringPair brpop(std::initializer_list<T> il, long long timeout = 0) {
+        return brpop(il.begin(), il.end(), timeout);
+    }
 
     template <typename Input>
     OptionalStringPair brpop(Input first,
                                 Input last,
                                 const std::chrono::seconds &timeout = std::chrono::seconds{0});
+
+    template <typename T>
+    OptionalStringPair brpop(std::initializer_list<T> il,
+                                const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+        return brpop(il.begin(), il.end(), timeout);
+    }
 
     OptionalString brpoplpush(const StringView &source,
                                 const StringView &destination,
@@ -322,13 +385,18 @@ public:
 
     long long lpush(const StringView &key, const StringView &val);
 
-    template <typename Iter>
-    long long lpush(const StringView &key, Iter first, Iter last);
+    template <typename Input>
+    long long lpush(const StringView &key, Input first, Input last);
+
+    template <typename T>
+    long long lpush(const StringView &key, std::initializer_list<T> il) {
+        return lpush(key, il.begin(), il.end());
+    }
 
     long long lpushx(const StringView &key, const StringView &val);
 
-    template <typename Iter>
-    void lrange(const StringView &key, long long start, long long stop, Iter output);
+    template <typename Output>
+    void lrange(const StringView &key, long long start, long long stop, Output output);
 
     long long lrem(const StringView &key, long long count, const StringView &val);
 
@@ -342,8 +410,13 @@ public:
 
     long long rpush(const StringView &key, const StringView &val);
 
-    template <typename Iter>
-    long long rpush(const StringView &key, Iter first, Iter last);
+    template <typename Input>
+    long long rpush(const StringView &key, Input first, Input last);
+
+    template <typename T>
+    long long rpush(const StringView &key, std::initializer_list<T> il) {
+        return rpush(key, il.begin(), il.end());
+    }
 
     long long rpushx(const StringView &key, const StringView &val);
 
@@ -351,30 +424,45 @@ public:
 
     long long hdel(const StringView &key, const StringView &field);
 
-    template <typename Iter>
-    long long hdel(const StringView &key, Iter first, Iter last);
+    template <typename Input>
+    long long hdel(const StringView &key, Input first, Input last);
+
+    template <typename T>
+    long long hdel(const StringView &key, std::initializer_list<T> il) {
+        return hdel(key, il.begin(), il.end());
+    }
 
     bool hexists(const StringView &key, const StringView &field);
 
     OptionalString hget(const StringView &key, const StringView &field);
 
-    template <typename Iter>
-    void hgetall(const StringView &key, Iter output);
+    template <typename Output>
+    void hgetall(const StringView &key, Output output);
 
     long long hincrby(const StringView &key, const StringView &field, long long increment);
 
     double hincrbyfloat(const StringView &key, const StringView &field, double increment);
 
-    template <typename Iter>
-    void hkeys(const StringView &key, Iter output);
+    template <typename Output>
+    void hkeys(const StringView &key, Output output);
 
     long long hlen(const StringView &key);
 
     template <typename Input, typename Output>
     void hmget(const StringView &key, Input first, Input last, Output output);
 
-    template <typename Iter>
-    void hmset(const StringView &key, Iter first, Iter last);
+    template <typename T, typename Output>
+    void hmget(const StringView &key, std::initializer_list<T> il, Output output) {
+        hmget(key, il.begin(), il.end(), output);
+    }
+
+    template <typename Input>
+    void hmset(const StringView &key, Input first, Input last);
+
+    template <typename T>
+    void hmset(const StringView &key, std::initializer_list<T> il) {
+        hmset(key, il.begin(), il.end());
+    }
 
     template <typename Output>
     long long hscan(const StringView &key,
@@ -406,38 +494,65 @@ public:
 
     long long hstrlen(const StringView &key, const StringView &field);
 
-    template <typename Iter>
-    void hvals(const StringView &key, Iter output);
+    template <typename Output>
+    void hvals(const StringView &key, Output output);
 
     // SET commands.
 
     long long sadd(const StringView &key, const StringView &member);
 
-    template <typename Iter>
-    long long sadd(const StringView &key, Iter first, Iter last);
+    template <typename Input>
+    long long sadd(const StringView &key, Input first, Input last);
+
+    template <typename T>
+    long long sadd(const StringView &key, std::initializer_list<T> il) {
+        return sadd(key, il.begin(), il.end());
+    }
 
     long long scard(const StringView &key);
 
     template <typename Input, typename Output>
     void sdiff(Input first, Input last, Output output);
 
+    template <typename T, typename Output>
+    void sdiff(std::initializer_list<T> il, Output output) {
+        sdiff(il.begin(), il.end(), output);
+    }
+
     template <typename Input>
     long long sdiffstore(const StringView &destination,
                             Input first,
                             Input last);
 
+    template <typename T>
+    long long sdiffstore(const StringView &destination,
+                            std::initializer_list<T> il) {
+        return sdiffstore(destination, il.begin(), il.end());
+    }
+
     template <typename Input, typename Output>
     void sinter(Input first, Input last, Output output);
+
+    template <typename T, typename Output>
+    void sinter(std::initializer_list<T> il, Output output) {
+        sinter(il.begin(), il.end(), output);
+    }
 
     template <typename Input>
     long long sinterstore(const StringView &destination,
                             Input first,
                             Input last);
 
+    template <typename T>
+    long long sinterstore(const StringView &destination,
+                            std::initializer_list<T> il) {
+        return sinterstore(destination, il.begin(), il.end());
+    }
+
     bool sismember(const StringView &key, const StringView &member);
 
-    template <typename Iter>
-    void smembers(const StringView &key, Iter output);
+    template <typename Output>
+    void smembers(const StringView &key, Output output);
 
     bool smove(const StringView &source,
                 const StringView &destination,
@@ -445,18 +560,23 @@ public:
 
     OptionalString spop(const StringView &key);
 
-    template <typename Iter>
-    void spop(const StringView &key, long long count, Iter output);
+    template <typename Output>
+    void spop(const StringView &key, long long count, Output output);
 
     OptionalString srandmember(const StringView &key);
 
-    template <typename Iter>
-    void srandmember(const StringView &key, long long count, Iter output);
+    template <typename Output>
+    void srandmember(const StringView &key, long long count, Output output);
 
     long long srem(const StringView &key, const StringView &member);
 
-    template <typename Iter>
-    long long srem(const StringView &key, Iter first, Iter last);
+    template <typename Input>
+    long long srem(const StringView &key, Input first, Input last);
+
+    template <typename T>
+    long long srem(const StringView &key, std::initializer_list<T> il) {
+        return srem(key, il.begin(), il.end());
+    }
 
     template <typename Output>
     long long sscan(const StringView &key,
@@ -485,8 +605,18 @@ public:
     template <typename Input, typename Output>
     void sunion(Input first, Input last, Output output);
 
+    template <typename T, typename Output>
+    void sunion(std::initializer_list<T> il, Output output) {
+        sunion(il.begin(), il.end(), output);
+    }
+
     template <typename Input>
     long long sunionstore(const StringView &destination, Input first, Input last);
+
+    template <typename T>
+    long long sunionstore(const StringView &destination, std::initializer_list<T> il) {
+        return sunionstore(destination, il.begin(), il.end());
+    }
 
     // SORTED SET commands.
 
@@ -504,6 +634,14 @@ public:
                     bool changed = false,
                     UpdateType type = UpdateType::ALWAYS);
 
+    template <typename T>
+    long long zadd(const StringView &key,
+                    std::initializer_list<T> il,
+                    bool changed = false,
+                    UpdateType type = UpdateType::ALWAYS) {
+        return zadd(key, il.begin(), il.end(), changed, type);
+    }
+
     long long zcard(const StringView &key);
 
     template <typename Interval>
@@ -516,6 +654,13 @@ public:
                             Input first,
                             Input last,
                             Aggregation type = Aggregation::SUM);
+
+    template <typename T>
+    long long zinterstore(const StringView &destination,
+                            std::initializer_list<T> il,
+                            Aggregation type = Aggregation::SUM) {
+        return zinterstore(destination, il.begin(), il.end(), type);
+    }
 
     template <typename Interval>
     long long zlexcount(const StringView &key, const Interval &interval);
@@ -547,6 +692,11 @@ public:
 
     template <typename Input>
     long long zrem(const StringView &key, Input first, Input last);
+
+    template <typename T>
+    long long zrem(const StringView &key, std::initializer_list<T> il) {
+        return zrem(key, il.begin(), il.end());
+    }
 
     template <typename Interval>
     long long zremrangebylex(const StringView &key, const Interval &interval);
@@ -611,6 +761,13 @@ public:
                             Input last,
                             Aggregation type = Aggregation::SUM);
 
+    template <typename T>
+    long long zunionstore(const StringView &destination,
+                            std::initializer_list<T> il,
+                            Aggregation type = Aggregation::SUM) {
+        return zunionstore(destination, il.begin(), il.end(), type);
+    }
+
     // HYPERLOGLOG commands.
 
     bool pfadd(const StringView &key, const StringView &element);
@@ -618,13 +775,28 @@ public:
     template <typename Input>
     bool pfadd(const StringView &key, Input first, Input last);
 
+    template <typename T>
+    bool pfadd(const StringView &key, std::initializer_list<T> il) {
+        return pfadd(key, il.begin(), il.end());
+    }
+
     long long pfcount(const StringView &key);
 
     template <typename Input>
     long long pfcount(Input first, Input last);
 
+    template <typename T>
+    long long pfcount(std::initializer_list<T> il) {
+        return pfcount(il.begin(), il.end());
+    }
+
     template <typename Input>
     void pfmerge(const StringView &destination, Input first, Input last);
+
+    template <typename T>
+    void pfmerge(const StringView &destination, std::initializer_list<T> il) {
+        pfmerge(destination, il.begin(), il.end());
+    }
 
     // GEO commands.
 
@@ -636,6 +808,12 @@ public:
                         Input first,
                         Input last);
 
+    template <typename T>
+    long long geoadd(const StringView &key,
+                        std::initializer_list<T> il) {
+        return geoadd(key, il.begin(), il.end());
+    }
+
     OptionalDouble geodist(const StringView &key,
                             const StringView &member1,
                             const StringView &member2,
@@ -646,11 +824,21 @@ public:
     template <typename Input, typename Output>
     void geohash(const StringView &key, Input first, Input last, Output output);
 
+    template <typename T, typename Output>
+    void geohash(const StringView &key, std::initializer_list<T> il, Output output) {
+        geohash(key, il.begin(), il.end(), output);
+    }
+
     auto geopos(const StringView &key, const StringView &member) ->
         Optional<std::pair<double, double>>;
 
     template <typename Input, typename Output>
     void geopos(const StringView &key, Input first, Input last, Output output);
+
+    template <typename T, typename Output>
+    void geopos(const StringView &key, std::initializer_list<T> il, Output output) {
+        geopos(key, il.begin(), il.end(), output);
+    }
 
     // TODO:
     // 1. since we have different overloads for georadius and georadius-store,
@@ -718,6 +906,11 @@ public:
 
     template <typename Input, typename Output>
     void script_exists(Input first, Input last, Output output);
+
+    template <typename T, typename Output>
+    void script_exists(std::initializer_list<T> il, Output output) {
+        script_exists(il.begin(), il.end(), output);
+    }
 
     void script_flush();
 
