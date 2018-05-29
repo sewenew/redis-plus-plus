@@ -18,6 +18,7 @@
 #include <chrono>
 #include <iostream>
 #include <sw/redis++/redis++.h>
+#include "string_cmds_test.h"
 
 namespace {
 
@@ -30,6 +31,11 @@ sw::redis::ConnectionOptions parse_options(int argc, char **argv);
 int main(int argc, char **argv) {
     try {
         auto opts = parse_options(argc, argv);
+
+        sw::redis::test::StringCmdTest string_test(opts);
+        string_test.run();
+
+        std::cout << "Pass all test" << std::endl;
     } catch (const sw::redis::Error &e) {
         std::cerr << e.what() << std::endl;
         return -1;
