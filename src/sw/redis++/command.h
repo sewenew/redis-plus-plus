@@ -300,7 +300,7 @@ inline void decr(Connection &connection, const StringView &key) {
 }
 
 inline void decrby(Connection &connection, const StringView &key, long long decrement) {
-    connection.send("DECRBY %b",
+    connection.send("DECRBY %b %lld",
                     key.data(), key.size(),
                     decrement);
 }
