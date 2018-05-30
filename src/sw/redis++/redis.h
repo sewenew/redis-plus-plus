@@ -327,10 +327,10 @@ public:
     // LIST commands.
 
     template <typename Input>
-    OptionalStringPair blpop(Input first, Input last, long long timeout = 0);
+    OptionalStringPair blpop(Input first, Input last, long long timeout);
 
     template <typename T>
-    OptionalStringPair blpop(std::initializer_list<T> il, long long timeout = 0) {
+    OptionalStringPair blpop(std::initializer_list<T> il, long long timeout) {
         return blpop(il.begin(), il.end(), timeout);
     }
 
@@ -346,10 +346,10 @@ public:
     }
 
     template <typename Input>
-    OptionalStringPair brpop(Input first, Input last, long long timeout = 0);
+    OptionalStringPair brpop(Input first, Input last, long long timeout);
 
     template <typename T>
-    OptionalStringPair brpop(std::initializer_list<T> il, long long timeout = 0) {
+    OptionalStringPair brpop(std::initializer_list<T> il, long long timeout) {
         return brpop(il.begin(), il.end(), timeout);
     }
 
@@ -366,7 +366,7 @@ public:
 
     OptionalString brpoplpush(const StringView &source,
                                 const StringView &destination,
-                                long long timeout = 0);
+                                long long timeout);
 
     OptionalString brpoplpush(const StringView &source,
                                 const StringView &destination,
