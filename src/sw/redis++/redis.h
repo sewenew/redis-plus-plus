@@ -490,7 +490,11 @@ public:
 
     bool hset(const StringView &key, const StringView &field, const StringView &val);
 
+    bool hset(const StringView &key, const std::pair<StringView, StringView> &item);
+
     bool hsetnx(const StringView &key, const StringView &field, const StringView &val);
+
+    bool hsetnx(const StringView &key, const std::pair<StringView, StringView> &item);
 
     long long hstrlen(const StringView &key, const StringView &field);
 

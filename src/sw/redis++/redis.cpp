@@ -513,7 +513,7 @@ long long Redis::hincrby(const StringView &key, const StringView &field, long lo
 }
 
 double Redis::hincrbyfloat(const StringView &key, const StringView &field, double increment) {
-    auto reply = command(cmd::hincrby, key, field, increment);
+    auto reply = command(cmd::hincrbyfloat, key, field, increment);
 
     return reply::parse<double>(*reply);
 }
@@ -530,10 +530,18 @@ bool Redis::hset(const StringView &key, const StringView &field, const StringVie
     return reply::parse<bool>(*reply);
 }
 
+bool Redis::hset(const StringView &key, const std::pair<StringView, StringView> &item) {
+    return hset(key, item.first, item.second);
+}
+
 bool Redis::hsetnx(const StringView &key, const StringView &field, const StringView &val) {
     auto reply = command(cmd::hsetnx, key, field, val);
 
     return reply::parse<bool>(*reply);
+}
+
+bool Redis::hsetnx(const StringView &key, const std::pair<StringView, StringView> &item) {
+    return hsetnx(key, item.first, item.second);
 }
 
 long long Redis::hstrlen(const StringView &key, const StringView &field) {
