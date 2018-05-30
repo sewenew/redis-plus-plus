@@ -19,6 +19,7 @@
 #include <iostream>
 #include <sw/redis++/redis++.h>
 #include "string_cmds_test.h"
+#include "list_cmds_test.h"
 
 namespace {
 
@@ -34,6 +35,13 @@ int main(int argc, char **argv) {
 
         sw::redis::test::StringCmdTest string_test(opts);
         string_test.run();
+
+        std::cout << "Pass string commands test" << std::endl;
+
+        sw::redis::test::ListCmdTest list_test(opts);
+        list_test.run();
+
+        std::cout << "Pass list commands test" << std::endl;
 
         std::cout << "Pass all test" << std::endl;
     } catch (const sw::redis::Error &e) {
@@ -54,9 +62,8 @@ void print_help() {
 sw::redis::ConnectionOptions parse_options(int argc, char **argv) {
     std::string host;
     int port = 0;
-    std::chrono::milliseconds socket_timeout{};
     int opt = 0;
-    while ((opt = getopt(argc, argv, "h:p:s:")) != -1) {
+    while ((opt = getopt(argc, argv, "h:p:")) != -1) {
         switch (opt) {
         case 'h':
             host = optarg;
@@ -66,10 +73,6 @@ sw::redis::ConnectionOptions parse_options(int argc, char **argv) {
             port = std::stoi(optarg);
             break;
 
-        case 's':
-            socket_timeout = std::chrono::milliseconds(std::stoi(optarg));
-            break;
-
         default:
             print_help();
             throw sw::redis::Error("Failed to parse connection options");
@@ -77,7 +80,7 @@ sw::redis::ConnectionOptions parse_options(int argc, char **argv) {
         }
     }
 
-    if (host.empty() || port <= 0 || socket_timeout < std::chrono::milliseconds{0}) {
+    if (host.empty() || port <= 0) {
         print_help();
         throw sw::redis::Error("Invalid connection options");
     }
@@ -85,7 +88,6 @@ sw::redis::ConnectionOptions parse_options(int argc, char **argv) {
     sw::redis::ConnectionOptions opts;
     opts.host = host;
     opts.port = port;
-    opts.socket_timeout = socket_timeout;
 
     return opts;
 }
