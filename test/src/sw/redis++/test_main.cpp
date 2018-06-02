@@ -21,6 +21,7 @@
 #include "string_cmds_test.h"
 #include "list_cmds_test.h"
 #include "hash_cmds_test.h"
+#include "set_cmds_test.h"
 
 namespace {
 
@@ -48,6 +49,11 @@ int main(int argc, char **argv) {
         hash_test.run();
 
         std::cout << "Pass hash commands test" << std::endl;
+
+        sw::redis::test::SetCmdTest set_test(opts);
+        set_test.run();
+
+        std::cout << "Pass set commands test" << std::endl;
 
         std::cout << "Pass all test" << std::endl;
     } catch (const sw::redis::Error &e) {
