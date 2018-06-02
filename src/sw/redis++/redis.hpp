@@ -507,7 +507,7 @@ template <typename Output>
 void Redis::zrange(const StringView &key, long long start, long long stop, Output output) {
     auto reply = command(cmd::zrange<Output>, key, start, stop);
 
-    reply::to_score_array(*reply, output);
+    reply::to_array(*reply, output);
 }
 
 template <typename Interval, typename Output>
@@ -542,7 +542,7 @@ void Redis::zrangebyscore(const StringView &key,
                             interval,
                             opts);
 
-    reply::to_score_array(*reply, output);
+    reply::to_array(*reply, output);
 }
 
 template <typename Input>
@@ -570,7 +570,7 @@ template <typename Output>
 void Redis::zrevrange(const StringView &key, long long start, long long stop, Output output) {
     auto reply = command(cmd::zrevrange<Output>, key, start, stop);
 
-    reply::to_score_array(*reply, output);
+    reply::to_array(*reply, output);
 }
 
 template <typename Interval, typename Output>
@@ -602,7 +602,7 @@ void Redis::zrevrangebyscore(const StringView &key,
                                 Output output) {
     auto reply = command(cmd::zrevrangebyscore<Interval, Output>, key, interval, opts);
 
-    reply::to_score_array(*reply, output);
+    reply::to_array(*reply, output);
 }
 
 template <typename Output>

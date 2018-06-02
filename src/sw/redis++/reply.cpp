@@ -87,6 +87,28 @@ void expect_ok_status(redisReply &reply) {
     }
 }
 
+namespace detail {
+
+bool is_flat_array(redisReply &reply) {
+    assert(reply::is_array(reply));
+
+    // Empty array reply.
+    if (reply.element == nullptr || reply.elements == 0) {
+        return false;
+    }
+
+    auto *sub_reply = reply.element[0];
+
+    // Null element.
+    if (sub_reply == nullptr) {
+        return false;
+    }
+
+    return !reply::is_array(*sub_reply);
+}
+
+}
+
 }
 
 }

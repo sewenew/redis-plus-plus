@@ -136,9 +136,6 @@ inline bool is_array(redisReply &reply) {
 
 std::string to_status(redisReply &reply);
 
-template<typename Iter>
-void to_score_array(redisReply &reply, Iter output);
-
 template <typename Output>
 void to_array(redisReply &reply, Output output);
 
@@ -162,8 +159,33 @@ namespace reply {
 
 namespace detail {
 
+template <typename Output>
+void to_array(redisReply &reply, Output output) {
+    if (!is_array(reply)) {
+        throw ProtoError("Expect ARRAY reply");
+    }
+
+    if (reply.element == nullptr) {
+        // Empty array.
+        return;
+    }
+
+    for (std::size_t idx = 0; idx != reply.elements; ++idx) {
+        auto *sub_reply = reply.element[idx];
+        if (sub_reply == nullptr) {
+            throw ProtoError("Null array element reply");
+        }
+
+        *output = parse<typename IterType<Output>::type>(*sub_reply);
+
+        ++output;
+    }
+}
+
+bool is_flat_array(redisReply &reply);
+
 template <typename Iter>
-void to_score_array(std::true_type, redisReply &reply, Iter output) {
+void to_flat_array(redisReply &reply, Iter output) {
     if (reply.element == nullptr) {
         // Empty array.
         return;
@@ -181,15 +203,26 @@ void to_score_array(std::true_type, redisReply &reply, Iter output) {
         }
 
         using Pair = typename IterType<Iter>::type;
-        *output = std::make_pair(parse<typename Pair::first_type>(*key_reply),
-                                    parse<typename Pair::second_type>(*val_reply));
+        using FirstType = typename std::decay<typename Pair::first_type>::type;
+        using SecondType = typename std::decay<typename Pair::second_type>::type;
+        *output = std::make_pair(parse<FirstType>(*key_reply),
+                                    parse<SecondType>(*val_reply));
 
         ++output;
     }
 }
 
-template <typename Iter>
-void to_score_array(std::false_type, redisReply &reply, Iter output) {
+template <typename Output>
+void to_array(std::true_type, redisReply &reply, Output output) {
+    if (is_flat_array(reply)) {
+        to_flat_array(reply, output);
+    } else {
+        to_array(reply, output);
+    }
+}
+
+template <typename Output>
+void to_array(std::false_type, redisReply &reply, Output output) {
     to_array(reply, output);
 }
 
@@ -214,15 +247,6 @@ auto parse_tuple(redisReply **reply, std::size_t idx) ->
                             parse_tuple<Args...>(reply, idx + 1));
 }
 
-}
-
-template<typename Iter>
-void to_score_array(redisReply &reply, Iter output) {
-    if (!is_array(reply)) {
-        throw ProtoError("Expect ARRAY reply");
-    }
-
-    detail::to_score_array(typename IsKvPairIter<Iter>::type(), reply, output);
 }
 
 template <typename T>
@@ -254,7 +278,8 @@ std::pair<T, U> parse(ParseTag<std::pair<T, U>>, redisReply &reply) {
         throw ProtoError("Null pair reply");
     }
 
-    return std::make_pair(parse<T>(*first), parse<U>(*second));
+    return std::make_pair(parse<typename std::decay<T>::type>(*first),
+                            parse<typename std::decay<U>::type>(*second));
 }
 
 template <typename ...Args>
@@ -284,21 +309,7 @@ void to_array(redisReply &reply, Output output) {
         throw ProtoError("Expect ARRAY reply");
     }
 
-    if (reply.element == nullptr) {
-        // Empty array.
-        return;
-    }
-
-    for (std::size_t idx = 0; idx != reply.elements; ++idx) {
-        auto *sub_reply = reply.element[idx];
-        if (sub_reply == nullptr) {
-            throw ProtoError("Null array element reply");
-        }
-
-        *output = parse<typename IterType<Output>::type>(*sub_reply);
-
-        ++output;
-    }
+    detail::to_array(typename IsKvPairIter<Output>::type(), reply, output);
 }
 
 }
