@@ -38,6 +38,8 @@ private:
 
     void _test_numeric();
 
+    void _test_hscan();
+
     Redis _redis;
 };
 

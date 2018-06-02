@@ -32,6 +32,8 @@ void HashCmdTest::run() {
     _test_hash_batch();
 
     _test_numeric();
+
+    _test_hscan();
 }
 
 void HashCmdTest::_test_hash() {
@@ -109,6 +111,7 @@ void HashCmdTest::_test_hash_batch() {
             && !res[2],
                 "failed to test hmget");
 }
+
 void HashCmdTest::_test_numeric() {
     auto key = test_key("numeric");
 
@@ -119,6 +122,45 @@ void HashCmdTest::_test_numeric() {
     REDIS_ASSERT(_redis.hincrby(key, field, 1) == 1, "failed to test hincrby");
     REDIS_ASSERT(_redis.hincrby(key, field, -1) == 0, "failed to test hincrby");
     REDIS_ASSERT(_redis.hincrbyfloat(key, field, 1.5) == 1.5, "failed to test hincrbyfloat");
+}
+
+void HashCmdTest::_test_hscan() {
+    auto key = test_key("hscan");
+
+    KeyDeleter deleter(_redis, key);
+
+    auto items = std::unordered_map<std::string, std::string>{
+        std::make_pair("f1", "v1"),
+        std::make_pair("f2", "v2"),
+        std::make_pair("f3", "v3"),
+    };
+
+    _redis.hmset(key, items.begin(), items.end());
+
+    std::unordered_map<std::string, std::string> item_map;
+    auto cursor = 0;
+    while (true) {
+        cursor = _redis.hscan(key, cursor, "f*", 2, std::inserter(item_map, item_map.end()));
+        if (cursor == 0) {
+            break;
+        }
+    }
+
+    REDIS_ASSERT(item_map == items, "failed to test hscan with pattern and count");
+
+    std::vector<std::pair<std::string, std::string>> item_vec;
+    cursor = 0;
+    while (true) {
+        cursor = _redis.hscan(key, cursor, std::back_inserter(item_vec));
+        if (cursor == 0) {
+            break;
+        }
+    }
+
+    REDIS_ASSERT(item_vec.size() == items.size(), "failed to test hscan");
+    for (const auto &ele : item_vec) {
+        REDIS_ASSERT(items.find(ele.first) != items.end(), "failed to test hscan");
+    }
 }
 
 }
