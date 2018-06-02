@@ -20,6 +20,7 @@
 #include <sw/redis++/redis++.h>
 #include "string_cmds_test.h"
 #include "list_cmds_test.h"
+#include "hash_cmds_test.h"
 
 namespace {
 
@@ -42,6 +43,11 @@ int main(int argc, char **argv) {
         list_test.run();
 
         std::cout << "Pass list commands test" << std::endl;
+
+        sw::redis::test::HashCmdTest hash_test(opts);
+        hash_test.run();
+
+        std::cout << "Pass hash commands test" << std::endl;
 
         std::cout << "Pass all test" << std::endl;
     } catch (const sw::redis::Error &e) {
