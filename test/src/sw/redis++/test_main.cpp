@@ -23,6 +23,7 @@
 #include "hash_cmds_test.h"
 #include "set_cmds_test.h"
 #include "zset_cmds_test.h"
+#include "hyperloglog_cmds_test.h"
 
 namespace {
 
@@ -60,6 +61,11 @@ int main(int argc, char **argv) {
         zset_test.run();
 
         std::cout << "Pass zset commands test" << std::endl;
+
+        sw::redis::test::HyperloglogCmdTest hll_test(opts);
+        hll_test.run();
+
+        std::cout << "Pass hyperloglog commands test" << std::endl;
 
         std::cout << "Pass all test" << std::endl;
     } catch (const sw::redis::Error &e) {
