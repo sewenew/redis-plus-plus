@@ -22,6 +22,7 @@
 #include "list_cmds_test.h"
 #include "hash_cmds_test.h"
 #include "set_cmds_test.h"
+#include "zset_cmds_test.h"
 
 namespace {
 
@@ -55,6 +56,11 @@ int main(int argc, char **argv) {
 
         std::cout << "Pass set commands test" << std::endl;
 
+        sw::redis::test::ZSetCmdTest zset_test(opts);
+        zset_test.run();
+
+        std::cout << "Pass zset commands test" << std::endl;
+
         std::cout << "Pass all test" << std::endl;
     } catch (const sw::redis::Error &e) {
         std::cerr << e.what() << std::endl;
@@ -67,8 +73,7 @@ int main(int argc, char **argv) {
 namespace {
 
 void print_help() {
-    std::cerr << "Usage: test_redis++ -h host -p port "
-        << "[-s socket_timeout_in_milliseconds]" << std::endl;
+    std::cerr << "Usage: test_redis++ -h host -p port" << std::endl;
 }
 
 sw::redis::ConnectionOptions parse_options(int argc, char **argv) {
