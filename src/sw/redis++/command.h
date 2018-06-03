@@ -879,18 +879,18 @@ void zadd_range(Connection &connection,
                 const StringView &key,
                 Iter first,
                 Iter last,
-                bool changed,
-                UpdateType type);
+                UpdateType type,
+                bool changed);
 
 inline void zadd(Connection &connection,
                     const StringView &key,
-                    double score,
                     const StringView &member,
-                    bool changed,
-                    UpdateType type) {
-    auto tmp = {std::make_pair(score, member)};
+                    double score,
+                    UpdateType type,
+                    bool changed) {
+    auto tmp = {std::make_pair(member, score)};
 
-    zadd_range(connection, key, tmp.begin(), tmp.end(), changed, type);
+    zadd_range(connection, key, tmp.begin(), tmp.end(), type, changed);
 }
 
 inline void zcard(Connection &connection, const StringView &key) {
@@ -1691,8 +1691,8 @@ void zadd_range(Connection &connection,
                 const StringView &key,
                 Iter first,
                 Iter last,
-                bool changed,
-                UpdateType type) {
+                UpdateType type,
+                bool changed) {
     CmdArgs args;
 
     args << "ZADD" << key;
@@ -1703,7 +1703,11 @@ void zadd_range(Connection &connection,
         args << "CH";
     }
 
-    args << std::make_pair(first, last);
+    while (first != last) {
+        // Swap the <member, score> pair to <score, member> pair.
+        args << first->second << first->first;
+        ++first;
+    }
 
     connection.send(args);
 }

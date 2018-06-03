@@ -626,24 +626,24 @@ public:
 
     // We don't support the INCR option, since you can always use ZINCRBY instead.
     long long zadd(const StringView &key,
-                    double score,
                     const StringView &member,
-                    bool changed = false,
-                    UpdateType type = UpdateType::ALWAYS);
+                    double score,
+                    UpdateType type = UpdateType::ALWAYS,
+                    bool changed = false);
 
     template <typename Input>
     long long zadd(const StringView &key,
                     Input first,
                     Input last,
-                    bool changed = false,
-                    UpdateType type = UpdateType::ALWAYS);
+                    UpdateType type = UpdateType::ALWAYS,
+                    bool changed = false);
 
     template <typename T>
     long long zadd(const StringView &key,
                     std::initializer_list<T> il,
-                    bool changed = false,
-                    UpdateType type = UpdateType::ALWAYS) {
-        return zadd(key, il.begin(), il.end(), changed, type);
+                    UpdateType type = UpdateType::ALWAYS,
+                    bool changed = false) {
+        return zadd(key, il.begin(), il.end(), type, changed);
     }
 
     long long zcard(const StringView &key);

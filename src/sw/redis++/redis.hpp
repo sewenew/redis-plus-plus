@@ -468,9 +468,9 @@ template <typename Input>
 long long Redis::zadd(const StringView &key,
                         Input first,
                         Input last,
-                        bool changed,
-                        UpdateType type) {
-    auto reply = command(cmd::zadd_range<Input>, key, first, last, changed, type);
+                        UpdateType type,
+                        bool changed) {
+    auto reply = command(cmd::zadd_range<Input>, key, first, last, type, changed);
 
     return reply::parse<long long>(*reply);
 }

@@ -105,6 +105,10 @@ RightBoundedInterval<double>::RightBoundedInterval(double max, BoundType type) :
     }
 }
 
+const std::string& RightBoundedInterval<double>::min() const {
+    return NEGATIVE_INFINITY_NUMERIC;
+}
+
 const std::string& UnboundedInterval<std::string>::min() const {
     return NEGATIVE_INFINITY_STRING;
 }
@@ -174,6 +178,10 @@ RightBoundedInterval<std::string>::RightBoundedInterval(const std::string &max, 
     default:
         throw Error("Bound type can only be OPEN or LEFT_OPEN");
     }
+}
+
+const std::string& RightBoundedInterval<std::string>::min() const {
+    return NEGATIVE_INFINITY_STRING;
 }
 
 }

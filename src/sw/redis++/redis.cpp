@@ -599,11 +599,11 @@ long long Redis::srem(const StringView &key, const StringView &member) {
 // SORTED SET commands.
 
 long long Redis::zadd(const StringView &key,
-                        double score,
                         const StringView &member,
-                        bool changed,
-                        UpdateType type) {
-    auto reply = command(cmd::zadd, key, score, member, changed, type);
+                        double score,
+                        UpdateType type,
+                        bool changed) {
+    auto reply = command(cmd::zadd, key, member, score, type, changed);
 
     return reply::parse<long long>(*reply);
 }
