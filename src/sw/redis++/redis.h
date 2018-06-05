@@ -887,7 +887,7 @@ OptionalLongLong georadius(const StringView &key,
                 std::initializer_list<StringView> keys,
                 std::initializer_list<StringView> args);
 
-    template <typename Result, typename Output>
+    template <typename Output>
     void eval(const StringView &script,
                 std::initializer_list<StringView> keys,
                 std::initializer_list<StringView> args,
@@ -898,13 +898,11 @@ OptionalLongLong georadius(const StringView &key,
                     std::initializer_list<StringView> keys,
                     std::initializer_list<StringView> args);
 
-    template <typename Result, typename Output>
+    template <typename Output>
     void evalsha(const StringView &script,
                     std::initializer_list<StringView> keys,
                     std::initializer_list<StringView> args,
                     Output output);
-
-    bool script_exists(const StringView &sha);
 
     template <typename Input, typename Output>
     void script_exists(Input first, Input last, Output output);

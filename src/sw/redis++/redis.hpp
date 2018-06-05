@@ -740,7 +740,7 @@ Result Redis::eval(const StringView &script,
     return reply::parse<Result>(*reply);
 }
 
-template <typename Result, typename Output>
+template <typename Output>
 void Redis::eval(const StringView &script,
                     std::initializer_list<StringView> keys,
                     std::initializer_list<StringView> args,
@@ -759,7 +759,7 @@ Result Redis::evalsha(const StringView &script,
     return reply::parse<Result>(*reply);
 }
 
-template <typename Result, typename Output>
+template <typename Output>
 void Redis::evalsha(const StringView &script,
                         std::initializer_list<StringView> keys,
                         std::initializer_list<StringView> args,
