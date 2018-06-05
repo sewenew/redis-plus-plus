@@ -24,6 +24,7 @@
 #include "set_cmds_test.h"
 #include "zset_cmds_test.h"
 #include "hyperloglog_cmds_test.h"
+#include "geo_cmds_test.h"
 
 namespace {
 
@@ -66,6 +67,11 @@ int main(int argc, char **argv) {
         hll_test.run();
 
         std::cout << "Pass hyperloglog commands test" << std::endl;
+
+        sw::redis::test::GeoCmdTest geo_test(opts);
+        geo_test.run();
+
+        std::cout << "Pass geo commands test" << std::endl;
 
         std::cout << "Pass all test" << std::endl;
     } catch (const sw::redis::Error &e) {
