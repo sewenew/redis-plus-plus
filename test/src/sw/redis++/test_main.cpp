@@ -25,6 +25,7 @@
 #include "zset_cmds_test.h"
 #include "hyperloglog_cmds_test.h"
 #include "geo_cmds_test.h"
+#include "script_cmds_test.h"
 
 namespace {
 
@@ -72,6 +73,11 @@ int main(int argc, char **argv) {
         geo_test.run();
 
         std::cout << "Pass geo commands test" << std::endl;
+
+        sw::redis::test::ScriptCmdTest script_test(opts);
+        script_test.run();
+
+        std::cout << "Pass script commands test" << std::endl;
 
         std::cout << "Pass all test" << std::endl;
     } catch (const sw::redis::Error &e) {
