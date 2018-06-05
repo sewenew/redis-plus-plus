@@ -805,7 +805,7 @@ public:
     // GEO commands.
 
     long long geoadd(const StringView &key,
-                        const std::tuple<double, double, std::string> &member);
+                        const std::tuple<StringView, double, double> &member);
 
     template <typename Input>
     long long geoadd(const StringView &key,
@@ -823,8 +823,6 @@ public:
                             const StringView &member2,
                             GeoUnit unit = GeoUnit::M);
 
-    OptionalString geohash(const StringView &key, const StringView &member);
-
     template <typename Input, typename Output>
     void geohash(const StringView &key, Input first, Input last, Output output);
 
@@ -832,9 +830,6 @@ public:
     void geohash(const StringView &key, std::initializer_list<T> il, Output output) {
         geohash(key, il.begin(), il.end(), output);
     }
-
-    auto geopos(const StringView &key, const StringView &member) ->
-        Optional<std::pair<double, double>>;
 
     template <typename Input, typename Output>
     void geopos(const StringView &key, Input first, Input last, Output output);
@@ -848,7 +843,10 @@ public:
     // 1. since we have different overloads for georadius and georadius-store,
     //    we might use the GEORADIUS_RO command in the future.
     // 2. there're too many parameters for this method, we might refactor it.
-    OptionalLongLong georadius(const StringView &key,
+    // 3. if *key* doesn't exist, Redis returns an array reply. That's a strage behavior.
+    //    In this case, by now, we throw an Error exception.
+    //    georadiusbymember has the same problem.
+OptionalLongLong georadius(const StringView &key,
                                 const std::pair<double, double> &loc,
                                 double radius,
                                 GeoUnit unit,

@@ -667,7 +667,7 @@ long long Redis::pfcount(const StringView &key) {
 // GEO commands.
 
 long long Redis::geoadd(const StringView &key,
-                        const std::tuple<double, double, std::string> &member) {
+                        const std::tuple<StringView, double, double> &member) {
     auto reply = command(cmd::geoadd, key, member);
 
     return reply::parse<long long>(*reply);
@@ -680,28 +680,6 @@ OptionalDouble Redis::geodist(const StringView &key,
     auto reply = command(cmd::geodist, key, member1, member2, unit);
 
     return reply::parse<OptionalDouble>(*reply);
-}
-
-OptionalString Redis::geohash(const StringView &key, const StringView &member) {
-    auto reply = command(cmd::geohash, key, member);
-
-    return reply::parse<OptionalString>(*reply);
-}
-
-auto Redis::geopos(const StringView &key, const StringView &member) ->
-    Optional<std::pair<double, double>> {
-    auto reply = command(cmd::geopos, key, member);
-
-    if (reply->elements != 1 || reply->element == nullptr) {
-        throw ProtoError("Should return one and only one array element");
-    }
-
-    auto *sub_reply = reply->element[0];
-    if (sub_reply == nullptr) {
-        throw ProtoError("Null reply");
-    }
-
-    return reply::parse<Optional<std::pair<double, double>>>(*sub_reply);
 }
 
 OptionalLongLong Redis::georadius(const StringView &key,
@@ -720,13 +698,7 @@ OptionalLongLong Redis::georadius(const StringView &key,
                             store_dist,
                             count);
 
-    try {
-        return reply::parse<OptionalLongLong>(*reply);
-    } catch (const Error &) {
-        // TODO: if *key* doesn't exist, Redis returns an array reply.
-        // That's a strage behavior.
-        return {};
-    }
+    return reply::parse<OptionalLongLong>(*reply);
 }
 
 OptionalLongLong Redis::georadiusbymember(const StringView &key,
@@ -745,13 +717,7 @@ OptionalLongLong Redis::georadiusbymember(const StringView &key,
                             store_dist,
                             count);
 
-    try {
-        return reply::parse<OptionalLongLong>(*reply);
-    } catch (const Error &) {
-        // TODO: if *key* doesn't exist, Redis returns an array reply.
-        // That's a strage behavior.
-        return {};
-    }
+    return reply::parse<OptionalLongLong>(*reply);
 }
 
 // SCRIPTING commands.

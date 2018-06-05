@@ -940,17 +940,9 @@ public:
         return command(cmd::geodist, key, member1, member2, unit);
     }
 
-    QueuedRedis& geohash(const StringView &key, const StringView &member) {
-        return command(cmd::geohash, key, member);
-    }
-
     template <typename Input>
     QueuedRedis& geohash(const StringView &key, Input first, Input last) {
         return command(cmd::geohash_range<Input>, key, first, last);
-    }
-
-    QueuedRedis& geopos(const StringView &key, const StringView &member) {
-        return command(cmd::geopos, key, member);
     }
 
     template <typename Input>

@@ -1141,13 +1141,13 @@ inline void pfmerge(Connection &connection,
 
 inline void geoadd(Connection &connection,
                     const StringView &key,
-                    const std::tuple<double, double, std::string> &member) {
-    const auto &mem = std::get<2>(member);
+                    const std::tuple<StringView, double, double> &member) {
+    const auto &mem = std::get<0>(member);
 
     connection.send("GEOADD %b %f %f %b",
                     key.data(), key.size(),
-                    std::get<0>(member),
                     std::get<1>(member),
+                    std::get<2>(member),
                     mem.data(), mem.size());
 }
 
@@ -1157,7 +1157,13 @@ inline void geoadd_range(Connection &connection,
                             Input first,
                             Input last) {
     CmdArgs args;
-    args << "GEOADD" << key << std::make_pair(first, last);
+    args << "GEOADD" << key;
+
+    while (first != last) {
+        const auto &member = *first;
+        args << std::get<1>(member) << std::get<2>(member) << std::get<0>(member);
+        ++first;
+    }
 
     connection.send(args);
 }
@@ -1168,14 +1174,6 @@ void geodist(Connection &connection,
                 const StringView &member2,
                 GeoUnit unit);
 
-inline void geohash(Connection &connection,
-                    const StringView &key,
-                    const StringView &member) {
-    connection.send("GEOHASH %b %b",
-                    key.data(), key.size(),
-                    member.data(), member.size());
-}
-
 template <typename Input>
 inline void geohash_range(Connection &connection,
                             const StringView &key,
@@ -1185,14 +1183,6 @@ inline void geohash_range(Connection &connection,
     args << "GEOHASH" << key << std::make_pair(first, last);
 
     connection.send(args);
-}
-
-inline void geopos(Connection &connection,
-                    const StringView &key,
-                    const StringView &member) {
-    connection.send("GEOPOS %b %b",
-                    key.data(), key.size(),
-                    member.data(), member.size());
 }
 
 template <typename Input>
