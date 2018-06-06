@@ -27,8 +27,8 @@ namespace cmd {
 
 void restore(Connection &connection,
                 const StringView &key,
-                long long ttl,
                 const StringView &val,
+                long long ttl,
                 bool replace) {
     CmdArgs args;
     args << "RESTORE" << key << ttl << val;

@@ -216,10 +216,10 @@ bool Redis::renamenx(const StringView &key, const StringView &newkey) {
 }
 
 void Redis::restore(const StringView &key,
-                    long long ttl,
                     const StringView &val,
+                    long long ttl,
                     bool replace) {
-    auto reply = command(cmd::restore, key, ttl, val, replace);
+    auto reply = command(cmd::restore, key, val, ttl, replace);
 
     reply::expect_ok_status(*reply);
 }

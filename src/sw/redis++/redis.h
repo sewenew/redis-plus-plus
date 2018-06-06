@@ -175,13 +175,13 @@ public:
     bool renamenx(const StringView &key, const StringView &newkey);
 
     void restore(const StringView &key,
-                    long long ttl,
                     const StringView &val,
+                    long long ttl,
                     bool replace = false);
 
     void restore(const StringView &key,
-                    const std::chrono::milliseconds &ttl,
                     const StringView &val,
+                    const std::chrono::milliseconds &ttl = std::chrono::milliseconds{0},
                     bool replace = false);
 
     // TODO: sort
@@ -846,7 +846,7 @@ public:
     // 3. if *key* doesn't exist, Redis returns an array reply. That's a strage behavior.
     //    In this case, by now, we throw an Error exception.
     //    georadiusbymember has the same problem.
-OptionalLongLong georadius(const StringView &key,
+    OptionalLongLong georadius(const StringView &key,
                                 const std::pair<double, double> &loc,
                                 double radius,
                                 GeoUnit unit,

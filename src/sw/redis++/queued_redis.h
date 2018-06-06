@@ -213,17 +213,17 @@ public:
     }
 
     QueuedRedis& restore(const StringView &key,
-                                long long ttl,
                                 const StringView &val,
+                                long long ttl,
                                 bool replace = false) {
-        return command(cmd::restore, key, ttl, val, replace);
+        return command(cmd::restore, key, val, ttl, replace);
     }
 
     QueuedRedis& restore(const StringView &key,
-                            const chrono::milliseconds &ttl,
                             const StringView &val,
+                            const chrono::milliseconds &ttl = std::chrono::milliseconds{0},
                             bool replace = false) {
-        return restore(key, ttl.count(), val, replace);
+        return restore(key, val, ttl.count(), replace);
     }
 
     // TODO: sort

@@ -178,7 +178,7 @@ inline void pexpire(Connection &connection,
 inline void pexpireat(Connection &connection,
                         const StringView &key,
                         long long timestamp) {
-    connection.send("PEXPIRE %b %lld",
+    connection.send("PEXPIREAT %b %lld",
                     key.data(), key.size(),
                     timestamp);
 }
@@ -209,8 +209,8 @@ inline void renamenx(Connection &connection,
 
 void restore(Connection &connection,
                 const StringView &key,
-                long long ttl,
                 const StringView &val,
+                long long ttl,
                 bool replace);
 
 inline void scan(Connection &connection,

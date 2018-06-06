@@ -104,7 +104,7 @@ void Redis::keys(const StringView &pattern, Output output) {
 }
 
 inline bool Redis::pexpire(const StringView &key, const std::chrono::milliseconds &timeout) {
-    return expire(key, timeout.count());
+    return pexpire(key, timeout.count());
 }
 
 inline bool Redis::pexpireat(const StringView &key,
@@ -114,10 +114,10 @@ inline bool Redis::pexpireat(const StringView &key,
 }
 
 inline void Redis::restore(const StringView &key,
-                            const std::chrono::milliseconds &ttl,
                             const StringView &val,
+                            const std::chrono::milliseconds &ttl,
                             bool replace) {
-    return restore(key, ttl.count(), val, replace);
+    return restore(key, val, ttl.count(), replace);
 }
 
 template <typename Output>
@@ -159,7 +159,7 @@ long long Redis::touch(Input first, Input last) {
 
 template <typename Input>
 long long Redis::unlink(Input first, Input last) {
-    auto reply = command(cmd::unlink_range, first, last);
+    auto reply = command(cmd::unlink_range<Input>, first, last);
 
     return reply::parse<long long>(*reply);
 }
