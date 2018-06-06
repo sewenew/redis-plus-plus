@@ -18,6 +18,7 @@
 #include <chrono>
 #include <iostream>
 #include <sw/redis++/redis++.h>
+#include "connection_cmds_test.h"
 #include "string_cmds_test.h"
 #include "list_cmds_test.h"
 #include "hash_cmds_test.h"
@@ -38,6 +39,11 @@ sw::redis::ConnectionOptions parse_options(int argc, char **argv);
 int main(int argc, char **argv) {
     try {
         auto opts = parse_options(argc, argv);
+
+        sw::redis::test::ConnectionCmdTest connection_test(opts);
+        connection_test.run();
+
+        std::cout << "Pass connection commands test" << std::endl;
 
         sw::redis::test::StringCmdTest string_test(opts);
         string_test.run();
@@ -97,8 +103,10 @@ void print_help() {
 sw::redis::ConnectionOptions parse_options(int argc, char **argv) {
     std::string host;
     int port = 0;
+    std::string auth;
+
     int opt = 0;
-    while ((opt = getopt(argc, argv, "h:p:")) != -1) {
+    while ((opt = getopt(argc, argv, "h:p:a:")) != -1) {
         switch (opt) {
         case 'h':
             host = optarg;
@@ -106,6 +114,10 @@ sw::redis::ConnectionOptions parse_options(int argc, char **argv) {
 
         case 'p':
             port = std::stoi(optarg);
+            break;
+
+        case 'a':
+            auth = optarg;
             break;
 
         default:
@@ -123,6 +135,7 @@ sw::redis::ConnectionOptions parse_options(int argc, char **argv) {
     sw::redis::ConnectionOptions opts;
     opts.host = host;
     opts.port = port;
+    opts.password = auth;
 
     return opts;
 }
