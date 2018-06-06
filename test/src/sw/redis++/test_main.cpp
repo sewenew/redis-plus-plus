@@ -19,6 +19,7 @@
 #include <iostream>
 #include <sw/redis++/redis++.h>
 #include "connection_cmds_test.h"
+#include "keys_cmds_test.h"
 #include "string_cmds_test.h"
 #include "list_cmds_test.h"
 #include "hash_cmds_test.h"
@@ -44,6 +45,11 @@ int main(int argc, char **argv) {
         connection_test.run();
 
         std::cout << "Pass connection commands test" << std::endl;
+
+        sw::redis::test::KeysCmdTest keys_test(opts);
+        keys_test.run();
+
+        std::cout << "Pass keys commands test" << std::endl;
 
         sw::redis::test::StringCmdTest string_test(opts);
         string_test.run();
