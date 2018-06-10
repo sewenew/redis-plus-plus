@@ -41,7 +41,7 @@ private:
 
     void _enable_keep_alive(redisContext &ctx) const;
 
-    timeval _to_timeval(const std::chrono::steady_clock::duration &dur) const;
+    timeval _to_timeval(const std::chrono::milliseconds &dur) const;
 
     const ConnectionOptions &_opts;
 };
@@ -84,7 +84,7 @@ Connection::ContextUPtr Connection::Connector::_connect() const {
 }
 
 redisContext* Connection::Connector::_connect_tcp() const {
-    if (_opts.connect_timeout > std::chrono::steady_clock::duration(0)) {
+    if (_opts.connect_timeout > std::chrono::milliseconds(0)) {
         return redisConnectWithTimeout(_opts.host.c_str(),
                     _opts.port,
                     _to_timeval(_opts.connect_timeout));
@@ -94,7 +94,7 @@ redisContext* Connection::Connector::_connect_tcp() const {
 }
 
 redisContext* Connection::Connector::_connect_unix() const {
-    if (_opts.connect_timeout > std::chrono::steady_clock::duration(0)) {
+    if (_opts.connect_timeout > std::chrono::milliseconds(0)) {
         return redisConnectUnixWithTimeout(
                     _opts.path.c_str(),
                     _to_timeval(_opts.connect_timeout));
@@ -104,7 +104,7 @@ redisContext* Connection::Connector::_connect_unix() const {
 }
 
 void Connection::Connector::_set_socket_timeout(redisContext &ctx) const {
-    if (_opts.socket_timeout <= std::chrono::steady_clock::duration(0)) {
+    if (_opts.socket_timeout <= std::chrono::milliseconds(0)) {
         return;
     }
 
@@ -123,7 +123,7 @@ void Connection::Connector::_enable_keep_alive(redisContext &ctx) const {
     }
 }
 
-timeval Connection::Connector::_to_timeval(const std::chrono::steady_clock::duration &dur) const {
+timeval Connection::Connector::_to_timeval(const std::chrono::milliseconds &dur) const {
     auto sec = std::chrono::duration_cast<std::chrono::seconds>(dur);
     auto msec = std::chrono::duration_cast<std::chrono::microseconds>(dur - sec);
 

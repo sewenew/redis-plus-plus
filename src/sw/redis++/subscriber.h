@@ -108,7 +108,7 @@ public:
 
     // Wait the subscribing thread exits or timeout.
     // Return false if the timeout expired, otherwise, true.
-    bool wait_for(const std::chrono::steady_clock::duration &timeout);
+    bool wait_for(const std::chrono::milliseconds &timeout);
 
 private:
     friend class Redis;
@@ -128,7 +128,7 @@ private:
 
     void _check_connection();
 
-    bool _wait_for(const std::chrono::steady_clock::duration &timeout);
+    bool _wait_for(const std::chrono::milliseconds &timeout);
 
     void _lazy_start_subscribe();
 

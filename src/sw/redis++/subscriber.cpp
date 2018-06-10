@@ -109,7 +109,7 @@ void Subscriber::wait() {
     _future.get();
 }
 
-bool Subscriber::wait_for(const std::chrono::steady_clock::duration &timeout) {
+bool Subscriber::wait_for(const std::chrono::milliseconds &timeout) {
     if (!_future.valid()) {
         // Subscribing thread is NOT running.
         return true;
@@ -146,7 +146,7 @@ void Subscriber::_check_connection() {
     }
 }
 
-bool Subscriber::_wait_for(const std::chrono::steady_clock::duration &timeout) {
+bool Subscriber::_wait_for(const std::chrono::milliseconds &timeout) {
     assert(_future.valid());
 
     auto status = _future.wait_for(timeout);

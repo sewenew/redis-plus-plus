@@ -32,10 +32,10 @@ struct ConnectionPoolOptions {
     std::size_t size = 1;
 
     // Max time to wait for a connection. 0ms means client waits forever.
-    std::chrono::steady_clock::duration wait_timeout{};
+    std::chrono::milliseconds wait_timeout{0};
 
     // Max lifetime of a connection. 0ms means we never expire the connection.
-    std::chrono::steady_clock::duration connection_lifetime{};
+    std::chrono::milliseconds connection_lifetime{0};
 };
 
 class ConnectionPool {

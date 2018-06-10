@@ -52,9 +52,9 @@ struct ConnectionOptions {
 
     bool keep_alive = false;
 
-    std::chrono::steady_clock::duration connect_timeout{0};
+    std::chrono::milliseconds connect_timeout{0};
 
-    std::chrono::steady_clock::duration socket_timeout{0};
+    std::chrono::milliseconds socket_timeout{0};
 };
 
 class CmdArgs;

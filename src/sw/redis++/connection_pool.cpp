@@ -85,7 +85,7 @@ Connection ConnectionPool::_fetch() {
 
 void ConnectionPool::_wait_for_connection(std::unique_lock<std::mutex> &lock) {
     auto timeout = _pool_opts.wait_timeout;
-    if (timeout > std::chrono::steady_clock::duration(0)) {
+    if (timeout > std::chrono::milliseconds(0)) {
         // Wait until _pool is no longer empty or timeout.
         if (!_cv.wait_for(lock,
                     timeout,
@@ -105,7 +105,7 @@ bool ConnectionPool::_need_reconnect(const Connection &connection) {
     }
 
     auto connection_lifetime = _pool_opts.connection_lifetime;
-    if (connection_lifetime > std::chrono::steady_clock::duration(0)) {
+    if (connection_lifetime > std::chrono::milliseconds(0)) {
         auto now = std::chrono::steady_clock::now();
         if (now - connection.last_active() > connection_lifetime) {
             return true;
