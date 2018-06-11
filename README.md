@@ -4,8 +4,8 @@
 
 This is a C++ client for Redis. It's based on [hiredis](https://github.com/redis/hiredis), and written in C++ 11.
 
-It supports the following features:
-- Most of commands for Redis 4.0.
+### Features
+- Most commands for Redis 4.0.
 - Connection pool.
 - Redis scripting.
 - Thread safe unless otherwise stated.
@@ -30,13 +30,17 @@ make
 make install
 ```
 
-Use `make PREFIX=/non/default/path install` to install hiredis at non-default location.
+Use `make PREFIX=/non/default/path` and `make PREFIX=/non/default/path install` to install hiredis at non-default location.
 
 ### Install redis-plus-plus
 
 *redis-plus-plus* is built with [CMAKE](https://cmake.org).
 
 ```
+git clone https://github.com/sewenew/redis-plus-plus.git
+
+cd redis-plus-plus
+
 mkdir compile
 
 cd compile
@@ -49,6 +53,26 @@ make install
 ```
 
 If hiredis is installed at non-default location, you should specify `-DCMAKE_PREFIX_PATH=/path/to/hiredis` when running cmake. Also you can specify `-DCMAKE_INSTALL_PREFIX=/path/to/install/redis-plus-plus` to install *redis-plus-plus* at non-default location.
+
+### Use redis-plus-plus In Your Project
+
+Since *redis-plus-plus* depends on *hiredis*, you need link both libraries to your Application. Take GCC as an example.
+
+#### Use Shared Libraries
+
+```
+g++ -std=c++11 -lhiredis -lredis++ -o app app.cpp
+```
+
+If *hiredis* and *redis-plus-plus* are installed at non-default location, you should use `-I` and `-L` options to specify the header and library path.
+
+#### Use Static Libraries
+
+```
+g++ -std=c++11 -o app app.cpp /path/to/libhiredis.a /path/to/libredis++.a
+```
+
+If *hiredis* and *redis-plus-plus* are installed at non-default location, you should use `-I` option to specify the header path.
 
 ## Getting Started
 
@@ -173,46 +197,42 @@ You can send [Redis commands](https://redis.io/commands) through `Redis` object.
 
 Most of these methods have the same parameters as the corresponding commands. The following is a list of parameter types:
 
-- StringView: We use [string_view](http://en.cppreference.com/w/cpp/string/basic_string_view) as the type of string parameters. However, by now, not all compilers support `string_view`. So when compiling *redis-plus-plus*, CMAKE checks if your compiler supports `string_view`. If not, it uses our own simple [implementation](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/utils.h#L48). Since there are conversions from `std::string` and c-style string to `StringView`, you can just pass `std::string` or c-style string to methods that need a `StringView` parameter.
-- long long: Parameters of integer type.
-- double: Parameters of floating-point type.
-- std::chrono::duration and std::chrono::time_point: Time-related parameters.
-- options: See [command_options.h](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/command_options.h) for details.
+- `StringView`: We use [string_view](http://en.cppreference.com/w/cpp/string/basic_string_view) as the type of string parameters. However, by now, not all compilers support `string_view`. So when compiling *redis-plus-plus*, CMAKE checks if your compiler supports `string_view`. If not, it uses our own simple [implementation](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/utils.h#L48). Since there are conversions from `std::string` and c-style string to `StringView`, you can just pass `std::string` or c-style string to methods that need a `StringView` parameter.
+- `long long`: Parameters of integer type.
+- `double`: Parameters of floating-point type.
+- `std::chrono::duration` and `std::chrono::time_point`: Time-related parameters.
+- some options: See [command_options.h](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/command_options.h) for details.
 - pair of iterators: Use a pair of iterators to specify a batch of input.
-- std::initializer_list<T>: Use an initializer list to specify a batch of input.
+- `std::initializer_list<T>`: Use an initializer list to specify a batch of input.
 
 #### Reply
 
 [Redis protocol](https://redis.io/topics/protocol) defines 5 kinds of replies:
-- Status Reply: Also known as *Simple String Reply*. It's a non-binary string reply.
-- Bulk String Reply: Binary safe string reply.
-- Integer Reply: Signed integer reply. Large enough to hold `long long`.
-- Array Reply: (Nested) Array reply.
-- Error Reply: Non-binary string reply that gives error info.
+- *Status Reply*: Also known as *Simple String Reply*. It's a non-binary string reply.
+- *Bulk String Reply*: Binary safe string reply.
+- *Integer Reply*: Signed integer reply. Large enough to hold `long long`.
+- *Array Reply*: (Nested) Array reply.
+- *Error Reply*: Non-binary string reply that gives error info.
 
 Also these replies might be *NULL*. For instance, when you try to `GET` the value of a nonexistent key, Redis returns a *NULL Bulk String Reply*.
 
 *redis-plus-plus* sends commands and receives replies synchronously. Replies are parsed into return values of these methods. The following is a list of return types:
 
-- void: *Status Reply* that should always return a string of *OK*.
-- std::string: *Status Reply* that not always returns *OK*, and *Bulk String Reply*.
-- Optional<std::string>: *Status Reply* and *Bulk String Reply* that might be *NULL*.
-- long long: *Integer Reply*.
-- Optional<long long>: *Integer Reply* that might be *NULL*.
-- bool: *Integer Reply* that always returns 0 or 1.
-- double: *Bulk String Reply* that represents a double.
-- Optional<double>: double reply that might be *NULL*.
+- `void`: *Status Reply* that should always return a string of *OK*.
+- `std::string`: *Status Reply* that not always returns *OK*, and *Bulk String Reply*.
+- `long long`: *Integer Reply*.
+- `bool`: *Integer Reply* that always returns 0 or 1.
+- `double`: *Bulk String Reply* that represents a double.
 - Output Iterator: *Array Reply*. We use STL-like interface to return array replies.
+- `Optional<T>`: For any reply of type `T` that might be *NULL*.
 
 We use [std::optional](http://en.cppreference.com/w/cpp/utility/optional) as return type, if Redis might return *NULL* reply. Again, since not all compilers support `std::optional` so far, we implement our own simple [version](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/utils.h#L85).
 
 #### Exception
 
-*redis-plus-plus* throws exceptions if something bad happens. All exceptions derived from `Error` class.
+*redis-plus-plus* throws exceptions if it receives an *Error Reply* or something bad happens. All exceptions derived from `Error` class.
 
-**NOTE**:
-
-*NULL* reply is not taken as an error, e.g. key not found. Instead it returns a null Optional<T> object.
+**NOTE**: *NULL* reply is not taken as an error, e.g. key not found. Instead it returns a null `Optional<T>` object.
 
 ## Author
 
