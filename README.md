@@ -30,11 +30,17 @@ make
 make install
 ```
 
-Use `make PREFIX=/non/default/path` and `make PREFIX=/non/default/path install` to install hiredis at non-default location.
+If you want to install *hiredis* at non-default location, use the following commands to specify the installation path.
+
+```
+make PREFIX=/non/default/path
+
+make PREFIX=/non/default/path install
+```
 
 ### Install redis-plus-plus
 
-*redis-plus-plus* is built with [CMAKE](https://cmake.org).
+*redis-plus-plus* is built with [CMAKE](https://cmake.org), and the minimum required version is *3.0.0*.
 
 ```
 git clone https://github.com/sewenew/redis-plus-plus.git
@@ -52,11 +58,15 @@ make
 make install
 ```
 
-If hiredis is installed at non-default location, you should specify `-DCMAKE_PREFIX_PATH=/path/to/hiredis` when running cmake. Also you can specify `-DCMAKE_INSTALL_PREFIX=/path/to/install/redis-plus-plus` to install *redis-plus-plus* at non-default location.
+If hiredis is installed at non-default location, you should use `CMAKE_PREFIX_PATH` to specify the installation path of *hiredis*. Also you can use `CMAKE_INSTALL_PREFIX` to install *redis-plus-plus* at non-default location.
+
+```
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/path/to/hiredis -DCMAKE_INSTALL_PREFIX=/path/to/install/redis-plus-plus ..
+```
 
 ### Use redis-plus-plus In Your Project
 
-Since *redis-plus-plus* depends on *hiredis*, you need link both libraries to your Application. Take GCC as an example.
+Since *redis-plus-plus* depends on *hiredis*, you need to link both libraries to your Application. Also don't forget to specify the `-std=c++11` option. Take GCC as an example.
 
 #### Use Shared Libraries
 
@@ -64,7 +74,7 @@ Since *redis-plus-plus* depends on *hiredis*, you need link both libraries to yo
 g++ -std=c++11 -lhiredis -lredis++ -o app app.cpp
 ```
 
-If *hiredis* and *redis-plus-plus* are installed at non-default location, you should use `-I` and `-L` options to specify the header and library path.
+If *hiredis* and *redis-plus-plus* are installed at non-default location, you should use `-I` and `-L` options to specify the header and library paths.
 
 #### Use Static Libraries
 
@@ -218,10 +228,10 @@ Also these replies might be *NULL*. For instance, when you try to `GET` the valu
 
 *redis-plus-plus* sends commands and receives replies synchronously. Replies are parsed into return values of these methods. The following is a list of return types:
 
-- `void`: *Status Reply* that should always return a string of *OK*.
-- `std::string`: *Status Reply* that not always returns *OK*, and *Bulk String Reply*.
-- `long long`: *Integer Reply*.
+- `void`: *Status Reply* that should always return a string of "OK".
+- `std::string`: *Status Reply* that not always return "OK", and *Bulk String Reply*.
 - `bool`: *Integer Reply* that always returns 0 or 1.
+- `long long`: *Integer Reply* that not always return 0 or 1.
 - `double`: *Bulk String Reply* that represents a double.
 - Output Iterator: *Array Reply*. We use STL-like interface to return array replies.
 - `Optional<T>`: For any reply of type `T` that might be *NULL*.
@@ -232,7 +242,7 @@ We use [std::optional](http://en.cppreference.com/w/cpp/utility/optional) as ret
 
 *redis-plus-plus* throws exceptions if it receives an *Error Reply* or something bad happens. All exceptions derived from `Error` class.
 
-**NOTE**: *NULL* reply is not taken as an error, e.g. key not found. Instead it returns a null `Optional<T>` object.
+**NOTE**: *NULL* reply is not taken as an exception, e.g. key not found. Instead we return it as a null `Optional<T>` object.
 
 ## Author
 
