@@ -154,22 +154,20 @@ struct IsInserter : std::false_type {};
 template <typename T>
 struct IsInserter<T, Void<typename T::container_type>> : std::true_type {};
 
-template <typename T, typename U = Void<>>
-struct IsKvPairIter : IsKvPair<typename std::decay<decltype(*std::declval<T>())>::type> {};
-
-template <typename T>
-struct IsKvPairIter<T, Void<typename T::container_type>> :
-                    IsKvPair<typename T::container_type::value_type> {};
-
 template <typename Iter, typename T = Void<>>
 struct IterType {
-    using type = typename std::decay<decltype(*std::declval<Iter>())>::type;
+    using type = typename std::iterator_traits<Iter>::value_type;
 };
 
 template <typename Iter>
-struct IterType<Iter, Void<typename Iter::container_type>> {
+//struct IterType<Iter, Void<typename Iter::container_type>> {
+struct IterType<Iter,
+    typename std::enable_if<std::is_void<typename Iter::value_type>::value>::type> {
     using type = typename std::decay<typename Iter::container_type::value_type>::type;
 };
+
+template <typename T>
+struct IsKvPairIter : IsKvPair<typename IterType<T>::type> {};
 
 template <typename T, typename Tuple>
 struct TupleWithType : std::false_type {};
