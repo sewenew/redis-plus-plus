@@ -58,8 +58,7 @@ void KeysCmdTest::_test_key() {
     REDIS_ASSERT(bool(new_val) && *new_val == val, "failed to test dump and restore");
 
     auto rand_key = _redis.randomkey();
-    REDIS_ASSERT(bool(rand_key) && *rand_key == key || *rand_key == dest,
-            "failed to test randomkey");
+    REDIS_ASSERT(bool(rand_key), "failed to test randomkey");
 
     _redis.rename(dest, new_key_name);
 
