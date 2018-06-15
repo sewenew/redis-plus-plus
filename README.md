@@ -40,7 +40,7 @@ make PREFIX=/non/default/path install
 
 ### Install redis-plus-plus
 
-*redis-plus-plus* is built with [CMAKE](https://cmake.org), and the minimum required version is *3.0.0*.
+*redis-plus-plus* is built with [CMAKE](https://cmake.org).
 
 ```
 git clone https://github.com/sewenew/redis-plus-plus.git
