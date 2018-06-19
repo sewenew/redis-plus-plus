@@ -76,6 +76,10 @@ g++ -std=c++11 -lhiredis -lredis++ -o app app.cpp
 
 If *hiredis* and *redis-plus-plus* are installed at non-default location, you should use `-I` and `-L` options to specify the header and library paths.
 
+```
+g++ -std=c++11 -I/non-default/install/include/path -L/non-default/install/lib/path -lhiredis -lredis++ -o app app.cpp
+```
+
 #### Use Static Libraries
 
 ```
@@ -83,6 +87,10 @@ g++ -std=c++11 -o app app.cpp /path/to/libhiredis.a /path/to/libredis++.a
 ```
 
 If *hiredis* and *redis-plus-plus* are installed at non-default location, you should use `-I` option to specify the header path.
+
+```
+g++ -std=c++11 -I/non-default/install/include/path -o app app.cpp /path/to/libhiredis.a /path/to/libredis++.a
+```
 
 ## Getting Started
 
@@ -548,7 +556,7 @@ redis.georadius("geo",
             std::back_inserter(mem_with_hash_coord_dist));
 ```
 
-Please see [Redis header](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/redis.h) for more API interface, and see the [tests](https://github.com/sewenew/redis-plus-plus/tree/master/test/src/sw/redis%2B%2B) for more examples.
+Please see [redis.h](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/redis.h) for more API references, and see the [tests](https://github.com/sewenew/redis-plus-plus/tree/master/test/src/sw/redis%2B%2B) for more examples.
 
 ## Author
 
