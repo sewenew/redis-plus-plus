@@ -669,6 +669,23 @@ public:
     template <typename Interval>
     long long zlexcount(const StringView &key, const Interval &interval);
 
+    // If *output* is an iterator of a container of string,
+    // we send *ZRANGE key start stop* command.
+    // If it's an iterator of a container of pair<string, double>,
+    // we send *ZRANGE key start stop WITHSCORES* command.
+    //
+    // The following code sends *ZRANGE* without the *WITHSCORES* option:
+    //
+    // vector<string> result;
+    // redis.zrange("key", 0, -1, back_inserter(result));
+    //
+    // On the other hand, the following code sends command with *WITHSCORES* option:
+    //
+    // unordered_map<string, double> with_score;
+    // redis.zrange("key", 0, -1, inserter(with_score, with_score.end()));
+    //
+    // This also applies to other commands with the *WITHSCORES* option,
+    // e.g. *ZRANGEBYSCORE*, *ZREVRANGE*, *ZREVRANGEBYSCORE*.
     template <typename Output>
     void zrange(const StringView &key, long long start, long long stop, Output output);
 
@@ -681,9 +698,11 @@ public:
                         const LimitOptions &opts,
                         Output output);
 
+    // See *zrange* comment on how to send command with *WITHSCORES* option.
     template <typename Interval, typename Output>
     void zrangebyscore(const StringView &key, const Interval &interval, Output output);
 
+    // See *zrange* comment on how to send command with *WITHSCORES* option.
     template <typename Interval, typename Output>
     void zrangebyscore(const StringView &key,
                         const Interval &interval,
@@ -710,6 +729,7 @@ public:
     template <typename Interval>
     long long zremrangebyscore(const StringView &key, const Interval &interval);
 
+    // See *zrange* comment on how to send command with *WITHSCORES* option.
     template <typename Output>
     void zrevrange(const StringView &key, long long start, long long stop, Output output);
 
@@ -722,9 +742,11 @@ public:
                         const LimitOptions &opts,
                         Output output);
 
+    // See *zrange* comment on how to send command with *WITHSCORES* option.
     template <typename Interval, typename Output>
     void zrevrangebyscore(const StringView &key, const Interval &interval, Output output);
 
+    // See *zrange* comment on how to send command with *WITHSCORES* option.
     template <typename Interval, typename Output>
     void zrevrangebyscore(const StringView &key,
                             const Interval &interval,
@@ -854,6 +876,37 @@ public:
                                 bool store_dist,
                                 long long count);
 
+    // If *output* is an iterator of a container of string, we send *GEORADIUS* command
+    // without any options and only get the members in the specified geo range.
+    // If *output* is an iterator of a container of a tuple, the type of the tuple decides
+    // options we send with the *GEORADIUS* command. If the tuple has an element of type
+    // double, we send the *WITHDIST* option. If it has an element of type string, we send
+    // the *WITHHASH* option. If it has an element of type pair<double, double>, we send
+    // the *WITHCOORD* option. For example:
+    //
+    // The following code only gets the members in range, i.e. without any option.
+    //
+    // vector<string> members;
+    // redis.georadius("key", make_pair(10.1, 10.2), 10, GeoUnit::KM, 10, true,
+    //                  back_inserter(members))
+    //
+    // The following code sends the command with *WITHDIST* option.
+    //
+    // vector<tuple<string, double>> with_dist;
+    // redis.georadius("key", make_pair(10.1, 10.2), 10, GeoUnit::KM, 10, true,
+    //                  back_inserter(with_dist))
+    //
+    // The following code sends the command with *WITHDIST* and *WITHHASH* options.
+    //
+    // vector<tuple<string, double, string>> with_dist_hash;
+    // redis.georadius("key", make_pair(10.1, 10.2), 10, GeoUnit::KM, 10, true,
+    //                  back_inserter(with_dist_hash))
+    //
+    // The following code sends the command with *WITHDIST*, *WITHCOORD* and *WITHHASH* options.
+    //
+    // vector<tuple<string, double, pair<double, double>, string>> with_dist_coord_hash;
+    // redis.georadius("key", make_pair(10.1, 10.2), 10, GeoUnit::KM, 10, true,
+    //                  back_inserter(with_dist_coord_hash))
     template <typename Output>
     void georadius(const StringView &key,
                     const std::pair<double, double> &loc,
