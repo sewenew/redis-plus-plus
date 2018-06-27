@@ -28,6 +28,7 @@
 #include "hyperloglog_cmds_test.h"
 #include "geo_cmds_test.h"
 #include "script_cmds_test.h"
+#include "pubsub_test.h"
 
 namespace {
 
@@ -44,56 +45,61 @@ int main(int argc, char **argv) {
         sw::redis::test::ConnectionCmdTest connection_test(opts);
         connection_test.run();
 
-        std::cout << "Pass connection commands test" << std::endl;
+        std::cout << "Pass connection commands tests" << std::endl;
 
         sw::redis::test::KeysCmdTest keys_test(opts);
         keys_test.run();
 
-        std::cout << "Pass keys commands test" << std::endl;
+        std::cout << "Pass keys commands tests" << std::endl;
 
         sw::redis::test::StringCmdTest string_test(opts);
         string_test.run();
 
-        std::cout << "Pass string commands test" << std::endl;
+        std::cout << "Pass string commands tests" << std::endl;
 
         sw::redis::test::ListCmdTest list_test(opts);
         list_test.run();
 
-        std::cout << "Pass list commands test" << std::endl;
+        std::cout << "Pass list commands tests" << std::endl;
 
         sw::redis::test::HashCmdTest hash_test(opts);
         hash_test.run();
 
-        std::cout << "Pass hash commands test" << std::endl;
+        std::cout << "Pass hash commands tests" << std::endl;
 
         sw::redis::test::SetCmdTest set_test(opts);
         set_test.run();
 
-        std::cout << "Pass set commands test" << std::endl;
+        std::cout << "Pass set commands tests" << std::endl;
 
         sw::redis::test::ZSetCmdTest zset_test(opts);
         zset_test.run();
 
-        std::cout << "Pass zset commands test" << std::endl;
+        std::cout << "Pass zset commands tests" << std::endl;
 
         sw::redis::test::HyperloglogCmdTest hll_test(opts);
         hll_test.run();
 
-        std::cout << "Pass hyperloglog commands test" << std::endl;
+        std::cout << "Pass hyperloglog commands tests" << std::endl;
 
         sw::redis::test::GeoCmdTest geo_test(opts);
         geo_test.run();
 
-        std::cout << "Pass geo commands test" << std::endl;
+        std::cout << "Pass geo commands tests" << std::endl;
 
         sw::redis::test::ScriptCmdTest script_test(opts);
         script_test.run();
 
-        std::cout << "Pass script commands test" << std::endl;
+        std::cout << "Pass script commands tests" << std::endl;
 
-        std::cout << "Pass all test" << std::endl;
+        sw::redis::test::PubSubTest pubsub_test(opts);
+        pubsub_test.run();
+
+        std::cout << "Pass pubsub tests" << std::endl;
+
+        std::cout << "Pass all tests" << std::endl;
     } catch (const sw::redis::Error &e) {
-        std::cerr << e.what() << std::endl;
+        std::cerr << "Test failed: " << e.what() << std::endl;
         return -1;
     }
 
