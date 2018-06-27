@@ -30,99 +30,63 @@ const Subscriber::TypeIndex Subscriber::_msg_type_index = {
     {"punsubscribe", MsgType::PUNSUBSCRIBE}
 };
 
-Subscriber::Subscriber(Connection connection) :
-        _connection(std::move(connection)),
-        _stop(std::unique_ptr<std::atomic<bool>>(new std::atomic<bool>(false))),
-        _mutex(std::unique_ptr<std::mutex>(new std::mutex)) {}
-
-Subscriber::~Subscriber() {
-    try {
-        stop();
-    } catch (...) {
-        // Avoid throwing exception from destructor.
-    }
-}
+Subscriber::Subscriber(Connection connection) : _connection(std::move(connection)) {}
 
 void Subscriber::unsubscribe() {
-    std::lock_guard<std::mutex> lock(*_mutex);
-
     _check_connection();
-
-    if (_channel_callbacks.empty()) {
-        throw Error("No channel has been subscribed");
-    }
 
     cmd::unsubscribe(_connection);
 }
 
 void Subscriber::unsubscribe(const StringView &channel) {
-    std::lock_guard<std::mutex> lock(*_mutex);
-
     _check_connection();
-
-    if (_channel_callbacks.find(std::string(channel.data(), channel.size()))
-            == _channel_callbacks.end()) {
-        throw Error("Channel has NOT been subscribed");
-    }
 
     cmd::unsubscribe(_connection, channel);
 }
 
 void Subscriber::punsubscribe() {
-    std::lock_guard<std::mutex> lock(*_mutex);
-
     _check_connection();
-
-    if (_pattern_callbacks.empty()) {
-        throw Error("No pattern has been subscribed");
-    }
 
     cmd::punsubscribe(_connection);
 }
 
 void Subscriber::punsubscribe(const StringView &pattern) {
-    std::lock_guard<std::mutex> lock(*_mutex);
-
     _check_connection();
-
-    if (_pattern_callbacks.find(std::string(pattern.data(), pattern.size()))
-            == _pattern_callbacks.end()) {
-        throw Error("Pattern has NOT been subscribed");
-    }
 
     cmd::punsubscribe(_connection, pattern);
 }
 
-void Subscriber::stop() {
-    *_stop = true;
+void Subscriber::consume() {
+    _check_connection();
 
-    wait();
-}
+    auto reply = _connection.recv();
 
-void Subscriber::wait() {
-    if (!_future.valid()) {
-        // Subscribing thread is NOT running.
-        return;
+    assert(reply);
+
+    if (!reply::is_array(*reply) || reply->elements < 1 || reply->element == nullptr) {
+        throw ProtoError("Invalid subscribe message");
     }
 
-    // Wait until subscribing thread exits, and get possible exceptions.
-    _future.get();
-}
+    auto type = _msg_type(reply->element[0]);
+    switch (type) {
+    case MsgType::MESSAGE:
+        _handle_message(*reply);
+        break;
 
-bool Subscriber::wait_for(const std::chrono::milliseconds &timeout) {
-    if (!_future.valid()) {
-        // Subscribing thread is NOT running.
-        return true;
+    case MsgType::PMESSAGE:
+        _handle_pmessage(*reply);
+        break;
+
+    case MsgType::SUBSCRIBE:
+    case MsgType::UNSUBSCRIBE:
+    case MsgType::PSUBSCRIBE:
+    case MsgType::PUNSUBSCRIBE:
+        _handle_meta(type, *reply);
+        break;
+
+    default:
+        assert(false);
     }
-
-    // Wait until subscribing thread exits or timeout.
-    auto ready = _wait_for(timeout);
-    if (ready) {
-        // Get possible exceptions.
-        _future.get();
-    }
-
-    return ready;
 }
 
 Subscriber::MsgType Subscriber::_msg_type(redisReply *reply) const {
@@ -146,37 +110,17 @@ void Subscriber::_check_connection() {
     }
 }
 
-bool Subscriber::_wait_for(const std::chrono::milliseconds &timeout) {
-    assert(_future.valid());
-
-    auto status = _future.wait_for(timeout);
-    if (status == std::future_status::timeout) {
-        return false;
-    } else if (status == std::future_status::ready) {
-        return true;
-    } else {
-        // The subscribing thread should NOT be deferred.
-        throw Error("Subscribing thread has been deferred");
-    }
-}
-
-void Subscriber::_lazy_start_subscribe() {
-    if (!_future.valid()) {
-        *_stop = false;
-        _future = std::async(&Subscriber::_consume, this);
-    }
-}
-
-std::pair<std::string, long long> Subscriber::_parse_meta_reply(redisReply &reply) const {
+std::pair<OptionalString, long long> Subscriber::_parse_meta_reply(redisReply &reply) const {
     if (reply.elements != 3) {
         throw ProtoError("Expect 3 sub replies");
     }
 
     assert(reply.element != nullptr);
 
+    std::string name;
     auto *name_reply = reply.element[1];
     if (name_reply == nullptr) {
-        throw ProtoError("Null name reply");
+        throw ProtoError("Null channel reply");
     }
 
     auto *num_reply = reply.element[2];
@@ -185,12 +129,15 @@ std::pair<std::string, long long> Subscriber::_parse_meta_reply(redisReply &repl
     }
 
     return {
-            reply::parse<std::string>(*name_reply),
-            reply::parse<long long>(*num_reply)
+        reply::parse<OptionalString>(*name_reply),
+        reply::parse<long long>(*num_reply)
     };
+    //auto num = reply::parse<long long>(*num_reply);
+
+    //return {std::move(name), num};
 }
 
-bool Subscriber::_handle_message(redisReply &reply) {
+void Subscriber::_handle_message(redisReply &reply) {
     if (reply.elements != 3) {
         throw ProtoError("Expect 3 sub replies");
     }
@@ -214,10 +161,10 @@ bool Subscriber::_handle_message(redisReply &reply) {
         throw Error("Unknown channel");
     }
 
-    return iter->second.msg_callback(channel, msg);
+    iter->second(std::move(channel), std::move(msg));
 }
 
-bool Subscriber::_handle_pmessage(redisReply &reply) {
+void Subscriber::_handle_pmessage(redisReply &reply) {
     if (reply.elements != 4) {
         throw ProtoError("Expect 4 sub replies");
     }
@@ -247,142 +194,13 @@ bool Subscriber::_handle_pmessage(redisReply &reply) {
         throw Error("Unknown pattern");
     }
 
-    return iter->second.msg_callback(pattern, channel, msg);
+    iter->second(std::move(pattern), std::move(channel), std::move(msg));
 }
 
-bool Subscriber::_handle_subscribe(redisReply &reply) {
-    auto meta = _parse_meta_reply(reply);
-
-    auto iter = _channel_callbacks.find(meta.first);
-    if (iter == _channel_callbacks.end()) {
-        throw Error("Unknown channel");
-    }
-
-    return iter->second.sub_callback(meta.first, meta.second);
-}
-
-bool Subscriber::_handle_unsubscribe(redisReply &reply) {
-    auto meta = _parse_meta_reply(reply);
-
-    auto iter = _channel_callbacks.find(meta.first);
-    if (iter == _channel_callbacks.end()) {
-        throw Error("Unknown channel");
-    }
-
-    auto ret = iter->second.unsub_callback(meta.first, meta.second);
-
-    _channel_callbacks.erase(iter);
-
-    return ret;
-}
-
-bool Subscriber::_handle_psubscribe(redisReply &reply) {
-    auto meta = _parse_meta_reply(reply);
-
-    auto iter = _pattern_callbacks.find(meta.first);
-    if (iter == _pattern_callbacks.end()) {
-        throw Error("Unknown pattern");
-    }
-
-    return iter->second.sub_callback(meta.first, meta.second);
-}
-
-bool Subscriber::_handle_punsubscribe(redisReply &reply) {
-    auto meta = _parse_meta_reply(reply);
-
-    auto iter = _pattern_callbacks.find(meta.first);
-    if (iter == _pattern_callbacks.end()) {
-        throw Error("Unknown pattern");
-    }
-
-    auto ret = iter->second.unsub_callback(meta.first, meta.second);
-
-    _pattern_callbacks.erase(iter);
-
-    return ret;
-}
-
-void Subscriber::_consume() {
-    while (true) {
-        // TODO: Narrow down the scope of the lock.
-        std::lock_guard<std::mutex> lock(*_mutex);
-
-        _check_connection();
-
-        if (*_stop) {
-            _stop_subscribe();
-            break;
-        }
-
-        try {
-            auto reply = _connection.recv();
-
-            assert(reply);
-
-            if (reply->elements < 1 || reply->element == nullptr) {
-                throw ProtoError("Invalid subscribe message");
-            }
-
-            auto type = _msg_type(reply->element[0]);
-            auto ret = true;
-            switch (type) {
-            case MsgType::MESSAGE:
-                ret = _handle_message(*reply);
-                break;
-
-            case MsgType::PMESSAGE:
-                ret = _handle_pmessage(*reply);
-                break;
-
-            case MsgType::SUBSCRIBE:
-                ret = _handle_subscribe(*reply);
-                break;
-
-            case MsgType::UNSUBSCRIBE:
-                ret = _handle_unsubscribe(*reply);
-                break;
-
-            case MsgType::PSUBSCRIBE:
-                ret = _handle_psubscribe(*reply);
-                break;
-
-            case MsgType::PUNSUBSCRIBE:
-                ret = _handle_punsubscribe(*reply);
-                break;
-
-            default:
-                assert(false);
-            }
-
-            if (!ret) {
-                // Stop consuming.
-                _stop_subscribe();
-                break;
-            }
-        } catch (const TimeoutError &e) {
-            // Try latter.
-            continue;
-        } catch (...) {
-            // TODO: should we allow an error_callback to handle the exception?
-            _stop_subscribe();
-            throw;
-        }
-    }
-}
-
-void Subscriber::_stop_subscribe() {
-    *_stop = true;
-
-    _channel_callbacks.clear();
-    _pattern_callbacks.clear();
-
-    // Reset connection.
-    // TODO: Maybe unsubscribe all channels should be better.
-    try {
-        _connection.reconnect();
-    } catch (const Error &e) {
-        // At least we broke the connection.
-        return;
+void Subscriber::_handle_meta(MsgType type, redisReply &reply) {
+    if (_meta_callback != nullptr) {
+        auto meta = _parse_meta_reply(reply);
+        _meta_callback(type, std::move(meta.first), meta.second);
     }
 }
 

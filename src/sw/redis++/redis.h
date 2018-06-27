@@ -55,6 +55,9 @@ public:
 
     Subscriber subscriber();
 
+    template <typename MetaCb>
+    Subscriber subscriber(MetaCb meta_callback);
+
     template <typename Cmd, typename ...Args>
     ReplyUPtr command(Cmd cmd, Args &&...args);
 
