@@ -32,6 +32,17 @@ const Subscriber::TypeIndex Subscriber::_msg_type_index = {
 
 Subscriber::Subscriber(Connection connection) : _connection(std::move(connection)) {}
 
+void Subscriber::subscribe(const StringView &channel) {
+    _check_connection();
+
+    // TODO: cmd::subscribe DOES NOT send the subscribe message to Redis.
+    // In fact, it puts the command to network buffer.
+    // So we need a queue to record these sub or unsub commands, and
+    // ensure that before stopping the subscriber, all these commands
+    // have really been sent to Redis.
+    cmd::subscribe(_connection, channel);
+}
+
 void Subscriber::unsubscribe() {
     _check_connection();
 
@@ -42,6 +53,12 @@ void Subscriber::unsubscribe(const StringView &channel) {
     _check_connection();
 
     cmd::unsubscribe(_connection, channel);
+}
+
+void Subscriber::psubscribe(const StringView &pattern) {
+    _check_connection();
+
+    cmd::psubscribe(_connection, pattern);
 }
 
 void Subscriber::punsubscribe() {
@@ -110,34 +127,11 @@ void Subscriber::_check_connection() {
     }
 }
 
-std::pair<OptionalString, long long> Subscriber::_parse_meta_reply(redisReply &reply) const {
-    if (reply.elements != 3) {
-        throw ProtoError("Expect 3 sub replies");
-    }
-
-    assert(reply.element != nullptr);
-
-    std::string name;
-    auto *name_reply = reply.element[1];
-    if (name_reply == nullptr) {
-        throw ProtoError("Null channel reply");
-    }
-
-    auto *num_reply = reply.element[2];
-    if (num_reply == nullptr) {
-        throw ProtoError("Null num reply");
-    }
-
-    return {
-        reply::parse<OptionalString>(*name_reply),
-        reply::parse<long long>(*num_reply)
-    };
-    //auto num = reply::parse<long long>(*num_reply);
-
-    //return {std::move(name), num};
-}
-
 void Subscriber::_handle_message(redisReply &reply) {
+    if (_msg_callback == nullptr) {
+        return;
+    }
+
     if (reply.elements != 3) {
         throw ProtoError("Expect 3 sub replies");
     }
@@ -156,15 +150,14 @@ void Subscriber::_handle_message(redisReply &reply) {
     }
     auto msg = reply::parse<std::string>(*msg_reply);
 
-    auto iter = _channel_callbacks.find(channel);
-    if (iter == _channel_callbacks.end()) {
-        throw Error("Unknown channel");
-    }
-
-    iter->second(std::move(channel), std::move(msg));
+    _msg_callback(std::move(channel), std::move(msg));
 }
 
 void Subscriber::_handle_pmessage(redisReply &reply) {
+    if (_pmsg_callback == nullptr) {
+        return;
+    }
+
     if (reply.elements != 4) {
         throw ProtoError("Expect 4 sub replies");
     }
@@ -189,19 +182,33 @@ void Subscriber::_handle_pmessage(redisReply &reply) {
     }
     auto msg = reply::parse<std::string>(*msg_reply);
 
-    auto iter = _pattern_callbacks.find(pattern);
-    if (iter == _pattern_callbacks.end()) {
-        throw Error("Unknown pattern");
-    }
-
-    iter->second(std::move(pattern), std::move(channel), std::move(msg));
+    _pmsg_callback(std::move(pattern), std::move(channel), std::move(msg));
 }
 
 void Subscriber::_handle_meta(MsgType type, redisReply &reply) {
-    if (_meta_callback != nullptr) {
-        auto meta = _parse_meta_reply(reply);
-        _meta_callback(type, std::move(meta.first), meta.second);
+    if (_meta_callback == nullptr) {
+        return;
     }
+
+    if (reply.elements != 3) {
+        throw ProtoError("Expect 3 sub replies");
+    }
+
+    assert(reply.element != nullptr);
+
+    auto *channel_reply = reply.element[1];
+    if (channel_reply == nullptr) {
+        throw ProtoError("Null channel reply");
+    }
+    auto channel = reply::parse<OptionalString>(*channel_reply);
+
+    auto *num_reply = reply.element[2];
+    if (num_reply == nullptr) {
+        throw ProtoError("Null num reply");
+    }
+    auto num = reply::parse<long long>(*num_reply);
+
+    _meta_callback(type, std::move(channel), num);
 }
 
 }

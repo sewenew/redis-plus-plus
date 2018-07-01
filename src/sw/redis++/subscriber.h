@@ -38,19 +38,28 @@ namespace redis {
 // 5) PSUBSCRIBE: meta message sent when we successfully subscribe to a channel pattern.
 // 6) PUNSUBSCRIBE: meta message sent when we successfully unsubscribe to a channel pattern.
 //
-// The callback interface of message of *MESSAGE* type is:
+// Use Subscriber::on_message(MsgCallback) to set the callback function for message of
+// *MESSAGE* type, and the callback interface is:
 // void (std::string channel, std::string msg)
 //
-// The callback interface of message of *PMESSAGE* type is:
+// Use Subscriber::on_pmessage(PatternMsgCallback) to set the callback function for message of
+// *PMESSAGE* type, and the callback interface is:
 // void (std::string pattern, std::string channel, std::string msg)
 //
-// Messages of other types are called *META MESSAGE*, they have the same callback interface:
+// Messages of other types are called *META MESSAGE*, they have the same callback interface.
+// Use Subscriber::on_meta(MetaCallback) to set the callback function:
 // void (Subscriber::MsgType type, OptionalString channel, long long num)
 //
-// *META MESSAGE* callback is optional. If you don't specify one in the constructor,
-// these *META MESSAGE*s are ignored.
+// NOTE: If we haven't subscribe/psubscribe to any channel/pattern, and try to
+// unsubscribe/punsubscribe without any parameter, i.e. unsubscribe/punsubscribe all
+// channels/patterns, *channel* will be null. So the second parameter of meta callback
+// is of type *OptionalString*.
+//
 // All these callback interfaces pass std::string by value, and you can take their ownership
 // (i.e. std::move) safely.
+//
+// If you don't set callback for a specific kind of message, Subscriber::consume() will
+// receive the message, and ignore it, i.e. no callback will be called.
 class Subscriber {
 public:
     Subscriber(const Subscriber &) = delete;
@@ -71,14 +80,22 @@ public:
     };
 
     template <typename MsgCb>
-    void subscribe(const StringView &channel, MsgCb msg_callback);
+    void on_message(MsgCb msg_callback);
 
-    template <typename Input, typename MsgCb>
-    void subscribe(Input first, Input last, MsgCb msg_callback);
+    template <typename PMsgCb>
+    void on_pmessage(PMsgCb pmsg_callback);
 
-    template <typename T, typename MsgCb>
-    void subscribe(std::initializer_list<T> channels, MsgCb msg_callback) {
-        subscribe(channels.begin(), channels.end(), msg_callback);
+    template <typename MetaCb>
+    void on_meta(MetaCb meta_callback);
+
+    void subscribe(const StringView &channel);
+
+    template <typename Input>
+    void subscribe(Input first, Input last);
+
+    template <typename T>
+    void subscribe(std::initializer_list<T> channels) {
+        subscribe(channels.begin(), channels.end());
     }
 
     void unsubscribe();
@@ -93,15 +110,14 @@ public:
         unsubscribe(channels.begin(), channels.end());
     }
 
-    template <typename MsgCb>
-    void psubscribe(const StringView &pattern, MsgCb msg_callback);
+    void psubscribe(const StringView &pattern);
 
-    template <typename Input, typename MsgCb>
-    void psubscribe(Input first, Input last, MsgCb msg_callback);
+    template <typename Input>
+    void psubscribe(Input first, Input last);
 
-    template <typename T, typename MsgCb>
-    void psubscribe(std::initializer_list<T> channels, MsgCb msg_callback) {
-        psubscribe(channels.begin(), channels.end(), msg_callback);
+    template <typename T>
+    void psubscribe(std::initializer_list<T> channels) {
+        psubscribe(channels.begin(), channels.end());
     }
 
     void punsubscribe();
@@ -123,14 +139,9 @@ private:
 
     explicit Subscriber(Connection connection);
 
-    template <typename MetaCb>
-    Subscriber(Connection connection, MetaCb meta_callback);
-
     MsgType _msg_type(redisReply *reply) const;
 
     void _check_connection();
-
-    std::pair<OptionalString, long long> _parse_meta_reply(redisReply &reply) const;
 
     void _handle_message(redisReply &reply);
 
@@ -153,51 +164,35 @@ private:
 
     Connection _connection;
 
-    std::unordered_map<std::string, MsgCallback> _channel_callbacks;
+    MsgCallback _msg_callback = nullptr;
 
-    std::unordered_map<std::string, PatternMsgCallback> _pattern_callbacks;
+    PatternMsgCallback _pmsg_callback = nullptr;
 
     MetaCallback _meta_callback = nullptr;
 };
 
-template <typename MetaCb>
-Subscriber::Subscriber(Connection connection,
-                        MetaCb meta_callback) : _connection(std::move(connection)),
-                                                _meta_callback(meta_callback) {}
-
 template <typename MsgCb>
-void Subscriber::subscribe(const StringView &channel, MsgCb msg_callback) {
-    _check_connection();
-
-    if (!_channel_callbacks.emplace(channel, msg_callback).second) {
-        throw Error("Channel has already been subscribed");
-    }
-
-    // TODO: cmd::subscribe DOES NOT send the subscribe message to Redis.
-    // In fact, it puts the command to network buffer.
-    // So we need a queue to record these sub or unsub commands, and
-    // ensure that before stopping the subscriber, all these commands
-    // have really been sent to Redis.
-    cmd::subscribe(_connection, channel);
+void Subscriber::on_message(MsgCb msg_callback) {
+    _msg_callback = msg_callback;
 }
 
-template <typename Input, typename MsgCb>
-void Subscriber::subscribe(Input first, Input last, MsgCb msg_callback) {
+template <typename PMsgCb>
+void Subscriber::on_pmessage(PMsgCb pmsg_callback) {
+    _pmsg_callback = pmsg_callback;
+}
+
+template <typename MetaCb>
+void Subscriber::on_meta(MetaCb meta_callback) {
+    _meta_callback = meta_callback;
+}
+
+template <typename Input>
+void Subscriber::subscribe(Input first, Input last) {
     if (first == last) {
         return;
     }
 
     _check_connection();
-
-    for (auto iter = first; iter != last; ++iter) {
-        if (_channel_callbacks.find(*iter) != _channel_callbacks.end()) {
-            throw Error("Channel has already been subscribed");
-        }
-    }
-
-    for (auto iter = first; iter != last; ++iter) {
-        _channel_callbacks.emplace(*first, msg_callback);
-    }
 
     cmd::subscribe_range(_connection, first, last);
 }
@@ -206,39 +201,16 @@ template <typename Input>
 void Subscriber::unsubscribe(Input first, Input last) {
     _check_connection();
 
-    // We don't care if the given channel has been subscribed.
-
     cmd::unsubscribe_range(_connection, first, last);
 }
 
-template <typename MsgCb>
-void Subscriber::psubscribe(const StringView &pattern, MsgCb msg_callback) {
-    _check_connection();
-
-    if (!_pattern_callbacks.emplace(pattern, msg_callback).second) {
-        throw Error("Channel has already been subscribed");
-    }
-
-    cmd::psubscribe(_connection, pattern);
-}
-
-template <typename Input, typename MsgCb>
-void Subscriber::psubscribe(Input first, Input last, MsgCb msg_callback) {
+template <typename Input>
+void Subscriber::psubscribe(Input first, Input last) {
     if (first == last) {
         return;
     }
 
     _check_connection();
-
-    for (auto iter = first; iter != last; ++iter) {
-        if (_pattern_callbacks.find(*iter) != _pattern_callbacks.end()) {
-            throw Error("Pattern has already been subscribed");
-        }
-    }
-
-    for (auto iter = first; iter != last; ++iter) {
-        _pattern_callbacks.emplace(*first, msg_callback);
-    }
 
     cmd::psubscribe_range(_connection, first, last);
 }
@@ -246,8 +218,6 @@ void Subscriber::psubscribe(Input first, Input last, MsgCb msg_callback) {
 template <typename Input>
 void Subscriber::punsubscribe(Input first, Input last) {
     _check_connection();
-
-    // We don't care if the given channel has been subscribed.
 
     cmd::punsubscribe_range(_connection, first, last);
 }

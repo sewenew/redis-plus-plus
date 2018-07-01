@@ -21,7 +21,6 @@
 #include "reply.h"
 #include "utils.h"
 #include "errors.h"
-#include "subscriber.h"
 
 namespace sw {
 
@@ -54,11 +53,6 @@ long long parse_scan_reply(redisReply &reply, Output output) {
     return new_cursor;
 }
 
-}
-
-template <typename MetaCb>
-Subscriber Redis::subscriber(MetaCb meta_callback) {
-    return Subscriber(_pool.create(), meta_callback);
 }
 
 template <typename Cmd, typename ...Args>
