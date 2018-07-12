@@ -19,6 +19,7 @@
 
 #include <cassert>
 #include <chrono>
+#include <initializer_list>
 #include <deque>
 #include "connection.h"
 #include "utils.h"
@@ -134,6 +135,11 @@ public:
         return command(cmd::del_range<Input>, first, last);
     }
 
+    template <typename T>
+    QueuedRedis& del(std::initializer_list<T> il) {
+        return del(il.begin(), il.end());
+    }
+
     QueuedRedis& dump(const StringView &key) {
         return command(cmd::dump, key);
     }
@@ -145,6 +151,11 @@ public:
     template <typename Input>
     QueuedRedis& exists(Input first, Input last) {
         return command(cmd::exists_range<Input>, first, last);
+    }
+
+    template <typename T>
+    QueuedRedis& exists(std::initializer_list<T> il) {
+        return exists(il.begin(), il.end());
     }
 
     QueuedRedis& expire(const StringView &key, long long timeout) {
@@ -257,6 +268,11 @@ public:
         return command(cmd::touch_range<Input>, first, last);
     }
 
+    template <typename T>
+    QueuedRedis& touch(std::initializer_list<T> il) {
+        return touch(il.begin(), il.end());
+    }
+
     QueuedRedis& ttl(const StringView &key) {
         return command(cmd::ttl, key);
     }
@@ -272,6 +288,11 @@ public:
     template <typename Input>
     QueuedRedis& unlink(Input first, Input last) {
         return command(cmd::unlink_range<Input>, first, last);
+    }
+
+    template <typename T>
+    QueuedRedis& unlink(std::initializer_list<T> il) {
+        return unlink(il.begin(), il.end());
     }
 
     QueuedRedis& wait(long long numslaves, long long timeout) {
@@ -300,6 +321,13 @@ public:
                         Input first,
                         Input last) {
         return command(cmd::bitop<Input>, op, destination, first, last);
+    }
+
+    template <typename T>
+    QueuedRedis& bitop(BitOp op,
+                        const StringView &destination,
+                        std::initializer_list<T> il) {
+        return bitop(op, destination, il.begin(), il.end());
     }
 
     QueuedRedis& bitpos(const StringView &key,
@@ -350,14 +378,29 @@ public:
         return command(cmd::mget<Input>, first, last);
     }
 
+    template <typename T>
+    QueuedRedis& mget(std::initializer_list<T> il) {
+        return mget(il.begin(), il.end());
+    }
+
     template <typename Input>
     QueuedRedis& mset(Input first, Input last) {
         return command(cmd::mset<Input>, first, last);
     }
 
+    template <typename T>
+    QueuedRedis& mset(std::initializer_list<T> il) {
+        return mset(il.begin(), il.end());
+    }
+
     template <typename Input>
     QueuedRedis& msetnx(Input first, Input last) {
         return command(cmd::msetnx<Input>, first, last);
+    }
+
+    template <typename T>
+    QueuedRedis& msetnx(std::initializer_list<T> il) {
+        return msetnx(il.begin(), il.end());
     }
 
     QueuedRedis& psetex(const StringView &key,
@@ -394,7 +437,7 @@ public:
     QueuedRedis& setex(const StringView &key,
                         const std::chrono::seconds &ttl,
                         const StringView &val) {
-        return command(cmd::setex, key, ttl.count(), val);
+        return setex(key, ttl.count(), val);
     }
 
     QueuedRedis& setnx(const StringView &key, const StringView &val) {
@@ -414,8 +457,13 @@ public:
     // LIST commands.
 
     template <typename Input>
-    QueuedRedis& blpop(Input first, Input last, long long timeout = 0) {
+    QueuedRedis& blpop(Input first, Input last, long long timeout) {
         return command(cmd::blpop<Input>, first, last, timeout);
+    }
+
+    template <typename T>
+    QueuedRedis& blpop(std::initializer_list<T> il, long long timeout) {
+        return blpop(il.begin(), il.end(), timeout);
     }
 
     template <typename Input>
@@ -425,9 +473,20 @@ public:
         return blpop(first, last, timeout.count());
     }
 
+    template <typename T>
+    QueuedRedis& blpop(std::initializer_list<T> il,
+                        const chrono::seconds &timeout = chrono::seconds{0}) {
+        return blpop(il.begin(), il.end(), timeout);
+    }
+
     template <typename Input>
-    QueuedRedis& brpop(Input first, Input last, long long timeout = 0) {
+    QueuedRedis& brpop(Input first, Input last, long long timeout) {
         return command(cmd::brpop<Input>, first, last, timeout);
+    }
+
+    template <typename T>
+    QueuedRedis& brpop(std::initializer_list<T> il, long long timeout) {
+        return brpop(il.begin(), il.end(), timeout);
     }
 
     template <typename Input>
@@ -437,9 +496,15 @@ public:
         return brpop(first, last, timeout.count());
     }
 
+    template <typename T>
+    QueuedRedis& brpop(std::initializer_list<T> il,
+                        const chrono::seconds &timeout = chrono::seconds{0}) {
+        return brpop(il.begin(), il.end(), timeout);
+    }
+
     QueuedRedis& brpoplpush(const StringView &source,
                             const StringView &destination,
-                            long long timeout = 0) {
+                            long long timeout) {
         return command(cmd::brpoplpush, source, destination, timeout);
     }
 
@@ -475,6 +540,11 @@ public:
     template <typename Input>
     QueuedRedis& lpush(const StringView &key, Input first, Input last) {
         return command(cmd::lpush_range<Input>, key, first, last);
+    }
+
+    template <typename T>
+    QueuedRedis& lpush(const StringView &key, std::initializer_list<T> il) {
+        return lpush(key, il.begin(), il.end());
     }
 
     QueuedRedis& lpushx(const StringView &key, const StringView &val) {
@@ -516,6 +586,11 @@ public:
         return command(cmd::rpush_range<Input>, key, first, last);
     }
 
+    template <typename T>
+    QueuedRedis& rpush(const StringView &key, std::initializer_list<T> il) {
+        return rpush(key, il.begin(), il.end());
+    }
+
     QueuedRedis& rpushx(const StringView &key, const StringView &val) {
         return command(cmd::rpushx, key, val);
     }
@@ -529,6 +604,11 @@ public:
     template <typename Input>
     QueuedRedis& hdel(const StringView &key, Input first, Input last) {
         return command(cmd::hdel_range<Input>, key, first, last);
+    }
+
+    template <typename T>
+    QueuedRedis& hdel(const StringView &key, std::initializer_list<T> il) {
+        return hdel(key, il.begin(), il.end());
     }
 
     QueuedRedis& hexists(const StringView &key, const StringView &field) {
@@ -568,9 +648,19 @@ public:
         return command(cmd::hmget<Input>, key, first, last);
     }
 
+    template <typename T>
+    QueuedRedis& hmget(const StringView &key, std::initializer_list<T> il) {
+        return hmget(key, il.begin(), il.end());
+    }
+
     template <typename Input>
     QueuedRedis& hmset(const StringView &key, Input first, Input last) {
         return command(cmd::hmset<Input>, key, first, last);
+    }
+
+    template <typename T>
+    QueuedRedis& hmset(const StringView &key, std::initializer_list<T> il) {
+        return hmset(key, il.begin(), il.end());
     }
 
     QueuedRedis& hscan(const StringView &key,
@@ -601,8 +691,16 @@ public:
         return command(cmd::hset, key, field, val);
     }
 
+    QueuedRedis& hset(const StringView &key, const std::pair<StringView, StringView> &item) {
+        return hset(key, item.first, item.second);
+    }
+
     QueuedRedis& hsetnx(const StringView &key, const StringView &field, const StringView &val) {
         return command(cmd::hsetnx, key, field, val);
+    }
+
+    QueuedRedis& hsetnx(const StringView &key, const std::pair<StringView, StringView> &item) {
+        return hsetnx(key, item.first, item.second);
     }
 
     QueuedRedis& hstrlen(const StringView &key, const StringView &field) {
@@ -624,6 +722,11 @@ public:
         return command(cmd::sadd_range<Input>, key, first, last);
     }
 
+    template <typename T>
+    QueuedRedis& sadd(const StringView &key, std::initializer_list<T> il) {
+        return sadd(key, il.begin(), il.end());
+    }
+
     QueuedRedis& scard(const StringView &key) {
         return command(cmd::scard, key);
     }
@@ -633,6 +736,11 @@ public:
         return command(cmd::sdiff<Input>, first, last);
     }
 
+    template <typename T>
+    QueuedRedis& sdiff(std::initializer_list<T> il) {
+        return sdiff(il.begin(), il.end());
+    }
+
     template <typename Input>
     QueuedRedis& sdiffstore(const StringView &destination,
                             Input first,
@@ -640,9 +748,19 @@ public:
         return command(cmd::sdiffstore<Input>, destination, first, last);
     }
 
+    template <typename T>
+    QueuedRedis& sdiffstore(const StringView &destination, std::initializer_list<T> il) {
+        return sdiffstore(destination, il.begin(), il.end());
+    }
+
     template <typename Input>
     QueuedRedis& sinter(Input first, Input last) {
         return command(cmd::sinter<Input>, first, last);
+    }
+
+    template <typename T>
+    QueuedRedis& sinter(std::initializer_list<T> il) {
+        return sinter(il.begin(), il.end());
     }
 
     template <typename Input>
@@ -650,6 +768,11 @@ public:
                                 Input first,
                                 Input last) {
         return command(cmd::sinterstore<Input>, destination, first, last);
+    }
+
+    template <typename T>
+    QueuedRedis& sinterstore(const StringView &destination, std::initializer_list<T> il) {
+        return sinterstore(destination, il.begin(), il.end());
     }
 
     QueuedRedis& sismember(const StringView &key, const StringView &member) {
@@ -671,7 +794,7 @@ public:
     }
 
     QueuedRedis& spop(const StringView &key, long long count) {
-        return command(cmd::spop, key, count);
+        return command(cmd::spop_range, key, count);
     }
 
     QueuedRedis& srandmember(const StringView &key) {
@@ -679,7 +802,7 @@ public:
     }
 
     QueuedRedis& srandmember(const StringView &key, long long count) {
-        return command(cmd::srandmember, key, count);
+        return command(cmd::srandmember_range, key, count);
     }
 
     QueuedRedis& srem(const StringView &key, const StringView &member) {
@@ -689,6 +812,11 @@ public:
     template <typename Input>
     QueuedRedis& srem(const StringView &key, Input first, Input last) {
         return command(cmd::srem_range<Input>, key, first, last);
+    }
+
+    template <typename T>
+    QueuedRedis& srem(const StringView &key, std::initializer_list<T> il) {
+        return srem(key, il.begin(), il.end());
     }
 
     QueuedRedis& sscan(const StringView &key,
@@ -720,29 +848,39 @@ public:
         return command(cmd::sunion<Input>, first, last);
     }
 
+    template <typename T>
+    QueuedRedis& sunion(std::initializer_list<T> il) {
+        return sunion(il.begin(), il.end());
+    }
+
     template <typename Input>
     QueuedRedis& sunionstore(const StringView &destination, Input first, Input last) {
         return command(cmd::sunionstore<Input>, destination, first, last);
+    }
+
+    template <typename T>
+    QueuedRedis& sunionstore(const StringView &destination, std::initializer_list<T> il) {
+        return sunionstore(destination, il.begin(), il.end());
     }
 
     // SORTED SET commands.
 
     // We don't support the INCR option, since you can always use ZINCRBY instead.
     QueuedRedis& zadd(const StringView &key,
-                        double score,
                         const StringView &member,
-                        bool changed = false,
-                        UpdateType type = UpdateType::ALWAYS) {
-        return command(cmd::zadd, key, score, member, changed, type);
+                        double score,
+                        UpdateType type = UpdateType::ALWAYS,
+                        bool changed = false) {
+        return command(cmd::zadd, key, member, score, type, changed);
     }
 
     template <typename Input>
     QueuedRedis& zadd(const StringView &key,
                         Input first,
                         Input last,
-                        bool changed = false,
-                        UpdateType type = UpdateType::ALWAYS) {
-        return command(cmd::zadd_range<Input>, key, first, last, changed, type);
+                        UpdateType type = UpdateType::ALWAYS,
+                        bool changed = false) {
+        return command(cmd::zadd_range<Input>, key, first, last, type, changed);
     }
 
     QueuedRedis& zcard(const StringView &key) {
@@ -766,14 +904,32 @@ public:
         return command(cmd::zinterstore<Input>, destination, first, last, type);
     }
 
+    template <typename T>
+    QueuedRedis& zinterstore(const StringView &destination,
+                                std::initializer_list<T> il,
+                                Aggregation type = Aggregation::SUM) {
+        return zinterstore(destination, il.begin(), il.end(), type);
+    }
+
     template <typename Interval>
     QueuedRedis& zlexcount(const StringView &key, const Interval &interval) {
         return command(cmd::zlexcount<Interval>, key, interval);
     }
 
-    QueuedRedis& zrange(const StringView &key, long long start, long long stop) {
+    /*
+    // NOTE: *QueuedRedis::zrange*'s parameters are different from *Redis::zrange*.
+    // *Redis::zrange* is overloaded by the output iterator, however, there's no such
+    // iterator in *QueuedRedis::zrange*. So we have to use an extra parameter: *with_scores*
+    // to decide whether we should send *WITHSCORES* option to Redis. This also applies to
+    // other commands with the *WITHSCORES* option, e.g. *ZRANGEBYSCORE*, *ZREVRANGE*,
+    // *ZREVRANGEBYSCORE*.
+    QueuedRedis& zrange(const StringView &key,
+                        long long start,
+                        long long stop,
+                        bool with_scores = false) {
         return command(cmd::zrange, key, start, stop);
     }
+    */
 
     template <typename Interval>
     QueuedRedis& zrangebylex(const StringView &key,
@@ -787,6 +943,7 @@ public:
         return zrangebylex(key, interval, {});
     }
 
+    /*
     template <typename Interval>
     QueuedRedis& zrangebyscore(const StringView &key,
                         const Interval &interval,
@@ -798,6 +955,7 @@ public:
     QueuedRedis& zrangebyscore(const StringView &key, const Interval &interval) {
         return zrangebyscore(key, interval, {});
     }
+    */
 
     QueuedRedis& zrank(const StringView &key, const StringView &member) {
         return command(cmd::zrank, key, member);
@@ -812,6 +970,11 @@ public:
         return command(cmd::zrem_range<Input>, key, first, last);
     }
 
+    template <typename T>
+    QueuedRedis& zrem(const StringView &key, std::initializer_list<T> il) {
+        return zrem(key, il.begin(), il.end());
+    }
+
     template <typename Interval>
     QueuedRedis& zremrangebylex(const StringView &key, const Interval &interval) {
         return command(cmd::zremrangebylex<Interval>, key, interval);
@@ -821,10 +984,12 @@ public:
         return command(cmd::zremrangebyrank, key, start, stop);
     }
 
+    /*
     template <typename Interval>
     QueuedRedis& zremrangebyscore(const StringView &key, const Interval &interval) {
         return command(cmd::zremrangebyscore<Interval>, key, interval);
     }
+    */
 
     QueuedRedis& zrevrange(const StringView &key, long long start, long long stop) {
         return command(cmd::zrevrange, key, start, stop);
@@ -894,6 +1059,13 @@ public:
         return command(cmd::zunionstore<Input>, destination, first, last, type);
     }
 
+    template <typename T>
+    QueuedRedis& zunionstore(const StringView &destination,
+                                std::initializer_list<T> il,
+                                Aggregation type = Aggregation::SUM) {
+        return zunionstore(destination, il.begin(), il.end(), type);
+    }
+
     // HYPERLOGLOG commands.
 
     QueuedRedis& pfadd(const StringView &key, const StringView &element) {
@@ -905,6 +1077,11 @@ public:
         return command(cmd::pfadd_range<Input>, key, first, last);
     }
 
+    template <typename T>
+    QueuedRedis& pfadd(const StringView &key, std::initializer_list<T> il) {
+        return pfadd(key, il.begin(), il.end());
+    }
+
     QueuedRedis& pfcount(const StringView &key) {
         return command(cmd::pfcount, key);
     }
@@ -914,15 +1091,25 @@ public:
         return command(cmd::pfcount_range<Input>, first, last);
     }
 
+    template <typename T>
+    QueuedRedis& pfcount(std::initializer_list<T> il) {
+        return pfcount(il.begin(), il.end());
+    }
+
     template <typename Input>
     QueuedRedis& pfmerge(const StringView &destination, Input first, Input last) {
         return command(cmd::pfmerge<Input>, destination, first, last);
     }
 
+    template <typename T>
+    QueuedRedis& pfmerge(const StringView &destination, std::initializer_list<T> il) {
+        return pfmerge(destination, il.begin(), il.end());
+    }
+
     // GEO commands.
 
     QueuedRedis& geoadd(const StringView &key,
-                        const std::tuple<double, double, std::string> &member) {
+                        const std::tuple<StringView, double, double> &member) {
         return command(cmd::geoadd, key, member);
     }
 
@@ -931,6 +1118,11 @@ public:
                         Input first,
                         Input last) {
         return command(cmd::geoadd_range<Input>, key, first, last);
+    }
+
+    template <typename T>
+    QueuedRedis& geoadd(const StringView &key, std::initializer_list<T> il) {
+        return geoadd(key, il.begin(), il.end());
     }
 
     QueuedRedis& geodist(const StringView &key,
@@ -945,9 +1137,19 @@ public:
         return command(cmd::geohash_range<Input>, key, first, last);
     }
 
+    template <typename T>
+    QueuedRedis& geohash(const StringView &key, std::initializer_list<T> il) {
+        return geohash(key, il.begin(), il.end());
+    }
+
     template <typename Input>
     QueuedRedis& geopos(const StringView &key, Input first, Input last) {
         return command(cmd::geopos_range<Input>, key, first, last);
+    }
+
+    template <typename T>
+    QueuedRedis& geopos(const StringView &key, std::initializer_list<T> il) {
+        return geopos(key, il.begin(), il.end());
     }
 
     // TODO:
@@ -961,9 +1163,18 @@ public:
                             const StringView &destination,
                             bool store_dist,
                             long long count) {
-        return command(cmd::georadius, key, loc, radius, unit, destination, store_dist, count);
+        return command(cmd::georadius_store,
+                        key,
+                        loc,
+                        radius,
+                        unit,
+                        destination,
+                        store_dist,
+                        count);
     }
 
+    /*
+    // NOTE: *QueuedRedis::georadius*'s parameters are different from *Redis::georadius*.
     QueuedRedis& georadius(const StringView &key,
                             const std::pair<double, double> &loc,
                             double radius,
@@ -972,6 +1183,7 @@ public:
                             bool asc) {
         return command(cmd::georadius, key, loc, radius, unit, count, asc);
     }
+    */
 
     QueuedRedis& georadiusbymember(const StringView &key,
                                     const StringView &member,
@@ -990,6 +1202,8 @@ public:
                         count);
     }
 
+    /*
+    // TODO: have the same problem with georadius
     QueuedRedis& georadiusbymember(const StringView &key,
                                     const StringView &member,
                                     double radius,
@@ -998,30 +1212,30 @@ public:
                                     bool asc) {
         return command(cmd::georadiusbymember, key, member, radius, unit, count, asc);
     }
+    */
 
     // SCRIPTING commands.
 
-    template <typename Result>
     QueuedRedis& eval(const StringView &script,
                         std::initializer_list<StringView> keys,
                         std::initializer_list<StringView> args) {
         return command(cmd::eval, script, keys, args);
     }
 
-    template <typename Result>
     QueuedRedis& evalsha(const StringView &script,
                             std::initializer_list<StringView> keys,
                             std::initializer_list<StringView> args) {
         return command(cmd::evalsha, script, keys, args);
     }
 
-    QueuedRedis& script_exists(const StringView &sha) {
-        return command(cmd::script_exists, sha);
-    }
-
     template <typename Input>
     QueuedRedis& script_exists(Input first, Input last) {
         return command(cmd::script_exists_range<Input>, first, last);
+    }
+
+    template <typename T>
+    QueuedRedis& script_exists(std::initializer_list<T> il) {
+        return script_exists(il.begin(), il.end());
     }
 
     QueuedRedis& script_flush() {
