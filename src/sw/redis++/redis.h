@@ -907,6 +907,8 @@ public:
     // vector<tuple<string, double, pair<double, double>, string>> with_dist_coord_hash;
     // redis.georadius("key", make_pair(10.1, 10.2), 10, GeoUnit::KM, 10, true,
     //                  back_inserter(with_dist_coord_hash))
+    //
+    // This also applies to *GEORADIUSBYMEMBER*.
     template <typename Output>
     void georadius(const StringView &key,
                     const std::pair<double, double> &loc,
@@ -924,6 +926,7 @@ public:
                                         bool store_dist,
                                         long long count);
 
+    // See comments on *GEORADIUS*.
     template <typename Output>
     void georadiusbymember(const StringView &key,
                             const StringView &member,
@@ -994,6 +997,15 @@ private:
 
     auto _split_string(const std::string &str, const std::string &delimiter) const ->
             std::pair<std::string, std::string>;
+
+    template <typename Cmd, typename ...Args>
+    ReplyUPtr _score_command(std::true_type, Cmd cmd, Args &&... args);
+
+    template <typename Cmd, typename ...Args>
+    ReplyUPtr _score_command(std::false_type, Cmd cmd, Args &&... args);
+
+    template <typename Output, typename Cmd, typename ...Args>
+    ReplyUPtr _score_command(Cmd cmd, Args &&... args);
 
     ConnectionPool _pool;
 };

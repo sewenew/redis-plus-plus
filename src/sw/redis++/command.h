@@ -937,11 +937,23 @@ inline void zlexcount(Connection &connection,
                     max.data(), max.size());
 }
 
-template <typename Output>
-void zrange(Connection &connection,
-                const StringView &key,
-                long long start,
-                long long stop);
+inline void zrange(Connection &connection,
+                    const StringView &key,
+                    long long start,
+                    long long stop,
+                    bool with_scores) {
+    if (with_scores) {
+        connection.send("ZRANGE %b %lld %lld WITHSCORES",
+                        key.data(), key.size(),
+                        start,
+                        stop);
+    } else {
+        connection.send("ZRANGE %b %lld %lld",
+                        key.data(), key.size(),
+                        start,
+                        stop);
+    }
+}
 
 template <typename Interval>
 inline void zrangebylex(Connection &connection,
@@ -959,11 +971,31 @@ inline void zrangebylex(Connection &connection,
                     opts.count);
 }
 
-template <typename Interval, typename Output>
+template <typename Interval>
 void zrangebyscore(Connection &connection,
                     const StringView &key,
                     const Interval &interval,
-                    const LimitOptions &opts);
+                    const LimitOptions &opts,
+                    bool with_scores) {
+    const auto &min = interval.min();
+    const auto &max = interval.max();
+
+    if (with_scores) {
+        connection.send("ZRANGEBYSCORE %b %b %b WITHSCORES LIMIT %lld %lld",
+                        key.data(), key.size(),
+                        min.data(), min.size(),
+                        max.data(), max.size(),
+                        opts.offset,
+                        opts.count);
+    } else {
+        connection.send("ZRANGEBYSCORE %b %b %b LIMIT %lld %lld",
+                        key.data(), key.size(),
+                        min.data(), min.size(),
+                        max.data(), max.size(),
+                        opts.offset,
+                        opts.count);
+    }
+}
 
 inline void zrank(Connection &connection,
                     const StringView &key,
@@ -1028,11 +1060,23 @@ inline void zremrangebyscore(Connection &connection,
                     max.data(), max.size());
 }
 
-template <typename Outupt>
-void zrevrange(Connection &connection,
-                const StringView &key,
-                long long start,
-                long long stop);
+inline void zrevrange(Connection &connection,
+                        const StringView &key,
+                        long long start,
+                        long long stop,
+                        bool with_scores) {
+    if (with_scores) {
+        connection.send("ZREVRANGE %b %lld %lld WITHSCORES",
+                        key.data(), key.size(),
+                        start,
+                        stop);
+    } else {
+        connection.send("ZREVRANGE %b %lld %lld",
+                        key.data(), key.size(),
+                        start,
+                        stop);
+    }
+}
 
 template <typename Interval>
 inline void zrevrangebylex(Connection &connection,
@@ -1050,11 +1094,31 @@ inline void zrevrangebylex(Connection &connection,
                     opts.count);
 }
 
-template <typename Interval, typename Output>
+template <typename Interval>
 void zrevrangebyscore(Connection &connection,
                         const StringView &key,
                         const Interval &interval,
-                        const LimitOptions &opts);
+                        const LimitOptions &opts,
+                        bool with_scores) {
+    const auto &min = interval.min();
+    const auto &max = interval.max();
+
+    if (with_scores) {
+        connection.send("ZREVRANGEBYSCORE %b %b %b WITHSCORES LIMIT %lld %lld",
+                        key.data(), key.size(),
+                        max.data(), max.size(),
+                        min.data(), min.size(),
+                        opts.offset,
+                        opts.count);
+    } else {
+        connection.send("ZREVRANGEBYSCORE %b %b %b LIMIT %lld %lld",
+                        key.data(), key.size(),
+                        max.data(), max.size(),
+                        min.data(), min.size(),
+                        opts.offset,
+                        opts.count);
+    }
+}
 
 inline void zrevrank(Connection &connection,
                         const StringView &key,
@@ -1196,14 +1260,16 @@ inline void geopos_range(Connection &connection,
     connection.send(args);
 }
 
-template <typename Output>
 void georadius(Connection &connection,
                 const StringView &key,
                 const std::pair<double, double> &loc,
                 double radius,
                 GeoUnit unit,
                 long long count,
-                bool asc);
+                bool asc,
+                bool with_coord,
+                bool with_dist,
+                bool with_hash);
 
 void georadius_store(Connection &connection,
                         const StringView &key,
@@ -1214,14 +1280,16 @@ void georadius_store(Connection &connection,
                         bool store_dist,
                         long long count);
 
-template <typename Output>
 void georadiusbymember(Connection &connection,
                         const StringView &key,
                         const StringView &member,
                         double radius,
                         GeoUnit unit,
                         long long count,
-                        bool asc);
+                        bool asc,
+                        bool with_coord,
+                        bool with_dist,
+                        bool with_hash);
 
 void georadiusbymember_store(Connection &connection,
                                 const StringView &key,
@@ -1392,109 +1460,6 @@ namespace detail {
 
 void set_update_type(CmdArgs &args, UpdateType type);
 
-template <typename Cmd, typename ...Args>
-inline void score_command(std::true_type, Cmd cmd, Args &&... args) {
-    cmd(std::forward<Args>(args)..., true);
-}
-
-template <typename Cmd, typename ...Args>
-inline void score_command(std::false_type, Cmd cmd, Args &&... args) {
-    cmd(std::forward<Args>(args)..., false);
-}
-
-template <typename Output, typename Cmd, typename ...Args>
-inline void score_command(Cmd cmd, Args &&... args) {
-    score_command(typename IsKvPairIter<Output>::type(), cmd, std::forward<Args>(args)...);
-}
-
-inline void zrange(Connection &connection,
-                const StringView &key,
-                long long start,
-                long long stop,
-                bool with_scores) {
-    if (with_scores) {
-        connection.send("ZRANGE %b %lld %lld WITHSCORES",
-                        key.data(), key.size(),
-                        start,
-                        stop);
-    } else {
-        connection.send("ZRANGE %b %lld %lld",
-                        key.data(), key.size(),
-                        start,
-                        stop);
-    }
-}
-
-template <typename Interval>
-void zrangebyscore(Connection &connection,
-                    const StringView &key,
-                    const Interval &interval,
-                    const LimitOptions &opts,
-                    bool with_scores) {
-    const auto &min = interval.min();
-    const auto &max = interval.max();
-
-    if (with_scores) {
-        connection.send("ZRANGEBYSCORE %b %b %b WITHSCORES LIMIT %lld %lld",
-                        key.data(), key.size(),
-                        min.data(), min.size(),
-                        max.data(), max.size(),
-                        opts.offset,
-                        opts.count);
-    } else {
-        connection.send("ZRANGEBYSCORE %b %b %b LIMIT %lld %lld",
-                        key.data(), key.size(),
-                        min.data(), min.size(),
-                        max.data(), max.size(),
-                        opts.offset,
-                        opts.count);
-    }
-}
-
-inline void zrevrange(Connection &connection,
-                        const StringView &key,
-                        long long start,
-                        long long stop,
-                        bool with_scores) {
-    if (with_scores) {
-        connection.send("ZREVRANGE %b %lld %lld WITHSCORES",
-                        key.data(), key.size(),
-                        start,
-                        stop);
-    } else {
-        connection.send("ZREVRANGE %b %lld %lld",
-                        key.data(), key.size(),
-                        start,
-                        stop);
-    }
-}
-
-template <typename Interval>
-inline void zrevrangebyscore(Connection &connection,
-                                const StringView &key,
-                                const Interval &interval,
-                                const LimitOptions &opts,
-                                bool with_scores) {
-    const auto &min = interval.min();
-    const auto &max = interval.max();
-
-    if (with_scores) {
-        connection.send("ZREVRANGEBYSCORE %b %b %b WITHSCORES LIMIT %lld %lld",
-                        key.data(), key.size(),
-                        max.data(), max.size(),
-                        min.data(), min.size(),
-                        opts.offset,
-                        opts.count);
-    } else {
-        connection.send("ZREVRANGEBYSCORE %b %b %b LIMIT %lld %lld",
-                        key.data(), key.size(),
-                        max.data(), max.size(),
-                        min.data(), min.size(),
-                        opts.offset,
-                        opts.count);
-    }
-}
-
 void set_aggregation_type(CmdArgs &args, Aggregation type);
 
 template <typename Input>
@@ -1588,45 +1553,14 @@ void set_georadius_store_parameters(CmdArgs &args,
                                     bool store_dist,
                                     long long count);
 
-template <typename T>
-struct WithCoord : TupleWithType<std::pair<double, double>, T> {};
-
-template <typename T>
-struct WithDist : TupleWithType<double, T> {};
-
-template <typename T>
-struct WithHash : TupleWithType<long long, T> {};
-
-template <typename Output>
 void set_georadius_parameters(CmdArgs &args,
                                 double radius,
                                 GeoUnit unit,
                                 long long count,
-                                bool asc) {
-    args << radius;
-
-    detail::set_geo_unit(args, unit);
-
-    if (detail::WithCoord<typename IterType<Output>::type>::value) {
-        args << "WITHCOORD";
-    }
-
-    if (detail::WithDist<typename IterType<Output>::type>::value) {
-        args << "WITHDIST";
-    }
-
-    if (detail::WithHash<typename IterType<Output>::type>::value) {
-        args << "WITHHASH";
-    }
-
-    args << "COUNT" << count;
-
-    if (asc) {
-        args << "ASC";
-    } else {
-        args << "DESC";
-    }
-}
+                                bool asc,
+                                bool with_coord,
+                                bool with_dist,
+                                bool with_hash);
 
 }
 
@@ -1702,42 +1636,6 @@ void zadd_range(Connection &connection,
     connection.send(args);
 }
 
-template <typename Output>
-inline void zrange(Connection &connection,
-                const StringView &key,
-                long long start,
-                long long stop) {
-    detail::score_command<Output>(detail::zrange, connection, key, start, stop);
-}
-
-template <typename Interval, typename Output>
-void zrangebyscore(Connection &connection,
-                    const StringView &key,
-                    const Interval &interval,
-                    const LimitOptions &opts) {
-    detail::score_command<Output>(detail::zrangebyscore<Interval>, connection, key, interval, opts);
-}
-
-template <typename Output>
-void zrevrange(Connection &connection,
-                const StringView &key,
-                long long start,
-                long long stop) {
-    detail::score_command<Output>(detail::zrevrange, connection, key, start, stop);
-}
-
-template <typename Interval, typename Output>
-void zrevrangebyscore(Connection &connection,
-                        const StringView &key,
-                        const Interval &interval,
-                        const LimitOptions &opts) {
-    detail::score_command<Output>(detail::zrevrangebyscore<Interval>,
-                                    connection,
-                                    key,
-                                    interval,
-                                    opts);
-}
-
 template <typename Input>
 void zinterstore(Connection &connection,
                     const StringView &destination,
@@ -1764,38 +1662,6 @@ void zunionstore(Connection &connection,
                         first,
                         last,
                         aggr);
-}
-
-template <typename Output>
-void georadius(Connection &connection,
-                const StringView &key,
-                const std::pair<double, double> &loc,
-                double radius,
-                GeoUnit unit,
-                long long count,
-                bool asc) {
-    CmdArgs args;
-    args << "GEORADIUS" << key << loc.first << loc.second;
-
-    detail::set_georadius_parameters<Output>(args, radius, unit, count, asc);
-
-    connection.send(args);
-}
-
-template <typename Output>
-void georadiusbymember(Connection &connection,
-                        const StringView &key,
-                        const StringView &member,
-                        double radius,
-                        GeoUnit unit,
-                        long long count,
-                        bool asc) {
-    CmdArgs args;
-    args << "GEORADIUSBYMEMBER" << key << member;
-
-    detail::set_georadius_parameters<Output>(args, radius, unit, count, asc);
-
-    connection.send(args);
 }
 
 }

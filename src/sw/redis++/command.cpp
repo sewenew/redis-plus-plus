@@ -125,6 +125,56 @@ void georadius_store(Connection &connection,
     connection.send(args);
 }
 
+void georadius(Connection &connection,
+                const StringView &key,
+                const std::pair<double, double> &loc,
+                double radius,
+                GeoUnit unit,
+                long long count,
+                bool asc,
+                bool with_coord,
+                bool with_dist,
+                bool with_hash) {
+    CmdArgs args;
+    args << "GEORADIUS" << key << loc.first << loc.second;
+
+    detail::set_georadius_parameters(args,
+                                        radius,
+                                        unit,
+                                        count,
+                                        asc,
+                                        with_coord,
+                                        with_dist,
+                                        with_hash);
+
+    connection.send(args);
+}
+
+void georadiusbymember(Connection &connection,
+                        const StringView &key,
+                        const StringView &member,
+                        double radius,
+                        GeoUnit unit,
+                        long long count,
+                        bool asc,
+                        bool with_coord,
+                        bool with_dist,
+                        bool with_hash) {
+    CmdArgs args;
+    args << "GEORADIUSBYMEMBER" << key << member;
+
+    detail::set_georadius_parameters(args,
+                                        radius,
+                                        unit,
+                                        count,
+                                        asc,
+                                        with_coord,
+                                        with_dist,
+                                        with_hash);
+
+    connection.send(args);
+}
+
 void georadiusbymember_store(Connection &connection,
                                 const StringView &key,
                                 const StringView &member,
@@ -231,6 +281,39 @@ void set_georadius_store_parameters(CmdArgs &args,
     }
 
     args << destination;
+}
+
+void set_georadius_parameters(CmdArgs &args,
+                                double radius,
+                                GeoUnit unit,
+                                long long count,
+                                bool asc,
+                                bool with_coord,
+                                bool with_dist,
+                                bool with_hash) {
+    args << radius;
+
+    detail::set_geo_unit(args, unit);
+
+    if (with_coord) {
+        args << "WITHCOORD";
+    }
+
+    if (with_dist) {
+        args << "WITHDIST";
+    }
+
+    if (with_hash) {
+        args << "WITHHASH";
+    }
+
+    args << "COUNT" << count;
+
+    if (asc) {
+        args << "ASC";
+    } else {
+        args << "DESC";
+    }
 }
 
 }

@@ -53,6 +53,15 @@ long long parse_scan_reply(redisReply &reply, Output output) {
     return new_cursor;
 }
 
+template <typename T>
+struct WithCoord : TupleWithType<std::pair<double, double>, T> {};
+
+template <typename T>
+struct WithDist : TupleWithType<double, T> {};
+
+template <typename T>
+struct WithHash : TupleWithType<long long, T> {};
+
 }
 
 template <typename Cmd, typename ...Args>
@@ -505,7 +514,7 @@ long long Redis::zlexcount(const StringView &key, const Interval &interval) {
 
 template <typename Output>
 void Redis::zrange(const StringView &key, long long start, long long stop, Output output) {
-    auto reply = command(cmd::zrange<Output>, key, start, stop);
+    auto reply = _score_command<Output>(cmd::zrange, key, start, stop);
 
     reply::to_array(*reply, output);
 }
@@ -537,10 +546,10 @@ void Redis::zrangebyscore(const StringView &key,
                             const Interval &interval,
                             const LimitOptions &opts,
                             Output output) {
-    auto reply = command(cmd::zrangebyscore<Interval, Output>,
-                            key,
-                            interval,
-                            opts);
+    auto reply = _score_command<Output>(cmd::zrangebyscore<Interval>,
+                                        key,
+                                        interval,
+                                        opts);
 
     reply::to_array(*reply, output);
 }
@@ -568,7 +577,7 @@ long long Redis::zremrangebyscore(const StringView &key, const Interval &interva
 
 template <typename Output>
 void Redis::zrevrange(const StringView &key, long long start, long long stop, Output output) {
-    auto reply = command(cmd::zrevrange<Output>, key, start, stop);
+    auto reply = _score_command<Output>(cmd::zrevrange, key, start, stop);
 
     reply::to_array(*reply, output);
 }
@@ -600,7 +609,7 @@ void Redis::zrevrangebyscore(const StringView &key,
                                 const Interval &interval,
                                 const LimitOptions &opts,
                                 Output output) {
-    auto reply = command(cmd::zrevrangebyscore<Interval, Output>, key, interval, opts);
+    auto reply = _score_command<Output>(cmd::zrevrangebyscore<Interval>, key, interval, opts);
 
     reply::to_array(*reply, output);
 }
@@ -711,7 +720,16 @@ void Redis::georadius(const StringView &key,
                         long long count,
                         bool asc,
                         Output output) {
-    auto reply = command(cmd::georadius<Output>, key, loc, radius, unit, count, asc);
+    auto reply = command(cmd::georadius,
+                            key,
+                            loc,
+                            radius,
+                            unit,
+                            count,
+                            asc,
+                            detail::WithCoord<typename IterType<Output>::type>::value,
+                            detail::WithDist<typename IterType<Output>::type>::value,
+                            detail::WithHash<typename IterType<Output>::type>::value);
 
     reply::to_array(*reply, output);
 }
@@ -724,7 +742,16 @@ void Redis::georadiusbymember(const StringView &key,
                                 long long count,
                                 bool asc,
                                 Output output) {
-    auto reply = command(cmd::georadiusbymember<Output>, key, member, radius, unit, count, asc);
+    auto reply = command(cmd::georadiusbymember,
+                            key,
+                            member,
+                            radius,
+                            unit,
+                            count,
+                            asc,
+                            detail::WithCoord<typename IterType<Output>::type>::value,
+                            detail::WithDist<typename IterType<Output>::type>::value,
+                            detail::WithHash<typename IterType<Output>::type>::value);
 
     reply::to_array(*reply, output);
 }
@@ -774,6 +801,23 @@ void Redis::script_exists(Input first, Input last, Output output) {
     auto reply = command(cmd::script_exists_range<Input>, first, last);
 
     reply::to_array(*reply, output);
+}
+
+template <typename Cmd, typename ...Args>
+inline ReplyUPtr Redis::_score_command(std::true_type, Cmd cmd, Args &&... args) {
+    return command(cmd, std::forward<Args>(args)..., true);
+}
+
+template <typename Cmd, typename ...Args>
+inline ReplyUPtr Redis::_score_command(std::false_type, Cmd cmd, Args &&... args) {
+    return command(cmd, std::forward<Args>(args)..., false);
+}
+
+template <typename Output, typename Cmd, typename ...Args>
+inline ReplyUPtr Redis::_score_command(Cmd cmd, Args &&... args) {
+    return _score_command(typename IsKvPairIter<Output>::type(),
+                            cmd,
+                            std::forward<Args>(args)...);
 }
 
 }

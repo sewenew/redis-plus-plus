@@ -916,10 +916,9 @@ public:
         return command(cmd::zlexcount<Interval>, key, interval);
     }
 
-    /*
     // NOTE: *QueuedRedis::zrange*'s parameters are different from *Redis::zrange*.
     // *Redis::zrange* is overloaded by the output iterator, however, there's no such
-    // iterator in *QueuedRedis::zrange*. So we have to use an extra parameter: *with_scores*
+    // iterator in *QueuedRedis::zrange*. So we have to use an extra parameter: *with_scores*,
     // to decide whether we should send *WITHSCORES* option to Redis. This also applies to
     // other commands with the *WITHSCORES* option, e.g. *ZRANGEBYSCORE*, *ZREVRANGE*,
     // *ZREVRANGEBYSCORE*.
@@ -927,9 +926,8 @@ public:
                         long long start,
                         long long stop,
                         bool with_scores = false) {
-        return command(cmd::zrange, key, start, stop);
+        return command(cmd::zrange, key, start, stop, with_scores);
     }
-    */
 
     template <typename Interval>
     QueuedRedis& zrangebylex(const StringView &key,
@@ -943,19 +941,22 @@ public:
         return zrangebylex(key, interval, {});
     }
 
-    /*
+    // See comments on *ZRANGE*.
     template <typename Interval>
     QueuedRedis& zrangebyscore(const StringView &key,
-                        const Interval &interval,
-                        const LimitOptions &opts) {
-        return command(cmd::zrangebyscore<Interval>, key, interval, opts);
+                                const Interval &interval,
+                                const LimitOptions &opts,
+                                bool with_scores = false) {
+        return command(cmd::zrangebyscore<Interval>, key, interval, opts, with_scores);
     }
 
+    // See comments on *ZRANGE*.
     template <typename Interval>
-    QueuedRedis& zrangebyscore(const StringView &key, const Interval &interval) {
-        return zrangebyscore(key, interval, {});
+    QueuedRedis& zrangebyscore(const StringView &key,
+                                const Interval &interval,
+                                bool with_scores = false) {
+        return zrangebyscore(key, interval, {}, with_scores);
     }
-    */
 
     QueuedRedis& zrank(const StringView &key, const StringView &member) {
         return command(cmd::zrank, key, member);
@@ -984,15 +985,17 @@ public:
         return command(cmd::zremrangebyrank, key, start, stop);
     }
 
-    /*
     template <typename Interval>
     QueuedRedis& zremrangebyscore(const StringView &key, const Interval &interval) {
         return command(cmd::zremrangebyscore<Interval>, key, interval);
     }
-    */
 
-    QueuedRedis& zrevrange(const StringView &key, long long start, long long stop) {
-        return command(cmd::zrevrange, key, start, stop);
+    // See comments on *ZRANGE*.
+    QueuedRedis& zrevrange(const StringView &key,
+                            long long start,
+                            long long stop,
+                            bool with_scores = false) {
+        return command(cmd::zrevrange, key, start, stop, with_scores);
     }
 
     template <typename Interval>
@@ -1007,16 +1010,21 @@ public:
         return zrevrangebylex(key, interval, {});
     }
 
+    // See comments on *ZRANGE*.
     template <typename Interval>
     QueuedRedis& zrevrangebyscore(const StringView &key,
                                     const Interval &interval,
-                                    const LimitOptions &opts) {
-        return command(cmd::zrevrangebyscore<Interval>, key, interval, opts);
+                                    const LimitOptions &opts,
+                                    bool with_scores = false) {
+        return command(cmd::zrevrangebyscore<Interval>, key, interval, opts, with_scores);
     }
 
+    // See comments on *ZRANGE*.
     template <typename Interval>
-    QueuedRedis& zrevrangebyscore(const StringView &key, const Interval &interval) {
-        return zrevrangebyscore(key, interval, {});
+    QueuedRedis& zrevrangebyscore(const StringView &key,
+                                    const Interval &interval,
+                                    bool with_scores = false) {
+        return zrevrangebyscore(key, interval, {}, with_scores);
     }
 
     QueuedRedis& zrevrank(const StringView &key, const StringView &member) {
@@ -1173,17 +1181,30 @@ public:
                         count);
     }
 
-    /*
     // NOTE: *QueuedRedis::georadius*'s parameters are different from *Redis::georadius*.
+    // *Redis::georadius* is overloaded by the output iterator, however, there's no such
+    // iterator in *QueuedRedis::georadius*. So we have to use extra parameters to decide
+    // whether we should send options to Redis. This also applies to *GEORADIUSBYMEMBER*.
     QueuedRedis& georadius(const StringView &key,
                             const std::pair<double, double> &loc,
                             double radius,
                             GeoUnit unit,
                             long long count,
-                            bool asc) {
-        return command(cmd::georadius, key, loc, radius, unit, count, asc);
+                            bool asc,
+                            bool with_coord,
+                            bool with_dist,
+                            bool with_hash) {
+        return command(cmd::georadius,
+                        key,
+                        loc,
+                        radius,
+                        unit,
+                        count,
+                        asc,
+                        with_coord,
+                        with_dist,
+                        with_hash);
     }
-    */
 
     QueuedRedis& georadiusbymember(const StringView &key,
                                     const StringView &member,
@@ -1202,17 +1223,27 @@ public:
                         count);
     }
 
-    /*
-    // TODO: have the same problem with georadius
+    // See the comments on *GEORADIUS*.
     QueuedRedis& georadiusbymember(const StringView &key,
                                     const StringView &member,
                                     double radius,
                                     GeoUnit unit,
                                     long long count,
-                                    bool asc) {
-        return command(cmd::georadiusbymember, key, member, radius, unit, count, asc);
+                                    bool asc,
+                                    bool with_coord,
+                                    bool with_dist,
+                                    bool with_hash) {
+        return command(cmd::georadiusbymember,
+                        key,
+                        member,
+                        radius,
+                        unit,
+                        count,
+                        asc,
+                        with_coord,
+                        with_dist,
+                        with_hash);
     }
-    */
 
     // SCRIPTING commands.
 
