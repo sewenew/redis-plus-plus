@@ -110,6 +110,10 @@ inline void QueuedReplies::pop(Output output) {
     reply::to_array(*reply, output);
 }
 
+inline void QueuedReplies::pop() {
+    _replies.pop_front();
+}
+
 }
 
 }

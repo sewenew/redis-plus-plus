@@ -83,10 +83,9 @@ std::deque<ReplyUPtr> TransactionImpl::_exec(Connection &connection) {
     }
 
     if (reply->element == nullptr || reply->elements == 0) {
-        // In fact, this should never happen
-        assert(false);
-
-        return {};
+        // Since we don't allow EXEC without any command, this ARRAY reply
+        // should NOT be null or empty.
+        throw ProtoError("Null ARRAY reply");
     }
 
     std::deque<ReplyUPtr> replies;

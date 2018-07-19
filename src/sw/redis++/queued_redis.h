@@ -1314,6 +1314,9 @@ public:
     template <typename Output>
     void pop(Output output);
 
+    // The reply won't be parsed, but just ignored.
+    void pop();
+
 private:
     template <typename Impl>
     friend class QueuedRedis;
