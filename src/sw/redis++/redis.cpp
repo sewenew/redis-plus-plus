@@ -334,10 +334,6 @@ double Redis::incrbyfloat(const StringView &key, double increment) {
 void Redis::psetex(const StringView &key,
                         long long ttl,
                         const StringView &val) {
-    if (ttl <= 0) {
-        throw Error("TTL must be positive.");
-    }
-
     auto reply = command(cmd::psetex, key, ttl, val);
 
     reply::parse<void>(*reply);
@@ -368,10 +364,6 @@ long long Redis::setbit(const StringView &key, long long offset, long long value
 void Redis::setex(const StringView &key,
                     long long ttl,
                     const StringView &val) {
-    if (ttl <= 0) {
-        throw Error("TTL must be positive.");
-    }
-
     auto reply = command(cmd::setex, key, ttl, val);
 
     reply::parse<void>(*reply);
