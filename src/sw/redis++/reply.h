@@ -39,44 +39,6 @@ struct ReplyDeleter {
 
 using ReplyUPtr = std::unique_ptr<redisReply, ReplyDeleter>;
 
-class DummyReplyFunctor {
-public:
-    void operator()(redisReply & /*reply*/) {}
-};
-
-class StatusReplyFunctor {
-public:
-    template <typename StringReplyCallback>
-    explicit StatusReplyFunctor(StringReplyCallback callback) : _callback(callback) {}
-
-    void operator()(redisReply &reply);
-
-private:
-    std::function<void (const std::string &)> _callback;
-};
-
-class StringReplyFunctor {
-public:
-    template <typename StringReplyCallback>
-    explicit StringReplyFunctor(StringReplyCallback callback) : _callback(callback) {}
-
-    void operator()(redisReply &reply);
-
-private:
-    std::function<void (const std::string &)> _callback;
-};
-
-class IntegerReplyFunctor {
-public:
-    template <typename IntegerReplyCallback>
-    explicit IntegerReplyFunctor(IntegerReplyCallback callback) : _callback(callback) {}
-
-    void operator()(redisReply &reply);
-
-private:
-    std::function<void (long long)> _callback;
-};
-
 namespace reply {
 
 void expect_ok_status(redisReply &reply);
@@ -142,18 +104,6 @@ void to_array(redisReply &reply, Output output);
 }
 
 // Inline implementations.
-
-inline void StatusReplyFunctor::operator()(redisReply &reply) {
-    _callback(reply::to_status(reply));
-}
-
-inline void StringReplyFunctor::operator()(redisReply &reply) {
-    _callback(reply::parse<std::string>(reply));
-}
-
-inline void IntegerReplyFunctor::operator()(redisReply &reply) {
-    _callback(reply::parse<long long>(reply));
-}
 
 namespace reply {
 

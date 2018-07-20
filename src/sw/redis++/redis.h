@@ -865,7 +865,7 @@ public:
     // 1. since we have different overloads for georadius and georadius-store,
     //    we might use the GEORADIUS_RO command in the future.
     // 2. there're too many parameters for this method, we might refactor it.
-    // 3. if *key* doesn't exist, Redis returns an array reply. That's a strage behavior.
+    // 3. if *key* doesn't exist, Redis returns an array reply. That's a strange behavior.
     //    In this case, by now, we throw an Error exception.
     //    georadiusbymember has the same problem.
     OptionalLongLong georadius(const StringView &key,

@@ -354,8 +354,6 @@ bool Redis::set(const StringView &key,
         return false;
     }
 
-    assert(reply::is_status(*reply));
-
     reply::expect_ok_status(*reply);
 
     return true;
