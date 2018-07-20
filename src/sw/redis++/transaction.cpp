@@ -42,7 +42,7 @@ void TransactionImpl::discard(Connection &connection) {
 
     cmd::discard(connection);
     auto reply = connection.recv();
-    reply::expect_ok_status(*reply);
+    reply::parse<void>(*reply);
 }
 
 void TransactionImpl::_open_transaction(Connection &connection) {

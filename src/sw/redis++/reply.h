@@ -41,8 +41,6 @@ using ReplyUPtr = std::unique_ptr<redisReply, ReplyDeleter>;
 
 namespace reply {
 
-void expect_ok_status(redisReply &reply);
-
 template <typename T>
 struct ParseTag {};
 
@@ -51,9 +49,7 @@ inline T parse(redisReply &reply) {
     return parse(ParseTag<T>(), reply);
 }
 
-inline void parse(ParseTag<void>, redisReply &reply) {
-    expect_ok_status(reply);
-}
+void parse(ParseTag<void>, redisReply &reply);
 
 std::string parse(ParseTag<std::string>, redisReply &reply);
 

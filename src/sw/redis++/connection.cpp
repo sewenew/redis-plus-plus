@@ -242,7 +242,7 @@ void Connection::_auth() {
 
     auto reply = recv();
 
-    reply::expect_ok_status(*reply);
+    reply::parse<void>(*reply);
 }
 
 void Connection::_select_db() {
@@ -254,7 +254,7 @@ void Connection::_select_db() {
 
     auto reply = recv();
 
-    reply::expect_ok_status(*reply);
+    reply::parse<void>(*reply);
 }
 
 }

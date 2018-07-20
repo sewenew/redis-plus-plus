@@ -197,7 +197,7 @@ template <typename Input>
 void Redis::mset(Input first, Input last) {
     auto reply = command(cmd::mset<Input>, first, last);
 
-    reply::expect_ok_status(*reply);
+    reply::parse<void>(*reply);
 }
 
 template <typename Input>
@@ -310,7 +310,7 @@ template <typename Input>
 inline void Redis::hmset(const StringView &key, Input first, Input last) {
     auto reply = command(cmd::hmset<Input>, key, first, last);
 
-    reply::expect_ok_status(*reply);
+    reply::parse<void>(*reply);
 }
 
 template <typename Output>
@@ -684,7 +684,7 @@ void Redis::pfmerge(const StringView &destination,
                     Input last) {
     auto reply = command(cmd::pfmerge<Input>, destination, first, last);
 
-    reply::expect_ok_status(*reply);
+    reply::parse<void>(*reply);
 }
 
 // GEO commands.

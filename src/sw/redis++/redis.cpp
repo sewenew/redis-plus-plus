@@ -52,7 +52,7 @@ Subscriber Redis::subscriber() {
 void Redis::auth(const StringView &password) {
     auto reply = command(cmd::auth, password);
 
-    reply::expect_ok_status(*reply);
+    reply::parse<void>(*reply);
 }
 
 std::string Redis::echo(const StringView &msg) {
@@ -76,7 +76,7 @@ std::string Redis::ping(const StringView &msg) {
 void Redis::swapdb(long long idx1, long long idx2) {
     auto reply = command(cmd::swapdb, idx1, idx2);
 
-    reply::expect_ok_status(*reply);
+    reply::parse<void>(*reply);
 }
 
 // SERVER commands.
@@ -84,13 +84,13 @@ void Redis::swapdb(long long idx1, long long idx2) {
 void Redis::bgrewriteaof() {
     auto reply = command(cmd::bgrewriteaof);
 
-    reply::expect_ok_status(*reply);
+    reply::parse<void>(*reply);
 }
 
 void Redis::bgsave() {
     auto reply = command(cmd::bgsave);
 
-    reply::expect_ok_status(*reply);
+    reply::parse<void>(*reply);
 }
 
 long long Redis::dbsize() {
@@ -102,13 +102,13 @@ long long Redis::dbsize() {
 void Redis::flushall(bool async) {
     auto reply = command(cmd::flushall, async);
 
-    reply::expect_ok_status(*reply);
+    reply::parse<void>(*reply);
 }
 
 void Redis::flushdb(bool async) {
     auto reply = command(cmd::flushdb, async);
 
-    reply::expect_ok_status(*reply);
+    reply::parse<void>(*reply);
 }
 
 std::string Redis::info() {
@@ -132,7 +132,7 @@ long long Redis::lastsave() {
 void Redis::save() {
     auto reply = command(cmd::save);
 
-    reply::expect_ok_status(*reply);
+    reply::parse<void>(*reply);
 }
 
 // KEY commands.
@@ -206,7 +206,7 @@ OptionalString Redis::randomkey() {
 void Redis::rename(const StringView &key, const StringView &newkey) {
     auto reply = command(cmd::rename, key, newkey);
 
-    reply::expect_ok_status(*reply);
+    reply::parse<void>(*reply);
 }
 
 bool Redis::renamenx(const StringView &key, const StringView &newkey) {
@@ -221,7 +221,7 @@ void Redis::restore(const StringView &key,
                     bool replace) {
     auto reply = command(cmd::restore, key, val, ttl, replace);
 
-    reply::expect_ok_status(*reply);
+    reply::parse<void>(*reply);
 }
 
 long long Redis::touch(const StringView &key) {
@@ -340,7 +340,7 @@ void Redis::psetex(const StringView &key,
 
     auto reply = command(cmd::psetex, key, ttl, val);
 
-    reply::expect_ok_status(*reply);
+    reply::parse<void>(*reply);
 }
 
 bool Redis::set(const StringView &key,
@@ -354,7 +354,7 @@ bool Redis::set(const StringView &key,
         return false;
     }
 
-    reply::expect_ok_status(*reply);
+    reply::parse<void>(*reply);
 
     return true;
 }
@@ -374,7 +374,7 @@ void Redis::setex(const StringView &key,
 
     auto reply = command(cmd::setex, key, ttl, val);
 
-    reply::expect_ok_status(*reply);
+    reply::parse<void>(*reply);
 }
 
 bool Redis::setnx(const StringView &key, const StringView &val) {
@@ -453,13 +453,13 @@ long long Redis::lrem(const StringView &key, long long count, const StringView &
 void Redis::lset(const StringView &key, long long index, const StringView &val) {
     auto reply = command(cmd::lset, key, index, val);
 
-    reply::expect_ok_status(*reply);
+    reply::parse<void>(*reply);
 }
 
 void Redis::ltrim(const StringView &key, long long start, long long stop) {
     auto reply = command(cmd::ltrim, key, start, stop);
 
-    reply::expect_ok_status(*reply);
+    reply::parse<void>(*reply);
 }
 
 OptionalString Redis::rpop(const StringView &key) {
@@ -723,13 +723,13 @@ OptionalLongLong Redis::georadiusbymember(const StringView &key,
 void Redis::script_flush() {
     auto reply = command(cmd::script_flush);
 
-    reply::expect_ok_status(*reply);
+    reply::parse<void>(*reply);
 }
 
 void Redis::script_kill() {
     auto reply = command(cmd::script_kill);
 
-    reply::expect_ok_status(*reply);
+    reply::parse<void>(*reply);
 }
 
 std::string Redis::script_load(const StringView &script) {

@@ -70,7 +70,7 @@ bool parse(ParseTag<bool>, redisReply &reply) {
     }
 }
 
-void expect_ok_status(redisReply &reply) {
+void parse(ParseTag<void>, redisReply &reply) {
     if (!reply::is_status(reply)) {
         throw ProtoError("Expect STATUS reply");
     }
