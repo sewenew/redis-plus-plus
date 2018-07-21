@@ -89,7 +89,6 @@ public:
     //
     // However, since Pipeline and Transaction always send multiple commands on a
     // single connection, these two classes have a *select* method.
-    // See *QueuedRedis::select* doc for details.
     //
     // void select(long long idx);
 

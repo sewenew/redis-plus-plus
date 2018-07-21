@@ -345,14 +345,9 @@ bool Redis::set(const StringView &key,
                     UpdateType type) {
     auto reply = command(cmd::set, key, val, ttl.count(), type);
 
-    if (reply::is_nil(*reply)) {
-        // Failed to set.
-        return false;
-    }
+    reply::rewrite_set_reply(*reply);
 
-    reply::parse<void>(*reply);
-
-    return true;
+    return reply::parse<bool>(*reply);
 }
 
 long long Redis::setbit(const StringView &key, long long offset, long long value) {

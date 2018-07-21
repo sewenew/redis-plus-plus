@@ -97,6 +97,9 @@ std::string to_status(redisReply &reply);
 template <typename Output>
 void to_array(redisReply &reply, Output output);
 
+// Rewrite set reply to bool type
+void rewrite_set_reply(redisReply &reply);
+
 }
 
 // Inline implementations.

@@ -87,6 +87,27 @@ void parse(ParseTag<void>, redisReply &reply) {
     }
 }
 
+void rewrite_set_reply(redisReply &reply) {
+    if (is_nil(reply)) {
+        // Failed to set, and make it a FALSE reply.
+        reply.type = REDIS_REPLY_INTEGER;
+        reply.integer = 0;
+
+        return;
+    }
+
+    // Check if it's a "OK" status reply.
+    reply::parse<void>(reply);
+
+    assert(is_status(reply) && reply.str != nullptr);
+
+    free(reply.str);
+
+    // Make it a TRUE reply.
+    reply.type = REDIS_REPLY_INTEGER;
+    reply.integer = 1;
+}
+
 namespace detail {
 
 bool is_flat_array(redisReply &reply) {
