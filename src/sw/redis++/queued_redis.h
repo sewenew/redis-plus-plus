@@ -20,7 +20,7 @@
 #include <cassert>
 #include <chrono>
 #include <initializer_list>
-#include <deque>
+#include <vector>
 #include "connection.h"
 #include "utils.h"
 #include "reply.h"
@@ -75,9 +75,6 @@ public:
     //
     // QueuedRedis& quit();
 
-    // Before returning the underlying connection to pool, i.e. destroying *QueueRedis*
-    // object, we must call *select* to reset the DB index. Otherwise, the subsequent
-    // command might work on the wrong DB.
     QueuedRedis& select(long long idx) {
         return command(cmd::select, idx);
     }
@@ -419,6 +416,8 @@ public:
                         const StringView &val,
                         const chrono::milliseconds &ttl = chrono::milliseconds(0),
                         UpdateType type = UpdateType::ALWAYS) {
+        _set_cmd_indexes.push_back(_cmd_num);
+
         return command(cmd::set, key, val, ttl.count(), type);
     }
 
@@ -1297,33 +1296,40 @@ private:
 
     void _reset();
 
+    void _invalidate();
+
+    void _rewrite_replies(std::vector<ReplyUPtr> &replies) const;
+
     Connection _connection;
 
     Impl _impl;
 
     std::size_t _cmd_num = 0;
 
+    std::vector<std::size_t> _set_cmd_indexes;
+
     bool _valid = true;
 };
 
 class QueuedReplies {
 public:
+    std::size_t size() const;
+
     template <typename Result>
-    Result pop();
+    Result get(std::size_t idx);
 
     template <typename Output>
-    void pop(Output output);
-
-    // The reply won't be parsed, but just ignored.
-    void pop();
+    void get(std::size_t idx, Output output);
 
 private:
     template <typename Impl>
     friend class QueuedRedis;
 
-    explicit QueuedReplies(std::deque<ReplyUPtr> replies) : _replies(std::move(replies)) {}
+    explicit QueuedReplies(std::vector<ReplyUPtr> replies) : _replies(std::move(replies)) {}
 
-    std::deque<ReplyUPtr> _replies;
+    void _index_check(std::size_t idx) const;
+
+    std::vector<ReplyUPtr> _replies;
 };
 
 }

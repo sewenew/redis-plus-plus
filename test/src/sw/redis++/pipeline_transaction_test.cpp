@@ -46,15 +46,12 @@ void PipelineTransactionTest::_test_pipeline() {
                         .strlen(key)
                         .exec();
 
-    replies.pop<void>();
-    auto new_val = replies.pop<OptionalString>();
-    std::size_t len = replies.pop<long long>();
+    REDIS_ASSERT(replies.get<bool>(0), "failed to test pipeline with set operation");
+
+    auto new_val = replies.get<OptionalString>(1);
+    std::size_t len = replies.get<long long>(2);
     REDIS_ASSERT(bool(new_val) && *new_val == val && len == val.size(),
             "failed to test pipeline with string operations");
-
-    pipe.del(key).lpush(key, val);
-
-    pipe.discard();
 }
 
 void PipelineTransactionTest::_test_transaction(bool piped) {
@@ -74,13 +71,27 @@ void PipelineTransactionTest::_test_transaction(bool piped) {
                         .hdel(key, "f1")
                         .exec();
 
-    replies.pop();
+    replies.get<void>(0);
 
     decltype(m) mm;
-    replies.pop(std::inserter(mm, mm.end()));
+    replies.get(1, std::inserter(mm, mm.end()));
     REDIS_ASSERT(mm == m, "failed to test transaction");
 
-    REDIS_ASSERT(replies.pop<long long>() == 1, "failed to test transaction");
+    REDIS_ASSERT(replies.get<long long>(2) == 1, "failed to test transaction");
+
+    tx.set(key, "value")
+        .get(key)
+        .incr(key);
+
+    tx.discard();
+
+    replies = tx.del(key)
+                .set(key, "value")
+                .exec();
+
+    REDIS_ASSERT(replies.get<long long>(0) == 1, "failed to test transaction");
+
+    REDIS_ASSERT(replies.get<bool>(1), "failed to test transaction");
 }
 
 }

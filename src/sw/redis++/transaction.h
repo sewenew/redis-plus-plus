@@ -18,7 +18,7 @@
 #define SEWENEW_REDISPLUSPLUS_TRANSACTION_H
 
 #include <cassert>
-#include <deque>
+#include <vector>
 #include "queued_redis.h"
 #include "errors.h"
 
@@ -35,9 +35,9 @@ public:
     template <typename Cmd, typename ...Args>
     void command(Connection &connection, Cmd cmd, Args &&...args);
 
-    std::deque<ReplyUPtr> exec(Connection &connection, std::size_t cmd_num);
+    std::vector<ReplyUPtr> exec(Connection &connection, std::size_t cmd_num);
 
-    void discard(Connection &connection);
+    void discard(Connection &connection, std::size_t cmd_num);
 
 private:
     void _open_transaction(Connection &connection);
@@ -46,7 +46,11 @@ private:
 
     void _get_queued_reply(Connection &connection);
 
-    std::deque<ReplyUPtr> _exec(Connection &connection);
+    void _get_queued_replies(Connection &connection, std::size_t cmd_num);
+
+    std::vector<ReplyUPtr> _exec(Connection &connection);
+
+    void _discard(Connection &connection);
 
     bool _in_transaction = false;
 

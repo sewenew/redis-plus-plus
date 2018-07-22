@@ -198,7 +198,7 @@ ReplyUPtr Connection::recv() {
         throw_error(*ctx, "Failed to get reply");
     }
 
-    assert(!broken());
+    assert(!broken() && r != nullptr);
 
     auto reply = ReplyUPtr(static_cast<redisReply*>(r));
 

@@ -37,7 +37,7 @@ QueuedRedis<Impl>& QueuedRedis<Impl>::command(Cmd cmd, Args &&...args) {
 
         ++_cmd_num;
     } catch (const Error &e) {
-        _reset();
+        _invalidate();
         throw;
     }
 
@@ -51,11 +51,13 @@ QueuedReplies QueuedRedis<Impl>::exec() {
 
         auto replies = _impl.exec(_connection, _cmd_num);
 
-        _cmd_num = 0;
+        _rewrite_replies(replies);
+
+        _reset();
 
         return QueuedReplies(std::move(replies));
     } catch (const Error &e) {
-        _reset();
+        _invalidate();
         throw;
     }
 }
@@ -65,11 +67,11 @@ void QueuedRedis<Impl>::discard() {
     try {
         _sanity_check();
 
-        _cmd_num = 0;
+        _impl.discard(_connection, _cmd_num);
 
-        _impl.discard(_connection);
-    } catch (const Error &e) {
         _reset();
+    } catch (const Error &e) {
+        _invalidate();
         throw;
     }
 }
@@ -89,29 +91,59 @@ template <typename Impl>
 inline void QueuedRedis<Impl>::_reset() {
     _cmd_num = 0;
 
+    _set_cmd_indexes.clear();
+}
+
+template <typename Impl>
+void QueuedRedis<Impl>::_invalidate() {
     _valid = false;
+
+    _reset();
+}
+
+template <typename Impl>
+void QueuedRedis<Impl>::_rewrite_replies(std::vector<ReplyUPtr> &replies) const {
+    for (auto idx : _set_cmd_indexes) {
+        assert(idx < replies.size());
+
+        auto &reply = replies[idx];
+
+        assert(reply);
+
+        reply::rewrite_set_reply(*reply);
+    }
+}
+
+inline std::size_t QueuedReplies::size() const {
+    return _replies.size();
 }
 
 template <typename Result>
-inline Result QueuedReplies::pop() {
-    auto reply = std::move(_replies.front());
+inline Result QueuedReplies::get(std::size_t idx) {
+    _index_check(idx);
 
-    _replies.pop_front();
+    auto &reply = _replies[idx];
+
+    assert(reply);
 
     return reply::parse<Result>(*reply);
 }
 
 template <typename Output>
-inline void QueuedReplies::pop(Output output) {
-    auto reply = std::move(_replies.front());
+inline void QueuedReplies::get(std::size_t idx, Output output) {
+    _index_check(idx);
 
-    _replies.pop_front();
+    auto &reply = _replies[idx];
+
+    assert(reply);
 
     reply::to_array(*reply, output);
 }
 
-inline void QueuedReplies::pop() {
-    _replies.pop_front();
+inline void QueuedReplies::_index_check(std::size_t idx) const {
+    if (idx >= size()) {
+        throw Error("Out of range");
+    }
 }
 
 }

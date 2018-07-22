@@ -18,7 +18,7 @@
 #define SEWENEW_REDISPLUSPLUS_PIPELINE_H
 
 #include <cassert>
-#include <deque>
+#include <vector>
 #include "queued_redis.h"
 
 namespace sw {
@@ -36,11 +36,10 @@ public:
         cmd(connection, std::forward<Args>(args)...);
     }
 
-    std::deque<ReplyUPtr> exec(Connection &connection, std::size_t cmd_num);
+    std::vector<ReplyUPtr> exec(Connection &connection, std::size_t cmd_num);
 
-    void discard(Connection &connection) {
-        // Reconnect to Redis to discard all commands.
-        connection.reconnect();
+    void discard(Connection &/*connection*/, std::size_t /*cmd_num*/) {
+        throw Error("NO DISCARD operation for Pipeline");
     }
 };
 

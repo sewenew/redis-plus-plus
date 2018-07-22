@@ -22,27 +22,20 @@ namespace redis {
 
 namespace detail {
 
-std::deque<ReplyUPtr> TransactionImpl::exec(Connection &connection, std::size_t cmd_num) {
+std::vector<ReplyUPtr> TransactionImpl::exec(Connection &connection, std::size_t cmd_num) {
     _close_transaction();
 
-    if (_piped) {
-        // Get all QUEUED reply
-        while (cmd_num > 0) {
-            _get_queued_reply(connection);
-
-            --cmd_num;
-        }
-    }
+    _get_queued_replies(connection, cmd_num);
 
     return _exec(connection);
 }
 
-void TransactionImpl::discard(Connection &connection) {
+void TransactionImpl::discard(Connection &connection, std::size_t cmd_num) {
     _close_transaction();
 
-    cmd::discard(connection);
-    auto reply = connection.recv();
-    reply::parse<void>(*reply);
+    _get_queued_replies(connection, cmd_num);
+
+    _discard(connection);
 }
 
 void TransactionImpl::_open_transaction(Connection &connection) {
@@ -74,7 +67,18 @@ void TransactionImpl::_get_queued_reply(Connection &connection) {
     }
 }
 
-std::deque<ReplyUPtr> TransactionImpl::_exec(Connection &connection) {
+void TransactionImpl::_get_queued_replies(Connection &connection, std::size_t cmd_num) {
+    if (_piped) {
+        // Get all QUEUED reply
+        while (cmd_num > 0) {
+            _get_queued_reply(connection);
+
+            --cmd_num;
+        }
+    }
+}
+
+std::vector<ReplyUPtr> TransactionImpl::_exec(Connection &connection) {
     cmd::exec(connection);
 
     auto reply = connection.recv();
@@ -88,7 +92,7 @@ std::deque<ReplyUPtr> TransactionImpl::_exec(Connection &connection) {
         throw ProtoError("Null ARRAY reply");
     }
 
-    std::deque<ReplyUPtr> replies;
+    std::vector<ReplyUPtr> replies;
     for (std::size_t idx = 0; idx != reply->elements; ++idx) {
         auto *sub_reply = reply->element[idx];
         if (sub_reply == nullptr) {
@@ -101,6 +105,12 @@ std::deque<ReplyUPtr> TransactionImpl::_exec(Connection &connection) {
     }
 
     return replies;
+}
+
+void TransactionImpl::_discard(Connection &connection) {
+    cmd::discard(connection);
+    auto reply = connection.recv();
+    reply::parse<void>(*reply);
 }
 
 }

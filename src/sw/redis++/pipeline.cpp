@@ -22,8 +22,8 @@ namespace redis {
 
 namespace detail {
 
-std::deque<ReplyUPtr> PipelineImpl::exec(Connection &connection, std::size_t cmd_num) {
-    std::deque<ReplyUPtr> replies;
+std::vector<ReplyUPtr> PipelineImpl::exec(Connection &connection, std::size_t cmd_num) {
+    std::vector<ReplyUPtr> replies;
     while (cmd_num > 0) {
         replies.push_back(connection.recv());
         --cmd_num;
