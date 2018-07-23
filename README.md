@@ -10,8 +10,8 @@ This is a C++ client for Redis. It's based on [hiredis](https://github.com/redis
 - Redis scripting.
 - Thread safe unless otherwise stated.
 - Redis publish/subscribe.
-- Redis pipeline (unstable).
-- Redis transaction (unstable).
+- Redis pipeline.
+- Redis transaction.
 - Redis Cluster (coming soon).
 
 ## Installation
@@ -155,6 +155,44 @@ try {
     auto num = redis.eval<long long>("return 1", {}, {});
     std::vector<long long> nums;
     redis.eval("return {ARGV[1], ARGV[2]}", {}, {"1", "2"}, std::back_inserter(nums));
+
+    // Pipeline
+    auto pipe = redis.pipeline();
+
+    auto pipe_replies = pipe.set("key", "value")
+                            .get("key")
+                            .rename("key", "new-key")
+                            .lpush("list", {"a", "b", "c"})
+                            .lrange("list", 0, -1)
+                            .exec();
+
+    auto set_result = pipe_replies.get<bool>(0);
+
+    auto get_result = pipe_replies.get<OptionalString>(1);
+
+    // rename result
+    pipe_replies.get<void>(2);
+
+    auto lpush_result = pipe_replies.get<long long>(3);
+
+    vector<string> lrange_result
+    pipe_replies.get(4, back_inserter(lrange_result));
+
+    // Transaction
+    auto tx = redis.transaction();
+
+    auto tx_replies = tx.incr("num0")
+                        .incr("num1")
+                        .mget({"num0", "num1"})
+                        .exec();
+
+    auto incr_result0 = tx_replies.get<long long>(0);
+
+    auto incr_result1 = tx_replies.get<long long>(1);
+
+    vector<OptionalString> mget_result;
+    tx_replies.get(2, back_inserter(mget_result));
+
 } catch (const Error &e) {
     // Error handling.
 }
@@ -214,7 +252,7 @@ Redis redis3("unix://path/to/socket");
 
 ### Command
 
-You can send [Redis commands](https://redis.io/commands) through `Redis` object. `Redis` has one or more (overload) methods for each Redis command. The method has the same name as the corresponding command.
+You can send [Redis commands](https://redis.io/commands) through `Redis` object. `Redis` has one or more (overloaded) methods for each Redis command. The method has the same name as the corresponding command.
 
 #### Parameter
 
@@ -247,13 +285,45 @@ Also these replies might be *NULL*. For instance, when you try to `GET` the valu
 - `long long`: *Integer Reply* that not always return 0 or 1.
 - `double`: *Bulk String Reply* that represents a double.
 - Output Iterator: *Array Reply*. We use STL-like interface to return array replies. Also, sometimes the type of output iterator decides which options to send with the command. See the [Examples](https://github.com/sewenew/redis-plus-plus#command-overloads) part for detail.
-- `Optional<T>`: For any reply of type `T` that might be *NULL*.
+- `Optional<T>`: For any reply of type `T` that might be *NULL*. We'll explain in detail.
 
-We use [std::optional](http://en.cppreference.com/w/cpp/utility/optional) as return type, if Redis might return *NULL* reply. Again, since not all compilers support `std::optional` so far, we implement our own simple [version](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/utils.h#L85).
+We use [std::optional](http://en.cppreference.com/w/cpp/utility/optional) as return type, if Redis might return *NULL* reply. Again, since not all compilers support `std::optional` so far, we implement our own simple [version](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/utils.h#L85). Take the [GET](https://redis.io/commands/get) and [MGET](https://redis.io/commands/mget) commands for example:
+
+```
+// Or just: auto val = redis.get("key");
+Optional<std::string> val = redis.get("key");
+
+if (val) {
+    // Key exists
+    cout << *val << endl;
+} else {
+    cout << "key doesn't exist." << endl;
+}
+
+vector<Optional<std::string>> values;
+redis.mget({"key1", "key2", "key3"}, back_inserter(values));
+for (const auto &val : values) {
+    if (val) {
+        // Key exist, process the value.
+    }
+}
+```
+
+We also have some typedefs for some commonly used `Optional<T>`:
+
+```
+using OptionalString = Optional<std::string>;
+
+using OptionalLongLong = Optional<long long>;
+
+using OptionalDouble = Optional<double>;
+
+using OptionalStringPair = Optional<std::pair<std::string, std::string>>;
+```
 
 #### Exception
 
-*redis-plus-plus* throws exceptions if it receives an *Error Reply* or something bad happens. All exceptions derived from `Error` class.
+*redis-plus-plus* throws exceptions if it receives an *Error Reply* or something bad happens. All exceptions derived from `Error` class. See [errors.h](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/errors.h) for detail.
 
 **NOTE**: *NULL* reply is not taken as an exception, e.g. key not found. Instead we return it as a null `Optional<T>` object.
 
@@ -572,7 +642,9 @@ You can use `Redis::publish` to publish messages to channels. *redis-plus-plus* 
 
 When you subscribe to a channel with a connection, all messages published to the channel are sent back to that connection. So there's **NO** `Redis::subscribe` method. Instead, you can use `Redis::subscriber` to create a `Subscriber` and the `Subscriber` maintains a connection to Redis. The underlying connection is a new connection, NOT picked from the connection pool. This new connection has the same `ConnectionOptions` as the `Redis` object.
 
-With `Subscriber`, you can call `Subscriber::subscribe`, `Subscriber::unsubscribe`, `Subscriber::psubscribe` and `Subscriber::punsubscribe` to send *SUBSCRIBE*, `UNSUBSCRIBE`, *PSUBSCRIBE* and *PUNSUBSCRIBE* commands to Redis.
+With `Subscriber`, you can call `Subscriber::subscribe`, `Subscriber::unsubscribe`, `Subscriber::psubscribe` and `Subscriber::punsubscribe` to send *SUBSCRIBE*, *UNSUBSCRIBE*, *PSUBSCRIBE* and *PUNSUBSCRIBE* commands to Redis.
+
+#### Thread Safety
 
 `Subscriber` is **NOT** thread-safe. If you want to call its member functions in multi-thread environment, you need to synchronize between threads manually.
 
@@ -654,6 +726,128 @@ while (true) {
     }
 }
 ```
+
+### Pipeline
+
+[Pipeline](https://redis.io/topics/pipelining) is used to reduce *RTT* (Round Trip Time), and speed up Redis queries. *redis-plus-plus* supports pipeline with the `Pipeline` class.
+
+#### Create Pipeline
+
+You can create a pipeline with `Redis::pipeline` method, which returns a `Pipeline` object.
+
+```
+ConnectionOptions connection_options;
+ConnectionPoolOptions pool_options;
+
+Redis redis(connection_options, pool_options);
+
+auto pipe = redis.pipeline();
+```
+
+When creating a `Pipeline` object, `Redis::pipeline` method creates a new connection to Redis server. This connection is NOT picked from the connection pool, but a newly created connection. This connection has the same `ConnectionOptions` with other connections in the connection pool. `Pipeline` object maintains the new connection, and all piped commands are sent through this connection.
+
+#### Send Commands
+
+You can send Redis commands through the `Pipeline` object. Just like the `Redis` class, `Pipeline` has one or more (overloaded) methods for each Redis command. These commands are sent to Redis, however, we don't fetch the replies until you call `Pipeline::exec` explicitly. So these methods do NOT return the reply, instead they return the `Pipeline` object itself. And you can chain these methods calls.
+
+```
+pipe.set("key", "val").incr("num").lpush("list", {0, 1, 2});
+```
+
+#### Get Replies
+
+Once you finish sending commands to Redis, you can call `Pipeline::exec` to get replies of these commands. You can also chain `Pipeline::exec` with other commands.
+
+```
+pipe.set("key", "val").incr("num");
+auto replies = pipe.exec();
+
+// The same as:
+auto another_replies = pipe.set("key", "val").incr("num).exec();
+```
+
+In fact, the name of this method, i.e. *exec*, is inaccurate. It's borrowed from Redis transaction's [EXEC](https://redis.io/commands/exec) command. No matter whether you call `Pipeline::exec` or not, these commands will be executed by Redis. `Pipeline::exec` is only used to get replies from Redis. Also you CANNOT call `Pipeline::discard` to stop the execution (in fact, if you call `Pipeline::discard`, it throws an exception). These behaviors are different from `Transaction::exec`.
+
+#### Use Replies
+
+`Pipeline::exec` returns a `QueuedReplies` object, which contains replies of all commands that have been send to Redis. You can use `QueuedReplies::get` method to get and parse the ith reply. It has two overloads:
+
+- `template <typename Result> Result get(std::size_t idx)`: Return the ith reply as a return value. You need to specify the return type as tempalte parameter.
+- `template <typename Output> void get(std::size_t idx, Output output)`: Return the ith reply as an output iterator. Normally, compiler will deduce the type of the output iterator.
+
+You can check [redis.h](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/redis.h) for the return type of each command.
+
+```
+auto replies = pipe.set("key", "val").incr("num").lrange("list", 0, -1).exec();
+
+auto set_result = replies.get<bool>(0);
+
+auto incr_result = replies.get<long long>(1);
+
+vector<string> list_result;
+replies.get(2, back_inserter(list_result));
+```
+
+#### Exception
+
+If any of `Pipeline`'s method throws an exception, the `Pipeline` object enters an invalid state. And you CANNOT use it any more, but only destroy the object.
+
+#### Thread Safety
+
+`Pipeline` is **NOT** thread-safe. If you want to call its member functions in multi-thread environment, you need to synchronize between threads manually.
+
+### Transaction
+
+[Transaction](https://redis.io/topics/transactions) is used to make multiple commands runs atomically.
+
+#### Create Transaction
+
+You can create a transaction with `Redis::transaction` method, which returns a `Transaction` object.
+
+
+```
+ConnectionOptions connection_options;
+ConnectionPoolOptions pool_options;
+
+Redis redis(connection_options, pool_options);
+
+auto tx = redis.transaction();
+```
+
+As the `Pipeline` class, `Transaction` maintains a newly created connection to Redis. This connection has the same `ConnectionOptions` with the `Redis` object.
+
+#### Send Commands
+
+`Transaction` shares parts of implementation with `Pipeline`. It has the same interfaces with `Pipeline`. You can send commands as what you do with `Pipeline` object.
+
+```
+tx.set("key", "val").incr("num").lpush("list", {0, 1, 2});
+```
+
+#### Execute Transaction
+
+As we mentioned above, `Transaction::exec` behaves differently with `Pipeline::exec`. When you call `Transaction::exec`, you explicitly ask Redis to execute these commands, and return the replies. Otherwise, these commands won't be executed. Also, you can call `Transaction::discard` to discard the execution, i.e. no command will be executed. Both `Transaction::exec` and `Transaction::discard` can be chained with other commands.
+
+```
+auto replies = tx.set("key", "val").incr("num").exec();
+
+tx.set("key", "val").incr("num");
+
+// Discard the transaction.
+tx.discard();
+```
+
+#### Use Replies
+
+See [Pipeline](https://github.com/sewenew/redis-plus-plus#use-replies)'s doc for how to use the replies.
+
+#### Exception
+
+If any of `Pipeline`'s method throws an exception, the `Pipeline` object enters an invalid state. And you CANNOT use it any more, but only destroy the object.
+
+#### Thread Safety
+
+`Transacation` is **NOT** thread-safe. If you want to call its member functions in multi-thread environment, you need to synchronize between threads manually.
 
 ## Author
 
