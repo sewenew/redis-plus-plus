@@ -748,7 +748,7 @@ When creating a `Pipeline` object, `Redis::pipeline` method creates a new connec
 
 #### Send Commands
 
-You can send Redis commands through the `Pipeline` object. Just like the `Redis` class, `Pipeline` has one or more (overloaded) methods for each Redis command. These commands are sent to Redis, however, we don't fetch the replies until you call `Pipeline::exec` explicitly. So these methods do NOT return the reply, instead they return the `Pipeline` object itself. And you can chain these methods calls.
+You can send Redis commands through the `Pipeline` object. Just like the `Redis` class, `Pipeline` has one or more (overloaded) methods for each Redis command. However, you CANNOT get the replies until you call `Pipeline::exec`. So these methods do NOT return the reply, instead they return the `Pipeline` object itself. And you can chain these methods calls.
 
 ```
 pipe.set("key", "val").incr("num").lpush("list", {0, 1, 2});
@@ -766,7 +766,15 @@ auto replies = pipe.exec();
 auto another_replies = pipe.set("key", "val").incr("num).exec();
 ```
 
-In fact, the name of this method, i.e. *exec*, is inaccurate. It's borrowed from Redis transaction's [EXEC](https://redis.io/commands/exec) command. No matter whether you call `Pipeline::exec` or not, these commands will be executed by Redis. `Pipeline::exec` is only used to get replies from Redis. Also you CANNOT call `Pipeline::discard` to stop the execution (in fact, if you call `Pipeline::discard`, it throws an exception). These behaviors are different from `Transaction::exec`.
+In fact, these commands won't be sent to Redis, until you call `Pipeline::exec`. So `Pipeline::exec` does 2 work: send piped commands and get replies from Redis.
+
+Also you can call `Pipeline::discard` to discard those piped commands.
+
+```
+pipe.set("key", "val").incr("num");
+
+pipe.discard();
+```
 
 #### Use Replies
 
@@ -816,6 +824,8 @@ auto tx = redis.transaction();
 
 As the `Pipeline` class, `Transaction` maintains a newly created connection to Redis. This connection has the same `ConnectionOptions` with the `Redis` object.
 
+Also you don't need to send [MULTI](https://redis.io/commands/multi) command to Redis. `Transaction` will do that for you automatically.
+
 #### Send Commands
 
 `Transaction` shares parts of implementation with `Pipeline`. It has the same interfaces with `Pipeline`. You can send commands as what you do with `Pipeline` object.
@@ -826,7 +836,7 @@ tx.set("key", "val").incr("num").lpush("list", {0, 1, 2});
 
 #### Execute Transaction
 
-As we mentioned above, `Transaction::exec` behaves differently with `Pipeline::exec`. When you call `Transaction::exec`, you explicitly ask Redis to execute these commands, and return the replies. Otherwise, these commands won't be executed. Also, you can call `Transaction::discard` to discard the execution, i.e. no command will be executed. Both `Transaction::exec` and `Transaction::discard` can be chained with other commands.
+When you call `Transaction::exec`, you explicitly ask Redis to execute those queued commands, and return the replies. Otherwise, these commands won't be executed. Also, you can call `Transaction::discard` to discard the execution, i.e. no command will be executed. Both `Transaction::exec` and `Transaction::discard` can be chained with other commands.
 
 ```
 auto replies = tx.set("key", "val").incr("num").exec();
@@ -840,6 +850,17 @@ tx.discard();
 #### Use Replies
 
 See [Pipeline](https://github.com/sewenew/redis-plus-plus#use-replies)'s doc for how to use the replies.
+
+#### Piped Transaction
+
+Normally, we always send multiple commnds in a transaction. In order to improve the performance, you can send these commands in a pipeline. You can create a piped transaction by passing `true` as parameter of `Redis::transaction` method.
+
+```
+// Create a piped transaction
+auto tx = redis.transaction(true);
+```
+
+With this piped transaction, all commands are sent to Redis in a pipeline.
 
 #### Exception
 
