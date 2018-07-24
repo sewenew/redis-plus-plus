@@ -108,6 +108,13 @@ void rewrite_set_reply(redisReply &reply) {
     reply.integer = 1;
 }
 
+void rewrite_georadius_reply(redisReply &reply) {
+    if (is_array(reply) && reply.element == nullptr) {
+        // Make it a nil reply.
+        reply.type = REDIS_REPLY_NIL;
+    }
+}
+
 namespace detail {
 
 bool is_flat_array(redisReply &reply) {

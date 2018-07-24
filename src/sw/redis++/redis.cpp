@@ -683,6 +683,8 @@ OptionalLongLong Redis::georadius(const StringView &key,
                             store_dist,
                             count);
 
+    reply::rewrite_georadius_reply(*reply);
+
     return reply::parse<OptionalLongLong>(*reply);
 }
 
@@ -701,6 +703,8 @@ OptionalLongLong Redis::georadiusbymember(const StringView &key,
                             destination,
                             store_dist,
                             count);
+
+    reply::rewrite_georadius_reply(*reply);
 
     return reply::parse<OptionalLongLong>(*reply);
 }

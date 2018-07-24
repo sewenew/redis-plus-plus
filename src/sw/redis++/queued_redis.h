@@ -1170,6 +1170,8 @@ public:
                             const StringView &destination,
                             bool store_dist,
                             long long count) {
+        _georadius_cmd_indexes.push_back(_cmd_num);
+
         return command(cmd::georadius_store,
                         key,
                         loc,
@@ -1212,6 +1214,8 @@ public:
                                     const StringView &destination,
                                     bool store_dist,
                                     long long count) {
+        _georadius_cmd_indexes.push_back(_cmd_num);
+
         return command(cmd::georadiusbymember,
                         key,
                         member,
@@ -1300,6 +1304,11 @@ private:
 
     void _rewrite_replies(std::vector<ReplyUPtr> &replies) const;
 
+    template <typename Func>
+    void _rewrite_replies(const std::vector<std::size_t> &indexes,
+                            Func rewriter,
+                            std::vector<ReplyUPtr> &replies) const;
+
     Connection _connection;
 
     Impl _impl;
@@ -1307,6 +1316,8 @@ private:
     std::size_t _cmd_num = 0;
 
     std::vector<std::size_t> _set_cmd_indexes;
+
+    std::vector<std::size_t> _georadius_cmd_indexes;
 
     bool _valid = true;
 };

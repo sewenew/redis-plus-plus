@@ -100,6 +100,9 @@ void to_array(redisReply &reply, Output output);
 // Rewrite set reply to bool type
 void rewrite_set_reply(redisReply &reply);
 
+// Rewrite georadius reply to OptionalLongLong type
+void rewrite_georadius_reply(redisReply &reply);
+
 }
 
 // Inline implementations.

@@ -92,6 +92,8 @@ inline void QueuedRedis<Impl>::_reset() {
     _cmd_num = 0;
 
     _set_cmd_indexes.clear();
+
+    _georadius_cmd_indexes.clear();
 }
 
 template <typename Impl>
@@ -103,14 +105,24 @@ void QueuedRedis<Impl>::_invalidate() {
 
 template <typename Impl>
 void QueuedRedis<Impl>::_rewrite_replies(std::vector<ReplyUPtr> &replies) const {
-    for (auto idx : _set_cmd_indexes) {
+    _rewrite_replies(_set_cmd_indexes, reply::rewrite_set_reply, replies);
+
+    _rewrite_replies(_georadius_cmd_indexes, reply::rewrite_georadius_reply, replies);
+}
+
+template <typename Impl>
+template <typename Func>
+void QueuedRedis<Impl>::_rewrite_replies(const std::vector<std::size_t> &indexes,
+                                            Func rewriter,
+                                            std::vector<ReplyUPtr> &replies) const {
+    for (auto idx : indexes) {
         assert(idx < replies.size());
 
         auto &reply = replies[idx];
 
         assert(reply);
 
-        reply::rewrite_set_reply(*reply);
+        rewriter(*reply);
     }
 }
 
