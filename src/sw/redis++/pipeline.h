@@ -38,8 +38,9 @@ public:
 
     std::vector<ReplyUPtr> exec(Connection &connection, std::size_t cmd_num);
 
-    void discard(Connection &/*connection*/, std::size_t /*cmd_num*/) {
-        throw Error("NO DISCARD operation for Pipeline");
+    void discard(Connection &connection, std::size_t /*cmd_num*/) {
+        // Reconnect to Redis to discard all commands.
+        connection.reconnect();
     }
 };
 
