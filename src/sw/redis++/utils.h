@@ -183,6 +183,8 @@ struct TupleWithType<T, std::tuple<U, Args...>> : TupleWithType<T, std::tuple<Ar
 template <typename T, typename ...Args>
 struct TupleWithType<T, std::tuple<T, Args...>> : std::true_type {};
 
+uint16_t crc16(const char *buf, int len);
+
 }
 
 }
