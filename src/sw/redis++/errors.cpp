@@ -17,6 +17,17 @@
 #include "errors.h"
 #include <cassert>
 #include <cerrno>
+#include <unordered_map>
+
+namespace {
+
+sw::redis::ReplyErrorType error_type(const std::string &msg);
+
+std::unordered_map<std::string, sw::redis::ReplyErrorType> error_map = {
+    {"MOVED", sw::redis::ReplyErrorType::MOVED}
+};
+
+}
 
 namespace sw {
 
@@ -69,9 +80,40 @@ void throw_error(const redisReply &reply) {
         throw Error("Null error reply");
     }
 
-    throw ReplyError(std::string(reply.str, reply.len));
+    auto err_str = std::string(reply.str, reply.len);
+
+    auto err_type = error_type(err_str);
+    switch (err_type) {
+    case ReplyErrorType::MOVED:
+        throw MovedError(err_str);
+        break;
+
+    default:
+        throw ReplyError(err_str);
+        break;
+    }
 }
 
+}
+
+}
+
+namespace {
+
+sw::redis::ReplyErrorType error_type(const std::string &msg) {
+    // The error message contains an Error Prefix, and an optional description.
+    auto idx = msg.find_first_of(" \n");
+
+    auto err_prefix = msg.substr(0, idx);
+
+    auto iter = error_map.find(err_prefix);
+    if (iter == error_map.end()) {
+        // Generic error.
+        return sw::redis::ReplyErrorType::ERR;
+    } else {
+        // Specific error.
+        return iter->second;
+    }
 }
 
 }

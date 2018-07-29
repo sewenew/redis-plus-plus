@@ -25,6 +25,11 @@ namespace sw {
 
 namespace redis {
 
+enum ReplyErrorType {
+    ERR,
+    MOVED
+};
+
 class Error : public std::exception {
 public:
     explicit Error(const std::string &msg) : _msg(msg) {}
@@ -121,6 +126,19 @@ public:
     ReplyError& operator=(ReplyError &&) = default;
 
     virtual ~ReplyError() = default;
+};
+
+class MovedError : public ReplyError {
+public:
+    MovedError(const std::string &msg) : ReplyError(msg) {}
+
+    MovedError(const MovedError &) = default;
+    MovedError& operator=(const MovedError &) = default;
+
+    MovedError(MovedError &&) = default;
+    MovedError& operator=(MovedError &&) = default;
+
+    virtual ~MovedError() = default;
 };
 
 void throw_error(redisContext &context, const std::string &err_info);
