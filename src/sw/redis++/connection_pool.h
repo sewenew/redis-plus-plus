@@ -43,6 +43,10 @@ public:
     explicit ConnectionPool(const ConnectionPoolOptions &pool_opts,
             const ConnectionOptions &connection_opts);
 
+    ConnectionPool(ConnectionPool &&that);
+
+    ConnectionPool& operator=(ConnectionPool &&that);
+
     // Fetch a connection from pool.
     Connection fetch();
 
@@ -50,6 +54,8 @@ public:
     Connection create() const;
 
     void release(Connection connection);
+
+    friend void swap(ConnectionPool &lhs, ConnectionPool &rhs);
 
 private:
     // NOT thread-safe

@@ -46,8 +46,8 @@ public:
     Redis(const Redis &) = delete;
     Redis& operator=(const Redis &) = delete;
 
-    Redis(Redis &&) = delete;
-    Redis& operator=(Redis &&) = delete;
+    Redis(Redis &&) = default;
+    Redis& operator=(Redis &&) = default;
 
     Pipeline pipeline();
 

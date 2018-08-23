@@ -35,6 +35,18 @@ ConnectionPool::ConnectionPool(const ConnectionPoolOptions &pool_opts,
     }
 }
 
+ConnectionPool::ConnectionPool(ConnectionPool &&that) : _opts(that._opts),
+                                                        _pool_opts(that._pool_opts),
+                                                        _pool(std::move(that._pool)) {}
+
+ConnectionPool& ConnectionPool::operator=(ConnectionPool &&that) {
+    ConnectionPool temp(std::move(that));
+
+    swap(temp, *this);
+
+    return *this;
+}
+
 Connection ConnectionPool::fetch() {
     std::unique_lock<std::mutex> lock(_mutex);
 
@@ -72,6 +84,14 @@ void ConnectionPool::release(Connection connection) {
     }
 
     _cv.notify_one();
+}
+
+void swap(ConnectionPool &lhs, ConnectionPool &rhs) {
+    std::swap(lhs._opts, rhs._opts);
+
+    std::swap(lhs._pool_opts, rhs._pool_opts);
+
+    std::swap(lhs._pool, rhs._pool);
 }
 
 Connection ConnectionPool::_fetch() {
