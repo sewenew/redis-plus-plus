@@ -769,7 +769,7 @@ ConnectionOptions Redis::_parse_tcp_options(const std::string &path) const {
     try {
         if (!port.empty()) {
             options.port = std::stoi(port);
-        }
+        } // else use default port, i.e. 6379.
     } catch (const std::exception &) {
         throw Error("Invalid URL: invalid port");
     }
@@ -788,7 +788,7 @@ ConnectionOptions Redis::_parse_unix_options(const std::string &path) const {
 
 auto Redis::_split_string(const std::string &str, const std::string &delimiter) const ->
         std::pair<std::string, std::string> {
-    auto pos = str.find(delimiter);
+    auto pos = str.rfind(delimiter);
     if (pos == std::string::npos) {
         return {str, ""};
     }

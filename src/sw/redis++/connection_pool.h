@@ -40,8 +40,8 @@ struct ConnectionPoolOptions {
 
 class ConnectionPool {
 public:
-    explicit ConnectionPool(const ConnectionPoolOptions &pool_opts,
-            const ConnectionOptions &connection_opts);
+    ConnectionPool(const ConnectionPoolOptions &pool_opts,
+                    const ConnectionOptions &connection_opts);
 
     ConnectionPool(ConnectionPool &&that);
 

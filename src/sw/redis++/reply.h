@@ -136,8 +136,8 @@ void to_array(redisReply &reply, Output output) {
 
 bool is_flat_array(redisReply &reply);
 
-template <typename Iter>
-void to_flat_array(redisReply &reply, Iter output) {
+template <typename Output>
+void to_flat_array(redisReply &reply, Output output) {
     if (reply.element == nullptr) {
         // Empty array.
         return;
@@ -154,7 +154,7 @@ void to_flat_array(redisReply &reply, Iter output) {
             throw ProtoError("Null string array reply");
         }
 
-        using Pair = typename IterType<Iter>::type;
+        using Pair = typename IterType<Output>::type;
         using FirstType = typename std::decay<typename Pair::first_type>::type;
         using SecondType = typename std::decay<typename Pair::second_type>::type;
         *output = std::make_pair(parse<FirstType>(*key_reply),

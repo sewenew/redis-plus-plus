@@ -94,6 +94,10 @@ public:
 
     ReplyUPtr recv();
 
+    const ConnectionOptions& options() const {
+        return _opts;
+    }
+
     friend void swap(Connection &lhs, Connection &rhs) noexcept;
 
 private:
