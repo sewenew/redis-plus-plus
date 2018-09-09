@@ -35,14 +35,20 @@ ConnectionPool::ConnectionPool(const ConnectionPoolOptions &pool_opts,
     }
 }
 
-ConnectionPool::ConnectionPool(ConnectionPool &&that) : _opts(that._opts),
-                                                        _pool_opts(that._pool_opts),
-                                                        _pool(std::move(that._pool)) {}
+ConnectionPool::ConnectionPool(ConnectionPool &&that) {
+    std::lock_guard<std::mutex>(that._mutex);
+
+    _move(std::move(that));
+}
 
 ConnectionPool& ConnectionPool::operator=(ConnectionPool &&that) {
-    ConnectionPool temp(std::move(that));
+    if (this != &that) {
+        std::lock(_mutex, that._mutex);
+        std::lock_guard<std::mutex>(_mutex, std::adopt_lock);
+        std::lock_guard<std::mutex>(that._mutex, std::adopt_lock);
 
-    swap(temp, *this);
+        _move(std::move(that));
+    }
 
     return *this;
 }
@@ -72,7 +78,9 @@ Connection ConnectionPool::fetch() {
     return connection;
 }
 
-Connection ConnectionPool::create() const {
+Connection ConnectionPool::create() {
+    std::lock_guard<std::mutex> lock(_mutex);
+
     return Connection(_opts);
 }
 
@@ -86,12 +94,10 @@ void ConnectionPool::release(Connection connection) {
     _cv.notify_one();
 }
 
-void swap(ConnectionPool &lhs, ConnectionPool &rhs) {
-    std::swap(lhs._opts, rhs._opts);
-
-    std::swap(lhs._pool_opts, rhs._pool_opts);
-
-    std::swap(lhs._pool, rhs._pool);
+void ConnectionPool::_move(ConnectionPool &&that) {
+    _opts = std::move(that._opts);
+    _pool_opts = std::move(that._pool_opts);
+    _pool = std::move(that._pool);
 }
 
 Connection ConnectionPool::_fetch() {

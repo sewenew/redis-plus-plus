@@ -51,13 +51,13 @@ public:
     Connection fetch();
 
     // Create a new connection.
-    Connection create() const;
+    Connection create();
 
     void release(Connection connection);
 
-    friend void swap(ConnectionPool &lhs, ConnectionPool &rhs);
-
 private:
+    void _move(ConnectionPool &&that);
+
     // NOT thread-safe
     Connection _fetch();
 
