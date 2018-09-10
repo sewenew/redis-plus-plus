@@ -36,7 +36,7 @@ ConnectionPool::ConnectionPool(const ConnectionPoolOptions &pool_opts,
 }
 
 ConnectionPool::ConnectionPool(ConnectionPool &&that) {
-    std::lock_guard<std::mutex>(that._mutex);
+    std::lock_guard<std::mutex> lock(that._mutex);
 
     _move(std::move(that));
 }
@@ -44,8 +44,8 @@ ConnectionPool::ConnectionPool(ConnectionPool &&that) {
 ConnectionPool& ConnectionPool::operator=(ConnectionPool &&that) {
     if (this != &that) {
         std::lock(_mutex, that._mutex);
-        std::lock_guard<std::mutex>(_mutex, std::adopt_lock);
-        std::lock_guard<std::mutex>(that._mutex, std::adopt_lock);
+        std::lock_guard<std::mutex> lock_this(_mutex, std::adopt_lock);
+        std::lock_guard<std::mutex> lock_that(that._mutex, std::adopt_lock);
 
         _move(std::move(that));
     }
@@ -94,7 +94,7 @@ void ConnectionPool::release(Connection connection) {
     _cv.notify_one();
 }
 
-void ConnectionPool::_move(ConnectionPool &&that) {
+void ConnectionPool::_move(ConnectionPool that) {
     _opts = std::move(that._opts);
     _pool_opts = std::move(that._pool_opts);
     _pool = std::move(that._pool);
