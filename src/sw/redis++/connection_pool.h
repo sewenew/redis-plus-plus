@@ -56,7 +56,7 @@ public:
     void release(Connection connection);
 
 private:
-    void _move(ConnectionPool that);
+    void _move(ConnectionPool &&that);
 
     // NOT thread-safe
     Connection _fetch();

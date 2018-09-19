@@ -18,6 +18,7 @@
 #include <chrono>
 #include <iostream>
 #include <sw/redis++/redis++.h>
+#include "sanity_test.h"
 #include "connection_cmds_test.h"
 #include "keys_cmds_test.h"
 #include "string_cmds_test.h"
@@ -42,6 +43,11 @@ sw::redis::ConnectionOptions parse_options(int argc, char **argv);
 int main(int argc, char **argv) {
     try {
         auto opts = parse_options(argc, argv);
+
+        sw::redis::test::SanityTest sanity_test(opts);
+        sanity_test.run();
+
+        std::cout << "Pass sanity tests" << std::endl;
 
         sw::redis::test::ConnectionCmdTest connection_test(opts);
         connection_test.run();

@@ -94,7 +94,7 @@ void ConnectionPool::release(Connection connection) {
     _cv.notify_one();
 }
 
-void ConnectionPool::_move(ConnectionPool that) {
+void ConnectionPool::_move(ConnectionPool &&that) {
     _opts = std::move(that._opts);
     _pool_opts = std::move(that._pool_opts);
     _pool = std::move(that._pool);
