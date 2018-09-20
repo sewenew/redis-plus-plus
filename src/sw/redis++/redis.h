@@ -985,15 +985,6 @@ private:
         Connection &_connection;
     };
 
-    ConnectionOptions _parse_options(const std::string &uri) const;
-
-    ConnectionOptions _parse_tcp_options(const std::string &path) const;
-
-    ConnectionOptions _parse_unix_options(const std::string &path) const;
-
-    auto _split_string(const std::string &str, const std::string &delimiter) const ->
-            std::pair<std::string, std::string>;
-
     template <typename Cmd, typename ...Args>
     ReplyUPtr _score_command(std::true_type, Cmd cmd, Args &&... args);
 

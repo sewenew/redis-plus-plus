@@ -26,44 +26,6 @@ namespace sw {
 
 namespace redis {
 
-namespace detail {
-
-template <typename Output>
-long long parse_scan_reply(redisReply &reply, Output output) {
-    if (reply.elements != 2 || reply.element == nullptr) {
-        throw ProtoError("Invalid scan reply");
-    }
-
-    auto *cursor_reply = reply.element[0];
-    auto *data_reply = reply.element[1];
-    if (cursor_reply == nullptr || data_reply == nullptr) {
-        throw ProtoError("Invalid cursor reply or data reply");
-    }
-
-    auto cursor_str = reply::parse<std::string>(*cursor_reply);
-    auto new_cursor = 0;
-    try {
-        new_cursor = std::stoll(cursor_str);
-    } catch (const std::exception &e) {
-        throw ProtoError("Invalid cursor reply: " + cursor_str);
-    }
-
-    reply::to_array(*data_reply, output);
-
-    return new_cursor;
-}
-
-template <typename T>
-struct WithCoord : TupleWithType<std::pair<double, double>, T> {};
-
-template <typename T>
-struct WithDist : TupleWithType<double, T> {};
-
-template <typename T>
-struct WithHash : TupleWithType<long long, T> {};
-
-}
-
 template <typename Cmd, typename ...Args>
 ReplyUPtr Redis::command(Cmd cmd, Args &&...args) {
     auto connection = _pool.fetch();
@@ -144,7 +106,7 @@ long long Redis::scan(long long cursor,
                     Output output) {
     auto reply = command(cmd::scan, cursor, pattern, count);
 
-    return detail::parse_scan_reply(*reply, output);
+    return reply::parse_scan_reply(*reply, output);
 }
 
 template <typename Output>
@@ -381,7 +343,7 @@ long long Redis::hscan(const StringView &key,
                         Output output) {
     auto reply = command(cmd::hscan, key, cursor, pattern, count);
 
-    return detail::parse_scan_reply(*reply, output);
+    return reply::parse_scan_reply(*reply, output);
 }
 
 template <typename Output>
@@ -515,7 +477,7 @@ long long Redis::sscan(const StringView &key,
                         Output output) {
     auto reply = command(cmd::sscan, key, cursor, pattern, count);
 
-    return detail::parse_scan_reply(*reply, output);
+    return reply::parse_scan_reply(*reply, output);
 }
 
 template <typename Output>
@@ -726,7 +688,7 @@ long long Redis::zscan(const StringView &key,
                         Output output) {
     auto reply = command(cmd::zscan, key, cursor, pattern, count);
 
-    return detail::parse_scan_reply(*reply, output);
+    return reply::parse_scan_reply(*reply, output);
 }
 
 template <typename Output>
@@ -859,9 +821,9 @@ void Redis::georadius(const StringView &key,
                             unit,
                             count,
                             asc,
-                            detail::WithCoord<typename IterType<Output>::type>::value,
-                            detail::WithDist<typename IterType<Output>::type>::value,
-                            detail::WithHash<typename IterType<Output>::type>::value);
+                            WithCoord<typename IterType<Output>::type>::value,
+                            WithDist<typename IterType<Output>::type>::value,
+                            WithHash<typename IterType<Output>::type>::value);
 
     reply::to_array(*reply, output);
 }
@@ -881,9 +843,9 @@ void Redis::georadiusbymember(const StringView &key,
                             unit,
                             count,
                             asc,
-                            detail::WithCoord<typename IterType<Output>::type>::value,
-                            detail::WithDist<typename IterType<Output>::type>::value,
-                            detail::WithHash<typename IterType<Output>::type>::value);
+                            WithCoord<typename IterType<Output>::type>::value,
+                            WithDist<typename IterType<Output>::type>::value,
+                            WithHash<typename IterType<Output>::type>::value);
 
     reply::to_array(*reply, output);
 }

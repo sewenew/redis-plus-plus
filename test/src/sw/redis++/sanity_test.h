@@ -32,7 +32,11 @@ public:
     void run();
 
 private:
+    void _test_uri_ctor();
+
     void _test_move_ctor();
+
+    ConnectionOptions _opts;
 
     Redis _redis;
 };

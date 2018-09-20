@@ -68,6 +68,9 @@ std::pair<T, U> parse(ParseTag<std::pair<T, U>>, redisReply &reply);
 template <typename ...Args>
 std::tuple<Args...> parse(ParseTag<std::tuple<Args...>>, redisReply &reply);
 
+template <typename Output>
+long long parse_scan_reply(redisReply &reply, Output output);
+
 inline bool is_error(redisReply &reply) {
     return reply.type == REDIS_REPLY_ERROR;
 }
@@ -253,6 +256,31 @@ std::tuple<Args...> parse(ParseTag<std::tuple<Args...>>, redisReply &reply) {
     }
 
     return detail::parse_tuple<Args...>(reply.element, 0);
+}
+
+template <typename Output>
+long long parse_scan_reply(redisReply &reply, Output output) {
+    if (reply.elements != 2 || reply.element == nullptr) {
+        throw ProtoError("Invalid scan reply");
+    }
+
+    auto *cursor_reply = reply.element[0];
+    auto *data_reply = reply.element[1];
+    if (cursor_reply == nullptr || data_reply == nullptr) {
+        throw ProtoError("Invalid cursor reply or data reply");
+    }
+
+    auto cursor_str = reply::parse<std::string>(*cursor_reply);
+    auto new_cursor = 0;
+    try {
+        new_cursor = std::stoll(cursor_str);
+    } catch (const std::exception &e) {
+        throw ProtoError("Invalid cursor reply: " + cursor_str);
+    }
+
+    reply::to_array(*data_reply, output);
+
+    return new_cursor;
 }
 
 template <typename Output>

@@ -24,6 +24,67 @@ namespace sw {
 
 namespace redis {
 
+ConnectionOptions::ConnectionOptions(const std::string &uri) :
+                                        ConnectionOptions(_parse_options(uri)) {}
+
+ConnectionOptions ConnectionOptions::_parse_options(const std::string &uri) const {
+    std::string type;
+    std::string path;
+    std::tie(type, path) = _split_string(uri, "://");
+
+    if (path.empty()) {
+        throw Error("Invalid URI: no path");
+    }
+
+    if (type == "tcp") {
+        return _parse_tcp_options(path);
+    } else if (type == "unix") {
+        return _parse_unix_options(path);
+    } else {
+        throw Error("Invalid URI: invalid type");
+    }
+}
+
+ConnectionOptions ConnectionOptions::_parse_tcp_options(const std::string &path) const {
+    ConnectionOptions options;
+
+    options.type = ConnectionType::TCP;
+
+    std::string host;
+    std::string port;
+    std::tie(host, port) = _split_string(path, ":");
+
+    options.host = host;
+    try {
+        if (!port.empty()) {
+            options.port = std::stoi(port);
+        } // else use default port, i.e. 6379.
+    } catch (const std::exception &) {
+        throw Error("Invalid URL: invalid port");
+    }
+
+    return options;
+}
+
+ConnectionOptions ConnectionOptions::_parse_unix_options(const std::string &path) const {
+    ConnectionOptions options;
+
+    options.type = ConnectionType::UNIX;
+    options.path = path;
+
+    return options;
+}
+
+auto ConnectionOptions::_split_string(const std::string &str, const std::string &delimiter) const ->
+        std::pair<std::string, std::string> {
+    auto pos = str.rfind(delimiter);
+    if (pos == std::string::npos) {
+        return {str, ""};
+    }
+
+    return {str.substr(0, pos), str.substr(pos + delimiter.size())};
+}
+
 class Connection::Connector {
 public:
     explicit Connector(const ConnectionOptions &opts);

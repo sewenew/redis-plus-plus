@@ -38,6 +38,19 @@ enum class ConnectionType {
 };
 
 struct ConnectionOptions {
+public:
+    ConnectionOptions() = default;
+
+    explicit ConnectionOptions(const std::string &uri);
+
+    ConnectionOptions(const ConnectionOptions &) = default;
+    ConnectionOptions& operator=(const ConnectionOptions &) = default;
+
+    ConnectionOptions(ConnectionOptions &&) = default;
+    ConnectionOptions& operator=(ConnectionOptions &&) = default;
+
+    ~ConnectionOptions() = default;
+
     ConnectionType type = ConnectionType::TCP;
 
     std::string host;
@@ -55,6 +68,16 @@ struct ConnectionOptions {
     std::chrono::milliseconds connect_timeout{0};
 
     std::chrono::milliseconds socket_timeout{0};
+
+private:
+    ConnectionOptions _parse_options(const std::string &uri) const;
+
+    ConnectionOptions _parse_tcp_options(const std::string &path) const;
+
+    ConnectionOptions _parse_unix_options(const std::string &path) const;
+
+    auto _split_string(const std::string &str, const std::string &delimiter) const ->
+            std::pair<std::string, std::string>;
 };
 
 class CmdArgs;

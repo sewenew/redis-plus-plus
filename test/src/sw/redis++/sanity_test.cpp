@@ -23,10 +23,37 @@ namespace redis {
 
 namespace test {
 
-SanityTest::SanityTest(const ConnectionOptions &opts) : _redis(opts) {}
+SanityTest::SanityTest(const ConnectionOptions &opts) : _opts(opts), _redis(opts) {}
 
 void SanityTest::run() {
+    _test_uri_ctor();
+
     _test_move_ctor();
+}
+
+void SanityTest::_test_uri_ctor() {
+    std::string uri;
+    switch (_opts.type) {
+    case sw::redis::ConnectionType::TCP:
+        uri = "tcp://" + _opts.host + ":" + std::to_string(_opts.port);
+        break;
+
+    case sw::redis::ConnectionType::UNIX:
+        uri = "unix://" + _opts.path;
+        break;
+
+    default:
+        REDIS_ASSERT(false, "Unknown connection type");
+    }
+
+    auto redis = sw::redis::Redis(uri);
+    try {
+        auto pong = redis.ping();
+        REDIS_ASSERT(pong == "PONG", "Failed to test constructing Redis with uri");
+    } catch (const sw::redis::ReplyError &e) {
+        REDIS_ASSERT(e.what() == std::string("NOAUTH Authentication required."),
+                "Failed to test constructing Redis with uri");
+    }
 }
 
 void SanityTest::_test_move_ctor() {

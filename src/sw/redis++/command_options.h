@@ -18,6 +18,7 @@
 #define SEWENEW_REDISPLUSPLUS_COMMAND_OPTIONS_H
 
 #include <string>
+#include "utils.h"
 
 namespace sw {
 
@@ -193,6 +194,15 @@ enum class GeoUnit {
     MI,
     FT
 };
+
+template <typename T>
+struct WithCoord : TupleWithType<std::pair<double, double>, T> {};
+
+template <typename T>
+struct WithDist : TupleWithType<double, T> {};
+
+template <typename T>
+struct WithHash : TupleWithType<long long, T> {};
 
 }
 
