@@ -39,17 +39,11 @@ try_compile(HAVE_STRING_VIEW
             "${CMAKE_CURRENT_BINARY_DIR}/try_compile"
             "${CMAKE_CURRENT_SOURCE_DIR}/try_compile/try_string_view.cpp")
 
-if (HAVE_STRING_VIEW)
-    add_definitions(-DHAVE_STRING_VIEW)
-endif()
-
 try_compile(HAVE_OPTIONAL
             "${CMAKE_CURRENT_BINARY_DIR}/try_compile"
             "${CMAKE_CURRENT_SOURCE_DIR}/try_compile/try_optional.cpp")
 
-if (HAVE_OPTIONAL)
-    add_definitions(-DHAVE_OPTIONAL)
-endif()
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${PROJECT_SOURCE_DIR}/config.h)
 
 add_subdirectory(test)
 
