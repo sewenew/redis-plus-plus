@@ -21,8 +21,6 @@
 #include <string>
 #include <type_traits>
 
-#include "config.h"
-
 #ifdef HAVE_STRING_VIEW
 
 #include <string_view>

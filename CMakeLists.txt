@@ -35,10 +35,21 @@ set_target_properties(${STATIC_LIB} PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 set_target_properties(${SHARED_LIB} PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 
 # Some special headers.
-include(CheckIncludeFileCXX)
-check_include_file_cxx(string_view HAVE_STRING_VIEW)
-check_include_file_cxx(optional HAVE_OPTIONAL)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${PROJECT_SOURCE_DIR}/config.h)
+try_compile(HAVE_STRING_VIEW
+            "${CMAKE_CURRENT_BINARY_DIR}/try_compile"
+            "${CMAKE_CURRENT_SOURCE_DIR}/try_compile/try_string_view.cpp")
+
+if (HAVE_STRING_VIEW)
+    add_definitions(-DHAVE_STRING_VIEW)
+endif()
+
+try_compile(HAVE_OPTIONAL
+            "${CMAKE_CURRENT_BINARY_DIR}/try_compile"
+            "${CMAKE_CURRENT_SOURCE_DIR}/try_compile/try_optional.cpp")
+
+if (HAVE_OPTIONAL)
+    add_definitions(-DHAVE_OPTIONAL)
+endif()
 
 add_subdirectory(test)
 

@@ -6,8 +6,6 @@ else()
     cmake_minimum_required(VERSION 2.8.0)
 endif()
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -Wall -W -Werror -fPIC")
-
 set(PROJECT_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src/sw/redis++)
 
 file(GLOB PROJECT_SOURCE_FILES "${PROJECT_SOURCE_DIR}/*.cpp")
