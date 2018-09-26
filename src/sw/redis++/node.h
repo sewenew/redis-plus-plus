@@ -14,14 +14,34 @@
    limitations under the License.
  *************************************************************************/
 
-#ifndef SEWENEW_REDISPLUSPLUS_REDISPLUSPLUS_H
-#define SEWENEW_REDISPLUSPLUS_REDISPLUSPLUS_H
+#ifndef SEWENEW_REDISPLUSPLUS_NODE_H
+#define SEWENEW_REDISPLUSPLUS_NODE_H
 
-#include "redis.h"
-#include "redis.hpp"
-#include "redis_cluster.h"
-#include "redis_cluster.hpp"
-#include "subscriber.h"
-#include "pipeline.h"
+#include <string>
 
-#endif // end SEWENEW_REDISPLUSPLUS_REDISPLUSPLUS_H
+namespace sw {
+
+namespace redis {
+
+struct Node {
+    std::string host;
+    int port;
+};
+
+inline bool operator==(const Node &lhs, const Node &rhs) {
+    return lhs.host == rhs.host && lhs.port == rhs.port;
+}
+
+struct NodeHash {
+    std::size_t operator()(const Node &node) const noexcept {
+        auto host_hash = std::hash<std::string>{}(node.host);
+        auto port_hash = std::hash<int>{}(node.port);
+        return host_hash ^ (port_hash << 1);
+    }
+};
+
+}
+
+}
+
+#endif // end SEWENEW_REDISPLUSPLUS_NODE_H

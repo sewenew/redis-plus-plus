@@ -20,6 +20,7 @@
 #include <exception>
 #include <string>
 #include <hiredis/hiredis.h>
+#include "node.h"
 
 namespace sw {
 
@@ -27,7 +28,8 @@ namespace redis {
 
 enum ReplyErrorType {
     ERR,
-    MOVED
+    MOVED,
+    ASK
 };
 
 class Error : public std::exception {
@@ -139,6 +141,33 @@ public:
     MovedError& operator=(MovedError &&) = default;
 
     virtual ~MovedError() = default;
+};
+
+class AskError : public ReplyError {
+public:
+    AskError(const std::string &msg);
+
+    AskError(const AskError &) = default;
+    AskError& operator=(const AskError &) = default;
+
+    AskError(AskError &&) = default;
+    AskError& operator=(AskError &&) = default;
+
+    virtual ~AskError() = default;
+
+    std::size_t slot() const {
+        return _slot;
+    }
+
+    const Node& node() const {
+        return _node;
+    }
+
+private:
+    std::pair<std::size_t, Node> _parse_error(const std::string &msg) const;
+
+    std::size_t _slot = 0;
+    Node _node;
 };
 
 void throw_error(redisContext &context, const std::string &err_info);

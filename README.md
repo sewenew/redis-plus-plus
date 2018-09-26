@@ -12,7 +12,7 @@ This is a C++ client for Redis. It's based on [hiredis](https://github.com/redis
 - Redis publish/subscribe.
 - Redis pipeline.
 - Redis transaction.
-- Redis Cluster (coming soon).
+- Redis Cluster (unstable).
 
 ## Installation
 

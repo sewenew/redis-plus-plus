@@ -18,13 +18,17 @@
 #include <cassert>
 #include <cerrno>
 #include <unordered_map>
+#include <tuple>
 
 namespace {
 
-sw::redis::ReplyErrorType error_type(const std::string &msg);
+using namespace sw::redis;
 
-std::unordered_map<std::string, sw::redis::ReplyErrorType> error_map = {
-    {"MOVED", sw::redis::ReplyErrorType::MOVED}
+std::pair<ReplyErrorType, std::string> parse_error(const std::string &msg);
+
+std::unordered_map<std::string, ReplyErrorType> error_map = {
+    {"MOVED", ReplyErrorType::MOVED},
+    {"ASK", ReplyErrorType::ASK}
 };
 
 }
@@ -32,6 +36,31 @@ std::unordered_map<std::string, sw::redis::ReplyErrorType> error_map = {
 namespace sw {
 
 namespace redis {
+
+inline AskError::AskError(const std::string &msg) : ReplyError(msg) {
+    std::tie(_slot, _node) = _parse_error(msg);
+}
+
+std::pair<std::size_t, Node> AskError::_parse_error(const std::string &msg) const {
+    // "slot ip:port"
+    auto space_pos = msg.find(" ");
+    auto colon_pos = msg.find(":");
+    if (space_pos == std::string::npos
+            || colon_pos == std::string::npos
+            || colon_pos < space_pos) {
+        throw ProtoError("Invalid ASK error message: " + msg);
+    }
+
+    try {
+        auto slot = std::stoull(msg.substr(0, space_pos));
+        auto host = msg.substr(space_pos + 1, colon_pos - space_pos - 1);
+        auto port = std::stoi(msg.substr(colon_pos + 1));
+
+        return {slot, {host, port}};
+    } catch (const std::exception &e) {
+        throw ProtoError("Invalid ASK error message: " + msg);
+    }
+}
 
 void throw_error(redisContext &context, const std::string &err_info) {
     auto err_code = context.err;
@@ -82,10 +111,17 @@ void throw_error(const redisReply &reply) {
 
     auto err_str = std::string(reply.str, reply.len);
 
-    auto err_type = error_type(err_str);
+    auto err_type = ReplyErrorType::ERR;
+    std::string err_msg;
+    std::tie(err_type, err_msg) = parse_error(err_str);
+
     switch (err_type) {
     case ReplyErrorType::MOVED:
-        throw MovedError(err_str);
+        throw MovedError(err_msg);
+        break;
+
+    case ReplyErrorType::ASK:
+        throw AskError(err_msg);
         break;
 
     default:
@@ -100,20 +136,26 @@ void throw_error(const redisReply &reply) {
 
 namespace {
 
-sw::redis::ReplyErrorType error_type(const std::string &msg) {
-    // The error message contains an Error Prefix, and an optional description.
-    auto idx = msg.find_first_of(" \n");
+using namespace sw::redis;
 
-    auto err_prefix = msg.substr(0, idx);
+std::pair<ReplyErrorType, std::string> parse_error(const std::string &err) {
+    // The error contains an Error Prefix, and an optional error message.
+    auto idx = err.find_first_of(" \n");
+
+    if (idx == std::string::npos) {
+        throw ProtoError("No Error Prefix: " + err);
+    }
+
+    auto err_prefix = err.substr(0, idx);
+    auto err_type = ReplyErrorType::ERR;
 
     auto iter = error_map.find(err_prefix);
-    if (iter == error_map.end()) {
-        // Generic error.
-        return sw::redis::ReplyErrorType::ERR;
-    } else {
+    if (iter != error_map.end()) {
         // Specific error.
-        return iter->second;
-    }
+        err_type = iter->second;
+    } // else Generic error.
+
+    return {err_type, err.substr(idx + 1)};
 }
 
 }
