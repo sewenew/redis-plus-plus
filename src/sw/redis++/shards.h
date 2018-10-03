@@ -17,83 +17,95 @@
 #ifndef SEWENEW_REDISPLUSPLUS_SHARDS_H
 #define SEWENEW_REDISPLUSPLUS_SHARDS_H
 
-#include <map>
-#include <unordered_map>
 #include <string>
-#include <random>
-#include "reply.h"
-#include "connection_pool.h"
-#include "node.h"
+#include <map>
+#include "errors.h"
 
 namespace sw {
 
 namespace redis {
 
+using Slot = std::size_t;
+
 struct SlotRange {
-    std::size_t min;
-    std::size_t max;
+    Slot min;
+    Slot max;
 };
 
 inline bool operator<(const SlotRange &lhs, const SlotRange &rhs) {
     return lhs.max < rhs.max;
 }
 
-class ShardsPool {
+struct Node {
+    std::string host;
+    int port;
+};
+
+inline bool operator==(const Node &lhs, const Node &rhs) {
+    return lhs.host == rhs.host && lhs.port == rhs.port;
+}
+
+struct NodeHash {
+    std::size_t operator()(const Node &node) const noexcept {
+        auto host_hash = std::hash<std::string>{}(node.host);
+        auto port_hash = std::hash<int>{}(node.port);
+        return host_hash ^ (port_hash << 1);
+    }
+};
+
+using Shards = std::map<SlotRange, Node>;
+
+class RedirectionError : public ReplyError {
 public:
-    ShardsPool() = default;
+    RedirectionError(const std::string &msg);
 
-    ShardsPool(const ShardsPool &that) = delete;
-    ShardsPool& operator=(const ShardsPool &that) = delete;
+    RedirectionError(const RedirectionError &) = default;
+    RedirectionError& operator=(const RedirectionError &) = default;
 
-    ShardsPool(ShardsPool &&that);
-    ShardsPool& operator=(ShardsPool &&that);
+    RedirectionError(RedirectionError &&) = default;
+    RedirectionError& operator=(RedirectionError &&) = default;
 
-    ~ShardsPool() = default;
+    virtual ~RedirectionError() = default;
 
-    ShardsPool(const ConnectionPoolOptions &pool_opts,
-                const ConnectionOptions &connection_opts);
+    Slot slot() const {
+        return _slot;
+    }
 
-    // Fetch a connection by key.
-    Connection fetch(const StringView &key);
-
-    // Randomly pick a connection.
-    Connection fetch();
-
-    // Fetch a connection by node.
-    Connection fetch(const Node &node);
-
-    void release(Connection connection);
-
-    void update();
+    const Node& node() const {
+        return _node;
+    }
 
 private:
-    void _move(ShardsPool &&that);
+    std::pair<Slot, Node> _parse_error(const std::string &msg) const;
 
-    // Get slot by key.
-    std::size_t _slot(const StringView &key) const;
+    Slot _slot = 0;
+    Node _node;
+};
 
-    // Randomly pick a slot.
-    std::size_t _slot() const;
+class MovedError : public RedirectionError {
+public:
+    explicit MovedError(const std::string &msg) : RedirectionError(msg) {}
 
-    Connection _fetch(std::size_t slot);
+    MovedError(const MovedError &) = default;
+    MovedError& operator=(const MovedError &) = default;
 
-    ReplyUPtr _cluster_slots(const ConnectionOptions &opts) const;
+    MovedError(MovedError &&) = default;
+    MovedError& operator=(MovedError &&) = default;
 
-    std::map<SlotRange, Node> _cluster_slots() const;
+    virtual ~MovedError() = default;
+};
 
-    std::pair<SlotRange, Node> _parse_slot_info(redisReply &reply) const;
+class AskError : public RedirectionError {
+public:
+    explicit AskError(const std::string &msg) : RedirectionError(msg) {}
 
-    ConnectionPoolOptions _pool_opts;
+    AskError(const AskError &) = default;
+    AskError& operator=(const AskError &) = default;
 
-    ConnectionOptions _connection_opts;
+    AskError(AskError &&) = default;
+    AskError& operator=(AskError &&) = default;
 
-    std::map<SlotRange, Node> _shards;
-
-    std::unordered_map<Node, ConnectionPool, NodeHash> _pool;
-
-    std::mutex _mutex;
-
-    static const std::size_t SHARDS = 16383;
+    virtual ~AskError() = default;
 };
 
 }

@@ -24,14 +24,6 @@ namespace sw {
 
 namespace redis {
 
-RedisCluster::ShardsPoolGuard::ShardsPoolGuard(ShardsPool &pool, Connection &connection) :
-                                                _pool(pool),
-                                                _connection(connection) {}
-
-RedisCluster::ShardsPoolGuard::~ShardsPoolGuard() {
-    _pool.release(std::move(_connection));
-}
-
 RedisCluster::RedisCluster(const std::string &uri) : RedisCluster(ConnectionOptions(uri)) {}
 
 // KEY commands.
@@ -591,7 +583,6 @@ OptionalLongLong RedisCluster::georadiusbymember(const StringView &key,
 }
 
 Connection RedisCluster::_asking(const Node &node) {
-    // TODO: if node doesn't exist, should we connect to this new node?
     auto connection = _pool.fetch(node);
 
     assert(!connection.broken());

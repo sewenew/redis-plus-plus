@@ -21,7 +21,7 @@
 #include <chrono>
 #include <initializer_list>
 #include <tuple>
-#include "shards.h"
+#include "shards_pool.h"
 #include "reply.h"
 #include "command_options.h"
 #include "utils.h"
@@ -862,16 +862,6 @@ public:
                     Output output);
 
 private:
-    class ShardsPoolGuard {
-    public:
-        ShardsPoolGuard(ShardsPool &pool, Connection &connection);
-        ~ShardsPoolGuard();
-
-    private:
-        ShardsPool &_pool;
-        Connection &_connection;
-    };
-
     template <typename Cmd, typename ...Args>
     ReplyUPtr _command(Cmd cmd, Connection &connection, Args &&...args);
 

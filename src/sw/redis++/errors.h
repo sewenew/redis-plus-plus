@@ -20,7 +20,6 @@
 #include <exception>
 #include <string>
 #include <hiredis/hiredis.h>
-#include "node.h"
 
 namespace sw {
 
@@ -130,45 +129,10 @@ public:
     virtual ~ReplyError() = default;
 };
 
-class MovedError : public ReplyError {
-public:
-    MovedError(const std::string &msg) : ReplyError(msg) {}
+// MovedError and AskError are defined in shards.h
+class MovedError;
 
-    MovedError(const MovedError &) = default;
-    MovedError& operator=(const MovedError &) = default;
-
-    MovedError(MovedError &&) = default;
-    MovedError& operator=(MovedError &&) = default;
-
-    virtual ~MovedError() = default;
-};
-
-class AskError : public ReplyError {
-public:
-    AskError(const std::string &msg);
-
-    AskError(const AskError &) = default;
-    AskError& operator=(const AskError &) = default;
-
-    AskError(AskError &&) = default;
-    AskError& operator=(AskError &&) = default;
-
-    virtual ~AskError() = default;
-
-    std::size_t slot() const {
-        return _slot;
-    }
-
-    const Node& node() const {
-        return _node;
-    }
-
-private:
-    std::pair<std::size_t, Node> _parse_error(const std::string &msg) const;
-
-    std::size_t _slot = 0;
-    Node _node;
-};
+class AskError;
 
 void throw_error(redisContext &context, const std::string &err_info);
 

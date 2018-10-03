@@ -22,7 +22,7 @@
 #include "reply.h"
 #include "utils.h"
 #include "errors.h"
-#include "shards.h"
+#include "shards_pool.h"
 
 namespace sw {
 
@@ -76,17 +76,19 @@ ReplyUPtr RedisCluster::_command(Cmd cmd, Connection &connection, Args &&...args
 
 template <typename Cmd, typename ...Args>
 ReplyUPtr RedisCluster::_command(Cmd cmd, const StringView &key, Args &&...args) {
-    // Try at most 3 times.
-    for (auto i = 0; i < 3; ++i) {
+    for (auto idx = 0; idx < 2; ++idx) {
         try {
             auto connection = _pool.fetch(key);
 
             return _command(cmd, connection, std::forward<Args>(args)...);
         } catch (const ClosedError &err) {
-            // TODO: Node might be removed.
+            // Node might be removed.
             // 1. Get up-to-date slot mapping to check if the node still exists.
+            _pool.update();
+
+            // TODO:
             // 2. If it's NOT exist, update slot mapping, and retry.
-            // 3. If it's still exist, that means the node is down, throw exception.
+            // 3. If it's still exist, that means the node is down, NOT removed, throw exception.
         } catch (const MovedError &err) {
             // Slot mapping has been changed, update it and try again.
             _pool.update();
@@ -99,7 +101,7 @@ ReplyUPtr RedisCluster::_command(Cmd cmd, const StringView &key, Args &&...args)
         } // For other exceptions, just throw it.
     }
 
-    throw Error("Tried too many times and still get MOVED error");
+    throw Error("Failed to send command with key: " + std::string(key.data(), key.size()));
 }
 
 // KEY commands.

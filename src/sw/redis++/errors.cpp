@@ -19,6 +19,7 @@
 #include <cerrno>
 #include <unordered_map>
 #include <tuple>
+#include "shards.h"
 
 namespace {
 
@@ -36,31 +37,6 @@ std::unordered_map<std::string, ReplyErrorType> error_map = {
 namespace sw {
 
 namespace redis {
-
-inline AskError::AskError(const std::string &msg) : ReplyError(msg) {
-    std::tie(_slot, _node) = _parse_error(msg);
-}
-
-std::pair<std::size_t, Node> AskError::_parse_error(const std::string &msg) const {
-    // "slot ip:port"
-    auto space_pos = msg.find(" ");
-    auto colon_pos = msg.find(":");
-    if (space_pos == std::string::npos
-            || colon_pos == std::string::npos
-            || colon_pos < space_pos) {
-        throw ProtoError("Invalid ASK error message: " + msg);
-    }
-
-    try {
-        auto slot = std::stoull(msg.substr(0, space_pos));
-        auto host = msg.substr(space_pos + 1, colon_pos - space_pos - 1);
-        auto port = std::stoi(msg.substr(colon_pos + 1));
-
-        return {slot, {host, port}};
-    } catch (const std::exception &e) {
-        throw ProtoError("Invalid ASK error message: " + msg);
-    }
-}
 
 void throw_error(redisContext &context, const std::string &err_info) {
     auto err_code = context.err;
