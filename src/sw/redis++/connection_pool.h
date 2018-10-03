@@ -44,8 +44,12 @@ public:
                     const ConnectionOptions &connection_opts);
 
     ConnectionPool(ConnectionPool &&that);
-
     ConnectionPool& operator=(ConnectionPool &&that);
+
+    ConnectionPool(const ConnectionPool &) = delete;
+    ConnectionPool& operator=(const ConnectionPool &) = delete;
+
+    ~ConnectionPool() = default;
 
     // Fetch a connection from pool.
     Connection fetch();
@@ -70,6 +74,8 @@ private:
     ConnectionPoolOptions _pool_opts;
 
     std::deque<Connection> _pool;
+
+    std::size_t _used_connections = 0;
 
     std::mutex _mutex;
 

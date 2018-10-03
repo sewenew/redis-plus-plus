@@ -31,6 +31,7 @@
 #include "script_cmds_test.h"
 #include "pubsub_test.h"
 #include "pipeline_transaction_test.h"
+#include "threads_test.h"
 
 namespace {
 
@@ -108,6 +109,11 @@ int main(int argc, char **argv) {
         pipe_tx_test.run();
 
         std::cout << "Pass pipeline and transaction tests" << std::endl;
+
+        sw::redis::test::ThreadsTest threads_test(opts);
+        threads_test.run();
+
+        std::cout << "Pass threads tests" << std::endl;
 
         std::cout << "Pass all tests" << std::endl;
     } catch (const sw::redis::Error &e) {

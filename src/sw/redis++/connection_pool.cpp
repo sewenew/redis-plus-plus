@@ -30,9 +30,7 @@ ConnectionPool::ConnectionPool(const ConnectionPoolOptions &pool_opts,
         throw Error("CANNOT create an empty pool");
     }
 
-    for (std::size_t idx = 0; idx != _pool_opts.size; ++idx) {
-        _pool.emplace_back(connection_opts);
-    }
+    // Lazily create connections.
 }
 
 ConnectionPool::ConnectionPool(ConnectionPool &&that) {
@@ -57,7 +55,16 @@ Connection ConnectionPool::fetch() {
     std::unique_lock<std::mutex> lock(_mutex);
 
     if (_pool.empty()) {
-        _wait_for_connection(lock);
+        if (_used_connections == _pool_opts.size) {
+            _wait_for_connection(lock);
+        } else {
+            // Lazily create a new connection.
+            auto connection = Connection(_opts);
+
+            ++_used_connections;
+
+            return connection;
+        }
     }
 
     // _pool is NOT empty.
@@ -98,6 +105,7 @@ void ConnectionPool::_move(ConnectionPool &&that) {
     _opts = std::move(that._opts);
     _pool_opts = std::move(that._pool_opts);
     _pool = std::move(that._pool);
+    _used_connections = that._used_connections;
 }
 
 Connection ConnectionPool::_fetch() {
