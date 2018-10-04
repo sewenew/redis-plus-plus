@@ -16,6 +16,7 @@
 
 #include <unistd.h>
 #include <chrono>
+#include <tuple>
 #include <iostream>
 #include <sw/redis++/redis++.h>
 #include "sanity_test.h"
@@ -32,18 +33,22 @@
 #include "pubsub_test.h"
 #include "pipeline_transaction_test.h"
 #include "threads_test.h"
+#include "cluster_test.h"
 
 namespace {
 
 void print_help();
 
-sw::redis::ConnectionOptions parse_options(int argc, char **argv);
+auto parse_options(int argc, char **argv)
+    -> std::pair<sw::redis::ConnectionOptions, sw::redis::ConnectionOptions>;
 
 }
 
 int main(int argc, char **argv) {
     try {
-        auto opts = parse_options(argc, argv);
+        sw::redis::ConnectionOptions opts;
+        sw::redis::ConnectionOptions cluster_node_opts;
+        std::tie(opts, cluster_node_opts) = parse_options(argc, argv);
 
         sw::redis::test::SanityTest sanity_test(opts);
         sanity_test.run();
@@ -115,6 +120,11 @@ int main(int argc, char **argv) {
 
         std::cout << "Pass threads tests" << std::endl;
 
+        sw::redis::test::ClusterTest cluster_test(cluster_node_opts);
+        cluster_test.run();
+
+        std::cout << "Pass cluster tests" << std::endl;
+
         std::cout << "Pass all tests" << std::endl;
     } catch (const sw::redis::Error &e) {
         std::cerr << "Test failed: " << e.what() << std::endl;
@@ -127,16 +137,20 @@ int main(int argc, char **argv) {
 namespace {
 
 void print_help() {
-    std::cerr << "Usage: test_redis++ -h host -p port" << std::endl;
+    std::cerr << "Usage: test_redis++ -h host -p port"
+       << " -a auth -n cluster_node -c cluster_port" << std::endl;
 }
 
-sw::redis::ConnectionOptions parse_options(int argc, char **argv) {
+auto parse_options(int argc, char **argv)
+    -> std::pair<sw::redis::ConnectionOptions, sw::redis::ConnectionOptions> {
     std::string host;
     int port = 0;
     std::string auth;
+    std::string cluster_node;
+    int cluster_port = 0;
 
     int opt = 0;
-    while ((opt = getopt(argc, argv, "h:p:a:")) != -1) {
+    while ((opt = getopt(argc, argv, "h:p:a:n:c:")) != -1) {
         switch (opt) {
         case 'h':
             host = optarg;
@@ -150,6 +164,14 @@ sw::redis::ConnectionOptions parse_options(int argc, char **argv) {
             auth = optarg;
             break;
 
+        case 'n':
+            cluster_node = optarg;
+            break;
+
+        case 'c':
+            cluster_port = std::stoi(optarg);
+            break;
+
         default:
             print_help();
             throw sw::redis::Error("Failed to parse connection options");
@@ -157,7 +179,7 @@ sw::redis::ConnectionOptions parse_options(int argc, char **argv) {
         }
     }
 
-    if (host.empty() || port <= 0) {
+    if (host.empty() || port <= 0 || cluster_node.empty() || cluster_port <= 0) {
         print_help();
         throw sw::redis::Error("Invalid connection options");
     }
@@ -167,7 +189,12 @@ sw::redis::ConnectionOptions parse_options(int argc, char **argv) {
     opts.port = port;
     opts.password = auth;
 
-    return opts;
+    sw::redis::ConnectionOptions cluster_node_opts;
+    cluster_node_opts.host = cluster_node;
+    cluster_node_opts.port = cluster_port;
+    cluster_node_opts.password = auth;
+
+    return {opts, cluster_node_opts};
 }
 
 }

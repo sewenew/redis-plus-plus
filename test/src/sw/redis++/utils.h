@@ -44,19 +44,20 @@ inline std::string test_key(const std::string &k) {
     return "sw::redis::test::" + k;
 }
 
-class KeyDeleter {
+template <typename RedisType>
+class KeyDeleterTpl {
 public:
     template <typename Input>
-    KeyDeleter(Redis &redis, Input first, Input last) : _redis(redis), _keys(first, last) {
+    KeyDeleterTpl(RedisType &redis, Input first, Input last) : _redis(redis), _keys(first, last) {
         _delete();
     }
 
-    KeyDeleter(Redis &redis, std::initializer_list<std::string> il) :
-                KeyDeleter(redis, il.begin(), il.end()) {}
+    KeyDeleterTpl(RedisType &redis, std::initializer_list<std::string> il) :
+                KeyDeleterTpl(redis, il.begin(), il.end()) {}
 
-    KeyDeleter(Redis &redis, const std::string &key) : KeyDeleter(redis, {key}) {}
+    KeyDeleterTpl(RedisType &redis, const std::string &key) : KeyDeleterTpl(redis, {key}) {}
 
-    ~KeyDeleter() {
+    ~KeyDeleterTpl() {
         _delete();
     }
 
@@ -67,9 +68,13 @@ private:
         }
     }
 
-    Redis &_redis;
+    RedisType &_redis;
     std::vector<std::string> _keys;
 };
+
+using KeyDeleter = KeyDeleterTpl<Redis>;
+
+using ClusterKeyDeleter = KeyDeleterTpl<RedisCluster>;
 
 }
 
