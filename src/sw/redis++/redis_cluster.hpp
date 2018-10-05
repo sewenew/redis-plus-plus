@@ -36,74 +36,6 @@ ReplyUPtr RedisCluster::command(Cmd cmd, FirstArg &&first_arg, Args &&...args) {
                     std::forward<Args>(args)...);
 }
 
-template <typename Cmd, typename ...Args>
-ReplyUPtr RedisCluster::_command(Cmd cmd, std::true_type, const StringView &key, Args &&...args) {
-    return _command(cmd, key, key, std::forward<Args>(args)...);
-}
-
-template <typename Cmd, typename Input, typename ...Args>
-ReplyUPtr RedisCluster::_command(Cmd cmd, std::false_type, Input &&first, Args &&...args) {
-    return _range_command(cmd,
-                            std::is_convertible<
-                                typename std::decay<
-                                    decltype(*std::declval<Input>())>::type, StringView>(),
-                            std::forward<Input>(first),
-                            std::forward<Args>(args)...);
-}
-
-template <typename Cmd, typename Input, typename ...Args>
-ReplyUPtr RedisCluster::_range_command(Cmd cmd, std::true_type, Input input, Args &&...args) {
-    return _command(cmd, *input, input, std::forward<Args>(args)...);
-}
-
-template <typename Cmd, typename Input, typename ...Args>
-ReplyUPtr RedisCluster::_range_command(Cmd cmd, std::false_type, Input input, Args &&...args) {
-    return _command(cmd, std::get<0>(*input), input, std::forward<Args>(args)...);
-}
-
-template <typename Cmd, typename ...Args>
-ReplyUPtr RedisCluster::_command(Cmd cmd, Connection &connection, Args &&...args) {
-    assert(!connection.broken());
-
-    ShardsPoolGuard guard(_pool, connection);
-
-    cmd(connection, std::forward<Args>(args)...);
-
-    auto reply = connection.recv();
-
-    return reply;
-}
-
-template <typename Cmd, typename ...Args>
-ReplyUPtr RedisCluster::_command(Cmd cmd, const StringView &key, Args &&...args) {
-    for (auto idx = 0; idx < 2; ++idx) {
-        try {
-            auto connection = _pool.fetch(key);
-
-            return _command(cmd, connection, std::forward<Args>(args)...);
-        } catch (const ClosedError &err) {
-            // Node might be removed.
-            // 1. Get up-to-date slot mapping to check if the node still exists.
-            _pool.update();
-
-            // TODO:
-            // 2. If it's NOT exist, update slot mapping, and retry.
-            // 3. If it's still exist, that means the node is down, NOT removed, throw exception.
-        } catch (const MovedError &err) {
-            // Slot mapping has been changed, update it and try again.
-            _pool.update();
-        } catch (const AskError &err) {
-            // 1. send ASKING command.
-            auto connection = _asking(err.node());
-
-            // 2. resend last command.
-            return _command(cmd, connection, std::forward<Args>(args)...);
-        } // For other exceptions, just throw it.
-    }
-
-    throw Error("Failed to send command with key: " + std::string(key.data(), key.size()));
-}
-
 // KEY commands.
 
 template <typename Input>
@@ -872,44 +804,72 @@ void RedisCluster::georadiusbymember(const StringView &key,
     reply::to_array(*reply, output);
 }
 
-// SCRIPTING commands.
-
-template <typename Result>
-Result RedisCluster::eval(const StringView &script,
-                    std::initializer_list<StringView> keys,
-                    std::initializer_list<StringView> args) {
-    auto reply = command(cmd::eval, script, keys, args);
-
-    return reply::parse<Result>(*reply);
+template <typename Cmd, typename ...Args>
+ReplyUPtr RedisCluster::_command(Cmd cmd, std::true_type, const StringView &key, Args &&...args) {
+    return _command(cmd, key, key, std::forward<Args>(args)...);
 }
 
-template <typename Output>
-void RedisCluster::eval(const StringView &script,
-                    std::initializer_list<StringView> keys,
-                    std::initializer_list<StringView> args,
-                    Output output) {
-    auto reply = command(cmd::eval, script, keys, args);
-
-    reply::to_array(*reply, output);
+template <typename Cmd, typename Input, typename ...Args>
+ReplyUPtr RedisCluster::_command(Cmd cmd, std::false_type, Input &&first, Args &&...args) {
+    return _range_command(cmd,
+                            std::is_convertible<
+                                typename std::decay<
+                                    decltype(*std::declval<Input>())>::type, StringView>(),
+                            std::forward<Input>(first),
+                            std::forward<Args>(args)...);
 }
 
-template <typename Result>
-Result RedisCluster::evalsha(const StringView &script,
-                        std::initializer_list<StringView> keys,
-                        std::initializer_list<StringView> args) {
-    auto reply = command(cmd::evalsha, script, keys, args);
-
-    return reply::parse<Result>(*reply);
+template <typename Cmd, typename Input, typename ...Args>
+ReplyUPtr RedisCluster::_range_command(Cmd cmd, std::true_type, Input input, Args &&...args) {
+    return _command(cmd, *input, input, std::forward<Args>(args)...);
 }
 
-template <typename Output>
-void RedisCluster::evalsha(const StringView &script,
-                        std::initializer_list<StringView> keys,
-                        std::initializer_list<StringView> args,
-                        Output output) {
-    auto reply = command(cmd::evalsha, script, keys, args);
+template <typename Cmd, typename Input, typename ...Args>
+ReplyUPtr RedisCluster::_range_command(Cmd cmd, std::false_type, Input input, Args &&...args) {
+    return _command(cmd, std::get<0>(*input), input, std::forward<Args>(args)...);
+}
 
-    reply::to_array(*reply, output);
+template <typename Cmd, typename ...Args>
+ReplyUPtr RedisCluster::_command(Cmd cmd, Connection &connection, Args &&...args) {
+    assert(!connection.broken());
+
+    ShardsPoolGuard guard(_pool, connection);
+
+    cmd(connection, std::forward<Args>(args)...);
+
+    auto reply = connection.recv();
+
+    return reply;
+}
+
+template <typename Cmd, typename ...Args>
+ReplyUPtr RedisCluster::_command(Cmd cmd, const StringView &key, Args &&...args) {
+    for (auto idx = 0; idx < 2; ++idx) {
+        try {
+            auto connection = _pool.fetch(key);
+
+            return _command(cmd, connection, std::forward<Args>(args)...);
+        } catch (const ClosedError &err) {
+            // Node might be removed.
+            // 1. Get up-to-date slot mapping to check if the node still exists.
+            _pool.update();
+
+            // TODO:
+            // 2. If it's NOT exist, update slot mapping, and retry.
+            // 3. If it's still exist, that means the node is down, NOT removed, throw exception.
+        } catch (const MovedError &err) {
+            // Slot mapping has been changed, update it and try again.
+            _pool.update();
+        } catch (const AskError &err) {
+            // 1. send ASKING command.
+            auto connection = _asking(err.node());
+
+            // 2. resend last command.
+            return _command(cmd, connection, std::forward<Args>(args)...);
+        } // For other exceptions, just throw it.
+    }
+
+    throw Error("Failed to send command with key: " + std::string(key.data(), key.size()));
 }
 
 template <typename Cmd, typename ...Args>

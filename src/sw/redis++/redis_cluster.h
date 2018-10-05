@@ -837,30 +837,6 @@ public:
                             bool asc,
                             Output output);
 
-    // SCRIPTING commands.
-
-    template <typename Result>
-    Result eval(const StringView &script,
-                std::initializer_list<StringView> keys,
-                std::initializer_list<StringView> args);
-
-    template <typename Output>
-    void eval(const StringView &script,
-                std::initializer_list<StringView> keys,
-                std::initializer_list<StringView> args,
-                Output output);
-
-    template <typename Result>
-    Result evalsha(const StringView &script,
-                    std::initializer_list<StringView> keys,
-                    std::initializer_list<StringView> args);
-
-    template <typename Output>
-    void evalsha(const StringView &script,
-                    std::initializer_list<StringView> keys,
-                    std::initializer_list<StringView> args,
-                    Output output);
-
 private:
     template <typename Cmd, typename ...Args>
     ReplyUPtr _command(Cmd cmd, Connection &connection, Args &&...args);
