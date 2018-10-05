@@ -112,7 +112,7 @@ try {
     // LIST commands.
     redis.lpush("list", {"a", "b", "c"});
     std::vector<std::string> list;
-    redis.lrange("list", 0, -1, back_inserter(list));
+    redis.lrange("list", 0, -1, std::back_inserter(list));
 
     // HASH commands.
     // The same as redis.hset("hash", std::make_pair("field", "val"));
@@ -124,7 +124,7 @@ try {
     redis.hmset("hash", m.begin(), m.end());
     m.clear();
     redis.hgetall("hash", std::inserter(m, m.begin()));
-    std::vector<string> vals;
+    std::vector<std::string> vals;
     redis.hmget("hash", {"f1", "f2"}, std::back_inserter(vals));
 
     // SET commands.
@@ -175,7 +175,7 @@ try {
 
     auto lpush_result = pipe_replies.get<long long>(3);
 
-    vector<string> lrange_result
+    std::vector<std::string> lrange_result
     pipe_replies.get(4, back_inserter(lrange_result));
 
     // Transaction
@@ -190,8 +190,26 @@ try {
 
     auto incr_result1 = tx_replies.get<long long>(1);
 
-    vector<OptionalString> mget_result;
+    std::vector<OptionalString> mget_result;
     tx_replies.get(2, back_inserter(mget_result));
+
+    // Redis Cluster
+    auto redis_cluster = RedisCluster("tcp://127.0.0.1:7000");
+
+    // RedisCluster has similar interface as Redis.
+    redis_cluster.set("key", "value");
+    auto val = redis_cluster.get("key");
+    if (val) {
+        std::cout << *val << std::endl;
+    }
+
+    // Keys with hash-tag.
+    redis_cluster.set("key{tag}1", "val1");
+    redis_cluster.set("key{tag}2", "val2");
+    redis_cluster.set("key{tag}3", "val3");
+    std::vector<OptionalString> hash_tag_res;
+    redis_cluster.mget({"key{tag}1", "key{tag}2", "key{tag}3"},
+            std::back_inserter(hash_tag_res));
 
 } catch (const Error &e) {
     // Error handling.
@@ -249,6 +267,10 @@ Redis redis2("tcp://127.0.0.1");
 // Connect to Unix Domain Socket.
 Redis redis3("unix://path/to/socket");
 ```
+
+#### Lazily Create Connection
+
+Connections in the pool are lazily created. When the connection pool is initialized, i.e. the constructor of `Redis`, `Redis` does NOT connect to the server. Instead, it connects to the server only when you try to send command. In this way, we can avoid unnecessary connections. So if the pool size is 5, but the number of max concurrent connections is 3, there will be only 3 connections in the pool.
 
 ### Command
 
@@ -869,6 +891,100 @@ If any of `Pipeline`'s method throws an exception, the `Pipeline` object enters 
 #### Thread Safety
 
 `Transacation` is **NOT** thread-safe. If you want to call its member functions in multi-thread environment, you need to synchronize between threads manually.
+
+### Redis Cluster
+
+*redis-plus-plus* supports [Redis Cluster](https://redis.io/topics/cluster-tutorial). You can use `RedisCluster` class to send commands to Redis Cluster. It has similar interfaces as `Redis` class.
+
+#### Connection
+
+`RedisCluster` connects to all master nodes in the cluster. For each master node, it maintains a connection pool. By now, it doesn't connect to slave nodes.
+
+You can initialize a `RedisCluster` instance with `ConnectionOptions` and `ConnectionPoolOptions`. You only need to set a master node's host & port in `ConnectionOptions`, and `RedisCluster` will get other nodes' info automatically (with the CLUSTER SLOTS command). For each master node, it creates a connection pool with the specified `ConnectionPoolOptions`. If `ConnectionPoolOptions` is not specified, `RedisCluster` maintains a single connection to every master node.
+
+```
+// Set a master node's host & port.
+ConnectionOptions connection_options;
+connection_options.host = "127.0.0.1";  // Required.
+connection_options.port = 7000; // Optional. The default port is 6379.
+connection_options.password = "auth"; // Optional. No password by default.
+
+// Automatically get other nodes' info,
+// and connect to each master node with a single connection.
+RedisCluster cluster1(connection_options);
+
+ConnectionPoolOptions pool_options;
+pool_options.size = 3;
+
+// For each master node, maintains a connection pool of size 3.
+RedisCluster cluster2(connection_options, pool_options);
+```
+
+You can also specify connection option with an URI. However, in this way, you can only use default `ConnectionPoolOptions`, i.e. pool of size 1, and CANNOT specify password.
+
+```
+// Specify a master node's host & port.
+RedisCluster cluster3("tcp://127.0.0.1:7000");
+
+// Use default port, i.e. 6379.
+RedisCluster cluster4("tcp://127.0.0.1");
+```
+
+##### Others
+
+- `RedisCluster` only works with tcp connection. It CANNOT connect to Unix Domain Socket. If you specify Unix Domain Socket in `ConnectionOptions`, it throws an exception.
+- All nodes in the cluster should have the same password.
+- Since [Redis Cluster does NOT support multiple databses](https://redis.io/topics/cluster-spec#implemented-subset), `ConnectionOptions::db` is ignored.
+
+#### Interfaces
+
+As we mentioned, `RedisCluster`'s interfaces are similar to `Redis`. It supports most of `Redis`' intefaces (see `Redis`' [API Reference](https://github.com/sewenew/redis-plus-plus#api-reference) for details), except the following:
+
+- Not support commands without key as argument, e.g. [PING](https://redis.io/commands/ping), [INFO](https://redis.io/commands/info).
+- Not support commands related to Lua scripting, e.g. [EVAL](https://redis.io/commands/eval), [EVALSHA](https://redis.io/commands/evalsha).
+- Not support Pipeline and Transaction.
+
+`RedisCluster` does NOT support these interfaces, because it has no idea to which node these commands should be sent.
+
+Also you can use the [hash tags](https://redis.io/topics/cluster-spec#keys-hash-tags) to send multiple-key commands.
+
+#### Examples
+
+```
+#include <sw/redis++/redis++.h>
+
+using namespace sw::redis;
+
+auto redis_cluster = RedisCluster("tcp://127.0.0.1:7000");
+
+redis_cluster.set("key", "value");
+auto val = redis_cluster.get("key");
+if (val) {
+    std::cout << *val << std::endl;
+}
+
+// With hash-tag.
+redis_cluster.set("key{tag}1", "val1");
+redis_cluster.set("key{tag}2", "val2");
+redis_cluster.set("key{tag}3", "val3");
+std::vector<OptionalString> hash_tag_res;
+redis_cluster.mget({"key{tag}1", "key{tag}2", "key{tag}3"},
+        std::back_inserter(hash_tag_res));
+
+redis_cluster.lpush("list", {"1", "2", "3"});
+std::vector<std::string> list;
+redis_cluster.lrange("list", 0, -1, std::back_inserter(list));
+```
+
+#### Details
+
+`RedisCluster` maintains the newest slot-node mapping, and sends command directly to the right node. Normally it works as fast as `Redis`. If the cluster reshards, `RedisCluster` will follow the redirection, and it will finally update the slot-node mapping. It can correctly handle the following resharding cases:
+
+- Data migration between exist nodes.
+- Add new node to the cluster.
+- Remove node from the cluster.
+
+`redis-plus-plus` is able to handle both [MOVED](https://redis.io/topics/cluster-spec#moved-redirection) and [ASK](https://redis.io/topics/cluster-spec#ask-redirection) redirections, so it's a complete Redis Cluster client.
 
 ## Author
 
