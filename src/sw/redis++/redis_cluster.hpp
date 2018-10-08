@@ -837,9 +837,7 @@ ReplyUPtr RedisCluster::_command(Cmd cmd, Connection &connection, Args &&...args
 
     cmd(connection, std::forward<Args>(args)...);
 
-    auto reply = connection.recv();
-
-    return reply;
+    return connection.recv();
 }
 
 template <typename Cmd, typename ...Args>
@@ -865,10 +863,19 @@ ReplyUPtr RedisCluster::_command(Cmd cmd, const StringView &key, Args &&...args)
             auto connection = _asking(err.node());
 
             // 2. resend last command.
-            return _command(cmd, connection, std::forward<Args>(args)...);
+            try {
+                return _command(cmd, connection, std::forward<Args>(args)...);
+            } catch (const MovedError &err) {
+                throw Error("Slot migrating... ASKING node hasn't been set to IMPORTING state");
+            }
         } // For other exceptions, just throw it.
     }
 
+    // Possible failures:
+    // 1. Source node has already run 'CLUSTER SETSLOT xxx NODE xxx',
+    //    while the destination node has NOT run it.
+    //    In this case, client will be redirected by both nodes with MovedError.
+    // 2. Other failures...
     throw Error("Failed to send command with key: " + std::string(key.data(), key.size()));
 }
 

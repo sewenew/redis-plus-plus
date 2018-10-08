@@ -144,6 +144,9 @@ void ShardsPool::update() {
                     _add_node(node);
                 }
             }
+
+            // Update successfully.
+            return;
         } catch (const Error &) {
             // continue;
         }
