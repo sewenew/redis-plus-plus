@@ -21,6 +21,8 @@ target_link_libraries(${PROJECT_NAME} ${HIREDIS_STATIC_LIB})
 
 # redis++ dependency
 target_include_directories(${PROJECT_NAME} PUBLIC ../src)
-
 set(REDIS_PLUS_PLUS_LIB ${CMAKE_CURRENT_BINARY_DIR}/../lib/libredis++.a)
-target_link_libraries(${PROJECT_NAME} ${REDIS_PLUS_PLUS_LIB})
+
+find_package(Threads REQUIRED)
+
+target_link_libraries(${PROJECT_NAME} ${REDIS_PLUS_PLUS_LIB} ${CMAKE_THREAD_LIBS_INIT})
