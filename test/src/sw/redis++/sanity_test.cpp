@@ -29,6 +29,8 @@ void SanityTest::run() {
     _test_uri_ctor();
 
     _test_move_ctor();
+
+    _test_cmdargs();
 }
 
 void SanityTest::_test_uri_ctor() {
@@ -60,6 +62,42 @@ void SanityTest::_test_move_ctor() {
     auto test_move_ctor = std::move(_redis);
 
     _redis = std::move(test_move_ctor);
+}
+
+void SanityTest::_test_cmdargs() {
+    auto lpush_num = [](Connection &connection, const StringView &key, long long num) {
+        connection.send("LPUSH %b %lld",
+                        key.data(), key.size(),
+                        num);
+    };
+
+    auto lpush_nums = [](Connection &connection,
+                            const StringView &key,
+                            const std::vector<long long> &nums) {
+        CmdArgs args;
+        args.append("LPUSH").append(key);
+        for (auto num : nums) {
+            args.append(std::to_string(num));
+        }
+
+        connection.send(args);
+    };
+
+    auto key = test_key("lpush_num");
+
+    KeyDeleter deleter(_redis, key);
+
+    auto reply = _redis.command(lpush_num, key, 1);
+    REDIS_ASSERT(reply::parse<long long>(*reply) == 1, "failed to test cmdargs");
+
+    std::vector<long long> nums = {2, 3, 4, 5};
+    reply = _redis.command(lpush_nums, key, nums);
+    REDIS_ASSERT(reply::parse<long long>(*reply) == 5, "failed to test cmdargs");
+
+    std::vector<std::string> res;
+    _redis.lrange(key, 0, -1, std::back_inserter(res));
+    REDIS_ASSERT((res == std::vector<std::string>{"5", "4", "3", "2", "1"}),
+            "failed to test cmdargs");
 }
 
 }

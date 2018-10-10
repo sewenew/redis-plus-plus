@@ -36,6 +36,8 @@ private:
 
     void _test_move_ctor();
 
+    void _test_cmdargs();
+
     ConnectionOptions _opts;
 
     Redis _redis;

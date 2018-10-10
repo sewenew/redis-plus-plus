@@ -343,6 +343,49 @@ using OptionalDouble = Optional<double>;
 using OptionalStringPair = Optional<std::pair<std::string, std::string>>;
 ```
 
+#### `command` Method
+
+There're too many Redis commands, we haven't implemented all of them. However, you can use `Redis::command` method to send these commands to Redis.
+
+```
+template <typename Cmd, typename ...Args>
+ReplyUPtr Redis::command(Cmd cmd, Args &&...args);
+```
+
+In order to use this method, you need to pass in a `Cmd` object, which must be a callable object, e.g. function, functor, or lambda. The first argument of `Cmd` is of type `Connection`. `Redis::command` will fetch a connection from the connection pool, and pass the connection and `args` as arguments for `Cmd`. `Cmd` can call the overloaded `Connection::send` methods to send the command to Redis.
+
+`Redis::command` returns a `ReplyUPtr`, i.e. `std::unique_ptr<redisReply>`. Normally you don't need to parse it manually. Instead, you only need to pass the reply to `template <typename T> T reply::parse(redisReply &)` to get a value of type `T`. By now, `T` can be `std::string`, `double`, `long long`, `bool`, `void`, `Optional<T>`, `std::pair`, and `std::tuple`.
+
+Let's see an example:
+
+```
+auto lpush_num = [](Connection &connection, const StringView &key, long long num) {
+    connection.send("LPUSH %b %lld",
+                    key.data(), key.size(),
+                    num);
+};
+
+auto lpush_nums = [](Connection &connection,
+                        const StringView &key,
+                        const std::vector<long long> &nums) {
+    CmdArgs args;
+    args.append("LPUSH").append(key);
+    for (auto num : nums) {
+        args.append(std::to_string(num));
+    }
+
+    connection.send(args);
+};
+
+auto reply = redis.command(lpush_num, "list", 1);
+assert(reply::parse<long long>(*reply) == 1);
+
+reply = redis.command(lpush_nums, "list", std::vector<long long>{2, 3, 4, 5});
+assert(reply::parse<long long>(*reply) == 5);
+```
+
+Please see [connection.h](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/connection.h), [command_args.h](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/command_args.h), and [command.h](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/command.h) for details.
+
 #### Exception
 
 *redis-plus-plus* throws exceptions if it receives an *Error Reply* or something bad happens. All exceptions derived from `Error` class. See [errors.h](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/errors.h) for detail.

@@ -50,10 +50,8 @@ void set(Connection &connection,
     CmdArgs args;
     args << "SET" << key << val;
 
-    std::string ttl_options;
     if (ttl > 0) {
-        ttl_options = std::to_string(ttl);
-        args << "PX" << ttl_options;
+        args << "PX" << ttl;
     }
 
     detail::set_update_type(args, type);

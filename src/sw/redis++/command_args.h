@@ -29,6 +29,16 @@ namespace redis {
 
 class CmdArgs {
 public:
+    // Deep copy 'arg'.
+    CmdArgs& append(std::string arg);
+
+    // Shallow copy 'arg'.
+    CmdArgs& append(const StringView &arg);
+
+    // Shallow copy 'arg'.
+    CmdArgs& append(const char *arg);
+
+    // All overloads of operator<< are for internal use only.
     CmdArgs& operator<<(const StringView &arg);
 
     template <typename T,
@@ -36,8 +46,7 @@ public:
                                             || std::is_floating_point<T>::value,
                                         int>::type = 0>
     CmdArgs& operator<<(T arg) {
-        _numbers.push_back(std::to_string(arg));
-        return operator<<(_numbers.back());
+        return append(std::to_string(arg));
     }
 
     template <typename Iter>
@@ -75,8 +84,21 @@ private:
     std::vector<const char *> _argv;
     std::vector<std::size_t> _argv_len;
 
-    std::list<std::string> _numbers;
+    std::list<std::string> _args;
 };
+
+inline CmdArgs& CmdArgs::append(std::string arg) {
+    _args.push_back(std::move(arg));
+    return operator<<(_args.back());
+}
+
+inline CmdArgs& CmdArgs::append(const StringView &arg) {
+    return operator<<(arg);
+}
+
+inline CmdArgs& CmdArgs::append(const char *arg) {
+    return operator<<(arg);
+}
 
 inline CmdArgs& CmdArgs::operator<<(const StringView &arg) {
     _argv.push_back(arg.data());
