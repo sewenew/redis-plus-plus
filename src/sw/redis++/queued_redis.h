@@ -30,8 +30,6 @@ namespace sw {
 
 namespace redis {
 
-namespace chrono = std::chrono;
-
 class QueuedReplies;
 
 // If any command throws, QueuedRedis resets the connection, and becomes invalid.
@@ -160,7 +158,7 @@ public:
     }
 
     QueuedRedis& expire(const StringView &key,
-                        const chrono::seconds &timeout) {
+                        const std::chrono::seconds &timeout) {
         return expire(key, timeout.count());
     }
 
@@ -169,7 +167,8 @@ public:
     }
 
     QueuedRedis& expireat(const StringView &key,
-                            const chrono::time_point<chrono::system_clock, chrono::seconds> &tp) {
+                            const std::chrono::time_point<std::chrono::system_clock,
+                                                            std::chrono::seconds> &tp) {
         return expireat(key, tp.time_since_epoch().count());
     }
 
@@ -190,7 +189,7 @@ public:
     }
 
     QueuedRedis& pexpire(const StringView &key,
-                            const chrono::milliseconds &timeout) {
+                            const std::chrono::milliseconds &timeout) {
         return pexpire(key, timeout.count());
     }
 
@@ -199,8 +198,8 @@ public:
     }
 
     QueuedRedis& pexpireat(const StringView &key,
-                            const chrono::time_point<chrono::system_clock,
-                                                        chrono::milliseconds> &tp) {
+                            const std::chrono::time_point<std::chrono::system_clock,
+                                                            std::chrono::milliseconds> &tp) {
         return pexpireat(key, tp.time_since_epoch().count());
     }
 
@@ -229,7 +228,7 @@ public:
 
     QueuedRedis& restore(const StringView &key,
                             const StringView &val,
-                            const chrono::milliseconds &ttl = std::chrono::milliseconds{0},
+                            const std::chrono::milliseconds &ttl = std::chrono::milliseconds{0},
                             bool replace = false) {
         return restore(key, val, ttl.count(), replace);
     }
@@ -296,7 +295,7 @@ public:
         return command(cmd::wait, numslaves, timeout);
     }
 
-    QueuedRedis& wait(long long numslaves, const chrono::milliseconds &timeout) {
+    QueuedRedis& wait(long long numslaves, const std::chrono::milliseconds &timeout) {
         return wait(numslaves, timeout.count());
     }
 
@@ -414,7 +413,7 @@ public:
 
     QueuedRedis& set(const StringView &key,
                         const StringView &val,
-                        const chrono::milliseconds &ttl = chrono::milliseconds(0),
+                        const std::chrono::milliseconds &ttl = std::chrono::milliseconds(0),
                         UpdateType type = UpdateType::ALWAYS) {
         _set_cmd_indexes.push_back(_cmd_num);
 
@@ -468,13 +467,13 @@ public:
     template <typename Input>
     QueuedRedis& blpop(Input first,
                         Input last,
-                        const chrono::seconds &timeout = chrono::seconds{0}) {
+                        const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
         return blpop(first, last, timeout.count());
     }
 
     template <typename T>
     QueuedRedis& blpop(std::initializer_list<T> il,
-                        const chrono::seconds &timeout = chrono::seconds{0}) {
+                        const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
         return blpop(il.begin(), il.end(), timeout);
     }
 
@@ -491,13 +490,13 @@ public:
     template <typename Input>
     QueuedRedis& brpop(Input first,
                         Input last,
-                        const chrono::seconds &timeout = chrono::seconds{0}) {
+                        const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
         return brpop(first, last, timeout.count());
     }
 
     template <typename T>
     QueuedRedis& brpop(std::initializer_list<T> il,
-                        const chrono::seconds &timeout = chrono::seconds{0}) {
+                        const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
         return brpop(il.begin(), il.end(), timeout);
     }
 
@@ -509,7 +508,7 @@ public:
 
     QueuedRedis& brpoplpush(const StringView &source,
                             const StringView &destination,
-                            const chrono::seconds &timeout = chrono::seconds{0}) {
+                            const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
         return brpoplpush(source, destination, timeout.count());
     }
 
