@@ -582,11 +582,7 @@ OptionalLongLong RedisCluster::georadiusbymember(const StringView &key,
     return reply::parse<OptionalLongLong>(*reply);
 }
 
-Connection RedisCluster::_asking(const Node &node) {
-    auto connection = _pool.fetch(node);
-
-    assert(!connection.broken());
-
+void RedisCluster::_asking(Connection &connection) {
     // Send ASKING command.
     connection.send("ASKING");
 
@@ -595,8 +591,6 @@ Connection RedisCluster::_asking(const Node &node) {
     assert(reply);
 
     reply::parse<void>(*reply);
-
-    return connection;
 }
 
 }

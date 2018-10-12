@@ -57,49 +57,31 @@ ShardsPool& ShardsPool::operator=(ShardsPool &&that) {
     return *this;
 }
 
-Connection ShardsPool::fetch(const StringView &key) {
+ConnectionPoolSPtr ShardsPool::fetch(const StringView &key) {
     auto slot = _slot(key);
 
     return _fetch(slot);
 }
 
-Connection ShardsPool::fetch() {
+ConnectionPoolSPtr ShardsPool::fetch() {
     auto slot = _slot();
 
     return _fetch(slot);
 }
 
-Connection ShardsPool::fetch(const Node &node) {
+ConnectionPoolSPtr ShardsPool::fetch(const Node &node) {
     std::lock_guard<std::mutex> lock(_mutex);
 
     auto iter = _pool.find(node);
     if (iter == _pool.end()) {
         // Node doesn't exist, and it should be a newly created node.
         // So add a new connection pool.
-        _add_node(node);
-
-        iter = _pool.find(node);
+        iter = _add_node(node);
     }
 
     assert(iter != _pool.end());
 
-    return iter->second.fetch();
-}
-
-void ShardsPool::release(Connection connection) {
-    const auto &opts = connection.options();
-    Node node{opts.host, opts.port};
-
-    std::lock_guard<std::mutex> lock(_mutex);
-
-    auto iter = _pool.find(node);
-    if (iter == _pool.end()) {
-        // The corresponding pool no longer exist. Let it go.
-        return;
-    }
-
-    auto &pool = iter->second;
-    pool.release(std::move(connection));
+    return iter->second;
 }
 
 void ShardsPool::update() {
@@ -107,12 +89,16 @@ void ShardsPool::update() {
     // Try at most 3 times.
     for (auto idx = 0; idx < 3; ++idx) {
         try {
-            // Randomly pick a connection/node.
-            auto connection = fetch();
+            // Randomly pick a connection pool.
+            auto pool = fetch();
+
+            assert(bool(pool));
+
+            auto connection = pool->fetch();
 
             assert(!connection.broken());
 
-            ShardsPoolGuard guard(*this, connection);
+            ConnectionPoolGuard guard(*pool, connection);
 
             auto shards = _cluster_slots(connection);
 
@@ -282,7 +268,7 @@ Slot ShardsPool::_slot() const {
     return uniform_dist(engine);
 }
 
-Connection ShardsPool::_fetch(Slot slot) {
+ConnectionPoolSPtr ShardsPool::_fetch(Slot slot) {
     std::lock_guard<std::mutex> lock(_mutex);
 
     auto shards_iter = _shards.lower_bound(SlotRange{slot, slot});
@@ -297,23 +283,15 @@ Connection ShardsPool::_fetch(Slot slot) {
         throw Error("Slot is NOT covered: " + std::to_string(slot));
     }
 
-    return node_iter->second.fetch();
+    return node_iter->second;
 }
 
-void ShardsPool::_add_node(const Node &node) {
+auto ShardsPool::_add_node(const Node &node) -> NodeMap::iterator {
     auto opts = _connection_opts;
     opts.host = node.host;
     opts.port = node.port;
 
-    _pool.emplace(node, ConnectionPool(_pool_opts, opts));
-}
-
-ShardsPoolGuard::ShardsPoolGuard(ShardsPool &pool, Connection &connection) :
-                                    _pool(pool),
-                                    _connection(connection) {}
-
-ShardsPoolGuard::~ShardsPoolGuard() {
-    _pool.release(std::move(_connection));
+    return _pool.emplace(node, std::make_shared<ConnectionPool>(_pool_opts, opts)).first;
 }
 
 }

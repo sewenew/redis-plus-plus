@@ -975,16 +975,6 @@ public:
     long long publish(const StringView &channel, const StringView &message);
 
 private:
-    class ConnectionPoolGuard {
-    public:
-        ConnectionPoolGuard(ConnectionPool &pool, Connection &connection);
-        ~ConnectionPoolGuard();
-
-    private:
-        ConnectionPool &_pool;
-        Connection &_connection;
-    };
-
     template <typename Cmd, typename ...Args>
     ReplyUPtr _score_command(std::true_type, Cmd cmd, Args &&... args);
 

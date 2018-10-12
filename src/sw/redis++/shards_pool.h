@@ -20,6 +20,7 @@
 #include <unordered_map>
 #include <string>
 #include <random>
+#include <memory>
 #include "reply.h"
 #include "connection_pool.h"
 #include "shards.h"
@@ -27,6 +28,8 @@
 namespace sw {
 
 namespace redis {
+
+using ConnectionPoolSPtr = std::shared_ptr<ConnectionPool>;
 
 class ShardsPool {
 public:
@@ -43,16 +46,14 @@ public:
     ShardsPool(const ConnectionPoolOptions &pool_opts,
                 const ConnectionOptions &connection_opts);
 
-    // Fetch a connection by key.
-    Connection fetch(const StringView &key);
+    // Fetch a connection pool by key.
+    ConnectionPoolSPtr fetch(const StringView &key);
 
-    // Randomly pick a connection.
-    Connection fetch();
+    // Randomly pick a connection pool.
+    ConnectionPoolSPtr fetch();
 
-    // Fetch a connection by node.
-    Connection fetch(const Node &node);
-
-    void release(Connection connection);
+    // Fetch a connection pool by node.
+    ConnectionPoolSPtr fetch(const Node &node);
 
     void update();
 
@@ -75,9 +76,11 @@ private:
     // Randomly pick a slot.
     std::size_t _slot() const;
 
-    Connection _fetch(Slot slot);
+    ConnectionPoolSPtr _fetch(Slot slot);
 
-    void _add_node(const Node &node);
+    using NodeMap = std::unordered_map<Node, ConnectionPoolSPtr, NodeHash>;
+
+    NodeMap::iterator _add_node(const Node &node);
 
     ConnectionPoolOptions _pool_opts;
 
@@ -85,21 +88,11 @@ private:
 
     Shards _shards;
 
-    std::unordered_map<Node, ConnectionPool, NodeHash> _pool;
+    NodeMap _pool;
 
     std::mutex _mutex;
 
     static const std::size_t SHARDS = 16383;
-};
-
-class ShardsPoolGuard {
-public:
-    ShardsPoolGuard(ShardsPool &pool, Connection &connection);
-    ~ShardsPoolGuard();
-
-private:
-    ShardsPool &_pool;
-    Connection &_connection;
 };
 
 }

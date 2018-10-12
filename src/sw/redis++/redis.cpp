@@ -25,15 +25,7 @@ namespace sw {
 
 namespace redis {
 
-Redis::ConnectionPoolGuard::ConnectionPoolGuard(ConnectionPool &pool, Connection &connection) :
-                                                _pool(pool),
-                                                _connection(connection) {}
-
 Redis::Redis(const std::string &uri) : Redis(ConnectionOptions(uri)) {}
-
-Redis::ConnectionPoolGuard::~ConnectionPoolGuard() {
-    _pool.release(std::move(_connection));
-}
 
 Pipeline Redis::pipeline() {
     return Pipeline(_pool.create());

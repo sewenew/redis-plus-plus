@@ -856,7 +856,7 @@ private:
     template <typename Cmd, typename Input, typename ...Args>
     ReplyUPtr _range_command(Cmd cmd, std::false_type, Input input, Args &&...args);
 
-    Connection _asking(const Node &node);
+    void _asking(Connection &connection);
 
     template <typename Cmd, typename ...Args>
     ReplyUPtr _score_command(std::true_type, Cmd cmd, Args &&... args);

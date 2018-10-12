@@ -833,8 +833,6 @@ template <typename Cmd, typename ...Args>
 ReplyUPtr RedisCluster::_command(Cmd cmd, Connection &connection, Args &&...args) {
     assert(!connection.broken());
 
-    ShardsPoolGuard guard(_pool, connection);
-
     cmd(connection, std::forward<Args>(args)...);
 
     return connection.recv();
@@ -844,7 +842,13 @@ template <typename Cmd, typename ...Args>
 ReplyUPtr RedisCluster::_command(Cmd cmd, const StringView &key, Args &&...args) {
     for (auto idx = 0; idx < 2; ++idx) {
         try {
-            auto connection = _pool.fetch(key);
+            auto pool = _pool.fetch(key);
+
+            assert(bool(pool));
+
+            auto connection = pool->fetch();
+
+            ConnectionPoolGuard guard(*pool, connection);
 
             return _command(cmd, connection, std::forward<Args>(args)...);
         } catch (const ClosedError &err) {
@@ -859,8 +863,18 @@ ReplyUPtr RedisCluster::_command(Cmd cmd, const StringView &key, Args &&...args)
             // Slot mapping has been changed, update it and try again.
             _pool.update();
         } catch (const AskError &err) {
+            auto pool = _pool.fetch(err.node());
+
+            assert(bool(pool));
+
+            auto connection = pool->fetch();
+
+            assert(!connection.broken());
+
+            ConnectionPoolGuard guard(*pool, connection);
+
             // 1. send ASKING command.
-            auto connection = _asking(err.node());
+            _asking(connection);
 
             // 2. resend last command.
             try {
