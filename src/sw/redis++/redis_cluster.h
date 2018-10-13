@@ -25,6 +25,7 @@
 #include "reply.h"
 #include "command_options.h"
 #include "utils.h"
+#include "subscriber.h"
 
 namespace sw {
 
@@ -46,6 +47,8 @@ public:
 
     RedisCluster(RedisCluster &&) = default;
     RedisCluster& operator=(RedisCluster &&) = default;
+
+    Subscriber subscriber();
 
     template <typename Cmd, typename FirstArg, typename ...Args>
     ReplyUPtr command(Cmd cmd, FirstArg &&first_arg, Args &&...args);
@@ -836,6 +839,10 @@ public:
                             long long count,
                             bool asc,
                             Output output);
+
+    // PUBSUB commands.
+
+    long long publish(const StringView &channel, const StringView &message);
 
 private:
     template <typename Cmd, typename ...Args>

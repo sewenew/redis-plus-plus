@@ -137,6 +137,8 @@ public:
 private:
     friend class Redis;
 
+    friend class RedisCluster;
+
     explicit Subscriber(Connection connection);
 
     MsgType _msg_type(redisReply *reply) const;

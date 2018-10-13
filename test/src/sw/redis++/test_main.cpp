@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
 
         std::cout << "Pass script commands tests" << std::endl;
 
-        sw::redis::test::PubSubTest pubsub_test(opts);
+        sw::redis::test::PubSubTest pubsub_test(opts, cluster_node_opts);
         pubsub_test.run();
 
         std::cout << "Pass pubsub tests" << std::endl;

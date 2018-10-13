@@ -25,18 +25,24 @@ namespace redis {
 
 namespace test {
 
-PubSubTest::PubSubTest(const ConnectionOptions &opts) : _redis(opts) {}
+PubSubTest::PubSubTest(const ConnectionOptions &opts,
+                        const ConnectionOptions &cluster_opts) :
+                            _redis(opts), _cluster(cluster_opts) {}
 
 void PubSubTest::run() {
-    _test_sub_channel();
+    _test_sub_channel(_redis);
+    _test_sub_channel(_cluster);
 
-    _test_sub_pattern();
+    _test_sub_pattern(_redis);
+    _test_sub_pattern(_cluster);
 
-    _test_unsubscribe();
+    _test_unsubscribe(_redis);
+    _test_unsubscribe(_cluster);
 }
 
-void PubSubTest::_test_sub_channel() {
-    auto sub = _redis.subscriber();
+template <typename RedisType>
+void PubSubTest::_test_sub_channel(RedisType &redis) {
+    auto sub = redis.subscriber();
 
     auto msgs = {"msg1", "msg2"};
     auto channel1 = test_key("c1");
@@ -53,7 +59,7 @@ void PubSubTest::_test_sub_channel() {
     sub.consume();
 
     for (const auto &msg : msgs) {
-        _redis.publish(channel1, msg);
+        redis.publish(channel1, msg);
         sub.consume();
     }
 
@@ -106,7 +112,7 @@ void PubSubTest::_test_sub_channel() {
     }
 
     for (const auto &ele : messages) {
-        _redis.publish(ele.first, ele.second);
+        redis.publish(ele.first, ele.second);
         sub.consume();
     }
 
@@ -118,8 +124,9 @@ void PubSubTest::_test_sub_channel() {
     }
 }
 
-void PubSubTest::_test_sub_pattern() {
-    auto sub = _redis.subscriber();
+template <typename RedisType>
+void PubSubTest::_test_sub_pattern(RedisType &redis) {
+    auto sub = redis.subscriber();
 
     auto msgs = {"msg1", "msg2"};
     auto pattern1 = test_key("pattern*");
@@ -141,7 +148,7 @@ void PubSubTest::_test_sub_pattern() {
     sub.consume();
 
     for (const auto &msg : msgs) {
-        _redis.publish(channel1, msg);
+        redis.publish(channel1, msg);
         sub.consume();
     }
 
@@ -201,7 +208,7 @@ void PubSubTest::_test_sub_pattern() {
     }
 
     for (const auto &ele : messages) {
-        _redis.publish(ele.first, ele.second);
+        redis.publish(ele.first, ele.second);
         sub.consume();
     }
 
@@ -213,8 +220,9 @@ void PubSubTest::_test_sub_pattern() {
     }
 }
 
-void PubSubTest::_test_unsubscribe() {
-    auto sub = _redis.subscriber();
+template <typename RedisType>
+void PubSubTest::_test_unsubscribe(RedisType &redis) {
+    auto sub = redis.subscriber();
 
     sub.on_meta([](Subscriber::MsgType type,
                         OptionalString channel,

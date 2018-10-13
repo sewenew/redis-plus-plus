@@ -132,6 +132,18 @@ void ShardsPool::update() {
     throw Error("Failed to update shards info");
 }
 
+Connection ShardsPool::create(const StringView &key) {
+    auto slot = _slot(key);
+
+    return _create(slot);
+}
+
+Connection ShardsPool::create() {
+    auto slot = _slot();
+
+    return _create(slot);
+}
+
 void ShardsPool::_move(ShardsPool &&that) {
     _pool_opts = that._pool_opts;
     _connection_opts = that._connection_opts;
@@ -259,9 +271,7 @@ Slot ShardsPool::_slot() const {
     return uniform_dist(engine);
 }
 
-GuardedConnection ShardsPool::_fetch(Slot slot) {
-    std::lock_guard<std::mutex> lock(_mutex);
-
+ConnectionPoolSPtr& ShardsPool::_get_pool(Slot slot) {
     auto shards_iter = _shards.lower_bound(SlotRange{slot, slot});
     if (shards_iter == _shards.end() || slot < shards_iter->first.min) {
         throw Error("Slot is out of range: " + std::to_string(slot));
@@ -274,7 +284,27 @@ GuardedConnection ShardsPool::_fetch(Slot slot) {
         throw Error("Slot is NOT covered: " + std::to_string(slot));
     }
 
-    return GuardedConnection(node_iter->second);
+    return node_iter->second;
+}
+
+GuardedConnection ShardsPool::_fetch(Slot slot) {
+    std::lock_guard<std::mutex> lock(_mutex);
+
+    auto &pool = _get_pool(slot);
+
+    assert(bool(pool));
+
+    return GuardedConnection(pool);
+}
+
+Connection ShardsPool::_create(Slot slot) {
+    std::lock_guard<std::mutex> lock(_mutex);
+
+    auto &pool = _get_pool(slot);
+
+    assert(bool(pool));
+
+    return pool->create();
 }
 
 auto ShardsPool::_add_node(const Node &node) -> NodeMap::iterator {

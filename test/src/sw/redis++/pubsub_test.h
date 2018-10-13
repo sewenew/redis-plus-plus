@@ -27,20 +27,23 @@ namespace test {
 
 class PubSubTest {
 public:
-    explicit PubSubTest(const ConnectionOptions &opts);
+    PubSubTest(const ConnectionOptions &opts, const ConnectionOptions &cluster_opts);
 
     void run();
 
 private:
-    ConnectionPoolOptions _pool_opts() const;
+    template <typename RedisType>
+    void _test_sub_channel(RedisType &redis);
 
-    void _test_sub_channel();
+    template <typename RedisType>
+    void _test_sub_pattern(RedisType &redis);
 
-    void _test_sub_pattern();
-
-    void _test_unsubscribe();
+    template <typename RedisType>
+    void _test_unsubscribe(RedisType &redis);
 
     Redis _redis;
+
+    RedisCluster _cluster;
 };
 
 }

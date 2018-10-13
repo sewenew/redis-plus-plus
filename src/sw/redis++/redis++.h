@@ -21,7 +21,5 @@
 #include "redis.hpp"
 #include "redis_cluster.h"
 #include "redis_cluster.hpp"
-#include "subscriber.h"
-#include "pipeline.h"
 
 #endif // end SEWENEW_REDISPLUSPLUS_REDISPLUSPLUS_H

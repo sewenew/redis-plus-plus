@@ -84,6 +84,10 @@ public:
 
     void update();
 
+    Connection create(const StringView &key);
+
+    Connection create();
+
 private:
     void _move(ShardsPool &&that);
 
@@ -103,7 +107,11 @@ private:
     // Randomly pick a slot.
     std::size_t _slot() const;
 
+    ConnectionPoolSPtr& _get_pool(Slot slot);
+
     GuardedConnection _fetch(Slot slot);
+
+    Connection _create(Slot slot);
 
     using NodeMap = std::unordered_map<Node, ConnectionPoolSPtr, NodeHash>;
 

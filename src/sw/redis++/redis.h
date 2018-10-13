@@ -25,14 +25,13 @@
 #include "reply.h"
 #include "command_options.h"
 #include "utils.h"
+#include "subscriber.h"
 #include "pipeline.h"
 #include "transaction.h"
 
 namespace sw {
 
 namespace redis {
-
-class Subscriber;
 
 class Redis {
 public:

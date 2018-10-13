@@ -26,6 +26,10 @@ namespace redis {
 
 RedisCluster::RedisCluster(const std::string &uri) : RedisCluster(ConnectionOptions(uri)) {}
 
+Subscriber RedisCluster::subscriber() {
+    return Subscriber(_pool.create());
+}
+
 // KEY commands.
 
 long long RedisCluster::del(const StringView &key) {
@@ -580,6 +584,14 @@ OptionalLongLong RedisCluster::georadiusbymember(const StringView &key,
     reply::rewrite_georadius_reply(*reply);
 
     return reply::parse<OptionalLongLong>(*reply);
+}
+
+// PUBSUB commands.
+
+long long RedisCluster::publish(const StringView &channel, const StringView &message) {
+    auto reply = command(cmd::publish, channel, message);
+
+    return reply::parse<long long>(*reply);
 }
 
 void RedisCluster::_asking(Connection &connection) {
