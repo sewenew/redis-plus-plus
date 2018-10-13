@@ -66,30 +66,30 @@ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/path/to/hiredis -DCMAKE_IN
 
 ### Use redis-plus-plus In Your Project
 
-Since *redis-plus-plus* depends on *hiredis*, you need to link both libraries to your Application. Also don't forget to specify the `-std=c++11` option. Take GCC as an example.
+Since *redis-plus-plus* depends on *hiredis*, you need to link both libraries to your Application. Also don't forget to specify the `-std=c++11` and thread-related option. Take GCC as an example.
 
 #### Use Shared Libraries
 
 ```
-g++ -std=c++11 -lhiredis -lredis++ -o app app.cpp
+g++ -std=c++11 -lhiredis -lredis++ -pthread -o app app.cpp
 ```
 
 If *hiredis* and *redis-plus-plus* are installed at non-default location, you should use `-I` and `-L` options to specify the header and library paths.
 
 ```
-g++ -std=c++11 -I/non-default/install/include/path -L/non-default/install/lib/path -lhiredis -lredis++ -o app app.cpp
+g++ -std=c++11 -I/non-default/install/include/path -L/non-default/install/lib/path -lhiredis -lredis++ -pthread -o app app.cpp
 ```
 
 #### Use Static Libraries
 
 ```
-g++ -std=c++11 -o app app.cpp /path/to/libhiredis.a /path/to/libredis++.a
+g++ -std=c++11 -pthread -o app app.cpp /path/to/libhiredis.a /path/to/libredis++.a
 ```
 
 If *hiredis* and *redis-plus-plus* are installed at non-default location, you should use `-I` option to specify the header path.
 
 ```
-g++ -std=c++11 -I/non-default/install/include/path -o app app.cpp /path/to/libhiredis.a /path/to/libredis++.a
+g++ -std=c++11 -pthread -I/non-default/install/include/path -o app app.cpp /path/to/libhiredis.a /path/to/libredis++.a
 ```
 
 ## Getting Started
@@ -985,11 +985,24 @@ As we mentioned, `RedisCluster`'s interfaces are similar to `Redis`. It supports
 
 - Not support commands without key as argument, e.g. [PING](https://redis.io/commands/ping), [INFO](https://redis.io/commands/info).
 - Not support commands related to Lua scripting, e.g. [EVAL](https://redis.io/commands/eval), [EVALSHA](https://redis.io/commands/evalsha).
-- Not support Pipeline and Transaction.
 
 `RedisCluster` does NOT support these interfaces, because it has no idea to which node these commands should be sent.
 
 Also you can use the [hash tags](https://redis.io/topics/cluster-spec#keys-hash-tags) to send multiple-key commands.
+
+##### Pipeline and Transaction
+
+`RedisCluster` also supports pipeline and transaction, but the interfaces are different from `Redis`. Since all commands in the pipeline and transaction should be sent to a single node in a single connection, we need to tell `RedisCluster` with which node the pipeline or transaction should be created.
+
+Instead of specifing the node's IP and port, `RedisCluster`'s pipeline and transaction interfaces allow you to specify the node with a *hash tag*. `RedisCluster` will calculate the slot number with the given *hash tag*, and create a pipeline or transaction with the node holding the slot.
+
+```
+Pipeline RedisCluster::pipeline(const StringView &hash_tag);
+
+Transaction RedisCluster::transaction(const StringView &hash_tag, bool piped = false);
+```
+
+With the created pipeline or transaction, you can send commands with keys located on the same node as the given *hash_tag*. See [Examples](https://github.com/sewenew/redis-plus-plus#examples-2) part for an example.
 
 #### Examples
 
@@ -1017,6 +1030,14 @@ redis_cluster.mget({"key{tag}1", "key{tag}2", "key{tag}3"},
 redis_cluster.lpush("list", {"1", "2", "3"});
 std::vector<std::string> list;
 redis_cluster.lrange("list", 0, -1, std::back_inserter(list));
+
+// Pipline.
+auto pipe = redis_cluster.pipeline("counter");
+auto replies = pipe.incr("{counter}:1").incr("{counter}:2").exec();
+
+// Transaction.
+auto tx = redis_cluster.transaction("key");
+replies = tx.incr("key").get("key").exec();
 ```
 
 #### Details
