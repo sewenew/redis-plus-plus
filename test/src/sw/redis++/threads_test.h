@@ -27,16 +27,19 @@ namespace test {
 
 class ThreadsTest {
 public:
-    explicit ThreadsTest(const ConnectionOptions &opts);
+    ThreadsTest(const ConnectionOptions &opts, const ConnectionOptions &cluster_opts);
 
     void run();
 
 private:
-    void _test_multithreads(Redis redis, int threads_num, int times);
+    template <typename RedisType>
+    void _test_multithreads(RedisType redis, int threads_num, int times);
 
     void _test_timeout();
 
     ConnectionOptions _opts;
+
+    ConnectionOptions _cluster_opts;
 };
 
 }

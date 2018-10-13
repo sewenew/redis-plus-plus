@@ -18,6 +18,7 @@
 #include <thread>
 #include <chrono>
 #include <atomic>
+#include <memory>
 #include "utils.h"
 
 namespace sw {
@@ -26,7 +27,9 @@ namespace redis {
 
 namespace test {
 
-ThreadsTest::ThreadsTest(const ConnectionOptions &opts) : _opts(opts) {}
+ThreadsTest::ThreadsTest(const ConnectionOptions &opts,
+                            const ConnectionOptions &cluster_opts) : _opts(opts),
+                                                                    _cluster_opts(cluster_opts) {}
 
 void ThreadsTest::run() {
     // 100 * 10000 = 1 million writes
@@ -36,15 +39,20 @@ void ThreadsTest::run() {
     // Default pool options: single connection and wait forever.
     _test_multithreads(Redis(_opts), thread_num, times);
 
+    _test_multithreads(RedisCluster(_cluster_opts), thread_num, times);
+
     // Pool with 10 connections.
     ConnectionPoolOptions pool_opts;
     pool_opts.size = 10;
     _test_multithreads(Redis(_opts, pool_opts), thread_num, times);
 
+    _test_multithreads(RedisCluster(_cluster_opts, pool_opts), thread_num, times);
+
     _test_timeout();
 }
 
-void ThreadsTest::_test_multithreads(Redis redis, int thread_num, int times) {
+template <typename RedisType>
+void ThreadsTest::_test_multithreads(RedisType redis, int thread_num, int times) {
     std::vector<std::string> keys;
     keys.reserve(thread_num);
     for (auto idx = 0; idx != thread_num; ++idx) {
@@ -52,7 +60,11 @@ void ThreadsTest::_test_multithreads(Redis redis, int thread_num, int times) {
         keys.push_back(key);
     }
 
-    KeyDeleter deleter(redis, keys.begin(), keys.end());
+    using DeleterUPtr = std::unique_ptr<KeyDeleterTpl<RedisType>>;
+    std::vector<DeleterUPtr> deleters;
+    for (const auto &key : keys) {
+        deleters.emplace_back(new KeyDeleterTpl<RedisType>(redis, key));
+    }
 
     std::vector<std::thread> workers;
     workers.reserve(thread_num);

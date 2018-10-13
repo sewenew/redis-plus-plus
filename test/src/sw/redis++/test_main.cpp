@@ -115,7 +115,7 @@ int main(int argc, char **argv) {
 
         std::cout << "Pass pipeline and transaction tests" << std::endl;
 
-        sw::redis::test::ThreadsTest threads_test(opts);
+        sw::redis::test::ThreadsTest threads_test(opts, cluster_node_opts);
         threads_test.run();
 
         std::cout << "Pass threads tests" << std::endl;
