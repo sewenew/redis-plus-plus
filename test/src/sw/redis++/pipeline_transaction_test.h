@@ -27,16 +27,19 @@ namespace test {
 
 class PipelineTransactionTest {
 public:
-    explicit PipelineTransactionTest(const ConnectionOptions &opts);
+    PipelineTransactionTest(const ConnectionOptions &opts,
+                            const ConnectionOptions &cluster_opts);
 
     void run();
 
 private:
-    void _test_pipeline();
+    void _test_pipeline(const StringView &key, Pipeline &pipe);
 
-    void _test_transaction(bool piped);
+    void _test_transaction(const StringView &key, Transaction &tx);
 
     Redis _redis;
+
+    RedisCluster _cluster;
 };
 
 }

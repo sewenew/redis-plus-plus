@@ -26,6 +26,14 @@ namespace redis {
 
 RedisCluster::RedisCluster(const std::string &uri) : RedisCluster(ConnectionOptions(uri)) {}
 
+Pipeline RedisCluster::pipeline(const StringView &hash_tag) {
+    return Pipeline(_pool.create(hash_tag));
+}
+
+Transaction RedisCluster::transaction(const StringView &hash_tag, bool piped) {
+    return Transaction(_pool.create(hash_tag), piped);
+}
+
 Subscriber RedisCluster::subscriber() {
     return Subscriber(_pool.create());
 }

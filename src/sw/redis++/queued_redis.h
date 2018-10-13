@@ -1292,6 +1292,8 @@ public:
 private:
     friend class Redis;
 
+    friend class RedisCluster;
+
     template <typename ...Args>
     QueuedRedis(Connection connection, Args &&...args);
 

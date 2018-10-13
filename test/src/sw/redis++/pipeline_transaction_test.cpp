@@ -23,23 +23,55 @@ namespace redis {
 
 namespace test {
 
-PipelineTransactionTest::PipelineTransactionTest(const ConnectionOptions &opts) : _redis(opts) {}
+PipelineTransactionTest::PipelineTransactionTest(const ConnectionOptions &opts,
+                                                    const ConnectionOptions &cluster_opts) :
+                                                        _redis(opts), _cluster(cluster_opts) {}
 
 void PipelineTransactionTest::run() {
-    _test_pipeline();
+    {
+        auto key = test_key("pipeline");
+        KeyDeleter deleter(_redis, key);
+        auto pipe = _redis.pipeline();
+        _test_pipeline(key, pipe);
+    }
 
-    _test_transaction(true);
+    {
+        auto key = test_key("pipeline");
+        ClusterKeyDeleter deleter(_cluster, key);
+        auto pipe = _cluster.pipeline(key);
+        _test_pipeline(key, pipe);
+    }
 
-    _test_transaction(false);
+    {
+        auto key = test_key("transaction");
+        KeyDeleter deleter(_redis, key);
+        auto tx = _redis.transaction(true);
+        _test_transaction(key, tx);
+    }
+
+    {
+        auto key = test_key("transaction");
+        KeyDeleter deleter(_redis, key);
+        auto tx = _redis.transaction(false);
+        _test_transaction(key, tx);
+    }
+
+    {
+        auto key = test_key("transaction");
+        ClusterKeyDeleter deleter(_cluster, key);
+        auto tx = _cluster.transaction(key, true);
+        _test_transaction(key, tx);
+    }
+
+    {
+        auto key = test_key("transaction");
+        ClusterKeyDeleter deleter(_cluster, key);
+        auto tx = _cluster.transaction(key, false);
+        _test_transaction(key, tx);
+    }
 }
 
-void PipelineTransactionTest::_test_pipeline() {
-    auto pipe = _redis.pipeline();
-
-    auto key = test_key("pipeline");
-
-    KeyDeleter deleter(_redis, key);
-
+void PipelineTransactionTest::_test_pipeline(const StringView &key, Pipeline &pipe) {
     std::string val("value");
     auto replies = pipe.set(key, val)
                         .get(key)
@@ -54,13 +86,7 @@ void PipelineTransactionTest::_test_pipeline() {
             "failed to test pipeline with string operations");
 }
 
-void PipelineTransactionTest::_test_transaction(bool piped) {
-    auto tx = _redis.transaction(piped);
-
-    auto key = test_key("transaction");
-
-    KeyDeleter deleter(_redis, key);
-
+void PipelineTransactionTest::_test_transaction(const StringView &key, Transaction &tx) {
     std::unordered_map<std::string, std::string> m = {
         std::make_pair("f1", "v1"),
         std::make_pair("f2", "v2"),

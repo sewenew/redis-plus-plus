@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
 
         std::cout << "Pass pubsub tests" << std::endl;
 
-        sw::redis::test::PipelineTransactionTest pipe_tx_test(opts);
+        sw::redis::test::PipelineTransactionTest pipe_tx_test(opts, cluster_node_opts);
         pipe_tx_test.run();
 
         std::cout << "Pass pipeline and transaction tests" << std::endl;
