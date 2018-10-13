@@ -842,15 +842,9 @@ template <typename Cmd, typename ...Args>
 ReplyUPtr RedisCluster::_command(Cmd cmd, const StringView &key, Args &&...args) {
     for (auto idx = 0; idx < 2; ++idx) {
         try {
-            auto pool = _pool.fetch(key);
+            auto guarded_connection = _pool.fetch(key);
 
-            assert(bool(pool));
-
-            auto connection = pool->fetch();
-
-            ConnectionPoolGuard guard(*pool, connection);
-
-            return _command(cmd, connection, std::forward<Args>(args)...);
+            return _command(cmd, guarded_connection.connection(), std::forward<Args>(args)...);
         } catch (const ClosedError &err) {
             // Node might be removed.
             // 1. Get up-to-date slot mapping to check if the node still exists.
@@ -863,15 +857,8 @@ ReplyUPtr RedisCluster::_command(Cmd cmd, const StringView &key, Args &&...args)
             // Slot mapping has been changed, update it and try again.
             _pool.update();
         } catch (const AskError &err) {
-            auto pool = _pool.fetch(err.node());
-
-            assert(bool(pool));
-
-            auto connection = pool->fetch();
-
-            assert(!connection.broken());
-
-            ConnectionPoolGuard guard(*pool, connection);
+            auto guarded_connection = _pool.fetch(err.node());
+            auto &connection = guarded_connection.connection();
 
             // 1. send ASKING command.
             _asking(connection);

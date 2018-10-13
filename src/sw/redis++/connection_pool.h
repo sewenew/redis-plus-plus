@@ -82,16 +82,6 @@ private:
     std::condition_variable _cv;
 };
 
-class ConnectionPoolGuard {
-public:
-    ConnectionPoolGuard(ConnectionPool &pool, Connection &connection);
-    ~ConnectionPoolGuard();
-
-private:
-    ConnectionPool &_pool;
-    Connection &_connection;
-};
-
 }
 
 }

@@ -149,14 +149,6 @@ bool ConnectionPool::_need_reconnect(const Connection &connection) {
     return false;
 }
 
-ConnectionPoolGuard::ConnectionPoolGuard(ConnectionPool &pool, Connection &connection) :
-                                            _pool(pool),
-                                            _connection(connection) {}
-
-ConnectionPoolGuard::~ConnectionPoolGuard() {
-    _pool.release(std::move(_connection));
-}
-
 }
 
 }

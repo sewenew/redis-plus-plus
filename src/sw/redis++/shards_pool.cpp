@@ -57,31 +57,31 @@ ShardsPool& ShardsPool::operator=(ShardsPool &&that) {
     return *this;
 }
 
-ConnectionPoolSPtr ShardsPool::fetch(const StringView &key) {
+GuardedConnection ShardsPool::fetch(const StringView &key) {
     auto slot = _slot(key);
 
     return _fetch(slot);
 }
 
-ConnectionPoolSPtr ShardsPool::fetch() {
+GuardedConnection ShardsPool::fetch() {
     auto slot = _slot();
 
     return _fetch(slot);
 }
 
-ConnectionPoolSPtr ShardsPool::fetch(const Node &node) {
+GuardedConnection ShardsPool::fetch(const Node &node) {
     std::lock_guard<std::mutex> lock(_mutex);
 
-    auto iter = _pool.find(node);
-    if (iter == _pool.end()) {
+    auto iter = _pools.find(node);
+    if (iter == _pools.end()) {
         // Node doesn't exist, and it should be a newly created node.
         // So add a new connection pool.
         iter = _add_node(node);
     }
 
-    assert(iter != _pool.end());
+    assert(iter != _pools.end());
 
-    return iter->second;
+    return GuardedConnection(iter->second);
 }
 
 void ShardsPool::update() {
@@ -89,18 +89,9 @@ void ShardsPool::update() {
     // Try at most 3 times.
     for (auto idx = 0; idx < 3; ++idx) {
         try {
-            // Randomly pick a connection pool.
-            auto pool = fetch();
-
-            assert(bool(pool));
-
-            auto connection = pool->fetch();
-
-            assert(!connection.broken());
-
-            ConnectionPoolGuard guard(*pool, connection);
-
-            auto shards = _cluster_slots(connection);
+            // Randomly pick a connection.
+            auto guarded_connection = fetch();
+            auto shards = _cluster_slots(guarded_connection.connection());
 
             std::unordered_set<Node, NodeHash> nodes;
             for (const auto &shard : shards) {
@@ -114,10 +105,10 @@ void ShardsPool::update() {
             _shards = std::move(shards);
 
             // Remove non-existent nodes.
-            for (auto iter = _pool.begin(); iter != _pool.end(); ) {
+            for (auto iter = _pools.begin(); iter != _pools.end(); ) {
                 if (nodes.find(iter->first) == nodes.end()) {
                     // Node has been removed.
-                    _pool.erase(iter++);
+                    _pools.erase(iter++);
                 } else {
                     ++iter;
                 }
@@ -126,7 +117,7 @@ void ShardsPool::update() {
             // Add connection pool for new nodes.
             // In fact, connections will be created lazily.
             for (const auto &node : nodes) {
-                if (_pool.find(node) == _pool.end()) {
+                if (_pools.find(node) == _pools.end()) {
                     _add_node(node);
                 }
             }
@@ -145,7 +136,7 @@ void ShardsPool::_move(ShardsPool &&that) {
     _pool_opts = that._pool_opts;
     _connection_opts = that._connection_opts;
     _shards = std::move(that._shards);
-    _pool = std::move(that._pool);
+    _pools = std::move(that._pools);
 }
 
 void ShardsPool::_init_pool(const Shards &shards) {
@@ -268,7 +259,7 @@ Slot ShardsPool::_slot() const {
     return uniform_dist(engine);
 }
 
-ConnectionPoolSPtr ShardsPool::_fetch(Slot slot) {
+GuardedConnection ShardsPool::_fetch(Slot slot) {
     std::lock_guard<std::mutex> lock(_mutex);
 
     auto shards_iter = _shards.lower_bound(SlotRange{slot, slot});
@@ -278,12 +269,12 @@ ConnectionPoolSPtr ShardsPool::_fetch(Slot slot) {
 
     const auto &node = shards_iter->second;
 
-    auto node_iter = _pool.find(node);
-    if (node_iter == _pool.end()) {
+    auto node_iter = _pools.find(node);
+    if (node_iter == _pools.end()) {
         throw Error("Slot is NOT covered: " + std::to_string(slot));
     }
 
-    return node_iter->second;
+    return GuardedConnection(node_iter->second);
 }
 
 auto ShardsPool::_add_node(const Node &node) -> NodeMap::iterator {
@@ -291,7 +282,7 @@ auto ShardsPool::_add_node(const Node &node) -> NodeMap::iterator {
     opts.host = node.host;
     opts.port = node.port;
 
-    return _pool.emplace(node, std::make_shared<ConnectionPool>(_pool_opts, opts)).first;
+    return _pools.emplace(node, std::make_shared<ConnectionPool>(_pool_opts, opts)).first;
 }
 
 }
