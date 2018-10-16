@@ -30,6 +30,8 @@ void ClusterTest::run() {
     _test_cluster();
 
     _test_hash_tag();
+
+    _test_script();
 }
 
 void ClusterTest::_test_cluster() {
@@ -116,6 +118,20 @@ void ClusterTest::_test_hash_tag(std::initializer_list<std::string> keys) {
     for (const auto &ele : res) {
         REDIS_ASSERT(ele && *ele == value, "failed to test hash tag");
     }
+}
+
+void ClusterTest::_test_script() {
+    auto first = test_key("first{tag}");
+    auto second = test_key("second{tag}");
+    ClusterKeyDeleter deleter(_redis_cluster, {first, second});
+
+    auto script = "redis.call('set', KEYS[1], 1);"
+                    "redis.call('set', KEYS[2], 2);"
+                    "local first = redis.call('get', KEYS[1]);"
+                    "local second = redis.call('get', KEYS[2]);"
+                    "return first + second";
+    auto num = _redis_cluster.eval<long long>(script, {first, second}, {});
+    REDIS_ASSERT(num == 3, "failed to test scripting for cluster");
 }
 
 }

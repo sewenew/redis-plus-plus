@@ -39,6 +39,8 @@ private:
 
     void _test_hash_tag(std::initializer_list<std::string> keys);
 
+    void _test_script();
+
     RedisCluster _redis_cluster;
 };
 

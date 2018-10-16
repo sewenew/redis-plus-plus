@@ -804,6 +804,62 @@ void RedisCluster::georadiusbymember(const StringView &key,
     reply::to_array(*reply, output);
 }
 
+// SCRIPTING commands.
+
+template <typename Result>
+Result RedisCluster::eval(const StringView &script,
+                            std::initializer_list<StringView> keys,
+                            std::initializer_list<StringView> args) {
+    if (keys.size() == 0) {
+        throw Error("DO NOT support Lua script without key");
+    }
+
+    auto reply = _command(cmd::eval, *keys.begin(), script, keys, args);
+
+    return reply::parse<Result>(*reply);
+}
+
+template <typename Output>
+void RedisCluster::eval(const StringView &script,
+                        std::initializer_list<StringView> keys,
+                        std::initializer_list<StringView> args,
+                        Output output) {
+    if (keys.size() == 0) {
+        throw Error("DO NOT support Lua script without key");
+    }
+
+    auto reply = _command(cmd::eval, *keys.begin(), script, keys, args);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Result>
+Result RedisCluster::evalsha(const StringView &script,
+                                std::initializer_list<StringView> keys,
+                                std::initializer_list<StringView> args) {
+    if (keys.size() == 0) {
+        throw Error("DO NOT support Lua script without key");
+    }
+
+    auto reply = _command(cmd::evalsha, *keys.begin(), script, keys, args);
+
+    return reply::parse<Result>(*reply);
+}
+
+template <typename Output>
+void RedisCluster::evalsha(const StringView &script,
+                            std::initializer_list<StringView> keys,
+                            std::initializer_list<StringView> args,
+                            Output output) {
+    if (keys.size() == 0) {
+        throw Error("DO NOT support Lua script without key");
+    }
+
+    auto reply = command(cmd::evalsha, *keys.begin(), script, keys, args);
+
+    reply::to_array(*reply, output);
+}
+
 template <typename Cmd, typename ...Args>
 ReplyUPtr RedisCluster::_command(Cmd cmd, std::true_type, const StringView &key, Args &&...args) {
     return _command(cmd, key, key, std::forward<Args>(args)...);
