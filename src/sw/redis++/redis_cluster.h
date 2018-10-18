@@ -33,6 +33,13 @@ namespace sw {
 
 namespace redis {
 
+template <typename Impl>
+class QueuedRedis;
+
+using Transaction = QueuedRedis<TransactionImpl>;
+
+using Pipeline = QueuedRedis<PipelineImpl>;
+
 class RedisCluster {
 public:
     RedisCluster(const ConnectionOptions &connection_opts,
@@ -910,5 +917,7 @@ private:
 }
 
 }
+
+#include "redis_cluster.hpp"
 
 #endif // end SEWENEW_REDISPLUSPLUS_REDIS_CLUSTER_H

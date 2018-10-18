@@ -132,18 +132,17 @@ void ShardsPool::update() {
     throw Error("Failed to update shards info");
 }
 
-Connection ShardsPool::create(const StringView &key) {
+ConnectionOptions ShardsPool::connection_options(const StringView &key) {
     auto slot = _slot(key);
 
-    return _create(slot);
+    return _connection_options(slot);
 }
 
-Connection ShardsPool::create() {
+ConnectionOptions ShardsPool::connection_options() {
     auto slot = _slot();
 
-    return _create(slot);
+    return _connection_options(slot);
 }
-
 void ShardsPool::_move(ShardsPool &&that) {
     _pool_opts = that._pool_opts;
     _connection_opts = that._connection_opts;
@@ -292,19 +291,19 @@ GuardedConnection ShardsPool::_fetch(Slot slot) {
 
     auto &pool = _get_pool(slot);
 
-    assert(bool(pool));
+    assert(pool);
 
     return GuardedConnection(pool);
 }
 
-Connection ShardsPool::_create(Slot slot) {
+ConnectionOptions ShardsPool::_connection_options(Slot slot) {
     std::lock_guard<std::mutex> lock(_mutex);
 
     auto &pool = _get_pool(slot);
 
-    assert(bool(pool));
+    assert(pool);
 
-    return pool->create();
+    return pool->connection_options();
 }
 
 auto ShardsPool::_add_node(const Node &node) -> NodeMap::iterator {

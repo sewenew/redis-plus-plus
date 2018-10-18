@@ -43,6 +43,8 @@ public:
     ConnectionPool(const ConnectionPoolOptions &pool_opts,
                     const ConnectionOptions &connection_opts);
 
+    ConnectionPool() = default;
+
     ConnectionPool(ConnectionPool &&that);
     ConnectionPool& operator=(ConnectionPool &&that);
 
@@ -54,8 +56,7 @@ public:
     // Fetch a connection from pool.
     Connection fetch();
 
-    // Create a new connection.
-    Connection create();
+    ConnectionOptions connection_options();
 
     void release(Connection connection);
 

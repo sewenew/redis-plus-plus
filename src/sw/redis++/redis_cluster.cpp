@@ -15,10 +15,10 @@
  *************************************************************************/
 
 #include "redis_cluster.h"
-#include "redis_cluster.hpp"
 #include <hiredis/hiredis.h>
 #include "command.h"
 #include "errors.h"
+#include "queued_redis.h"
 
 namespace sw {
 
@@ -27,15 +27,18 @@ namespace redis {
 RedisCluster::RedisCluster(const std::string &uri) : RedisCluster(ConnectionOptions(uri)) {}
 
 Pipeline RedisCluster::pipeline(const StringView &hash_tag) {
-    return Pipeline(_pool.create(hash_tag));
+    auto opts = _pool.connection_options(hash_tag);
+    return Pipeline(std::make_shared<Connection>(opts));
 }
 
 Transaction RedisCluster::transaction(const StringView &hash_tag, bool piped) {
-    return Transaction(_pool.create(hash_tag), piped);
+    auto opts = _pool.connection_options(hash_tag);
+    return Transaction(std::make_shared<Connection>(opts), piped);
 }
 
 Subscriber RedisCluster::subscriber() {
-    return Subscriber(_pool.create());
+    auto opts = _pool.connection_options();
+    return Subscriber(Connection(opts));
 }
 
 // KEY commands.

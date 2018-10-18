@@ -155,6 +155,8 @@ private:
     ConnectionOptions _opts;
 };
 
+using ConnectionSPtr = std::shared_ptr<Connection>;
+
 // Inline implementaions.
 
 template <typename ...Args>

@@ -84,9 +84,9 @@ public:
 
     void update();
 
-    Connection create(const StringView &key);
+    ConnectionOptions connection_options(const StringView &key);
 
-    Connection create();
+    ConnectionOptions connection_options();
 
 private:
     void _move(ShardsPool &&that);
@@ -111,7 +111,7 @@ private:
 
     GuardedConnection _fetch(Slot slot);
 
-    Connection _create(Slot slot);
+    ConnectionOptions _connection_options(Slot slot);
 
     using NodeMap = std::unordered_map<Node, ConnectionPoolSPtr, NodeHash>;
 

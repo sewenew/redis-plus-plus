@@ -25,6 +25,7 @@
 #include "utils.h"
 #include "reply.h"
 #include "command.h"
+#include "redis.h"
 
 namespace sw {
 
@@ -43,6 +44,8 @@ public:
     // When it destructs, the underlying *Connection* will be closed,
     // and any command that has NOT been executed will be ignored.
     ~QueuedRedis() = default;
+
+    Redis redis();
 
     template <typename Cmd, typename ...Args>
     QueuedRedis& command(Cmd cmd, Args &&...args);
@@ -1295,7 +1298,7 @@ private:
     friend class RedisCluster;
 
     template <typename ...Args>
-    QueuedRedis(Connection connection, Args &&...args);
+    QueuedRedis(const ConnectionSPtr &connection, Args &&...args);
 
     void _sanity_check() const;
 
@@ -1310,7 +1313,7 @@ private:
                             Func rewriter,
                             std::vector<ReplyUPtr> &replies) const;
 
-    Connection _connection;
+    ConnectionSPtr _connection;
 
     Impl _impl;
 

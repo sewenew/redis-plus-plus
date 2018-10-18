@@ -20,8 +20,6 @@ namespace sw {
 
 namespace redis {
 
-namespace detail {
-
 std::vector<ReplyUPtr> PipelineImpl::exec(Connection &connection, std::size_t cmd_num) {
     std::vector<ReplyUPtr> replies;
     while (cmd_num > 0) {
@@ -30,8 +28,6 @@ std::vector<ReplyUPtr> PipelineImpl::exec(Connection &connection, std::size_t cm
     }
 
     return replies;
-}
-
 }
 
 }

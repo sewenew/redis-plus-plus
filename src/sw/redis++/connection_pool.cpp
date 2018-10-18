@@ -85,10 +85,10 @@ Connection ConnectionPool::fetch() {
     return connection;
 }
 
-Connection ConnectionPool::create() {
+ConnectionOptions ConnectionPool::connection_options() {
     std::lock_guard<std::mutex> lock(_mutex);
 
-    return Connection(_opts);
+    return _opts;
 }
 
 void ConnectionPool::release(Connection connection) {

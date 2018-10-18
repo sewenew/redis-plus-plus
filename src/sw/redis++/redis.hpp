@@ -28,17 +28,23 @@ namespace redis {
 
 template <typename Cmd, typename ...Args>
 ReplyUPtr Redis::command(Cmd cmd, Args &&...args) {
-    auto connection = _pool.fetch();
+    if (_connection) {
+        // Single Connection Mode.
+        if (_connection->broken()) {
+            throw Error("Connection is broken");
+        }
 
-    assert(!connection.broken());
+        return _command(*_connection, cmd, std::forward<Args>(args)...);
+    } else {
+        // Pool Mode, i.e. get connection from pool.
+        auto connection = _pool.fetch();
 
-    ConnectionPoolGuard guard(_pool, connection);
+        assert(!connection.broken());
 
-    cmd(connection, std::forward<Args>(args)...);
+        ConnectionPoolGuard guard(_pool, connection);
 
-    auto reply = connection.recv();
-
-    return reply;
+        return _command(connection, cmd, std::forward<Args>(args)...);
+    }
 }
 
 // KEY commands.
@@ -899,6 +905,17 @@ void Redis::script_exists(Input first, Input last, Output output) {
     auto reply = command(cmd::script_exists_range<Input>, first, last);
 
     reply::to_array(*reply, output);
+}
+
+template <typename Cmd, typename ...Args>
+ReplyUPtr Redis::_command(Connection &connection, Cmd cmd, Args &&...args) {
+    assert(!connection.broken());
+
+    cmd(connection, std::forward<Args>(args)...);
+
+    auto reply = connection.recv();
+
+    return reply;
 }
 
 template <typename Cmd, typename ...Args>

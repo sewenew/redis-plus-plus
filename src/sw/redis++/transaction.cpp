@@ -15,12 +15,11 @@
  *************************************************************************/
 
 #include "transaction.h"
+#include "command.h"
 
 namespace sw {
 
 namespace redis {
-
-namespace detail {
 
 std::vector<ReplyUPtr> TransactionImpl::exec(Connection &connection, std::size_t cmd_num) {
     _close_transaction();
@@ -111,8 +110,6 @@ void TransactionImpl::_discard(Connection &connection) {
     cmd::discard(connection);
     auto reply = connection.recv();
     reply::parse<void>(*reply);
-}
-
 }
 
 }

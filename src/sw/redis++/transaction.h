@@ -19,14 +19,12 @@
 
 #include <cassert>
 #include <vector>
-#include "queued_redis.h"
+#include "connection.h"
 #include "errors.h"
 
 namespace sw {
 
 namespace redis {
-
-namespace detail {
 
 class TransactionImpl {
 public:
@@ -71,10 +69,6 @@ void TransactionImpl::command(Connection &connection, Cmd cmd, Args &&...args) {
         _get_queued_reply(connection);
     }
 }
-
-}
-
-using Transaction = QueuedRedis<detail::TransactionImpl>;
 
 }
 

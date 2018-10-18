@@ -15,10 +15,10 @@
  *************************************************************************/
 
 #include "redis.h"
-#include "redis.hpp"
 #include <hiredis/hiredis.h>
 #include "command.h"
 #include "errors.h"
+#include "queued_redis.h"
 
 namespace sw {
 
@@ -26,16 +26,23 @@ namespace redis {
 
 Redis::Redis(const std::string &uri) : Redis(ConnectionOptions(uri)) {}
 
+Redis::Redis(const ConnectionSPtr &connection) : _connection(connection) {
+    assert(_connection);
+}
+
 Pipeline Redis::pipeline() {
-    return Pipeline(_pool.create());
+    auto opts = _pool.connection_options();
+    return Pipeline(std::make_shared<Connection>(opts));
 }
 
 Transaction Redis::transaction(bool piped) {
-    return Transaction(_pool.create(), piped);
+    auto opts = _pool.connection_options();
+    return Transaction(std::make_shared<Connection>(opts), piped);
 }
 
 Subscriber Redis::subscriber() {
-    return Subscriber(_pool.create());
+    auto opts = _pool.connection_options();
+    return Subscriber(Connection(opts));
 }
 
 // CONNECTION commands.

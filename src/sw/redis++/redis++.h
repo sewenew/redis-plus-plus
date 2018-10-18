@@ -18,8 +18,7 @@
 #define SEWENEW_REDISPLUSPLUS_REDISPLUSPLUS_H
 
 #include "redis.h"
-#include "redis.hpp"
 #include "redis_cluster.h"
-#include "redis_cluster.hpp"
+#include "queued_redis.h"
 
 #endif // end SEWENEW_REDISPLUSPLUS_REDISPLUSPLUS_H

@@ -19,13 +19,11 @@
 
 #include <cassert>
 #include <vector>
-#include "queued_redis.h"
+#include "connection.h"
 
 namespace sw {
 
 namespace redis {
-
-namespace detail {
 
 class PipelineImpl {
 public:
@@ -43,10 +41,6 @@ public:
         connection.reconnect();
     }
 };
-
-}
-
-using Pipeline = QueuedRedis<detail::PipelineImpl>;
 
 }
 

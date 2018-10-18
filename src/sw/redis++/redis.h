@@ -33,6 +33,13 @@ namespace sw {
 
 namespace redis {
 
+template <typename Impl>
+class QueuedRedis;
+
+using Transaction = QueuedRedis<TransactionImpl>;
+
+using Pipeline = QueuedRedis<PipelineImpl>;
+
 class Redis {
 public:
     Redis(const ConnectionOptions &connection_opts,
@@ -988,6 +995,15 @@ private:
         Connection &_connection;
     };
 
+    template <typename Impl>
+    friend class QueuedRedis;
+
+    // For internal use.
+    explicit Redis(const ConnectionSPtr &connection);
+
+    template <typename Cmd, typename ...Args>
+    ReplyUPtr _command(Connection &connection, Cmd cmd, Args &&...args);
+
     template <typename Cmd, typename ...Args>
     ReplyUPtr _score_command(std::true_type, Cmd cmd, Args &&... args);
 
@@ -997,11 +1013,22 @@ private:
     template <typename Output, typename Cmd, typename ...Args>
     ReplyUPtr _score_command(Cmd cmd, Args &&... args);
 
+    // Pool Mode.
+    // Public constructors create a *Redis* instance with a pool.
+    // In this case, *_connection* is a null pointer, and is never used.
     ConnectionPool _pool;
+
+    // Single Connection Mode.
+    // Private constructor creats a *Redis* instance with a single connection.
+    // This is used when we create Transaction, Pipeline and Subscriber.
+    // In this case, *_pool* is empty, and is never used.
+    ConnectionSPtr _connection;
 };
 
 }
 
 }
+
+#include "redis.hpp"
 
 #endif // end SEWENEW_REDISPLUSPLUS_REDIS_H
