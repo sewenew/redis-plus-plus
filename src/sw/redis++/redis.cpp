@@ -735,6 +735,14 @@ long long Redis::publish(const StringView &channel, const StringView &message) {
     return reply::parse<long long>(*reply);
 }
 
+// Transaction commands.
+
+void Redis::watch(const StringView &key) {
+    auto reply = command(cmd::watch, key);
+
+    reply::parse<void>(*reply);
+}
+
 }
 
 }

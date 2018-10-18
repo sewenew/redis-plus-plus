@@ -980,6 +980,17 @@ public:
 
     long long publish(const StringView &channel, const StringView &message);
 
+    // Transaction commands.
+    void watch(const StringView &key);
+
+    template <typename Input>
+    void watch(Input first, Input last);
+
+    template <typename T>
+    void watch(std::initializer_list<T> il) {
+        watch(il.begin(), il.end());
+    }
+
 private:
     class ConnectionPoolGuard {
     public:

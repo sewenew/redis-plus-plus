@@ -37,6 +37,8 @@ private:
 
     void _test_transaction(const StringView &key, Transaction &tx);
 
+    void _test_watch();
+
     Redis _redis;
 
     RedisCluster _cluster;

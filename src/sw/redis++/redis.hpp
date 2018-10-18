@@ -907,6 +907,15 @@ void Redis::script_exists(Input first, Input last, Output output) {
     reply::to_array(*reply, output);
 }
 
+// Transaction commands.
+
+template <typename Input>
+void Redis::watch(Input first, Input last) {
+    auto reply = command(cmd::watch_range<Input>, first, last);
+
+    reply::parse<void>(*reply);
+}
+
 template <typename Cmd, typename ...Args>
 ReplyUPtr Redis::_command(Connection &connection, Cmd cmd, Args &&...args) {
     assert(!connection.broken());

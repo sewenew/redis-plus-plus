@@ -81,6 +81,12 @@ std::vector<ReplyUPtr> TransactionImpl::_exec(Connection &connection) {
     cmd::exec(connection);
 
     auto reply = connection.recv();
+
+    if (reply::is_nil(*reply)) {
+        // Execution has been aborted, i.e. watched key has been modified.
+        throw WatchError();
+    }
+
     if (!reply::is_array(*reply)) {
         throw ProtoError("Expect ARRAY reply");
     }

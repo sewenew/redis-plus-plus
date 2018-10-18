@@ -15,6 +15,7 @@
  *************************************************************************/
 
 #include "pipeline_transaction_test.h"
+#include <string>
 #include "utils.h"
 
 namespace sw {
@@ -69,6 +70,8 @@ void PipelineTransactionTest::run() {
         auto tx = _cluster.transaction(key, false);
         _test_transaction(key, tx);
     }
+
+    _test_watch();
 }
 
 void PipelineTransactionTest::_test_pipeline(const StringView &key, Pipeline &pipe) {
@@ -118,6 +121,46 @@ void PipelineTransactionTest::_test_transaction(const StringView &key, Transacti
     REDIS_ASSERT(replies.get<long long>(0) == 1, "failed to test transaction");
 
     REDIS_ASSERT(replies.get<bool>(1), "failed to test transaction");
+}
+
+void PipelineTransactionTest::_test_watch() {
+    auto key = test_key("watch");
+
+    KeyDeleter deleter(_redis, key);
+
+    {
+        auto tx = _redis.transaction();
+
+        auto redis = tx.redis();
+
+        redis.watch(key);
+
+        auto replies = tx.set(key, "1").get(key).exec();
+
+        REDIS_ASSERT(replies.size() == 2 && replies.get<bool>(0) == true, "failed to test watch");
+
+        auto val = replies.get<sw::redis::OptionalString>(1);
+
+        REDIS_ASSERT(val && *val == "1", "failed to test watch");
+    }
+
+    try {
+        auto tx = _redis.transaction();
+
+        auto redis = tx.redis();
+
+        redis.watch(key);
+
+        // Key has been modified by other client.
+        _redis.set(key, "val");
+
+        // Transaction should fail, and throw WatchError
+        tx.set(key, "1").exec();
+
+        REDIS_ASSERT(false, "failed to test watch");
+    } catch (const sw::redis::WatchError &err) {
+        // Catch the error.
+    }
 }
 
 }

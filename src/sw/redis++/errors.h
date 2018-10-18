@@ -129,6 +129,20 @@ public:
     virtual ~ReplyError() = default;
 };
 
+class WatchError : public Error {
+public:
+    explicit WatchError() : Error("Watched key has been modified") {}
+
+    WatchError(const WatchError &) = default;
+    WatchError& operator=(const WatchError &) = default;
+
+    WatchError(WatchError &&) = default;
+    WatchError& operator=(WatchError &&) = default;
+
+    virtual ~WatchError() = default;
+};
+
+
 // MovedError and AskError are defined in shards.h
 class MovedError;
 
