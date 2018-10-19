@@ -13,6 +13,7 @@ This is a C++ client for Redis. It's based on [hiredis](https://github.com/redis
 - Redis pipeline.
 - Redis transaction.
 - Redis Cluster.
+- STL-like interfaces.
 
 ## Installation
 
@@ -929,11 +930,75 @@ With this piped transaction, all commands are sent to Redis in a pipeline.
 
 #### Exception
 
-If any of `Pipeline`'s method throws an exception, the `Pipeline` object enters an invalid state. And you CANNOT use it any more, but only destroy the object.
+If any of `Transaction`'s method throws an exception other than `WatchError`, the `Transaction` object enters an invalid state. And you CANNOT use it any more, but only destroy the object.
 
 #### Thread Safety
 
 `Transacation` is **NOT** thread-safe. If you want to call its member functions in multi-thread environment, you need to synchronize between threads manually.
+
+#### Watch
+
+[WATCH is used to provide a check-and-set(CAS) behavior to Redis transactions](https://redis.io/topics/transactions#optimistic-locking-using-check-and-set).
+
+The **WATCH** command must be sent in the same connection as the transaction. And normally after the **WATCH** command, we also need to send some other commands to get data from Redis before executing the transaction. Take the following check-and-set case as an example:
+
+```
+WATCH key           // watch a key
+val = GET key       // get value of the key
+new_val = val + 1   // incr the value
+MULTI               // begin the transaction
+SET key new_val         // set value only if the value is NOT modified by others
+EXEC                // try to execute the transaction.
+                    // if val has been modified, the transaction won't be executed.
+```
+
+However, with `Transaction` object, you CANNOT get the result of commands until the whole transaction has been finished. Instead, you need to create a `Redis` object from the `Transaction` object. The created `Redis` object shares the connection with `Transaction` object. With this created `Redis` object, you can send **WATCH** command and any other Redis commands to Redis server, and get the result immediately.
+
+Let's see how to implement the above example with *redis-plus-plus*:
+
+```
+auto redis = Redis("tcp://127.0.0.1");
+
+// Create a transaction.
+auto tx = redis.transaction();
+
+// Create a Redis object from the Transaction object, which share a single connection.
+auto r = tx.redis();
+
+// If the watched key has been modified by other clients, the transaction might fail.
+// So we need to retry the transaction in a loop.
+while (true) {
+    try {
+        // Watch a key.
+        r.watch("key");
+
+        // Get the old value.
+        auto val = r.get("key");
+        auto num = 0;
+        if (val) {
+            num = std::stoi(*val);
+        } // else use default value, i.e. 0.
+
+        // Incr value.
+        ++num;
+
+        // Execute the transaction.
+        auto replies = tx.set("key", std::to_string(num)).exec();
+
+        // Transaction has been executed successfully. Check the result and break.
+
+        assert(replies.size() == 1 && replies.get<bool>(0) == true);
+
+        break;
+    } catch (const WatchError &err) {
+        // Key has been modified by other clients, retry.
+        continue;
+    } catch (const Error &err) {
+        // Something bad happens, and the Transaction object is no longer valid.
+        throw;
+    }
+}
+```
 
 ### Redis Cluster
 
@@ -984,7 +1049,7 @@ RedisCluster cluster4("tcp://127.0.0.1");
 As we mentioned, `RedisCluster`'s interfaces are similar to `Redis`. It supports most of `Redis`' intefaces (see `Redis`' [API Reference](https://github.com/sewenew/redis-plus-plus#api-reference) for details), except the following:
 
 - Not support commands without key as argument, e.g. [PING](https://redis.io/commands/ping), [INFO](https://redis.io/commands/info).
-- Not support commands related to Lua scripting, e.g. [EVAL](https://redis.io/commands/eval), [EVALSHA](https://redis.io/commands/evalsha).
+- Not support Lua script without key parameters.
 
 `RedisCluster` does NOT support these interfaces, because it has no idea to which node these commands should be sent.
 
