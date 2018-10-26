@@ -919,6 +919,40 @@ inline void sunionstore(Connection &connection,
 
 // Sorted Set commands.
 
+inline void bzpopmax(Connection &connection, const StringView &key, long long timeout) {
+    connection.send("BZPOPMAX %b %lld", key.data(), key.size(), timeout);
+}
+
+template <typename Input>
+void bzpopmax_range(Connection &connection,
+                    Input first,
+                    Input last,
+                    long long timeout) {
+    assert(first != last);
+
+    CmdArgs args;
+    args << "BZPOPMAX" << std::make_pair(first, last) << timeout;
+
+    connection.send(args);
+}
+
+inline void bzpopmin(Connection &connection, const StringView &key, long long timeout) {
+    connection.send("BZPOPMIN %b %lld", key.data(), key.size(), timeout);
+}
+
+template <typename Input>
+void bzpopmin_range(Connection &connection,
+                    Input first,
+                    Input last,
+                    long long timeout) {
+    assert(first != last);
+
+    CmdArgs args;
+    args << "BZPOPMIN" << std::make_pair(first, last) << timeout;
+
+    connection.send(args);
+}
+
 template <typename Input>
 void zadd_range(Connection &connection,
                 const StringView &key,
@@ -980,6 +1014,18 @@ inline void zlexcount(Connection &connection,
                     key.data(), key.size(),
                     min.data(), min.size(),
                     max.data(), max.size());
+}
+
+inline void zpopmax(Connection &connection, const StringView &key, long long count) {
+    connection.send("ZPOPMAX %b %lld",
+                        key.data(), key.size(),
+                        count);
+}
+
+inline void zpopmin(Connection &connection, const StringView &key, long long count) {
+    connection.send("ZPOPMIN %b %lld",
+                        key.data(), key.size(),
+                        count);
 }
 
 inline void zrange(Connection &connection,

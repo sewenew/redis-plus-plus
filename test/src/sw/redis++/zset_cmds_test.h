@@ -42,6 +42,10 @@ private:
 
     void _test_multi_zset();
 
+    void _test_zpop();
+
+    void _test_bzpop();
+
     Redis _redis;
 };
 

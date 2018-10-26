@@ -629,6 +629,66 @@ public:
 
     // SORTED SET commands.
 
+    auto bzpopmax(const StringView &key, long long timeout)
+        -> Optional<std::tuple<std::string, std::string, double>>;
+
+    auto bzpopmax(const StringView &key,
+                    const std::chrono::seconds &timeout = std::chrono::seconds{0})
+        -> Optional<std::tuple<std::string, std::string, double>>;
+
+    template <typename Input>
+    auto bzpopmax(Input first, Input last, long long timeout)
+        -> Optional<std::tuple<std::string, std::string, double>>;
+
+    template <typename Input>
+    auto bzpopmax(Input first,
+                    Input last,
+                    const std::chrono::seconds &timeout = std::chrono::seconds{0})
+        -> Optional<std::tuple<std::string, std::string, double>>;
+
+    template <typename T>
+    auto bzpopmax(std::initializer_list<T> il, long long timeout)
+        -> Optional<std::tuple<std::string, std::string, double>> {
+        return bzpopmax(il.begin(), il.end(), timeout);
+    }
+
+    template <typename T>
+    auto bzpopmax(std::initializer_list<T> il,
+                    const std::chrono::seconds &timeout = std::chrono::seconds{0})
+        -> Optional<std::tuple<std::string, std::string, double>> {
+        return bzpopmax(il.begin(), il.end(), timeout);
+    }
+
+    auto bzpopmin(const StringView &key, long long timeout)
+        -> Optional<std::tuple<std::string, std::string, double>>;
+
+    auto bzpopmin(const StringView &key,
+                    const std::chrono::seconds &timeout = std::chrono::seconds{0})
+        -> Optional<std::tuple<std::string, std::string, double>>;
+
+    template <typename Input>
+    auto bzpopmin(Input first, Input last, long long timeout)
+        -> Optional<std::tuple<std::string, std::string, double>>;
+
+    template <typename Input>
+    auto bzpopmin(Input first,
+                    Input last,
+                    const std::chrono::seconds &timeout = std::chrono::seconds{0})
+        -> Optional<std::tuple<std::string, std::string, double>>;
+
+    template <typename T>
+    auto bzpopmin(std::initializer_list<T> il, long long timeout)
+        -> Optional<std::tuple<std::string, std::string, double>> {
+        return bzpopmin(il.begin(), il.end(), timeout);
+    }
+
+    template <typename T>
+    auto bzpopmin(std::initializer_list<T> il,
+                    const std::chrono::seconds &timeout = std::chrono::seconds{0})
+        -> Optional<std::tuple<std::string, std::string, double>> {
+        return bzpopmin(il.begin(), il.end(), timeout);
+    }
+
     // We don't support the INCR option, since you can always use ZINCRBY instead.
     long long zadd(const StringView &key,
                     const StringView &member,
@@ -673,6 +733,16 @@ public:
 
     template <typename Interval>
     long long zlexcount(const StringView &key, const Interval &interval);
+
+    Optional<std::pair<std::string, double>> zpopmax(const StringView &key);
+
+    template <typename Output>
+    void zpopmax(const StringView &key, long long count, Output output);
+
+    Optional<std::pair<std::string, double>> zpopmin(const StringView &key);
+
+    template <typename Output>
+    void zpopmin(const StringView &key, long long count, Output output);
 
     // If *output* is an iterator of a container of string,
     // we send *ZRANGE key start stop* command.

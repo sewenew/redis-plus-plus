@@ -866,6 +866,70 @@ public:
 
     // SORTED SET commands.
 
+    QueuedRedis& bzpopmax(const StringView &key, long long timeout) {
+        return command(cmd::bzpopmax, key, timeout);
+    }
+
+    QueuedRedis& bzpopmax(const StringView &key,
+                    const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+        return bzpopmax(key, timeout.count());
+    }
+
+    template <typename Input>
+    QueuedRedis& bzpopmax(Input first, Input last, long long timeout) {
+        return command(cmd::bzpopmax_range<Input>, first, last, timeout);
+    }
+
+    template <typename Input>
+    QueuedRedis& bzpopmax(Input first,
+                            Input last,
+                            const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+        return bzpopmax(first, last, timeout.count());
+    }
+
+    template <typename T>
+    QueuedRedis& bzpopmax(std::initializer_list<T> il, long long timeout) {
+        return bzpopmax(il.begin(), il.end(), timeout);
+    }
+
+    template <typename T>
+    QueuedRedis& bzpopmax(std::initializer_list<T> il,
+                            const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+        return bzpopmax(il.begin(), il.end(), timeout);
+    }
+
+    QueuedRedis& bzpopmin(const StringView &key, long long timeout) {
+        return command(cmd::bzpopmin, key, timeout);
+    }
+
+    QueuedRedis& bzpopmin(const StringView &key,
+                            const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+        return bzpopmin(key, timeout.count());
+    }
+
+    template <typename Input>
+    QueuedRedis& bzpopmin(Input first, Input last, long long timeout) {
+        return command(cmd::bzpopmin_range<Input>, first, last, timeout);
+    }
+
+    template <typename Input>
+    QueuedRedis& bzpopmin(Input first,
+                            Input last,
+                            const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+        return bzpopmin(first, last, timeout.count());
+    }
+
+    template <typename T>
+    QueuedRedis& bzpopmin(std::initializer_list<T> il, long long timeout) {
+        return bzpopmin(il.begin(), il.end(), timeout);
+    }
+
+    template <typename T>
+    QueuedRedis& bzpopmin(std::initializer_list<T> il,
+                            const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+        return bzpopmin(il.begin(), il.end(), timeout);
+    }
+
     // We don't support the INCR option, since you can always use ZINCRBY instead.
     QueuedRedis& zadd(const StringView &key,
                         const StringView &member,
@@ -915,6 +979,22 @@ public:
     template <typename Interval>
     QueuedRedis& zlexcount(const StringView &key, const Interval &interval) {
         return command(cmd::zlexcount<Interval>, key, interval);
+    }
+
+    QueuedRedis& zpopmax(const StringView &key) {
+        return command(cmd::zpopmax, key, 1);
+    }
+
+    QueuedRedis& zpopmax(const StringView &key, long long count) {
+        return command(cmd::zpopmax, key, count);
+    }
+
+    QueuedRedis& zpopmin(const StringView &key) {
+        return command(cmd::zpopmin, key, 1);
+    }
+
+    QueuedRedis& zpopmin(const StringView &key, long long count) {
+        return command(cmd::zpopmin, key, count);
     }
 
     // NOTE: *QueuedRedis::zrange*'s parameters are different from *Redis::zrange*.

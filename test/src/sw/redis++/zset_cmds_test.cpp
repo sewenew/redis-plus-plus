@@ -16,6 +16,7 @@
 
 #include "zset_cmds_test.h"
 #include <map>
+#include <unordered_map>
 #include <vector>
 #include <algorithm>
 #include "utils.h"
@@ -38,6 +39,10 @@ void ZSetCmdTest::run() {
     _test_lex();
 
     _test_multi_zset();
+
+    _test_zpop();
+
+    _test_bzpop();
 }
 
 void ZSetCmdTest::_test_zset() {
@@ -256,6 +261,72 @@ void ZSetCmdTest::_test_multi_zset() {
             REDIS_ASSERT(false, "failed to test zuionstore");
         }
     }
+}
+
+void ZSetCmdTest::_test_zpop() {
+    auto key = test_key("zpop");
+
+    KeyDeleter deleter(_redis, key);
+
+    _redis.zadd(key, {std::make_pair("m1", 1.1),
+                        std::make_pair("m2", 2.2),
+                        std::make_pair("m3", 3.3),
+                        std::make_pair("m4", 4.4),
+                        std::make_pair("m5", 5.5),
+                        std::make_pair("m6", 6.6)});
+
+    auto item = _redis.zpopmax(key);
+    REDIS_ASSERT(item && item->first == "m6", "failed to test zpopmax");
+
+    item = _redis.zpopmin(key);
+    REDIS_ASSERT(item && item->first == "m1", "failed to test zpopmin");
+
+    std::vector<std::pair<std::string, double>> vec;
+    _redis.zpopmax(key, 2, std::back_inserter(vec));
+    REDIS_ASSERT(vec.size() == 2 && vec[0].first == "m5" && vec[1].first == "m4",
+            "failed to test zpopmax");
+
+    std::unordered_map<std::string, double> m;
+    _redis.zpopmin(key, 2, std::inserter(m, m.end()));
+    REDIS_ASSERT(m.size() == 2 && m.find("m3") != m.end() && m.find("m2") != m.end(),
+            "failed to test zpopmin");
+}
+
+void ZSetCmdTest::_test_bzpop() {
+    auto key1 = test_key("bzpop1");
+    auto key2 = test_key("bzpop2");
+
+    KeyDeleter deleter(_redis, {key1, key2});
+
+    _redis.zadd(key1, {std::make_pair("m1", 1.1),
+                        std::make_pair("m2", 2.2),
+                        std::make_pair("m3", 3.3),
+                        std::make_pair("m4", 4.4),
+                        std::make_pair("m5", 5.5),
+                        std::make_pair("m6", 6.6)});
+
+    _redis.zadd(key2, {std::make_pair("m1", 1.1),
+                        std::make_pair("m2", 2.2),
+                        std::make_pair("m3", 3.3),
+                        std::make_pair("m4", 4.4),
+                        std::make_pair("m5", 5.5),
+                        std::make_pair("m6", 6.6)});
+
+    auto item = _redis.bzpopmax(key1);
+    REDIS_ASSERT(item && std::get<0>(*item) == key1 && std::get<1>(*item) == "m6",
+            "failed to test bzpopmax");
+
+    item = _redis.bzpopmin(key1, std::chrono::seconds(1));
+    REDIS_ASSERT(item && std::get<0>(*item) == key1 && std::get<1>(*item) == "m1",
+            "failed to test zpopmin");
+
+    item = _redis.bzpopmax({key1, key2}, std::chrono::seconds(1));
+    REDIS_ASSERT(item && std::get<0>(*item) == key1 && std::get<1>(*item) == "m5",
+            "failed to test zpopmax");
+
+    item = _redis.bzpopmin({key2, key1});
+    REDIS_ASSERT(item && std::get<0>(*item) == key2 && std::get<1>(*item) == "m1",
+            "failed to test zpopmin");
 }
 
 }

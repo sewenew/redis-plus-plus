@@ -471,6 +471,20 @@ long long RedisCluster::srem(const StringView &key, const StringView &member) {
 
 // SORTED SET commands.
 
+auto RedisCluster::bzpopmax(const StringView &key, long long timeout)
+    -> Optional<std::tuple<std::string, std::string, double>> {
+    auto reply = command(cmd::bzpopmax, key, timeout);
+
+    return reply::parse<Optional<std::tuple<std::string, std::string, double>>>(*reply);
+}
+
+auto RedisCluster::bzpopmin(const StringView &key, long long timeout)
+    -> Optional<std::tuple<std::string, std::string, double>> {
+    auto reply = command(cmd::bzpopmin, key, timeout);
+
+    return reply::parse<Optional<std::tuple<std::string, std::string, double>>>(*reply);
+}
+
 long long RedisCluster::zadd(const StringView &key,
                         const StringView &member,
                         double score,
@@ -491,6 +505,18 @@ double RedisCluster::zincrby(const StringView &key, double increment, const Stri
     auto reply = command(cmd::zincrby, key, increment, member);
 
     return reply::parse<double>(*reply);
+}
+
+Optional<std::pair<std::string, double>> RedisCluster::zpopmax(const StringView &key) {
+    auto reply = command(cmd::zpopmax, key, 1);
+
+    return reply::parse<Optional<std::pair<std::string, double>>>(*reply);
+}
+
+Optional<std::pair<std::string, double>> RedisCluster::zpopmin(const StringView &key) {
+    auto reply = command(cmd::zpopmin, key, 1);
+
+    return reply::parse<Optional<std::pair<std::string, double>>>(*reply);
 }
 
 OptionalLongLong RedisCluster::zrank(const StringView &key, const StringView &member) {

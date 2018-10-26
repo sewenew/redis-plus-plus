@@ -481,6 +481,48 @@ long long RedisCluster::sunionstore(const StringView &destination, Input first, 
 
 // SORTED SET commands.
 
+inline auto RedisCluster::bzpopmax(const StringView &key, const std::chrono::seconds &timeout)
+    -> Optional<std::tuple<std::string, std::string, double>> {
+    return bzpopmax(key, timeout.count());
+}
+
+template <typename Input>
+auto RedisCluster::bzpopmax(Input first, Input last, long long timeout)
+    -> Optional<std::tuple<std::string, std::string, double>> {
+    auto reply = command(cmd::bzpopmax_range<Input>, first, last, timeout);
+
+    return reply::parse<Optional<std::tuple<std::string, std::string, double>>>(*reply);
+}
+
+template <typename Input>
+inline auto RedisCluster::bzpopmax(Input first,
+                                    Input last,
+                                    const std::chrono::seconds &timeout)
+    -> Optional<std::tuple<std::string, std::string, double>> {
+    return bzpopmax(first, last, timeout.count());
+}
+
+inline auto RedisCluster::bzpopmin(const StringView &key, const std::chrono::seconds &timeout)
+    -> Optional<std::tuple<std::string, std::string, double>> {
+    return bzpopmin(key, timeout.count());
+}
+
+template <typename Input>
+auto RedisCluster::bzpopmin(Input first, Input last, long long timeout)
+    -> Optional<std::tuple<std::string, std::string, double>> {
+    auto reply = command(cmd::bzpopmin_range<Input>, first, last, timeout);
+
+    return reply::parse<Optional<std::tuple<std::string, std::string, double>>>(*reply);
+}
+
+template <typename Input>
+inline auto RedisCluster::bzpopmin(Input first,
+                                    Input last,
+                                    const std::chrono::seconds &timeout)
+    -> Optional<std::tuple<std::string, std::string, double>> {
+    return bzpopmin(first, last, timeout.count());
+}
+
 template <typename Input>
 long long RedisCluster::zadd(const StringView &key,
                         Input first,
@@ -526,6 +568,20 @@ long long RedisCluster::zlexcount(const StringView &key, const Interval &interva
     auto reply = command(cmd::zlexcount<Interval>, key, interval);
 
     return reply::parse<long long>(*reply);
+}
+
+template <typename Output>
+void RedisCluster::zpopmax(const StringView &key, long long count, Output output) {
+    auto reply = command(cmd::zpopmax, key, count);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Output>
+void RedisCluster::zpopmin(const StringView &key, long long count, Output output) {
+    auto reply = command(cmd::zpopmin, key, count);
+
+    reply::to_array(*reply, output);
 }
 
 template <typename Output>
