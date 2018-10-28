@@ -108,7 +108,7 @@ try {
     auto val = redis.get("key");
     if (val) {
         std::cout << *val << std::endl;
-    }
+    } // else key doesn't exist.
 
     // LIST commands.
     redis.lpush("list", {"a", "b", "c"});
@@ -302,13 +302,15 @@ Also these replies might be *NULL*. For instance, when you try to `GET` the valu
 
 *redis-plus-plus* sends commands and receives replies synchronously. Replies are parsed into return values of these methods. The following is a list of return types:
 
-- `void`: *Status Reply* that should always return a string of "OK".
-- `std::string`: *Status Reply* that not always return "OK", and *Bulk String Reply*.
-- `bool`: *Integer Reply* that always returns 0 or 1.
-- `long long`: *Integer Reply* that not always return 0 or 1.
-- `double`: *Bulk String Reply* that represents a double.
-- Output Iterator: *Array Reply*. We use STL-like interface to return array replies. Also, sometimes the type of output iterator decides which options to send with the command. See the [Examples](https://github.com/sewenew/redis-plus-plus#command-overloads) part for detail.
-- `Optional<T>`: For any reply of type `T` that might be *NULL*. We'll explain in detail.
+- `void`: *Status Reply* that should always return a string of "OK", e.g. `RENAME`, `SETEX`.
+- `std::string`: *Status Reply* that not always return "OK", and *Bulk String Reply*, e.g. `PING`, `INFO`.
+- `bool`: *Integer Reply* that always returns 0 or 1, e.g. `EXPIRE`, `SET`.
+- `long long`: *Integer Reply* that not always return 0 or 1, e.g. `DEL`, `APPEND`.
+- `double`: *Bulk String Reply* that represents a double, e.g. `INCRBYFLOAT`, `ZINCRBY`.
+- `std::pair`: *Array Reply* with 2 elements. Since the return value is always an array of 2 elements, we return the 2 elements as a `std::pair`'s first and second elements, e.g. `BLPOP`.
+- `std::tuple`: *Array Reply* with fixed length and has more than 2 elements. Since length of the returned array is fixed, we return the array as a `std::tuple`, e.g. `BZPOPMAX`.
+- `Optional<T>`: For any reply of type `T` that might be *NULL*, `GET`, `LPOP`, `BLPOP`, `BZPOPMAX`. We'll explain in detail latter.
+- Output Iterator: General *Array Reply* with non-fixed length. We use STL-like interface to return array replies, `MGET`, `LRANGE`. Also, sometimes the type of output iterator decides which options to send with the command. See the [Examples](https://github.com/sewenew/redis-plus-plus#command-overloads) part for detail.
 
 We use [std::optional](http://en.cppreference.com/w/cpp/utility/optional) as return type, if Redis might return *NULL* reply. Again, since not all compilers support `std::optional` so far, we implement our own simple [version](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/utils.h#L85). Take the [GET](https://redis.io/commands/get) and [MGET](https://redis.io/commands/mget) commands for example:
 
@@ -355,7 +357,7 @@ ReplyUPtr Redis::command(Cmd cmd, Args &&...args);
 
 In order to use this method, you need to pass in a `Cmd` object, which must be a callable object, e.g. function, functor, or lambda. The first argument of `Cmd` is of type `Connection`. `Redis::command` will fetch a connection from the connection pool, and pass the connection and `args` as arguments for `Cmd`. `Cmd` can call the overloaded `Connection::send` methods to send the command to Redis.
 
-`Redis::command` returns a `ReplyUPtr`, i.e. `std::unique_ptr<redisReply>`. Normally you don't need to parse it manually. Instead, you only need to pass the reply to `template <typename T> T reply::parse(redisReply &)` to get a value of type `T`. By now, `T` can be `std::string`, `double`, `long long`, `bool`, `void`, `Optional<T>`, `std::pair`, and `std::tuple`.
+`Redis::command` returns a `ReplyUPtr`, i.e. `std::unique_ptr<redisReply, ReplyDeleter>`. Normally you don't need to parse it manually. Instead, you only need to pass the reply to `template <typename T> T reply::parse(redisReply &)` to get a value of type `T`. By now, `T` can be `std::string`, `double`, `long long`, `bool`, `void`, `Optional<T>`, `std::pair`, and `std::tuple`.
 
 Let's see an example:
 
