@@ -82,7 +82,7 @@ Then you can run the test program with the following command:
 ```
 
 - `host` and `port` are the host and port number of the Redis instance.
-- `cluster_node` and `cluster_port` are the host and port number of Redis Cluster.
+- `cluster_node` and `cluster_port` are the host and port number of Redis Cluster. You only need to set the host and port number of a single node in the cluster, *redis-plus-plus* will find other nodes automatically.
 - `auth` is the password of the Redis instance and Redis Cluster. The Redis instance and Redis Cluster must be configured with the same password. If there's no password configured, don't set this option.
 
 The test program will test running *redis-plus-plus* in multi-threads environment, and this test will cost a long time. If you want to skip it (not recommended), just comment out the following lines in `test/src/sw/redis++/test_main.cpp` file.
