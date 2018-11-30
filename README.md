@@ -57,6 +57,8 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 make
 
 make install
+
+cd ..
 ```
 
 If hiredis is installed at non-default location, you should use `CMAKE_PREFIX_PATH` to specify the installation path of *hiredis*. Also you can use `CMAKE_INSTALL_PREFIX` to install *redis-plus-plus* at non-default location.
@@ -64,6 +66,33 @@ If hiredis is installed at non-default location, you should use `CMAKE_PREFIX_PA
 ```
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/path/to/hiredis -DCMAKE_INSTALL_PREFIX=/path/to/install/redis-plus-plus ..
 ```
+
+### Run Tests (Optional)
+
+After compiling with cmake, you'll get a test program in `compile/test` directory: `test_redis++`.
+
+In order to run the tests, you need to set up both a Redis instance, and a Redis Cluster. Since the test program will send most of Redis commands to the server and cluster, you need to set up Redis of the latest version (by now, it's 5.0). Otherwise, the tests might fail. For example, if you set up Redis 4.0 for testing, the test program will fail when it tries to send the `ZPOPMAX` command (a Redis 5.0 command) to the server. If you want to run the tests with other Redis versions, you have to comment out commands that haven't been supported by your Redis, from test source files in `redis-plus-plus/test/src/sw/redis++/` directory. Sorry for the inconvenience, and I'll fix this problem to make the test program work with any version of Redis in the future.
+
+**NOTE**: The latest version of Redis is only a requirement for running the tests. In fact, you can use *redis-plus-plus* with Redis of any version, e.g. Redis 2.0, Redis 3.0, Redis 4.0, Redis 5.0.
+
+Then you can run the test program with the following command:
+
+```
+./compile/test/test_redis++ -h host -p port -a auth -n cluster_node -c cluster_port
+```
+
+- `host` and `port` are the host and port number of the Redis instance.
+- `cluster_node` and `cluster_port` are the host and port number of Redis Cluster.
+- `auth` is the password of the Redis instance and Redis Cluster. The Redis instance and Redis Cluster must be configured with the same password. If there's no password configured, don't set this option.
+
+The test program will test running *redis-plus-plus* in multi-threads environment, and this test will cost a long time. If you want to skip it (not recommended), just comment out the following lines in `test/src/sw/redis++/test_main.cpp` file.
+
+```
+sw::redis::test::ThreadsTest threads_test(opts, cluster_node_opts);
+threads_test.run();
+```
+
+If all tests have been passed, the test program will print the following message: *Pass all tests*. Otherwise, it prints the error message.
 
 ### Use redis-plus-plus In Your Project
 
