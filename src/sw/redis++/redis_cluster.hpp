@@ -957,6 +957,11 @@ ReplyUPtr RedisCluster::_command(Cmd cmd, const StringView &key, Args &&...args)
             auto guarded_connection = _pool.fetch(key);
 
             return _command(cmd, guarded_connection.connection(), std::forward<Args>(args)...);
+        } catch (const IoError &err) {
+            // When master is down, one of its replicas will be promoted to be the new master.
+            // If we try to send command to the old master, we'll get an *IoError*.
+            // In this case, we need to update the slots mapping.
+            _pool.update();
         } catch (const ClosedError &err) {
             // Node might be removed.
             // 1. Get up-to-date slot mapping to check if the node still exists.
