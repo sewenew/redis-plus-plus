@@ -28,6 +28,7 @@
 #include "subscriber.h"
 #include "pipeline.h"
 #include "transaction.h"
+#include "is_command_functor.h"
 
 namespace sw {
 
@@ -62,7 +63,17 @@ public:
     Subscriber subscriber();
 
     template <typename Cmd, typename ...Args>
-    ReplyUPtr command(Cmd cmd, Args &&...args);
+    auto command(Cmd cmd, Args &&...args)->std::enable_if_t<isCommandFunctor_v<Cmd, Args...>, ReplyUPtr>;
+    
+    /**
+     * simplified command execution. cmd is a redis command string with format specifiers, matching the trailing args.
+     * Usage example:
+     * Redis redis("tcp://127.0.0.1:6379");
+     * std::string clientName("Hugo");
+     * redis.command("CLIENT SETNAME %s",clientName.c_str());
+     */
+    template <typename ...Args>
+    ReplyUPtr command(const StringView & cmd, Args &&...args);
 
     // CONNECTION commands.
 

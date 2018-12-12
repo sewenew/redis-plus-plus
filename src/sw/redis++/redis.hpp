@@ -27,7 +27,7 @@ namespace sw {
 namespace redis {
 
 template <typename Cmd, typename ...Args>
-ReplyUPtr Redis::command(Cmd cmd, Args &&...args) {
+auto Redis::command(Cmd cmd, Args &&...args)->std::enable_if_t<isCommandFunctor_v<Cmd, Args...>, ReplyUPtr> {
     if (_connection) {
         // Single Connection Mode.
         if (_connection->broken()) {
@@ -45,6 +45,13 @@ ReplyUPtr Redis::command(Cmd cmd, Args &&...args) {
 
         return _command(connection, cmd, std::forward<Args>(args)...);
     }
+}
+
+template <typename ...Args>
+ReplyUPtr Redis::command(const StringView & cmdString, Args &&...args) {
+    auto cmd = [&cmdString](Connection &connection, Args &&...args){
+            connection.send(cmdString.data(), std::forward<Args>(args)...);};
+    return Redis::command(cmd, std::forward<Args>(args)...);
 }
 
 // KEY commands.
