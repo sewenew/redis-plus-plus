@@ -114,6 +114,10 @@ Connection::ContextUPtr Connection::Connector::connect() const {
 
     assert(ctx);
 
+    if (ctx->err != REDIS_OK) {
+        throw_error(*ctx, "Failed to connect to Redis");
+    }
+
     _set_socket_timeout(*ctx);
 
     _enable_keep_alive(*ctx);
@@ -204,11 +208,7 @@ Connection::Connection(const ConnectionOptions &opts) :
             _ctx(Connector(opts).connect()),
             _last_active(std::chrono::steady_clock::now()),
             _opts(opts) {
-    assert(_ctx);
-
-    if (broken()) {
-        throw_error(*_ctx, "Failed to connect to Redis");
-    }
+    assert(_ctx && !broken());
 
     _set_options();
 }

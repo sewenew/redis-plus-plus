@@ -30,6 +30,7 @@ template <typename Cmd, typename ...Args>
 ReplyUPtr Redis::command(Cmd cmd, Args &&...args) {
     if (_connection) {
         // Single Connection Mode.
+        // TODO: In this case, should we reconnect?
         if (_connection->broken()) {
             throw Error("Connection is broken");
         }
