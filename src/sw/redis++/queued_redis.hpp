@@ -36,7 +36,9 @@ Redis QueuedRedis<Impl>::redis() {
 
 template <typename Impl>
 template <typename Cmd, typename ...Args>
-QueuedRedis<Impl>& QueuedRedis<Impl>::command(Cmd cmd, Args &&...args) {
+auto QueuedRedis<Impl>::command(Cmd cmd, Args &&...args)
+    -> typename std::enable_if<!std::is_convertible<Cmd, StringView>::value,
+                                QueuedRedis<Impl>&>::type {
     try {
         _sanity_check();
 
@@ -49,6 +51,18 @@ QueuedRedis<Impl>& QueuedRedis<Impl>::command(Cmd cmd, Args &&...args) {
     }
 
     return *this;
+}
+
+template <typename Impl>
+template <typename ...Args>
+QueuedRedis<Impl>& QueuedRedis<Impl>::command(const StringView &cmd_name, Args &&...args) {
+    auto cmd = [](Connection &connection, const StringView &cmd_name, Args &&...args) {
+                    CmdArgs cmd_args;
+                    cmd_args.append(cmd_name, std::forward<Args>(args)...);
+                    connection.send(cmd_args);
+    };
+
+    return command(cmd, cmd_name, std::forward<Args>(args)...);
 }
 
 template <typename Impl>

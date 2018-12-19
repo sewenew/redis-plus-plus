@@ -29,11 +29,21 @@ namespace sw {
 namespace redis {
 
 template <typename Cmd, typename FirstArg, typename ...Args>
-ReplyUPtr RedisCluster::command(Cmd cmd, FirstArg &&first_arg, Args &&...args) {
+auto RedisCluster::command(Cmd cmd, FirstArg &&first_arg, Args &&...args)
+    -> typename std::enable_if<!std::is_convertible<Cmd, StringView>::value, ReplyUPtr>::type {
     return _command(cmd,
                     std::is_convertible<typename std::decay<FirstArg>::type, StringView>(),
                     std::forward<FirstArg>(first_arg),
                     std::forward<Args>(args)...);
+}
+
+template <typename FirstArg, typename ...Args>
+auto RedisCluster::command(const StringView &cmd_name, FirstArg &&first_arg, Args &&...args)
+    -> typename std::enable_if<std::is_convertible<FirstArg, StringView>::value
+        || std::is_arithmetic<typename std::decay<FirstArg>::type>::value, ReplyUPtr>::type {
+    auto cmd = Command(cmd_name);
+
+    return _generic_command(cmd, std::forward<FirstArg>(first_arg), std::forward<Args>(args)...);
 }
 
 // KEY commands.
@@ -914,6 +924,21 @@ void RedisCluster::evalsha(const StringView &script,
     auto reply = command(cmd::evalsha, *keys.begin(), script, keys, args);
 
     reply::to_array(*reply, output);
+}
+
+template <typename Cmd, typename FirstArg, typename ...Args>
+auto RedisCluster::_generic_command(Cmd cmd, FirstArg &&first_arg, Args &&...args)
+    -> typename std::enable_if<std::is_convertible<FirstArg, StringView>::value,
+                                ReplyUPtr>::type {
+    return command(cmd, std::forward<FirstArg>(first_arg), std::forward<Args>(args)...);
+}
+
+template <typename Cmd, typename FirstArg, typename ...Args>
+auto RedisCluster::_generic_command(Cmd cmd, FirstArg &&first_arg, Args &&...args)
+    -> typename std::enable_if<std::is_arithmetic<typename std::decay<FirstArg>::type>::value,
+                                ReplyUPtr>::type {
+    auto key = std::to_string(std::forward<FirstArg>(first_arg));
+    return command(cmd, key, std::forward<Args>(args)...);
 }
 
 template <typename Cmd, typename ...Args>

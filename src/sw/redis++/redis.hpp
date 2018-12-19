@@ -27,7 +27,8 @@ namespace sw {
 namespace redis {
 
 template <typename Cmd, typename ...Args>
-ReplyUPtr Redis::command(Cmd cmd, Args &&...args) {
+auto Redis::command(Cmd cmd, Args &&...args)
+    -> typename std::enable_if<!std::is_convertible<Cmd, StringView>::value, ReplyUPtr>::type {
     if (_connection) {
         // Single Connection Mode.
         // TODO: In this case, should we reconnect?
@@ -46,6 +47,17 @@ ReplyUPtr Redis::command(Cmd cmd, Args &&...args) {
 
         return _command(connection, cmd, std::forward<Args>(args)...);
     }
+}
+
+template <typename ...Args>
+ReplyUPtr Redis::command(const StringView &cmd_name, Args &&...args) {
+    auto cmd = [](Connection &connection, const StringView &cmd_name, Args &&...args) {
+                    CmdArgs cmd_args;
+                    cmd_args.append(cmd_name, std::forward<Args>(args)...);
+                    connection.send(cmd_args);
+    };
+
+    return command(cmd, cmd_name, std::forward<Args>(args)...);
 }
 
 // KEY commands.

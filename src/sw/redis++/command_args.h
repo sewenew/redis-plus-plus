@@ -29,25 +29,19 @@ namespace redis {
 
 class CmdArgs {
 public:
-    // Deep copy 'arg'.
-    CmdArgs& append(std::string arg);
+    template <typename Arg>
+    CmdArgs& append(Arg &&arg);
 
-    // Shallow copy 'arg'.
-    CmdArgs& append(const StringView &arg);
-
-    // Shallow copy 'arg'.
-    CmdArgs& append(const char *arg);
+    template <typename Arg, typename ...Args>
+    CmdArgs& append(Arg &&arg, Args &&...args);
 
     // All overloads of operator<< are for internal use only.
     CmdArgs& operator<<(const StringView &arg);
 
     template <typename T,
-                 typename std::enable_if<std::is_integral<T>::value
-                                            || std::is_floating_point<T>::value,
+                 typename std::enable_if<std::is_arithmetic<typename std::decay<T>::type>::value,
                                         int>::type = 0>
-    CmdArgs& operator<<(T arg) {
-        return append(std::to_string(arg));
-    }
+    CmdArgs& operator<<(T &&arg);
 
     template <typename Iter>
     CmdArgs& operator<<(const std::pair<Iter, Iter> &range);
@@ -75,6 +69,22 @@ public:
     }
 
 private:
+    // Deep copy.
+    CmdArgs& _append(std::string arg);
+
+    // Shallow copy.
+    CmdArgs& _append(const StringView &arg);
+
+    // Shallow copy.
+    CmdArgs& _append(const char *arg);
+
+    template <typename T,
+                 typename std::enable_if<std::is_arithmetic<typename std::decay<T>::type>::value,
+                                        int>::type = 0>
+    CmdArgs& _append(T &&arg) {
+        return operator<<(std::forward<T>(arg));
+    }
+
     template <typename Iter>
     CmdArgs& _append(std::true_type, const std::pair<Iter, Iter> &range);
 
@@ -87,17 +97,16 @@ private:
     std::list<std::string> _args;
 };
 
-inline CmdArgs& CmdArgs::append(std::string arg) {
-    _args.push_back(std::move(arg));
-    return operator<<(_args.back());
+template <typename Arg>
+inline CmdArgs& CmdArgs::append(Arg &&arg) {
+    return _append(std::forward<Arg>(arg));
 }
 
-inline CmdArgs& CmdArgs::append(const StringView &arg) {
-    return operator<<(arg);
-}
+template <typename Arg, typename ...Args>
+inline CmdArgs& CmdArgs::append(Arg &&arg, Args &&...args) {
+    _append(std::forward<Arg>(arg));
 
-inline CmdArgs& CmdArgs::append(const char *arg) {
-    return operator<<(arg);
+    return append(std::forward<Args>(args)...);
 }
 
 inline CmdArgs& CmdArgs::operator<<(const StringView &arg) {
@@ -112,12 +121,32 @@ inline CmdArgs& CmdArgs::operator<<(const std::pair<Iter, Iter> &range) {
     return _append(IsKvPair<typename std::decay<decltype(*std::declval<Iter>())>::type>(), range);
 }
 
+template <typename T,
+             typename std::enable_if<std::is_arithmetic<typename std::decay<T>::type>::value,
+                                    int>::type>
+inline CmdArgs& CmdArgs::operator<<(T &&arg) {
+    return _append(std::to_string(std::forward<T>(arg)));
+}
+
 template <std::size_t N, typename ...Args>
 auto CmdArgs::operator<<(const std::tuple<Args...> &arg) ->
     typename std::enable_if<N < sizeof...(Args), CmdArgs&>::type {
     operator<<(std::get<N>(arg));
 
     return operator<<<N + 1, Args...>(arg);
+}
+
+inline CmdArgs& CmdArgs::_append(std::string arg) {
+    _args.push_back(std::move(arg));
+    return operator<<(_args.back());
+}
+
+inline CmdArgs& CmdArgs::_append(const StringView &arg) {
+    return operator<<(arg);
+}
+
+inline CmdArgs& CmdArgs::_append(const char *arg) {
+    return operator<<(arg);
 }
 
 template <typename Iter>

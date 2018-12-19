@@ -31,6 +31,8 @@ void SanityTest::run() {
     _test_move_ctor();
 
     _test_cmdargs();
+
+    _test_generic_command();
 }
 
 void SanityTest::_test_uri_ctor() {
@@ -98,6 +100,30 @@ void SanityTest::_test_cmdargs() {
     _redis.lrange(key, 0, -1, std::back_inserter(res));
     REDIS_ASSERT((res == std::vector<std::string>{"5", "4", "3", "2", "1"}),
             "failed to test cmdargs");
+}
+
+void SanityTest::_test_generic_command() {
+    auto key = test_key("key");
+
+    KeyDeleter deleter(_redis, key);
+
+    std::string cmd("set");
+    _redis.command(cmd, key, 123);
+    auto reply = _redis.command("get", key);
+    auto val = reply::parse<OptionalString>(*reply);
+    REDIS_ASSERT(val && *val == "123", "failed to test generic command");
+
+    reply = _redis.command("incr", key);
+    REDIS_ASSERT(reply::parse<long long>(*reply) == 124, "failed to test generic command");
+
+    auto pipe = _redis.pipeline();
+    auto pipe_replies = pipe.command("set", key, "value").command("get", key).exec();
+    val = pipe_replies.get<OptionalString>(1);
+    REDIS_ASSERT(val && *val == "value", "failed to test generic command");
+
+    auto tx = _redis.transaction();
+    auto tx_replies = tx.command("set", key, 456).command("incr", key).exec();
+    REDIS_ASSERT(tx_replies.get<long long>(1) == 457, "failed to test generic command");
 }
 
 }

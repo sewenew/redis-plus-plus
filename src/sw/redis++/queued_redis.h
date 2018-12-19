@@ -48,7 +48,12 @@ public:
     Redis redis();
 
     template <typename Cmd, typename ...Args>
-    QueuedRedis& command(Cmd cmd, Args &&...args);
+    auto command(Cmd cmd, Args &&...args)
+        -> typename std::enable_if<!std::is_convertible<Cmd, StringView>::value,
+                                    QueuedRedis&>::type;
+
+    template <typename ...Args>
+    QueuedRedis& command(const StringView &cmd_name, Args &&...args);
 
     QueuedReplies exec();
 

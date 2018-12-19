@@ -64,7 +64,13 @@ public:
     Subscriber subscriber();
 
     template <typename Cmd, typename FirstArg, typename ...Args>
-    ReplyUPtr command(Cmd cmd, FirstArg &&first_arg, Args &&...args);
+    auto command(Cmd cmd, FirstArg &&first_arg, Args &&...args)
+        -> typename std::enable_if<!std::is_convertible<Cmd, StringView>::value, ReplyUPtr>::type;
+
+    template <typename FirstArg, typename ...Args>
+    auto command(const StringView &cmd_name, FirstArg &&first_arg, Args &&...args)
+        -> typename std::enable_if<std::is_convertible<FirstArg, StringView>::value
+                || std::is_arithmetic<typename std::decay<FirstArg>::type>::value, ReplyUPtr>::type;
 
     // KEY commands.
 
@@ -952,6 +958,31 @@ public:
     long long publish(const StringView &channel, const StringView &message);
 
 private:
+    class Command {
+    public:
+        explicit Command(const StringView &cmd_name) : _cmd_name(cmd_name) {}
+
+        template <typename ...Args>
+        void operator()(Connection &connection, Args &&...args) const {
+            CmdArgs cmd_args;
+            cmd_args.append(_cmd_name, std::forward<Args>(args)...);
+            connection.send(cmd_args);
+        }
+
+    private:
+        StringView _cmd_name;
+    };
+
+    template <typename Cmd, typename FirstArg, typename ...Args>
+    auto _generic_command(Cmd cmd, FirstArg &&first_arg, Args &&...args)
+        -> typename std::enable_if<std::is_convertible<FirstArg, StringView>::value,
+                                    ReplyUPtr>::type;
+
+    template <typename Cmd, typename FirstArg, typename ...Args>
+    auto _generic_command(Cmd cmd, FirstArg &&first_arg, Args &&...args)
+        -> typename std::enable_if<std::is_arithmetic<typename std::decay<FirstArg>::type>::value,
+                                    ReplyUPtr>::type;
+
     template <typename Cmd, typename ...Args>
     ReplyUPtr _command(Cmd cmd, Connection &connection, Args &&...args);
 

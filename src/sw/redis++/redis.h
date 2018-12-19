@@ -62,7 +62,11 @@ public:
     Subscriber subscriber();
 
     template <typename Cmd, typename ...Args>
-    ReplyUPtr command(Cmd cmd, Args &&...args);
+    auto command(Cmd cmd, Args &&...args)
+        -> typename std::enable_if<!std::is_convertible<Cmd, StringView>::value, ReplyUPtr>::type;
+
+    template <typename ...Args>
+    ReplyUPtr command(const StringView &cmd_name, Args &&...args);
 
     // CONNECTION commands.
 

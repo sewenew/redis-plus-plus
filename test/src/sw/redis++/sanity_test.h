@@ -38,6 +38,8 @@ private:
 
     void _test_cmdargs();
 
+    void _test_generic_command();
+
     ConnectionOptions _opts;
 
     Redis _redis;
