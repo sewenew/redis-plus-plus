@@ -142,8 +142,6 @@ private:
 
     void _select_db();
 
-    std::string _server_info() const;
-
     redisContext* _context();
 
     ContextUPtr _ctx;

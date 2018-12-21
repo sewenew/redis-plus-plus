@@ -270,24 +270,6 @@ ReplyUPtr Connection::recv() {
     return reply;
 }
 
-std::string Connection::_server_info() const {
-    assert(_ctx);
-
-    auto connection_type = _ctx->connection_type;
-    switch (connection_type) {
-    case REDIS_CONN_TCP:
-        return std::string(_ctx->tcp.host)
-                    + ":" + std::to_string(_ctx->tcp.port);
-
-    case REDIS_CONN_UNIX:
-        return _ctx->unix_sock.path;
-
-    default:
-        throw Error("Unknown connection type: "
-                + std::to_string(connection_type));
-    }
-}
-
 void Connection::_set_options() {
     _auth();
 
