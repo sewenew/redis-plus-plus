@@ -36,7 +36,7 @@ This is a C++ client for Redis. It's based on [hiredis](https://github.com/redis
 
 ### Install hiredis
 
-Since **redis-plus-plus** is based on hiredis, you should install hiredis first.
+Since **redis-plus-plus** is based on hiredis, you should install hiredis first. The minimum version requirement for hiredis is **v0.12.1**, and you'd better use the latest release of hiredis.
 
 ```
 git clone https://github.com/redis/hiredis.git
