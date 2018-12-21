@@ -31,7 +31,9 @@ std::string to_status(redisReply &reply) {
         throw ProtoError("A null status reply");
     }
 
-    return {reply.str, reply.len};
+    // Old version hiredis' *redisReply::len* is of type int.
+    // So we CANNOT have something like: *return {reply.str, reply.len}*.
+    return std::string(reply.str, reply.len);
 }
 
 std::string parse(ParseTag<std::string>, redisReply &reply) {
@@ -43,7 +45,9 @@ std::string parse(ParseTag<std::string>, redisReply &reply) {
         throw ProtoError("A null string reply");
     }
 
-    return {reply.str, reply.len};
+    // Old version hiredis' *redisReply::len* is of type int.
+    // So we CANNOT have something like: *return {reply.str, reply.len}*.
+    return std::string(reply.str, reply.len);
 }
 
 long long parse(ParseTag<long long>, redisReply &reply) {
@@ -81,7 +85,9 @@ void parse(ParseTag<void>, redisReply &reply) {
 
     static const std::string OK = "OK";
 
-    if (reply.len != OK.size()
+    // Old version hiredis' *redisReply::len* is of type int.
+    // So we have to cast it to an unsigned int.
+    if (static_cast<std::size_t>(reply.len) != OK.size()
             || OK.compare(0, OK.size(), reply.str, reply.len) != 0) {
         throw ProtoError("NOT ok status reply: " + reply::to_status(reply));
     }
