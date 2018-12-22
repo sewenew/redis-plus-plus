@@ -48,7 +48,7 @@ make
 make install
 ```
 
-If you want to install *hiredis* at non-default location, use the following commands to specify the installation path.
+By default *hiredis* is installed at */usr/local*. If you want to install *hiredis* at non-default location, use the following commands to specify the installation path.
 
 ```
 make PREFIX=/non/default/path
@@ -78,7 +78,7 @@ make install
 cd ..
 ```
 
-If hiredis is installed at non-default location, you should use `CMAKE_PREFIX_PATH` to specify the installation path of *hiredis*. Also you can use `CMAKE_INSTALL_PREFIX` to install *redis-plus-plus* at non-default location.
+If hiredis is installed at non-default location, you should use `CMAKE_PREFIX_PATH` to specify the installation path of *hiredis*. By default, *redis-plus-plus* is installed at */usr/local*. However, you can use `CMAKE_INSTALL_PREFIX` to install *redis-plus-plus* at non-default location.
 
 ```
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/path/to/hiredis -DCMAKE_INSTALL_PREFIX=/path/to/install/redis-plus-plus ..
@@ -126,6 +126,14 @@ If *hiredis* and *redis-plus-plus* are installed at non-default location, you sh
 ```
 g++ -std=c++11 -I/non-default/install/include/path -L/non-default/install/lib/path -lhiredis -lredis++ -pthread -o app app.cpp
 ```
+
+When linking the shared library, and running your application, you might get the following error message: *error while loading shared libraries: xxx: cannot open shared object file: No such file or directory*. That's because the linker cannot find the shared libraries. In order to solve the problem, you can add the path where you installed *hiredis* and *redis-plus-plus* libraries, to `LD_LIBRARY_PATH` envirnoment variable. For example:
+
+```
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+```
+
+Check [this StackOverflow question](https://stackoverflow.com/questions/480764) for details on how to solve the problem.
 
 #### Use Static Libraries
 
