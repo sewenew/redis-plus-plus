@@ -23,7 +23,10 @@ namespace redis {
 
 namespace test {
 
-SanityTest::SanityTest(const ConnectionOptions &opts) : _opts(opts), _redis(opts) {}
+SanityTest::SanityTest(const ConnectionOptions &opts,
+                        const ConnectionOptions &cluster_opts) : _opts(opts),
+                                                                    _redis(opts),
+                                                                    _cluster(cluster_opts) {}
 
 void SanityTest::run() {
     _test_uri_ctor();
@@ -113,8 +116,23 @@ void SanityTest::_test_generic_command() {
     auto val = reply::parse<OptionalString>(*reply);
     REDIS_ASSERT(val && *val == "123", "failed to test generic command");
 
+    _cluster.command(cmd, key, 456);
+    reply = _cluster.command("get", key);
+    val = reply::parse<OptionalString>(*reply);
+    REDIS_ASSERT(val && *val == "456", "failed to test generic command");
+
     reply = _redis.command("incr", key);
     REDIS_ASSERT(reply::parse<long long>(*reply) == 124, "failed to test generic command");
+
+    reply = _cluster.command("incr", key);
+    REDIS_ASSERT(reply::parse<long long>(*reply) == 457, "failed to test generic command");
+
+    _redis.command("mset", "k1", "v", "k2", "v");
+    reply = _redis.command("mget", "k1", "k2");
+    std::vector<OptionalString> res;
+    reply::to_array(*reply, std::back_inserter(res));
+    REDIS_ASSERT(res.size() == 2 && res[0] && *(res[0]) == "v" && res[1] && *(res[1]) == "v",
+            "failed to test generic command");
 
     auto pipe = _redis.pipeline();
     auto pipe_replies = pipe.command("set", key, "value").command("get", key).exec();
@@ -124,6 +142,26 @@ void SanityTest::_test_generic_command() {
     auto tx = _redis.transaction();
     auto tx_replies = tx.command("set", key, 456).command("incr", key).exec();
     REDIS_ASSERT(tx_replies.get<long long>(1) == 457, "failed to test generic command");
+
+    auto cmd_str = {"set", key.c_str(), "new_value"};
+    _redis.command(cmd_str.begin(), cmd_str.end());
+    reply = _redis.command("get", key);
+    val = reply::parse<OptionalString>(*reply);
+    REDIS_ASSERT(val && *val == "new_value", "failed to test generic command");
+
+    _cluster.command(cmd_str.begin(), cmd_str.end());
+    reply = _cluster.command("get", key);
+    val = reply::parse<OptionalString>(*reply);
+    REDIS_ASSERT(val && *val == "new_value", "failed to test generic command");
+
+    auto hash_taged_mset = {"mset", "{k}1", "v", "{k}2", "v"};
+    _cluster.command(hash_taged_mset.begin(), hash_taged_mset.end());
+    auto hash_taged_mget = {"mget", "{k}1", "{k}2"};
+    reply = _cluster.command(hash_taged_mget.begin(), hash_taged_mget.end());
+    res.clear();
+    reply::to_array(*reply, std::back_inserter(res));
+    REDIS_ASSERT(res.size() == 2 && res[0] && *(res[0]) == "v" && res[1] && *(res[1]) == "v",
+            "failed to test generic command");
 }
 
 }

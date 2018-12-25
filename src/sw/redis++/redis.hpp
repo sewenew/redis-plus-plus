@@ -60,6 +60,26 @@ ReplyUPtr Redis::command(const StringView &cmd_name, Args &&...args) {
     return command(cmd, cmd_name, std::forward<Args>(args)...);
 }
 
+template <typename Input>
+auto Redis::command(Input first, Input last)
+    -> typename std::enable_if<!std::is_convertible<Input, StringView>::value
+                                && IsIter<Input>::value, ReplyUPtr>::type {
+    if (first == last) {
+        throw Error("command: empty range");
+    }
+
+    auto cmd = [](Connection &connection, Input first, Input last) {
+                    CmdArgs cmd_args;
+                    while (first != last) {
+                        cmd_args.append(*first);
+                        ++first;
+                    }
+                    connection.send(cmd_args);
+    };
+
+    return command(cmd, first, last);
+}
+
 // KEY commands.
 
 template <typename Input>

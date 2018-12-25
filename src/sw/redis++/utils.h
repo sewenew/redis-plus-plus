@@ -166,6 +166,13 @@ struct IterType<Iter,
     using type = typename std::decay<typename Iter::container_type::value_type>::type;
 };
 
+template <typename Iter, typename T = Void<>>
+struct IsIter : std::false_type {};
+
+template <typename Iter>
+struct IsIter<Iter,
+                Void<typename std::iterator_traits<Iter>::iterator_category>> : std::true_type {};
+
 template <typename T>
 struct IsKvPairIter : IsKvPair<typename IterType<T>::type> {};
 

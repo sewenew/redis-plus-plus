@@ -301,6 +301,15 @@ pool_options.size = 3;  // Pool size, i.e. max number of connections.
 Redis redis2(connection_options, pool_options);
 ```
 
+`Redis` is movable but NOT copyable.
+
+```
+// auto redis3 = redis1;    // this won't compile.
+
+// But it's movable.
+auto redis3 = std::move(redis1);
+```
+
 *redis-plus-plus* also supports connecting to Redis server with Unix Domain Socket.
 
 ```
@@ -402,46 +411,88 @@ using OptionalStringPair = Optional<std::pair<std::string, std::string>>;
 
 #### `command` Method
 
-There're too many Redis commands, we haven't implemented all of them. However, you can use `Redis::command` method to send these commands to Redis.
+There're too many Redis commands, we haven't implemented all of them. However, you can use `Redis::command` method to send any commands to Redis. Unlike other client libraries, `Redis::command` doesn't use format string to combine command arguments into a command string. Instead, you can directly pass command arguments of string type or arithmetic type as parameters of `Redis::command`.
+
+```
+template <typename ...Args>
+ReplyUPtr command(const StringView &cmd_name, Args &&...args);
+
+template <typename Input>
+auto command(Input first, Input last)
+    -> typename std::enable_if<!std::is_convertible<Input, StringView>::value
+                                && IsIter<Input>::value, ReplyUPtr>::type;
+```
+
+Don't be scared with those template parameters and type traits. It's easy to use, and we'll show you some examples later.
+
+`Redis::command` returns a `ReplyUPtr`, i.e. `std::unique_ptr<redisReply, ReplyDeleter>`, object. Normally you don't need to parse it manually. Instead, you only need to pass the reply to `template <typename T> T reply::parse(redisReply &)` to get a value of type `T`. By now, `T` can be `std::string`, `double`, `long long`, `bool`, `void`, `Optional<T>`, `std::pair`, and `std::tuple`. If the command returns an array of elements, you can call `template <typename Output> reply::to_array(redisReply &reply, Output output)` to parse the result into an array or STL container.
+
+Let's see some examples:
+
+```
+auto redis = Redis("tcp://127.0.0.1");
+
+// Redis class doesn't have built-in *CLIENT SETNAME* method.
+// However, you can use Redis::command to send the command manually.
+redis.command("client", "setname", "name");
+auto r = redis.command("client", "getname");
+assert(r);
+
+// If the command returns a single element,
+// use `reply::parse<T>(redisReply&)` to parse it.
+auto val = reply::parse<OptionalString>(*r);
+assert(val && *val == "name");
+
+// NOTE: the following code is for example only. In fact, Redis has built-in
+// methods for the following commands.
+
+// Arguments of the command can be strings.
+redis.command("set", "key", "100");
+
+// Arguments of the command can be a combination of strings and integers.
+r = redis.command("incrby", "key", 1);
+assert(r && reply::parse<long long>(*r) == 101);
+
+// Argument can also be double.
+redis.command("incrbyfloat", "key", 2.3);
+
+// Even the key of the command can be of arithmetic type.
+redis.command("set", 100, "value");
+
+r = redis.command("get", 100);
+val = reply::parse<OptionalString>(*r);
+assert(val && *val == "value");
+
+// If the command returns an array of elements.
+r = redis.command("mget", "k1", "k2", "k3");
+// Use `reply::to_array(redisReply&, OutputIterator)` to parse the result into an STL container.
+std::vector<OptionalString> result;
+reply::to_array(*r, std::back_inserter(result));
+
+// Arguments of the command can be a range of strings.
+auto cmd_strs = {"set", "key", "value"};
+redis.command(cmd_strs.begin(), cmd_strs.end());
+```
+
+**NOTE**: The name of some Redis commands is composed with two strings, e.g. *CLIENT SETNAME*. In this case, you need to pass these two strings as two arguments for `Redis::command`.
+
+```
+// This is good.
+redis.command("client", "setname", "name");
+
+// This is bad.
+// redis.command("client setname", "name");
+```
+
+There's another `Redis::command` method:
 
 ```
 template <typename Cmd, typename ...Args>
-ReplyUPtr Redis::command(Cmd cmd, Args &&...args);
+auto command(Cmd cmd, Args &&...args)
+    -> typename std::enable_if<!std::is_convertible<Cmd, StringView>::value, ReplyUPtr>::type;
 ```
 
-In order to use this method, you need to pass in a `Cmd` object, which must be a callable object, e.g. function, functor, or lambda. The first argument of `Cmd` is of type `Connection`. `Redis::command` will fetch a connection from the connection pool, and pass the connection and `args` as arguments for `Cmd`. `Cmd` can call the overloaded `Connection::send` methods to send the command to Redis.
-
-`Redis::command` returns a `ReplyUPtr`, i.e. `std::unique_ptr<redisReply, ReplyDeleter>`. Normally you don't need to parse it manually. Instead, you only need to pass the reply to `template <typename T> T reply::parse(redisReply &)` to get a value of type `T`. By now, `T` can be `std::string`, `double`, `long long`, `bool`, `void`, `Optional<T>`, `std::pair`, and `std::tuple`.
-
-Let's see an example:
-
-```
-auto lpush_num = [](Connection &connection, const StringView &key, long long num) {
-    connection.send("LPUSH %b %lld",
-                    key.data(), key.size(),
-                    num);
-};
-
-auto lpush_nums = [](Connection &connection,
-                        const StringView &key,
-                        const std::vector<long long> &nums) {
-    CmdArgs args;
-    args.append("LPUSH").append(key);
-    for (auto num : nums) {
-        args.append(std::to_string(num));
-    }
-
-    connection.send(args);
-};
-
-auto reply = redis.command(lpush_num, "list", 1);
-assert(reply::parse<long long>(*reply) == 1);
-
-reply = redis.command(lpush_nums, "list", std::vector<long long>{2, 3, 4, 5});
-assert(reply::parse<long long>(*reply) == 5);
-```
-
-Please see [connection.h](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/connection.h), [command_args.h](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/command_args.h), and [command.h](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/command.h) for details.
+However, this method exposes some implementation details, and only for internal use. You should NOT use this method.
 
 #### Exception
 
@@ -876,6 +927,12 @@ You can send Redis commands through the `Pipeline` object. Just like the `Redis`
 pipe.set("key", "val").incr("num").lpush("list", {0, 1, 2});
 ```
 
+`Pipeline` also has a `Pipeline::command` method:
+
+```
+pipe.command("set", "key", "value");
+```
+
 #### Get Replies
 
 Once you finish sending commands to Redis, you can call `Pipeline::exec` to get replies of these commands. You can also chain `Pipeline::exec` with other commands.
@@ -955,6 +1012,8 @@ Also you don't need to send [MULTI](https://redis.io/commands/multi) command to 
 ```
 tx.set("key", "val").incr("num").lpush("list", {0, 1, 2});
 ```
+
+Same as `Pipeline`, `Transaction` also has a `Transaction::command` interface for sending non-built-in commands.
 
 #### Execute Transaction
 

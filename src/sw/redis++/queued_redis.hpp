@@ -66,6 +66,27 @@ QueuedRedis<Impl>& QueuedRedis<Impl>::command(const StringView &cmd_name, Args &
 }
 
 template <typename Impl>
+template <typename Input>
+auto QueuedRedis<Impl>::command(Input first, Input last)
+    -> typename std::enable_if<!std::is_convertible<Input, StringView>::value
+                                && IsIter<Input>::value, QueuedRedis<Impl>&>::type {
+    if (first == last) {
+        throw Error("command: empty range");
+    }
+
+    auto cmd = [](Connection &connection, Input first, Input last) {
+                    CmdArgs cmd_args;
+                    while (first != last) {
+                        cmd_args.append(*first);
+                        ++first;
+                    }
+                    connection.send(cmd_args);
+    };
+
+    return command(cmd, first, last);
+}
+
+template <typename Impl>
 QueuedReplies QueuedRedis<Impl>::exec() {
     try {
         _sanity_check();

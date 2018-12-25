@@ -27,7 +27,7 @@ namespace test {
 
 class SanityTest {
 public:
-    explicit SanityTest(const ConnectionOptions &opts);
+    SanityTest(const ConnectionOptions &opts, const ConnectionOptions &cluster_opts);
 
     void run();
 
@@ -43,6 +43,8 @@ private:
     ConnectionOptions _opts;
 
     Redis _redis;
+
+    RedisCluster _cluster;
 };
 
 }

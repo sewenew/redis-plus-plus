@@ -68,6 +68,11 @@ public:
     template <typename ...Args>
     ReplyUPtr command(const StringView &cmd_name, Args &&...args);
 
+    template <typename Input>
+    auto command(Input first, Input last)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value
+                                    && IsIter<Input>::value, ReplyUPtr>::type;
+
     // CONNECTION commands.
 
     void auth(const StringView &password);

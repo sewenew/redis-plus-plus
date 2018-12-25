@@ -72,6 +72,11 @@ public:
         -> typename std::enable_if<std::is_convertible<FirstArg, StringView>::value
                 || std::is_arithmetic<typename std::decay<FirstArg>::type>::value, ReplyUPtr>::type;
 
+    template <typename Input>
+    auto command(Input first, Input last)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value
+                                    && IsIter<Input>::value, ReplyUPtr>::type;
+
     // KEY commands.
 
     long long del(const StringView &key);

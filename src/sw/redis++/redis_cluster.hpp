@@ -46,6 +46,30 @@ auto RedisCluster::command(const StringView &cmd_name, FirstArg &&first_arg, Arg
     return _generic_command(cmd, std::forward<FirstArg>(first_arg), std::forward<Args>(args)...);
 }
 
+template <typename Input>
+auto RedisCluster::command(Input first, Input last)
+    -> typename std::enable_if<!std::is_convertible<Input, StringView>::value
+                                && IsIter<Input>::value, ReplyUPtr>::type {
+    if (first == last || std::next(first) == last) {
+        throw Error("command: invalid range");
+    }
+
+    const auto &key = *first;
+    ++first;
+
+    auto cmd = [&key](Connection &connection, Input first, Input last) {
+                        CmdArgs cmd_args;
+                        cmd_args.append(key);
+                        while (first != last) {
+                            cmd_args.append(*first);
+                            ++first;
+                        }
+                        connection.send(cmd_args);
+    };
+
+    return command(cmd, first, last);
+}
+
 // KEY commands.
 
 template <typename Input>

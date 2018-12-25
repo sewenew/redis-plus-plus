@@ -55,6 +55,11 @@ public:
     template <typename ...Args>
     QueuedRedis& command(const StringView &cmd_name, Args &&...args);
 
+    template <typename Input>
+    auto command(Input first, Input last)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value
+                                    && IsIter<Input>::value, QueuedRedis&>::type;
+
     QueuedReplies exec();
 
     void discard();
