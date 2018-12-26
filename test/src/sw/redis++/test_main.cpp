@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
         sw::redis::ConnectionOptions cluster_node_opts;
         std::tie(opts, cluster_node_opts) = parse_options(argc, argv);
 
-        sw::redis::test::SanityTest sanity_test(opts);
+        sw::redis::test::SanityTest sanity_test(opts, cluster_node_opts);
         sanity_test.run();
 
         std::cout << "Pass sanity tests" << std::endl;
