@@ -66,6 +66,12 @@ void ClusterTest::_test_cluster() {
     _redis_cluster.zadd(zset_key, member, score);
     auto res = _redis_cluster.zscore(zset_key, member);
     REDIS_ASSERT(res && score == *res, "failed to test cluster: zadd/zscore commands");
+
+    auto r = _redis_cluster.redis("hash-tag");
+    r.command("client", "setname", "my-name");
+    auto reply = r.command("client", "getname");
+    val = reply::parse<OptionalString>(*reply);
+    REDIS_ASSERT(val && *val == "my-name", "failed to test cluster");
 }
 
 void ClusterTest::_test_hash_tag() {

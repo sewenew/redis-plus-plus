@@ -26,6 +26,11 @@ namespace redis {
 
 RedisCluster::RedisCluster(const std::string &uri) : RedisCluster(ConnectionOptions(uri)) {}
 
+Redis RedisCluster::redis(const StringView &hash_tag) {
+    auto opts = _pool.connection_options(hash_tag);
+    return Redis(std::make_shared<Connection>(opts));
+}
+
 Pipeline RedisCluster::pipeline(const StringView &hash_tag) {
     auto opts = _pool.connection_options(hash_tag);
     return Pipeline(std::make_shared<Connection>(opts));

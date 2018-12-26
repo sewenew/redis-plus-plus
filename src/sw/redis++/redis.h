@@ -1088,6 +1088,8 @@ private:
     template <typename Impl>
     friend class QueuedRedis;
 
+    friend class RedisCluster;
+
     // For internal use.
     explicit Redis(const ConnectionSPtr &connection);
 

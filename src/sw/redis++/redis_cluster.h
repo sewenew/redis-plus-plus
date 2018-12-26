@@ -28,6 +28,7 @@
 #include "subscriber.h"
 #include "pipeline.h"
 #include "transaction.h"
+#include "redis.h"
 
 namespace sw {
 
@@ -56,6 +57,8 @@ public:
 
     RedisCluster(RedisCluster &&) = default;
     RedisCluster& operator=(RedisCluster &&) = default;
+
+    Redis redis(const StringView &hash_tag);
 
     Pipeline pipeline(const StringView &hash_tag);
 

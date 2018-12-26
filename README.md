@@ -919,6 +919,8 @@ auto pipe = redis.pipeline();
 
 When creating a `Pipeline` object, `Redis::pipeline` method creates a new connection to Redis server. This connection is NOT picked from the connection pool, but a newly created connection. This connection has the same `ConnectionOptions` with other connections in the connection pool. `Pipeline` object maintains the new connection, and all piped commands are sent through this connection.
 
+**NOTE**: Creating a `Pipeline` object is NOT cheap, since it creates a new connection. So you'd better reuse the `Pipeline` as much as possible.
+
 #### Send Commands
 
 You can send Redis commands through the `Pipeline` object. Just like the `Redis` class, `Pipeline` has one or more (overloaded) methods for each Redis command. However, you CANNOT get the replies until you call `Pipeline::exec`. So these methods do NOT return the reply, instead they return the `Pipeline` object itself. And you can chain these methods calls.
@@ -1003,6 +1005,8 @@ auto tx = redis.transaction();
 
 As the `Pipeline` class, `Transaction` maintains a newly created connection to Redis. This connection has the same `ConnectionOptions` with the `Redis` object.
 
+**NOTE**: Creating a `Transaction` object is NOT cheap, since it creates a new connection. So you'd better reuse the `Transaction` as much as possible.
+
 Also you don't need to send [MULTI](https://redis.io/commands/multi) command to Redis. `Transaction` will do that for you automatically.
 
 #### Send Commands
@@ -1077,7 +1081,7 @@ auto redis = Redis("tcp://127.0.0.1");
 // Create a transaction.
 auto tx = redis.transaction();
 
-// Create a Redis object from the Transaction object, which share a single connection.
+// Create a Redis object from the Transaction object. Both objects share the same connection.
 auto r = tx.redis();
 
 // If the watched key has been modified by other clients, the transaction might fail.
@@ -1166,7 +1170,10 @@ As we mentioned, `RedisCluster`'s interfaces are similar to `Redis`. It supports
 - Not support commands without key as argument, e.g. [PING](https://redis.io/commands/ping), [INFO](https://redis.io/commands/info).
 - Not support Lua script without key parameters.
 
-`RedisCluster` does NOT support these interfaces, because it has no idea to which node these commands should be sent.
+`RedisCluster` does NOT have built-in methods to send these commands or Lua scripts. Since there's no key parameter, `RedisCluster` has no idea to which node these commands should be sent. However there're 2 workarounds for this problem:
+
+- If you want to send these commands to a specific node, you can create a `Redis` object with that node's host and port, and use the `Redis` object to do the work.
+- Instead of host and port, you can also call `Redis RedisCluster::redis(const StringView &hash_tag)` to create a `Redis` object with a hash-tag specifying the node. In this case, the returned `Redis` object creates a new connection to Redis server.
 
 Also you can use the [hash tags](https://redis.io/topics/cluster-spec#keys-hash-tags) to send multiple-key commands.
 
@@ -1218,6 +1225,12 @@ auto replies = pipe.incr("{counter}:1").incr("{counter}:2").exec();
 // Transaction.
 auto tx = redis_cluster.transaction("key");
 replies = tx.incr("key").get("key").exec();
+
+// Create a Redis object with hash-tag.
+auto r = redis_cluster.redis("hash-tag");
+
+// And send command without key parameter to the server.
+r.command("client", "setname", "connection-name");
 ```
 
 #### Details
