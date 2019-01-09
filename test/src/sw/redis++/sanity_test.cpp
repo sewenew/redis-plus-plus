@@ -107,18 +107,37 @@ void SanityTest::_test_cmdargs() {
 
 void SanityTest::_test_generic_command() {
     auto key = test_key("key");
+    auto not_exist_key = test_key("not_exist_key");
 
-    KeyDeleter deleter(_redis, key);
+    KeyDeleter deleter(_redis, {key, not_exist_key});
+
+    auto reply = _redis.command("ping");
+    REDIS_ASSERT(reply && reply::parse<std::string>(*reply) == "PONG",
+            "failed to test generic command");
+
+    auto pong = _redis.command<std::string>("ping");
+    REDIS_ASSERT(pong == "PONG", "failed to test generic command");
 
     std::string cmd("set");
     _redis.command(cmd, key, 123);
-    auto reply = _redis.command("get", key);
+    reply = _redis.command("get", key);
     auto val = reply::parse<OptionalString>(*reply);
     REDIS_ASSERT(val && *val == "123", "failed to test generic command");
+
+    val = _redis.command<OptionalString>("get", key);
+    REDIS_ASSERT(val && *val == "123", "failed to test generic command");
+
+    std::vector<OptionalString> res;
+    _redis.command("mget", key, not_exist_key, std::back_inserter(res));
+    REDIS_ASSERT(res.size() == 2 && res[0] && *res[0] == "123" && !res[1],
+            "failed to test generic command");
 
     _cluster.command(cmd, key, 456);
     reply = _cluster.command("get", key);
     val = reply::parse<OptionalString>(*reply);
+    REDIS_ASSERT(val && *val == "456", "failed to test generic command");
+
+    val = _cluster.command<OptionalString>("get", key);
     REDIS_ASSERT(val && *val == "456", "failed to test generic command");
 
     reply = _redis.command("incr", key);
@@ -129,7 +148,7 @@ void SanityTest::_test_generic_command() {
 
     _redis.command("mset", "k1", "v", "k2", "v");
     reply = _redis.command("mget", "k1", "k2");
-    std::vector<OptionalString> res;
+    res.clear();
     reply::to_array(*reply, std::back_inserter(res));
     REDIS_ASSERT(res.size() == 2 && res[0] && *(res[0]) == "v" && res[1] && *(res[1]) == "v",
             "failed to test generic command");
@@ -145,13 +164,30 @@ void SanityTest::_test_generic_command() {
 
     auto cmd_str = {"set", key.c_str(), "new_value"};
     _redis.command(cmd_str.begin(), cmd_str.end());
-    reply = _redis.command("get", key);
+
+    cmd_str = {"get", key.c_str()};
+    reply = _redis.command(cmd_str.begin(), cmd_str.end());
     val = reply::parse<OptionalString>(*reply);
     REDIS_ASSERT(val && *val == "new_value", "failed to test generic command");
 
+    val = _redis.command<OptionalString>(cmd_str.begin(), cmd_str.end());
+    REDIS_ASSERT(val && *val == "new_value", "failed to test generic command");
+
+    cmd_str = {"mget", key.c_str(), not_exist_key.c_str()};
+    res.clear();
+    _redis.command(cmd_str.begin(), cmd_str.end(), std::back_inserter(res));
+    REDIS_ASSERT(res.size() == 2 && res[0] && *res[0] == "new_value" && !res[1],
+            "failed to test generic command");
+
+    cmd_str = {"set", key.c_str(), "new_value"};
     _cluster.command(cmd_str.begin(), cmd_str.end());
-    reply = _cluster.command("get", key);
+
+    cmd_str = {"get", key.c_str()};
+    reply = _cluster.command(cmd_str.begin(), cmd_str.end());
     val = reply::parse<OptionalString>(*reply);
+    REDIS_ASSERT(val && *val == "new_value", "failed to test generic command");
+
+    val = _cluster.command<OptionalString>(cmd_str.begin(), cmd_str.end());
     REDIS_ASSERT(val && *val == "new_value", "failed to test generic command");
 
     auto hash_taged_mset = {"mset", "{k}1", "v", "{k}2", "v"};
@@ -160,6 +196,11 @@ void SanityTest::_test_generic_command() {
     reply = _cluster.command(hash_taged_mget.begin(), hash_taged_mget.end());
     res.clear();
     reply::to_array(*reply, std::back_inserter(res));
+    REDIS_ASSERT(res.size() == 2 && res[0] && *(res[0]) == "v" && res[1] && *(res[1]) == "v",
+            "failed to test generic command");
+
+    res.clear();
+    _cluster.command(hash_taged_mget.begin(), hash_taged_mget.end(), std::back_inserter(res));
     REDIS_ASSERT(res.size() == 2 && res[0] && *(res[0]) == "v" && res[1] && *(res[1]) == "v",
             "failed to test generic command");
 }

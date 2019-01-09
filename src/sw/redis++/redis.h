@@ -66,12 +66,28 @@ public:
         -> typename std::enable_if<!std::is_convertible<Cmd, StringView>::value, ReplyUPtr>::type;
 
     template <typename ...Args>
-    ReplyUPtr command(const StringView &cmd_name, Args &&...args);
+    auto command(const StringView &cmd_name, Args &&...args)
+        -> typename std::enable_if<!IsIter<typename LastType<Args...>::type>::value,
+                                    ReplyUPtr>::type;
+
+    template <typename ...Args>
+    auto command(const StringView &cmd_name, Args &&...args)
+        -> typename std::enable_if<IsIter<typename LastType<Args...>::type>::value, void>::type;
+
+    template <typename Result, typename ...Args>
+    Result command(const StringView &cmd_name, Args &&...args);
 
     template <typename Input>
     auto command(Input first, Input last)
-        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value
-                                    && IsIter<Input>::value, ReplyUPtr>::type;
+        -> typename std::enable_if<IsIter<Input>::value, ReplyUPtr>::type;
+
+    template <typename Result, typename Input>
+    auto command(Input first, Input last)
+        -> typename std::enable_if<IsIter<Input>::value, Result>::type;
+
+    template <typename Input, typename Output>
+    auto command(Input first, Input last, Output output)
+        -> typename std::enable_if<IsIter<Input>::value, void>::type;
 
     // CONNECTION commands.
 
@@ -1092,6 +1108,11 @@ private:
 
     // For internal use.
     explicit Redis(const ConnectionSPtr &connection);
+
+    template <std::size_t ...Is, typename ...Args>
+    ReplyUPtr _command(const StringView &cmd_name, const IndexSequence<Is...> &, Args &&...args) {
+        return command(cmd_name, NthValue<Is>(std::forward<Args>(args)...)...);
+    }
 
     template <typename Cmd, typename ...Args>
     ReplyUPtr _command(Connection &connection, Cmd cmd, Args &&...args);

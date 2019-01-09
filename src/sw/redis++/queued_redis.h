@@ -57,8 +57,7 @@ public:
 
     template <typename Input>
     auto command(Input first, Input last)
-        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value
-                                    && IsIter<Input>::value, QueuedRedis&>::type;
+        -> typename std::enable_if<IsIter<Input>::value, QueuedRedis&>::type;
 
     QueuedReplies exec();
 
