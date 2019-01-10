@@ -152,7 +152,10 @@ template <typename T, typename U = Void<>>
 struct IsInserter : std::false_type {};
 
 template <typename T>
-struct IsInserter<T, Void<typename T::container_type>> : std::true_type {};
+//struct IsInserter<T, Void<typename T::container_type>> : std::true_type {};
+struct IsInserter<T,
+    typename std::enable_if<!std::is_void<typename T::container_type>::value>::type>
+        : std::true_type {};
 
 template <typename Iter, typename T = Void<>>
 struct IterType {
@@ -162,7 +165,8 @@ struct IterType {
 template <typename Iter>
 //struct IterType<Iter, Void<typename Iter::container_type>> {
 struct IterType<Iter,
-    typename std::enable_if<std::is_void<typename Iter::value_type>::value>::type> {
+    //typename std::enable_if<std::is_void<typename Iter::value_type>::value>::type> {
+    typename std::enable_if<IsInserter<Iter>::value>::type> {
     using type = typename std::decay<typename Iter::container_type::value_type>::type;
 };
 
@@ -170,8 +174,14 @@ template <typename Iter, typename T = Void<>>
 struct IsIter : std::false_type {};
 
 template <typename Iter>
-struct IsIter<Iter, Void<typename std::iterator_traits<Iter>::iterator_category>>
-    : std::integral_constant<bool, !std::is_convertible<Iter, StringView>::value> {};
+struct IsIter<Iter, typename std::enable_if<IsInserter<Iter>::value>::type> : std::true_type {};
+
+template <typename Iter>
+//struct IsIter<Iter, Void<typename std::iterator_traits<Iter>::iterator_category>>
+struct IsIter<Iter,
+    typename std::enable_if<!std::is_void<
+        typename std::iterator_traits<Iter>::value_type>::value>::type>
+            : std::integral_constant<bool, !std::is_convertible<Iter, StringView>::value> {};
 
 template <typename T>
 struct IsKvPairIter : IsKvPair<typename IterType<T>::type> {};
