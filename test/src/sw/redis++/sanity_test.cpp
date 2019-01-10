@@ -162,32 +162,32 @@ void SanityTest::_test_generic_command() {
     auto tx_replies = tx.command("set", key, 456).command("incr", key).exec();
     REDIS_ASSERT(tx_replies.get<long long>(1) == 457, "failed to test generic command");
 
-    auto cmd_str = {"set", key.c_str(), "new_value"};
-    _redis.command(cmd_str.begin(), cmd_str.end());
+    auto set_cmd_str = {"set", key.c_str(), "new_value"};
+    _redis.command(set_cmd_str.begin(), set_cmd_str.end());
 
-    cmd_str = {"get", key.c_str()};
-    reply = _redis.command(cmd_str.begin(), cmd_str.end());
+    auto get_cmd_str = {"get", key.c_str()};
+    reply = _redis.command(get_cmd_str.begin(), get_cmd_str.end());
     val = reply::parse<OptionalString>(*reply);
     REDIS_ASSERT(val && *val == "new_value", "failed to test generic command");
 
-    val = _redis.command<OptionalString>(cmd_str.begin(), cmd_str.end());
+    val = _redis.command<OptionalString>(get_cmd_str.begin(), get_cmd_str.end());
     REDIS_ASSERT(val && *val == "new_value", "failed to test generic command");
 
-    cmd_str = {"mget", key.c_str(), not_exist_key.c_str()};
+    auto mget_cmd_str = {"mget", key.c_str(), not_exist_key.c_str()};
     res.clear();
-    _redis.command(cmd_str.begin(), cmd_str.end(), std::back_inserter(res));
+    _redis.command(mget_cmd_str.begin(), mget_cmd_str.end(), std::back_inserter(res));
     REDIS_ASSERT(res.size() == 2 && res[0] && *res[0] == "new_value" && !res[1],
             "failed to test generic command");
 
-    cmd_str = {"set", key.c_str(), "new_value"};
-    _cluster.command(cmd_str.begin(), cmd_str.end());
+    auto cluster_set_cmd_str = {"set", key.c_str(), "new_value"};
+    _cluster.command(cluster_set_cmd_str.begin(), cluster_set_cmd_str.end());
 
-    cmd_str = {"get", key.c_str()};
-    reply = _cluster.command(cmd_str.begin(), cmd_str.end());
+    auto cluster_get_cmd_str = {"get", key.c_str()};
+    reply = _cluster.command(cluster_get_cmd_str.begin(), cluster_get_cmd_str.end());
     val = reply::parse<OptionalString>(*reply);
     REDIS_ASSERT(val && *val == "new_value", "failed to test generic command");
 
-    val = _cluster.command<OptionalString>(cmd_str.begin(), cmd_str.end());
+    val = _cluster.command<OptionalString>(cluster_get_cmd_str.begin(), cluster_get_cmd_str.end());
     REDIS_ASSERT(val && *val == "new_value", "failed to test generic command");
 
     auto hash_taged_mset = {"mset", "{k}1", "v", "{k}2", "v"};
