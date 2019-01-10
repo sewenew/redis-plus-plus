@@ -1419,6 +1419,8 @@ class QueuedReplies {
 public:
     std::size_t size() const;
 
+    redisReply& get(std::size_t idx);
+
     template <typename Result>
     Result get(std::size_t idx);
 

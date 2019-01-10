@@ -87,6 +87,13 @@ void PipelineTransactionTest::_test_pipeline(const StringView &key, Pipeline &pi
     std::size_t len = replies.get<long long>(2);
     REDIS_ASSERT(bool(new_val) && *new_val == val && len == val.size(),
             "failed to test pipeline with string operations");
+
+    REDIS_ASSERT(reply::parse<bool>(replies.get(0)), "failed to test pipeline with set operation");
+
+    new_val = reply::parse<OptionalString>(replies.get(1));
+    len = reply::parse<long long>(replies.get(2));
+    REDIS_ASSERT(bool(new_val) && *new_val == val && len == val.size(),
+            "failed to test pipeline with string operations");
 }
 
 void PipelineTransactionTest::_test_transaction(const StringView &key, Transaction &tx) {

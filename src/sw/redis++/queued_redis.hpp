@@ -171,26 +171,28 @@ inline std::size_t QueuedReplies::size() const {
     return _replies.size();
 }
 
-template <typename Result>
-inline Result QueuedReplies::get(std::size_t idx) {
+inline redisReply& QueuedReplies::get(std::size_t idx) {
     _index_check(idx);
 
     auto &reply = _replies[idx];
 
     assert(reply);
 
-    return reply::parse<Result>(*reply);
+    return *reply;
+}
+
+template <typename Result>
+inline Result QueuedReplies::get(std::size_t idx) {
+    auto &reply = get(idx);
+
+    return reply::parse<Result>(reply);
 }
 
 template <typename Output>
 inline void QueuedReplies::get(std::size_t idx, Output output) {
-    _index_check(idx);
+    auto &reply = get(idx);
 
-    auto &reply = _replies[idx];
-
-    assert(reply);
-
-    reply::to_array(*reply, output);
+    reply::to_array(reply, output);
 }
 
 inline void QueuedReplies::_index_check(std::size_t idx) const {
