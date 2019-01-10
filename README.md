@@ -21,6 +21,8 @@
 
 This is a C++ client for Redis. It's based on [hiredis](https://github.com/redis/hiredis), and written in C++ 11.
 
+**NOTE**: I'm not a native speaker. So if the documentation is unclear, please feel free to open an issue or pull request. I'll response ASAP.
+
 ### Features
 - Most commands for Redis 4.0.
 - Connection pool.
@@ -414,26 +416,70 @@ using OptionalStringPair = Optional<std::pair<std::string, std::string>>;
 There're too many Redis commands, we haven't implemented all of them. However, you can use `Redis::command` method to send any commands to Redis. Unlike other client libraries, `Redis::command` doesn't use format string to combine command arguments into a command string. Instead, you can directly pass command arguments of string type or arithmetic type as parameters of `Redis::command`.
 
 ```
-template <typename ...Args>
-ReplyUPtr command(const StringView &cmd_name, Args &&...args);
-
-template <typename Input>
-auto command(Input first, Input last)
-    -> typename std::enable_if<!std::is_convertible<Input, StringView>::value
-                                && IsIter<Input>::value, ReplyUPtr>::type;
-```
-
-Don't be scared with those template parameters and type traits. It's easy to use, and we'll show you some examples later.
-
-`Redis::command` returns a `ReplyUPtr`, i.e. `std::unique_ptr<redisReply, ReplyDeleter>`, object. Normally you don't need to parse it manually. Instead, you only need to pass the reply to `template <typename T> T reply::parse(redisReply &)` to get a value of type `T`. By now, `T` can be `std::string`, `double`, `long long`, `bool`, `void`, `Optional<T>`, `std::pair`, and `std::tuple`. If the command returns an array of elements, you can call `template <typename Output> reply::to_array(redisReply &reply, Output output)` to parse the result into an array or STL container.
-
-Let's see some examples:
-
-```
 auto redis = Redis("tcp://127.0.0.1");
 
 // Redis class doesn't have built-in *CLIENT SETNAME* method.
 // However, you can use Redis::command to send the command manually.
+redis.command<void>("client", "setname", "name");
+auto val = redis.command<OptionalString>("client", "getname");
+assert(val && *val == "name");
+
+// NOTE: the following code is for example only. In fact, Redis has built-in
+// methods for the following commands.
+
+// Arguments of the command can be strings.
+// NOTE: for SET command, the return value is NOT always void, I'll explain latter.
+redis.command<void>("set", "key", "100");
+
+// Arguments of the command can be a combination of strings and integers.
+auto num = redis.command<long long>("incrby", "key", 1);
+assert(num == 101);
+
+// Argument can also be double.
+auto real = redis.command<double>("incrbyfloat", "key", 2.3);
+
+// Even the key of the command can be of arithmetic type.
+redis.command<void>("set", 100, "value");
+
+val = redis.command<OptionalString>("get", 100);
+assert(val && *val == "value");
+
+// If the command returns an array of elements.
+std::vector<OptionalString> result;
+redis.command("mget", "k1", "k2", "k3", std::back_inserter(result));
+
+// Arguments of the command can be a range of strings.
+auto set_cmd_strs = {"set", "key", "value"};
+redis.command<void>(set_cmd_strs.begin(), set_cmd_strs.end());
+
+auto get_cmd_strs = {"get", "key"};
+val = redis.command<OptionalString>(get_cmd_strs.begin(), get_cmd_strs.end());
+
+// If it returns an array of elements.
+result.clear();
+auto mget_cmd_strs = {"mget", "key1", "key2"};
+redis.command(mget_cmd_strs.begin(), mget_cmd_strs.end(), std::back_inserter(result));
+```
+
+**NOTE**: The name of some Redis commands is composed with two strings, e.g. *CLIENT SETNAME*. In this case, you need to pass these two strings as two arguments for `Redis::command`.
+
+```
+// This is GOOD.
+redis.command<void>("client", "setname", "name");
+
+// This is BAD.
+// redis.command<void>("client setname", "name");
+```
+
+As I mentioned in the comments, the `SET` command not always returns `void`. Because if you try to set a key-value pair with *NX* or *XX* option, you might fail, and Redis will return a null reply. Besides the `SET` command, there're other commands whose return value is NOT a fixed type, you need to parse it by yourself.
+
+So `Redis` class also has other overloaded `command` methods, these methods return a `ReplyUPtr`, i.e. `std::unique_ptr<redisReply, ReplyDeleter>`, object. Normally you don't need to parse it manually. Instead, you only need to pass the reply to `template <typename T> T reply::parse(redisReply &)` to get a value of type `T`. By now, `T` can be `std::string`, `double`, `long long`, `bool`, `void`, `Optional<T>`, `std::pair`, and `std::tuple`. If the command returns an array of elements, you can call `template <typename Output> reply::to_array(redisReply &reply, Output output)` to parse the result into an array or STL container.
+
+Let's rewrite the above examples:
+
+```
+auto redis = Redis("tcp://127.0.0.1");
+
 redis.command("client", "setname", "name");
 auto r = redis.command("client", "getname");
 assert(r);
@@ -442,9 +488,6 @@ assert(r);
 // use `reply::parse<T>(redisReply&)` to parse it.
 auto val = reply::parse<OptionalString>(*r);
 assert(val && *val == "name");
-
-// NOTE: the following code is for example only. In fact, Redis has built-in
-// methods for the following commands.
 
 // Arguments of the command can be strings.
 redis.command("set", "key", "100");
@@ -470,21 +513,18 @@ std::vector<OptionalString> result;
 reply::to_array(*r, std::back_inserter(result));
 
 // Arguments of the command can be a range of strings.
-auto cmd_strs = {"set", "key", "value"};
-redis.command(cmd_strs.begin(), cmd_strs.end());
+auto get_cmd_strs = {"get", "key"};
+r = redis.command(get_cmd_strs.begin(), get_cmd_strs.end());
+val = reply::parse<OptionalString>(*r);
+
+// If it returns an array of elements.
+result.clear();
+auto mget_cmd_strs = {"mget", "key1", "key2"};
+r = redis.command(mget_cmd_strs.begin(), mget_cmd_strs.end());
+reply::to_array(*r, std::back_inserter(result));
 ```
 
-**NOTE**: The name of some Redis commands is composed with two strings, e.g. *CLIENT SETNAME*. In this case, you need to pass these two strings as two arguments for `Redis::command`.
-
-```
-// This is good.
-redis.command("client", "setname", "name");
-
-// This is bad.
-// redis.command("client setname", "name");
-```
-
-There's another `Redis::command` method:
+In fact, there's one more `Redis::command` method:
 
 ```
 template <typename Cmd, typename ...Args>
