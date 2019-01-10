@@ -66,19 +66,38 @@ public:
 
     Subscriber subscriber();
 
-    template <typename Cmd, typename FirstArg, typename ...Args>
-    auto command(Cmd cmd, FirstArg &&first_arg, Args &&...args)
+    template <typename Cmd, typename Key, typename ...Args>
+    auto command(Cmd cmd, Key &&key, Args &&...args)
         -> typename std::enable_if<!std::is_convertible<Cmd, StringView>::value, ReplyUPtr>::type;
 
-    template <typename FirstArg, typename ...Args>
-    auto command(const StringView &cmd_name, FirstArg &&first_arg, Args &&...args)
-        -> typename std::enable_if<std::is_convertible<FirstArg, StringView>::value
-                || std::is_arithmetic<typename std::decay<FirstArg>::type>::value, ReplyUPtr>::type;
+    template <typename Key, typename ...Args>
+    auto command(const StringView &cmd_name, Key &&key, Args &&...args)
+        -> typename std::enable_if<(std::is_convertible<Key, StringView>::value
+                || std::is_arithmetic<typename std::decay<Key>::type>::value)
+                && !IsIter<typename LastType<Key, Args...>::type>::value, ReplyUPtr>::type;
+
+    template <typename Key, typename ...Args>
+    auto command(const StringView &cmd_name, Key &&key, Args &&...args)
+        -> typename std::enable_if<(std::is_convertible<Key, StringView>::value
+                || std::is_arithmetic<typename std::decay<Key>::type>::value)
+                && IsIter<typename LastType<Key, Args...>::type>::value, void>::type;
+
+    template <typename Result, typename Key, typename ...Args>
+    auto command(const StringView &cmd_name, Key &&key, Args &&...args)
+        -> typename std::enable_if<std::is_convertible<Key, StringView>::value
+                || std::is_arithmetic<typename std::decay<Key>::type>::value, Result>::type;
 
     template <typename Input>
     auto command(Input first, Input last)
-        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value
-                                    && IsIter<Input>::value, ReplyUPtr>::type;
+        -> typename std::enable_if<IsIter<Input>::value, ReplyUPtr>::type;
+
+    template <typename Result, typename Input>
+    auto command(Input first, Input last)
+        -> typename std::enable_if<IsIter<Input>::value, Result>::type;
+
+    template <typename Input, typename Output>
+    auto command(Input first, Input last, Output output)
+        -> typename std::enable_if<IsIter<Input>::value, void>::type;
 
     // KEY commands.
 
@@ -981,14 +1000,14 @@ private:
         StringView _cmd_name;
     };
 
-    template <typename Cmd, typename FirstArg, typename ...Args>
-    auto _generic_command(Cmd cmd, FirstArg &&first_arg, Args &&...args)
-        -> typename std::enable_if<std::is_convertible<FirstArg, StringView>::value,
+    template <typename Cmd, typename Key, typename ...Args>
+    auto _generic_command(Cmd cmd, Key &&key, Args &&...args)
+        -> typename std::enable_if<std::is_convertible<Key, StringView>::value,
                                     ReplyUPtr>::type;
 
-    template <typename Cmd, typename FirstArg, typename ...Args>
-    auto _generic_command(Cmd cmd, FirstArg &&first_arg, Args &&...args)
-        -> typename std::enable_if<std::is_arithmetic<typename std::decay<FirstArg>::type>::value,
+    template <typename Cmd, typename Key, typename ...Args>
+    auto _generic_command(Cmd cmd, Key &&key, Args &&...args)
+        -> typename std::enable_if<std::is_arithmetic<typename std::decay<Key>::type>::value,
                                     ReplyUPtr>::type;
 
     template <typename Cmd, typename ...Args>
@@ -1002,6 +1021,11 @@ private:
 
     template <typename Cmd, typename Input, typename ...Args>
     ReplyUPtr _command(Cmd cmd, std::false_type, Input &&first, Args &&...args);
+
+    template <std::size_t ...Is, typename ...Args>
+    ReplyUPtr _command(const StringView &cmd_name, const IndexSequence<Is...> &, Args &&...args) {
+        return command(cmd_name, NthValue<Is>(std::forward<Args>(args)...)...);
+    }
 
     template <typename Cmd, typename Input, typename ...Args>
     ReplyUPtr _range_command(Cmd cmd, std::true_type, Input input, Args &&...args);

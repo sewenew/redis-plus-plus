@@ -72,6 +72,10 @@ void ClusterTest::_test_cluster() {
     auto reply = r.command("client", "getname");
     val = reply::parse<OptionalString>(*reply);
     REDIS_ASSERT(val && *val == "my-name", "failed to test cluster");
+
+    r.command<void>("client", "setname", "new-name");
+    val = r.command<OptionalString>("client", "getname");
+    REDIS_ASSERT(val && *val == "new-name", "failed to test cluster");
 }
 
 void ClusterTest::_test_hash_tag() {

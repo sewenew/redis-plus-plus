@@ -50,7 +50,8 @@ auto Redis::command(Cmd cmd, Args &&...args)
 }
 
 template <typename ...Args>
-ReplyUPtr Redis::command(const StringView &cmd_name, Args &&...args) {
+auto Redis::command(const StringView &cmd_name, Args &&...args)
+    -> typename std::enable_if<!IsIter<typename LastType<Args...>::type>::value, ReplyUPtr>::type {
     auto cmd = [](Connection &connection, const StringView &cmd_name, Args &&...args) {
                     CmdArgs cmd_args;
                     cmd_args.append(cmd_name, std::forward<Args>(args)...);
@@ -62,8 +63,7 @@ ReplyUPtr Redis::command(const StringView &cmd_name, Args &&...args) {
 
 template <typename Input>
 auto Redis::command(Input first, Input last)
-    -> typename std::enable_if<!std::is_convertible<Input, StringView>::value
-                                && IsIter<Input>::value, ReplyUPtr>::type {
+    -> typename std::enable_if<IsIter<Input>::value, ReplyUPtr>::type {
     if (first == last) {
         throw Error("command: empty range");
     }
@@ -78,6 +78,47 @@ auto Redis::command(Input first, Input last)
     };
 
     return command(cmd, first, last);
+}
+
+template <typename Result, typename ...Args>
+Result Redis::command(const StringView &cmd_name, Args &&...args) {
+    auto r = command(cmd_name, std::forward<Args>(args)...);
+
+    assert(r);
+
+    return reply::parse<Result>(*r);
+}
+
+template <typename ...Args>
+auto Redis::command(const StringView &cmd_name, Args &&...args)
+    -> typename std::enable_if<IsIter<typename LastType<Args...>::type>::value, void>::type {
+    auto r = _command(cmd_name,
+                        MakeIndexSequence<sizeof...(Args) - 1>(),
+                        std::forward<Args>(args)...);
+
+    assert(r);
+
+    reply::to_array(*r, LastValue(std::forward<Args>(args)...));
+}
+
+template <typename Result, typename Input>
+auto Redis::command(Input first, Input last)
+    -> typename std::enable_if<IsIter<Input>::value, Result>::type {
+    auto r = command(first, last);
+
+    assert(r);
+
+    return reply::parse<Result>(*r);
+}
+
+template <typename Input, typename Output>
+auto Redis::command(Input first, Input last, Output output)
+    -> typename std::enable_if<IsIter<Input>::value, void>::type {
+    auto r = command(first, last);
+
+    assert(r);
+
+    reply::to_array(*r, output);
 }
 
 // KEY commands.

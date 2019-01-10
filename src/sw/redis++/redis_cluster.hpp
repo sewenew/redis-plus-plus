@@ -28,28 +28,54 @@ namespace sw {
 
 namespace redis {
 
-template <typename Cmd, typename FirstArg, typename ...Args>
-auto RedisCluster::command(Cmd cmd, FirstArg &&first_arg, Args &&...args)
+template <typename Cmd, typename Key, typename ...Args>
+auto RedisCluster::command(Cmd cmd, Key &&key, Args &&...args)
     -> typename std::enable_if<!std::is_convertible<Cmd, StringView>::value, ReplyUPtr>::type {
     return _command(cmd,
-                    std::is_convertible<typename std::decay<FirstArg>::type, StringView>(),
-                    std::forward<FirstArg>(first_arg),
+                    std::is_convertible<typename std::decay<Key>::type, StringView>(),
+                    std::forward<Key>(key),
                     std::forward<Args>(args)...);
 }
 
-template <typename FirstArg, typename ...Args>
-auto RedisCluster::command(const StringView &cmd_name, FirstArg &&first_arg, Args &&...args)
-    -> typename std::enable_if<std::is_convertible<FirstArg, StringView>::value
-        || std::is_arithmetic<typename std::decay<FirstArg>::type>::value, ReplyUPtr>::type {
+template <typename Key, typename ...Args>
+auto RedisCluster::command(const StringView &cmd_name, Key &&key, Args &&...args)
+    -> typename std::enable_if<(std::is_convertible<Key, StringView>::value
+        || std::is_arithmetic<typename std::decay<Key>::type>::value)
+        && !IsIter<typename LastType<Key, Args...>::type>::value, ReplyUPtr>::type {
     auto cmd = Command(cmd_name);
 
-    return _generic_command(cmd, std::forward<FirstArg>(first_arg), std::forward<Args>(args)...);
+    return _generic_command(cmd, std::forward<Key>(key), std::forward<Args>(args)...);
+}
+
+template <typename Result, typename Key, typename ...Args>
+auto RedisCluster::command(const StringView &cmd_name, Key &&key, Args &&...args)
+    -> typename std::enable_if<std::is_convertible<Key, StringView>::value
+            || std::is_arithmetic<typename std::decay<Key>::type>::value, Result>::type {
+    auto r = command(cmd_name, std::forward<Key>(key), std::forward<Args>(args)...);
+
+    assert(r);
+
+    return reply::parse<Result>(*r);
+}
+
+template <typename Key, typename ...Args>
+auto RedisCluster::command(const StringView &cmd_name, Key &&key, Args &&...args)
+    -> typename std::enable_if<(std::is_convertible<Key, StringView>::value
+            || std::is_arithmetic<typename std::decay<Key>::type>::value)
+            && IsIter<typename LastType<Key, Args...>::type>::value, void>::type {
+    auto r = _command(cmd_name,
+                        MakeIndexSequence<sizeof...(Args)>(),
+                        std::forward<Key>(key),
+                        std::forward<Args>(args)...);
+
+    assert(r);
+
+    reply::to_array(*r, LastValue(std::forward<Args>(args)...));
 }
 
 template <typename Input>
 auto RedisCluster::command(Input first, Input last)
-    -> typename std::enable_if<!std::is_convertible<Input, StringView>::value
-                                && IsIter<Input>::value, ReplyUPtr>::type {
+    -> typename std::enable_if<IsIter<Input>::value, ReplyUPtr>::type {
     if (first == last || std::next(first) == last) {
         throw Error("command: invalid range");
     }
@@ -68,6 +94,26 @@ auto RedisCluster::command(Input first, Input last)
     };
 
     return command(cmd, first, last);
+}
+
+template <typename Result, typename Input>
+auto RedisCluster::command(Input first, Input last)
+    -> typename std::enable_if<IsIter<Input>::value, Result>::type {
+    auto r = command(first, last);
+
+    assert(r);
+
+    return reply::parse<Result>(*r);
+}
+
+template <typename Input, typename Output>
+auto RedisCluster::command(Input first, Input last, Output output)
+    -> typename std::enable_if<IsIter<Input>::value, void>::type {
+    auto r = command(first, last);
+
+    assert(r);
+
+    reply::to_array(*r, output);
 }
 
 // KEY commands.
@@ -950,19 +996,19 @@ void RedisCluster::evalsha(const StringView &script,
     reply::to_array(*reply, output);
 }
 
-template <typename Cmd, typename FirstArg, typename ...Args>
-auto RedisCluster::_generic_command(Cmd cmd, FirstArg &&first_arg, Args &&...args)
-    -> typename std::enable_if<std::is_convertible<FirstArg, StringView>::value,
+template <typename Cmd, typename Key, typename ...Args>
+auto RedisCluster::_generic_command(Cmd cmd, Key &&key, Args &&...args)
+    -> typename std::enable_if<std::is_convertible<Key, StringView>::value,
                                 ReplyUPtr>::type {
-    return command(cmd, std::forward<FirstArg>(first_arg), std::forward<Args>(args)...);
+    return command(cmd, std::forward<Key>(key), std::forward<Args>(args)...);
 }
 
-template <typename Cmd, typename FirstArg, typename ...Args>
-auto RedisCluster::_generic_command(Cmd cmd, FirstArg &&first_arg, Args &&...args)
-    -> typename std::enable_if<std::is_arithmetic<typename std::decay<FirstArg>::type>::value,
+template <typename Cmd, typename Key, typename ...Args>
+auto RedisCluster::_generic_command(Cmd cmd, Key &&key, Args &&...args)
+    -> typename std::enable_if<std::is_arithmetic<typename std::decay<Key>::type>::value,
                                 ReplyUPtr>::type {
-    auto key = std::to_string(std::forward<FirstArg>(first_arg));
-    return command(cmd, key, std::forward<Args>(args)...);
+    auto k = std::to_string(std::forward<Key>(key));
+    return command(cmd, k, std::forward<Args>(args)...);
 }
 
 template <typename Cmd, typename ...Args>

@@ -152,7 +152,10 @@ template <typename T, typename U = Void<>>
 struct IsInserter : std::false_type {};
 
 template <typename T>
-struct IsInserter<T, Void<typename T::container_type>> : std::true_type {};
+//struct IsInserter<T, Void<typename T::container_type>> : std::true_type {};
+struct IsInserter<T,
+    typename std::enable_if<!std::is_void<typename T::container_type>::value>::type>
+        : std::true_type {};
 
 template <typename Iter, typename T = Void<>>
 struct IterType {
@@ -162,7 +165,8 @@ struct IterType {
 template <typename Iter>
 //struct IterType<Iter, Void<typename Iter::container_type>> {
 struct IterType<Iter,
-    typename std::enable_if<std::is_void<typename Iter::value_type>::value>::type> {
+    //typename std::enable_if<std::is_void<typename Iter::value_type>::value>::type> {
+    typename std::enable_if<IsInserter<Iter>::value>::type> {
     using type = typename std::decay<typename Iter::container_type::value_type>::type;
 };
 
@@ -170,8 +174,14 @@ template <typename Iter, typename T = Void<>>
 struct IsIter : std::false_type {};
 
 template <typename Iter>
+struct IsIter<Iter, typename std::enable_if<IsInserter<Iter>::value>::type> : std::true_type {};
+
+template <typename Iter>
+//struct IsIter<Iter, Void<typename std::iterator_traits<Iter>::iterator_category>>
 struct IsIter<Iter,
-                Void<typename std::iterator_traits<Iter>::iterator_category>> : std::true_type {};
+    typename std::enable_if<!std::is_void<
+        typename std::iterator_traits<Iter>::value_type>::value>::type>
+            : std::integral_constant<bool, !std::is_convertible<Iter, StringView>::value> {};
 
 template <typename T>
 struct IsKvPairIter : IsKvPair<typename IterType<T>::type> {};
@@ -187,6 +197,65 @@ struct TupleWithType<T, std::tuple<U, Args...>> : TupleWithType<T, std::tuple<Ar
 
 template <typename T, typename ...Args>
 struct TupleWithType<T, std::tuple<T, Args...>> : std::true_type {};
+
+template <std::size_t ...Is>
+struct IndexSequence {};
+
+template <std::size_t I, std::size_t ...Is>
+struct MakeIndexSequence : MakeIndexSequence<I - 1, I - 1, Is...> {};
+
+template <std::size_t ...Is>
+struct MakeIndexSequence<0, Is...> : IndexSequence<Is...> {};
+
+// NthType and NthValue are taken from
+// https://stackoverflow.com/questions/14261183
+template <std::size_t I, typename ...Args>
+struct NthType {};
+
+template <typename Arg, typename ...Args>
+struct NthType<0, Arg, Args...> {
+    using type = Arg;
+};
+
+template <std::size_t I, typename Arg, typename ...Args>
+struct NthType<I, Arg, Args...> {
+    using type = typename NthType<I - 1, Args...>::type;
+};
+
+template <typename ...Args>
+struct LastType {
+    using type = typename NthType<sizeof...(Args) - 1, Args...>::type;
+};
+
+struct InvalidLastType {};
+
+template <>
+struct LastType<> {
+    using type = InvalidLastType;
+};
+
+template <std::size_t I, typename Arg, typename ...Args>
+auto NthValue(Arg &&arg, Args &&...)
+    -> typename std::enable_if<(I == 0), decltype(std::forward<Arg>(arg))>::type {
+    return std::forward<Arg>(arg);
+}
+
+template <std::size_t I, typename Arg, typename ...Args>
+auto NthValue(Arg &&, Args &&...args)
+    -> typename std::enable_if<(I > 0),
+            decltype(std::forward<typename NthType<I, Arg, Args...>::type>(
+                    std::declval<typename NthType<I, Arg, Args...>::type>()))>::type {
+    return std::forward<typename NthType<I, Arg, Args...>::type>(
+            NthValue<I - 1>(std::forward<Args>(args)...));
+}
+
+template <typename ...Args>
+auto LastValue(Args &&...args)
+    -> decltype(std::forward<typename LastType<Args...>::type>(
+            std::declval<typename LastType<Args...>::type>())) {
+    return std::forward<typename LastType<Args...>::type>(
+            NthValue<sizeof...(Args) - 1>(std::forward<Args>(args)...));
+}
 
 uint16_t crc16(const char *buf, int len);
 

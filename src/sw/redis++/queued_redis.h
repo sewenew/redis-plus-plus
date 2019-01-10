@@ -57,8 +57,7 @@ public:
 
     template <typename Input>
     auto command(Input first, Input last)
-        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value
-                                    && IsIter<Input>::value, QueuedRedis&>::type;
+        -> typename std::enable_if<IsIter<Input>::value, QueuedRedis&>::type;
 
     QueuedReplies exec();
 
@@ -1419,6 +1418,8 @@ private:
 class QueuedReplies {
 public:
     std::size_t size() const;
+
+    redisReply& get(std::size_t idx);
 
     template <typename Result>
     Result get(std::size_t idx);
