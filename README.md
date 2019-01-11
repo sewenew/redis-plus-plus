@@ -24,7 +24,7 @@ This is a C++ client for Redis. It's based on [hiredis](https://github.com/redis
 **NOTE**: I'm not a native speaker. So if the documentation is unclear, please feel free to open an issue or pull request. I'll response ASAP.
 
 ### Features
-- Most commands for Redis 4.0.
+- Most commands for Redis.
 - Connection pool.
 - Redis scripting.
 - Thread safe unless otherwise stated.
@@ -38,7 +38,7 @@ This is a C++ client for Redis. It's based on [hiredis](https://github.com/redis
 
 ### Install hiredis
 
-Since **redis-plus-plus** is based on hiredis, you should install hiredis first. The minimum version requirement for hiredis is **v0.12.1**, and you'd better use the latest release of hiredis.
+Since *redis-plus-plus* is based on *hiredis*, you should install *hiredis* first. The minimum version requirement for *hiredis* is **v0.12.1**, and you'd better use the latest release of *hiredis*.
 
 ```
 git clone https://github.com/redis/hiredis.git
@@ -50,7 +50,7 @@ make
 make install
 ```
 
-By default *hiredis* is installed at */usr/local*. If you want to install *hiredis* at non-default location, use the following commands to specify the installation path.
+By default, *hiredis* is installed at */usr/local*. If you want to install *hiredis* at non-default location, use the following commands to specify the installation path.
 
 ```
 make PREFIX=/non/default/path
@@ -80,7 +80,7 @@ make install
 cd ..
 ```
 
-If hiredis is installed at non-default location, you should use `CMAKE_PREFIX_PATH` to specify the installation path of *hiredis*. By default, *redis-plus-plus* is installed at */usr/local*. However, you can use `CMAKE_INSTALL_PREFIX` to install *redis-plus-plus* at non-default location.
+If *hiredis* is installed at non-default location, you should use `CMAKE_PREFIX_PATH` to specify the installation path of *hiredis*. By default, *redis-plus-plus* is installed at */usr/local*. However, you can use `CMAKE_INSTALL_PREFIX` to install *redis-plus-plus* at non-default location.
 
 ```
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/path/to/hiredis -DCMAKE_INSTALL_PREFIX=/path/to/install/redis-plus-plus ..
@@ -88,9 +88,9 @@ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/path/to/hiredis -DCMAKE_IN
 
 ### Run Tests (Optional)
 
-After compiling with cmake, you'll get a test program in `compile/test` directory: `test_redis++`.
+After compiling with cmake, you'll get a test program in *compile/test* directory: *compile/test/test_redis++*.
 
-In order to run the tests, you need to set up both a Redis instance, and a Redis Cluster. Since the test program will send most of Redis commands to the server and cluster, you need to set up Redis of the latest version (by now, it's 5.0). Otherwise, the tests might fail. For example, if you set up Redis 4.0 for testing, the test program will fail when it tries to send the `ZPOPMAX` command (a Redis 5.0 command) to the server. If you want to run the tests with other Redis versions, you have to comment out commands that haven't been supported by your Redis, from test source files in `redis-plus-plus/test/src/sw/redis++/` directory. Sorry for the inconvenience, and I'll fix this problem to make the test program work with any version of Redis in the future.
+In order to run the tests, you need to set up both a Redis instance, and a Redis Cluster. Since the test program will send most of Redis commands to the server and cluster, you need to set up Redis of the latest version (by now, it's 5.0). Otherwise, the tests might fail. For example, if you set up Redis 4.0 for testing, the test program will fail when it tries to send the `ZPOPMAX` command (a Redis 5.0 command) to the server. If you want to run the tests with other Redis versions, you have to comment out commands that haven't been supported by your Redis, from test source files in *redis-plus-plus/test/src/sw/redis++/* directory. Sorry for the inconvenience, and I'll fix this problem to make the test program work with any version of Redis in the future.
 
 **NOTE**: The latest version of Redis is only a requirement for running the tests. In fact, you can use *redis-plus-plus* with Redis of any version, e.g. Redis 2.0, Redis 3.0, Redis 4.0, Redis 5.0.
 
@@ -100,22 +100,28 @@ Then you can run the test program with the following command:
 ./compile/test/test_redis++ -h host -p port -a auth -n cluster_node -c cluster_port
 ```
 
-- `host` and `port` are the host and port number of the Redis instance.
-- `cluster_node` and `cluster_port` are the host and port number of Redis Cluster. You only need to set the host and port number of a single node in the cluster, *redis-plus-plus* will find other nodes automatically.
-- `auth` is the password of the Redis instance and Redis Cluster. The Redis instance and Redis Cluster must be configured with the same password. If there's no password configured, don't set this option.
+- *host* and *port* are the host and port number of the Redis instance.
+- *cluster_node* and *cluster_port* are the host and port number of Redis Cluster. You only need to set the host and port number of a single node in the cluster, *redis-plus-plus* will find other nodes automatically.
+- *auth* is the password of the Redis instance and Redis Cluster. The Redis instance and Redis Cluster must be configured with the same password. If there's no password configured, don't set this option.
 
-The test program will test running *redis-plus-plus* in multi-threads environment, and this test will cost a long time. If you want to skip it (not recommended), just comment out the following lines in `test/src/sw/redis++/test_main.cpp` file.
+The test program will test running *redis-plus-plus* in multi-threads environment, and this test will cost a long time. If you want to skip it (not recommended), just comment out the following lines in *test/src/sw/redis++/test_main.cpp* file.
 
 ```
 sw::redis::test::ThreadsTest threads_test(opts, cluster_node_opts);
 threads_test.run();
 ```
 
-If all tests have been passed, the test program will print the following message: *Pass all tests*. Otherwise, it prints the error message.
+If all tests have been passed, the test program will print the following message:
+
+```
+Pass all tests
+```
+
+Otherwise, it prints the error message.
 
 ### Use redis-plus-plus In Your Project
 
-Since *redis-plus-plus* depends on *hiredis*, you need to link both libraries to your Application. Also don't forget to specify the `-std=c++11` and thread-related option. Take GCC as an example.
+After compiling the code, you'll get both shared library and static library. Since *redis-plus-plus* depends on *hiredis*, you need to link both libraries to your Application. Also don't forget to specify the `-std=c++11` and thread-related option. Take GCC as an example.
 
 #### Use Shared Libraries
 
@@ -129,7 +135,13 @@ If *hiredis* and *redis-plus-plus* are installed at non-default location, you sh
 g++ -std=c++11 -I/non-default/install/include/path -L/non-default/install/lib/path -lhiredis -lredis++ -pthread -o app app.cpp
 ```
 
-When linking the shared library, and running your application, you might get the following error message: *error while loading shared libraries: xxx: cannot open shared object file: No such file or directory*. That's because the linker cannot find the shared libraries. In order to solve the problem, you can add the path where you installed *hiredis* and *redis-plus-plus* libraries, to `LD_LIBRARY_PATH` envirnoment variable. For example:
+When linking with shared libraries, and running your application, you might get the following error message:
+
+```
+error while loading shared libraries: xxx: cannot open shared object file: No such file or directory.
+```
+
+That's because the linker cannot find the shared libraries. In order to solve the problem, you can add the path where you installed *hiredis* and *redis-plus-plus* libraries, to `LD_LIBRARY_PATH` envirnoment variable. For example:
 
 ```
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
@@ -157,113 +169,170 @@ g++ -std=c++11 -pthread -I/non-default/install/include/path -o app app.cpp /path
 using namespace sw::redis;
 
 try {
-    Redis redis("tcp://127.0.0.1:6379");
+    // Create an Redis object, which is movable but NOT copyable.
+    auto redis = Redis("tcp://127.0.0.1:6379");
 
-    // STRING commands.
+    // ***** STRING commands *****
+
     redis.set("key", "val");
-    auto val = redis.get("key");
+    auto val = redis.get("key");    // val is of type OptionalString. See API Reference part for detail.
     if (val) {
+        // dereference val to get the returned value of std::string type.
         std::cout << *val << std::endl;
-    } // else key doesn't exist.
+    }   // else key doesn't exist.
 
-    // LIST commands.
-    redis.lpush("list", {"a", "b", "c"});
-    std::vector<std::string> list;
-    redis.lrange("list", 0, -1, std::back_inserter(list));
+    // ***** LIST commands *****
 
-    // HASH commands.
-    // The same as redis.hset("hash", std::make_pair("field", "val"));
+    // std::vector<std::string> to Redis LIST.
+    std::vector<std::string> vec = {"a", "b", "c"};
+    redis.rpush("list", vec.begin(), vec.end());
+
+    // std::initializer_list to Redis LIST.
+    redis.rpush("list", {"a", "b", "c"});
+
+    // Redis LIST to std::vector<std::string>.
+    vec.clear();
+    redis.lrange("list", 0, -1, std::back_inserter(vec));
+
+    // ***** HASH commands *****
+
+    redis.hset("hash", std::make_pair("field", "val"));
+
+    // Another way to do the same job.
     redis.hset("hash", "field", "val");
-    std::unorderd_map<std::string, std::string> m = {
-        {"f1", "v1"},
-        {"f2", "v2"}
+
+    // std::unordered_map<std::string, std::string> to Redis HASH.
+    std::unordered_map<std::string, std::string> m = {
+        {"field1", "val1"},
+        {"field2", "val2"}
     };
     redis.hmset("hash", m.begin(), m.end());
+
+    // Redis HASH to std::unordered_map<std::string, std::string>.
     m.clear();
     redis.hgetall("hash", std::inserter(m, m.begin()));
+
     std::vector<std::string> vals;
-    redis.hmget("hash", {"f1", "f2"}, std::back_inserter(vals));
+    redis.hmget("hash", {"field1", "field2"}, std::back_inserter(vals));
 
-    // SET commands.
+    // ***** SET commands *****
+
     redis.sadd("set", "m1");
-    auto members = {"m2", "m3"};
-    redis.sadd(members);
-    if (redis.ismember("m1")) {
-        std::cout << "m1 exists" << std::endl;
-    }
 
-    // SORTED SET commands.
+    // std::unordered_set<std::string> to Redis SET.
+    std::unordered_set<std::string> set = {"m2", "m3"};
+    redis.sadd("set", set.begin(), set.end());
+
+    // std::initializer_list to Redis SET.
+    auto members = {"m2", "m3"};
+    redis.sadd("set", members);
+
+    if (redis.sismember("set", "m1")) {
+        std::cout << "m1 exists" << std::endl;
+    }   // else NOT exist.
+
+    // ***** SORTED SET commands *****
+
     redis.zadd("sorted_set", "m1", 1.3);
-    std::unorderd_map<std::string, double> scores = {
+
+    // std::unordered_map<std::string, double> to Redis SORTED SET.
+    std::unordered_map<std::string, double> scores = {
         {"m2", 2.3},
         {"m3", 4.5}
     };
     redis.zadd("sorted_set", scores.begin(), scores.end());
+
+    // Redis SORTED SET to std::unordered_map<std::string, double>.
+    scores.clear();
+    redis.zrangebyscore("sorted_set",
+            UnboundedInterval<double>{},            // (-inf, +inf)
+            std::inserter(scores, scores.begin()));
+
+    // Only get member names:
+    // pass an inserter of std::vector<std::string> type as output parameter.
     std::vector<std::string> without_score;
     redis.zrangebyscore("sorted_set",
-            BoundedInterval<double>(1.5, 3.4),
+            BoundedInterval<double>(1.5, 3.4, BoundType::CLOSED),   // [1.5, 3.4]
             std::back_inserter(without_score));
-    std::unorderd_map<std::string, double> with_score;
+
+    // Get both member names and scores:
+    // pass an inserter of std::unordered_map<std::string, double> as output parameter.
+    std::unordered_map<std::string, double> with_score;
     redis.zrangebyscore("sorted_set",
-            BoundedInterval<double>(1.5, 3.4),
+            BoundedInterval<double>(1.5, 3.4, BoundType::LEFT_OPEN),    // (1.5, 3.4]
             std::inserter(with_score, with_score.end()));
 
-    // SCRIPTING commands.
+    // ***** SCRIPTING commands *****
+
+    // Script returns a single element.
     auto num = redis.eval<long long>("return 1", {}, {});
+
+    // Script returns an array of elements.
     std::vector<long long> nums;
     redis.eval("return {ARGV[1], ARGV[2]}", {}, {"1", "2"}, std::back_inserter(nums));
 
-    // Pipeline
+    // ***** Pipeline *****
+
+    // Create a pipeline.
     auto pipe = redis.pipeline();
 
+    // Send mulitple commands and get all replies.
     auto pipe_replies = pipe.set("key", "value")
                             .get("key")
                             .rename("key", "new-key")
-                            .lpush("list", {"a", "b", "c"})
+                            .rpush("list", {"a", "b", "c"})
                             .lrange("list", 0, -1)
                             .exec();
 
-    auto set_result = pipe_replies.get<bool>(0);
+    // Parse reply with reply type and index.
+    auto set_cmd_result = pipe_replies.get<bool>(0);
 
-    auto get_result = pipe_replies.get<OptionalString>(1);
+    auto get_cmd_result = pipe_replies.get<OptionalString>(1);
 
-    // rename result
+    // rename command result
     pipe_replies.get<void>(2);
 
-    auto lpush_result = pipe_replies.get<long long>(3);
+    auto rpush_cmd_result = pipe_replies.get<long long>(3);
 
-    std::vector<std::string> lrange_result
-    pipe_replies.get(4, back_inserter(lrange_result));
+    std::vector<std::string> lrange_cmd_result;
+    pipe_replies.get(4, back_inserter(lrange_cmd_result));
 
-    // Transaction
+    // ***** Transaction *****
+
+    // Create a transaction.
     auto tx = redis.transaction();
 
+    // Run multiple commands in a transaction, and get all replies.
     auto tx_replies = tx.incr("num0")
                         .incr("num1")
                         .mget({"num0", "num1"})
                         .exec();
 
+    // Parse reply with reply type and index.
     auto incr_result0 = tx_replies.get<long long>(0);
 
     auto incr_result1 = tx_replies.get<long long>(1);
 
-    std::vector<OptionalString> mget_result;
-    tx_replies.get(2, back_inserter(mget_result));
+    std::vector<OptionalString> mget_cmd_result;
+    tx_replies.get(2, back_inserter(mget_cmd_result));
 
-    // Redis Cluster
+    // ***** Redis Cluster *****
+
+    // Create a RedisCluster object, which is movable but NOT copyable.
     auto redis_cluster = RedisCluster("tcp://127.0.0.1:7000");
 
-    // RedisCluster has similar interface as Redis.
+    // RedisCluster has similar interfaces as Redis.
     redis_cluster.set("key", "value");
-    auto val = redis_cluster.get("key");
+    val = redis_cluster.get("key");
     if (val) {
         std::cout << *val << std::endl;
-    }
+    }   // else key doesn't exist.
 
     // Keys with hash-tag.
     redis_cluster.set("key{tag}1", "val1");
     redis_cluster.set("key{tag}2", "val2");
     redis_cluster.set("key{tag}3", "val3");
+
     std::vector<OptionalString> hash_tag_res;
     redis_cluster.mget({"key{tag}1", "key{tag}2", "key{tag}3"},
             std::back_inserter(hash_tag_res));
