@@ -11,11 +11,12 @@
 - [API Reference](https://github.com/sewenew/redis-plus-plus#api-reference)
     - [Connection](https://github.com/sewenew/redis-plus-plus#connection)
     - [Send Command to Redis Server](https://github.com/sewenew/redis-plus-plus#send-command-to-redis-server)
-    - [Generic Command Method](https://github.com/sewenew/redis-plus-plus#generic-command-method)
+    - [Generic Command Interface](https://github.com/sewenew/redis-plus-plus#generic-command-interface)
     - [Publish/Subscribe](https://github.com/sewenew/redis-plus-plus#publishsubscribe)
     - [Pipeline](https://github.com/sewenew/redis-plus-plus#pipeline)
     - [Transaction](https://github.com/sewenew/redis-plus-plus#transaction)
     - [Redis Cluster](https://github.com/sewenew/redis-plus-plus#redis-cluster)
+    - [Redis Stream](https://github.com/sewenew/redis-plus-plus#redis-stream)
 - [Author](https://github.com/sewenew/redis-plus-plus#author)
 
 ## Overview
@@ -138,16 +139,28 @@ Otherwise, it prints the error message.
 
 After compiling the code, you'll get both shared library and static library. Since *redis-plus-plus* depends on *hiredis*, you need to link both libraries to your Application. Also don't forget to specify the `-std=c++11` and thread-related option. Take gcc as an example.
 
+#### Use Static Libraries
+
+```
+g++ -std=c++11 -o app app.cpp /path/to/libhiredis.a /path/to/libredis++.a -pthread
+```
+
+If *hiredis* and *redis-plus-plus* are installed at non-default location, you should use `-I` option to specify the header path.
+
+```
+g++ -std=c++11 -I/non-default/install/include/path -o app app.cpp /path/to/libhiredis.a /path/to/libredis++.a -pthread
+```
+
 #### Use Shared Libraries
 
 ```
-g++ -std=c++11 -lhiredis -lredis++ -pthread -o app app.cpp
+g++ -std=c++11 -o app app.cpp -lhiredis -lredis++ -pthread
 ```
 
 If *hiredis* and *redis-plus-plus* are installed at non-default location, you should use `-I` and `-L` options to specify the header and library paths.
 
 ```
-g++ -std=c++11 -I/non-default/install/include/path -L/non-default/install/lib/path -lhiredis -lredis++ -pthread -o app app.cpp
+g++ -std=c++11 -I/non-default/install/include/path -L/non-default/install/lib/path -o app app.cpp -lhiredis -lredis++ -pthread
 ```
 
 When linking with shared libraries, and running your application, you might get the following error message:
@@ -163,18 +176,6 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 ```
 
 Check [this StackOverflow question](https://stackoverflow.com/questions/480764) for details on how to solve the problem.
-
-#### Use Static Libraries
-
-```
-g++ -std=c++11 -pthread -o app app.cpp /path/to/libhiredis.a /path/to/libredis++.a
-```
-
-If *hiredis* and *redis-plus-plus* are installed at non-default location, you should use `-I` option to specify the header path.
-
-```
-g++ -std=c++11 -pthread -I/non-default/install/include/path -o app app.cpp /path/to/libhiredis.a /path/to/libredis++.a
-```
 
 ## Getting Started
 
@@ -334,6 +335,28 @@ try {
 
     std::vector<OptionalString> mget_cmd_result;
     tx_replies.get(2, back_inserter(mget_cmd_result));
+
+    // ***** Generic Command Interface *****
+
+    // There's no *Redis::client_getname* interface.
+    // But you can use *Redis::command* to get the client name.
+    val = redis.command<OptionalString>("client", "getname");
+    if (val) {
+        std::cout << *val << std::endl;
+    }
+
+    // Same as above.
+    auto getname_cmd_str = {"client", "getname"};
+    val = redis.command<OptionalString>(getname_cmd_str.begin(), getname_cmd_str.end());
+
+    // There's no *Redis::sort* interface.
+    // But you can use *Redis::command* to send sort the list.
+    std::vector<std::string> sorted_list;
+    redis.command("sort", "list", "ALPHA", std::back_inserter(sorted_list));
+
+    // Another *Redis::command* to do the same work.
+    auto sort_cmd_str = {"sort", "list", "ALPHA"};
+    redis.command(sort_cmd_str.begin(), sort_cmd_str.end(), std::back_inserter(sorted_list));
 
     // ***** Redis Cluster *****
 
@@ -925,7 +948,7 @@ redis.georadius("geo",
 
 Please see [redis.h](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/redis.h) for more API references, and see the [tests](https://github.com/sewenew/redis-plus-plus/tree/master/test/src/sw/redis%2B%2B) for more examples.
 
-### Generic Command Method
+### Generic Command Interface
 
 There're too many Redis commands, we haven't implemented all of them. However, you can use the generic `Redis::command` methods to send any commands to Redis. Unlike other client libraries, `Redis::command` doesn't use format string to combine command arguments into a command string. Instead, you can directly pass command arguments of `StringView` type or arithmetic type as parameters of `Redis::command`. For the reason why we don't use format string, please see [this discussion](https://github.com/sewenew/redis-plus-plus/pull/2).
 
@@ -1480,6 +1503,21 @@ If master is down, the cluster will promote one of its replicas to be the new ma
 
 - When the master is down, *redis-plus-plus* losts connection to it. In this case, if you try to send commands to this master, *redis-plus-plus* will try to update slot-node mapping from other nodes. If the mapping remains unchanged, i.e. new master hasn't been elected yet, it fails to send command to Redis Cluster and throws exception.
 - When the new master has been elected, the slot-node mapping will be updated by the cluster. In this case, if you send commands to the cluster, *redis-plus-plus* can get an update-to-date mapping, and sends commands to the new master.
+
+### Redis Stream
+
+Since Redis 5.0, it introduces a new data type: *Redis Stream*. By now, `Redis` class doesn't have any member function for commands related to *Redis Stream*. However, you can use the [Generic Command Interface](https://github.com/sewenew/redis-plus-plus#generic-command-interface) to send *Redis Stream* commands.
+
+```
+auto redis = Redis("tcp://127.0.0.1");
+auto id = redis.command<std::string>("XADD", "stream", "*", "field1", "value1", "field2", "value2");
+auto len = redis.command<long long>("XLEN", "stream");
+using ElementTuple = std::pair<std::string, std::tuple<std::string, std::string, std::string, std::string>>;
+std::vector<std::pair<std::string, std::tuple<ElementTuple, ElementTuple>>> vec;
+redis.command("XREAD", "COUNT", "2", "STREAMS", "stream", "0-0", std::back_inserter(vec));
+```
+
+I have to admit, it's hard to parse the result of *XREAD* command. I'll add more user-friendly *Redis Stream* API in the future. By now, if you have any problem, feel free to let me know by opening an issue.
 
 ## Author
 
