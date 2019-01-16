@@ -137,9 +137,11 @@ Otherwise, it prints the error message.
 
 ### Use redis-plus-plus In Your Project
 
-After compiling the code, you'll get both shared library and static library. Since *redis-plus-plus* depends on *hiredis*, you need to link both libraries to your Application. Also don't forget to specify the `-std=c++11` and thread-related option. Take gcc as an example.
+After compiling the code, you'll get both shared library and static library. Since *redis-plus-plus* depends on *hiredis*, you need to link both libraries to your Application. Also don't forget to specify the `-std=c++11` and thread-related option.
 
 #### Use Static Libraries
+
+Take gcc as an example.
 
 ```
 g++ -std=c++11 -o app app.cpp /path/to/libhiredis.a /path/to/libredis++.a -pthread
@@ -176,6 +178,35 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 ```
 
 Check [this StackOverflow question](https://stackoverflow.com/questions/480764) for details on how to solve the problem.
+
+#### Build With Cmake
+
+If you're using cmake to build your application, you need to add *hiredis* and *redis-plus-plus* dependencies in your *CMakeLists.txt*:
+
+```
+# <------------ add hiredis dependency --------------->
+find_path(HIREDIS_HEADER hiredis)
+target_include_directories(target PUBLIC ${HIREDIS_HEADER})
+
+find_library(HIREDIS_LIB hiredis)
+target_link_libraries(target ${HIREDIS_LIB})
+
+# <------------ add redis-plus-plus dependency -------------->
+# NOTE: this should be *sw* NOT *redis++*
+find_path(REDIS_PLUS_PLUS_HEADER sw)
+target_include_directories(target PUBLIC ${REDIS_PLUS_PLUS_HEADER})
+
+find_library(REDIS_PLUS_PLUS_LIB redis++)
+target_link_libraries(target ${REDIS_PLUS_PLUS_LIB})
+```
+
+See [this issue](https://github.com/sewenew/redis-plus-plus/issues/5) for a complete example of *CMakeLists.txt*.
+
+Also, if you installed *hiredis* and *redis-plus-plus* at non-default location, you need to run cmake with `CMAKE_PREFIX_PATH` option to specify the installation path of these two libraries.
+
+```
+cmake -DCMAKE_PREFIX_PATH=/installation/path/to/the/two/libs ..
+```
 
 ## Getting Started
 
