@@ -35,6 +35,7 @@ This is a C++ client for Redis. It's based on [hiredis](https://github.com/redis
 - Redis transaction.
 - Redis Cluster.
 - STL-like interfaces.
+- Generic command interface.
 
 ## Installation
 
@@ -102,6 +103,7 @@ clang version 4.0.1-10 (tags/RELEASE_401/final)
 clang version 5.0.1-4 (tags/RELEASE_501/final)
 clang version 6.0.0-1ubuntu2 (tags/RELEASE_600/final)
 clang version 7.0.0-3~ubuntu0.18.04.1 (tags/RELEASE_700/final)
+Apple LLVM version 10.0.0 (clang-1000.11.45.5)
 ```
 
 After compiling with cmake, you'll get a test program in *compile/test* directory: *compile/test/test_redis++*.
@@ -1539,16 +1541,7 @@ If master is down, the cluster will promote one of its replicas to be the new ma
 
 Since Redis 5.0, it introduces a new data type: *Redis Stream*. By now, `Redis` class doesn't have any member function for commands related to *Redis Stream*. However, you can use the [Generic Command Interface](https://github.com/sewenew/redis-plus-plus#generic-command-interface) to send *Redis Stream* commands.
 
-```
-auto redis = Redis("tcp://127.0.0.1");
-auto id = redis.command<std::string>("XADD", "stream", "*", "field1", "value1", "field2", "value2");
-auto len = redis.command<long long>("XLEN", "stream");
-using ElementTuple = std::pair<std::string, std::tuple<std::string, std::string, std::string, std::string>>;
-std::vector<std::pair<std::string, std::tuple<ElementTuple, ElementTuple>>> vec;
-redis.command("XREAD", "COUNT", "2", "STREAMS", "stream", "0-0", std::back_inserter(vec));
-```
-
-I have to admit, it's hard to parse the result of *XREAD* command. I'll add more user-friendly *Redis Stream* API in the future. By now, if you have any problem, feel free to let me know by opening an issue.
+I have to admit, it's hard to parse the result of some stream commands, e.g. *XREAD*, you might need to manually parse the `redisReply` object defined by *libhiredis*. I'll add more user-friendly *Redis Stream* API in the future. By now, if you have any problem, feel free to let me know by opening an issue.
 
 ## Author
 
