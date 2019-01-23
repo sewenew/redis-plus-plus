@@ -1454,7 +1454,7 @@ RedisCluster cluster4("tcp://127.0.0.1");
 
 #### Interfaces
 
-As we mentioned above, `RedisCluster`'s interfaces are similar to `Redis`. It supports most of `Redis`' intefaces (see `Redis`' [API Reference](https://github.com/sewenew/redis-plus-plus#api-reference) for details), except the following:
+As we mentioned above, `RedisCluster`'s interfaces are similar to `Redis`. It supports most of `Redis`' interfaces, including the [generic command interface](https://github.com/sewenew/redis-plus-plus#generic-command-interface) (see `Redis`' [API Reference section](https://github.com/sewenew/redis-plus-plus#api-reference) for details), except the following:
 
 - Not support commands without key as argument, e.g. `PING`, `INFO`.
 - Not support Lua script without key parameters.
@@ -1465,6 +1465,10 @@ Since there's no key parameter, `RedisCluster` has no idea on to which node thes
 - Instead of host and port, you can also call `Redis RedisCluster::redis(const StringView &hash_tag)` to create a `Redis` object with a hash-tag specifying the node. In this case, the returned `Redis` object creates a new connection to Redis server.
 
 Also you can use the [hash tags](https://redis.io/topics/cluster-spec#keys-hash-tags) to send multiple-key commands.
+
+##### Publish/Subscribe
+
+You can publish and subscribe messages with `RedisCluster`. The interfaces are exactly the same as `Redis`, i.e. use `RedisCluster::publish` to publish messages, and use `RedisCluster::subscriber` to create a subscriber to consume messages. See [Publish/Subscribe section](https://github.com/sewenew/redis-plus-plus#publishsubscribe) for details.
 
 ##### Pipeline and Transaction
 
