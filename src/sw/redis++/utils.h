@@ -257,6 +257,38 @@ auto LastValue(Args &&...args)
             NthValue<sizeof...(Args) - 1>(std::forward<Args>(args)...));
 }
 
+template <typename T, typename = Void<>>
+struct HasPushBack : std::false_type {};
+
+template <typename T>
+struct HasPushBack<T,
+    typename std::enable_if<
+        std::is_void<decltype(
+            std::declval<T>().push_back(std::declval<typename T::value_type>())
+                )>::value>::type> : std::true_type {};
+
+template <typename T, typename = Void<>>
+struct HasInsert : std::false_type {};
+
+template <typename T>
+struct HasInsert<T,
+    typename std::enable_if<
+        std::is_same<
+            decltype(std::declval<T>().insert(std::declval<typename T::const_iterator>(),
+                                                std::declval<typename T::value_type>())),
+            typename T::iterator>::value>::type> : std::true_type {};
+
+template <typename T>
+struct IsSequenceContainer
+    : std::integral_constant<bool,
+        HasPushBack<T>::value
+            && !std::is_same<typename std::decay<T>::type, std::string>::value> {};
+
+template <typename T>
+struct IsAssociativeContainer
+    : std::integral_constant<bool,
+        HasInsert<T>::value && !HasPushBack<T>::value> {};
+
 uint16_t crc16(const char *buf, int len);
 
 }

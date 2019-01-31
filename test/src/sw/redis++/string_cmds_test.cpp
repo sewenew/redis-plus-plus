@@ -150,7 +150,7 @@ void StringCmdTest::_test_numeric() {
 
 void StringCmdTest::_test_getset() {
     auto key = test_key("getset");
-    auto non_exist_key("non-existent");
+    auto non_exist_key = test_key("non-existent");
 
     KeyDeleter deleter(_redis, {key, non_exist_key});
 
@@ -186,9 +186,9 @@ void StringCmdTest::_test_getset() {
 }
 
 void StringCmdTest::_test_mgetset() {
-    auto kvs = {std::make_pair("k1", "v1"),
-                std::make_pair("k2", "v2"),
-                std::make_pair("k3", "v3")};
+    auto kvs = {std::make_pair(test_key("k1"), "v1"),
+                std::make_pair(test_key("k2"), "v2"),
+                std::make_pair(test_key("k3"), "v3")};
 
     std::vector<std::string> keys;
     std::vector<std::string> vals;

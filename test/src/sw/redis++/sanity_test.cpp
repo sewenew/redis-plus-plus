@@ -106,10 +106,14 @@ void SanityTest::_test_cmdargs() {
 }
 
 void SanityTest::_test_generic_command() {
-    auto key = test_key("key");
-    auto not_exist_key = test_key("not_exist_key");
+    auto key = test_key("{k}ey");
+    auto not_exist_key = test_key("not_exist_{k}ey");
+    auto k1 = test_key("{k}1");
+    auto k2 = test_key("{k}2");
 
-    KeyDeleter deleter(_redis, {key, not_exist_key});
+    KeyDeleter deleter(_redis, {key, not_exist_key, k1, k2});
+
+    ClusterKeyDeleter cluster_deleter(_cluster, {key, not_exist_key, k1, k2});
 
     auto reply = _redis.command("ping");
     REDIS_ASSERT(reply && reply::parse<std::string>(*reply) == "PONG",
@@ -146,10 +150,19 @@ void SanityTest::_test_generic_command() {
     reply = _cluster.command("incr", key);
     REDIS_ASSERT(reply::parse<long long>(*reply) == 457, "failed to test generic command");
 
-    _redis.command("mset", "k1", "v", "k2", "v");
-    reply = _redis.command("mget", "k1", "k2");
+    _redis.command("mset", k1.c_str(), "v", k2.c_str(), "v");
+    reply = _redis.command("mget", k1, k2);
     res.clear();
     reply::to_array(*reply, std::back_inserter(res));
+    REDIS_ASSERT(res.size() == 2 && res[0] && *(res[0]) == "v" && res[1] && *(res[1]) == "v",
+            "failed to test generic command");
+
+    res = _redis.command<std::vector<OptionalString>>("mget", k1, k2);
+    REDIS_ASSERT(res.size() == 2 && res[0] && *(res[0]) == "v" && res[1] && *(res[1]) == "v",
+            "failed to test generic command");
+
+    res.clear();
+    _redis.command("mget", k1, k2, std::back_inserter(res));
     REDIS_ASSERT(res.size() == 2 && res[0] && *(res[0]) == "v" && res[1] && *(res[1]) == "v",
             "failed to test generic command");
 
@@ -190,12 +203,17 @@ void SanityTest::_test_generic_command() {
     val = _cluster.command<OptionalString>(cluster_get_cmd_str.begin(), cluster_get_cmd_str.end());
     REDIS_ASSERT(val && *val == "new_value", "failed to test generic command");
 
-    auto hash_taged_mset = {"mset", "{k}1", "v", "{k}2", "v"};
+    auto hash_taged_mset = {"mset", k1.c_str(), "v", k2.c_str(), "v"};
     _cluster.command(hash_taged_mset.begin(), hash_taged_mset.end());
-    auto hash_taged_mget = {"mget", "{k}1", "{k}2"};
+    auto hash_taged_mget = {"mget", k1.c_str(), k2.c_str()};
     reply = _cluster.command(hash_taged_mget.begin(), hash_taged_mget.end());
     res.clear();
     reply::to_array(*reply, std::back_inserter(res));
+    REDIS_ASSERT(res.size() == 2 && res[0] && *(res[0]) == "v" && res[1] && *(res[1]) == "v",
+            "failed to test generic command");
+
+    res = _cluster.command<std::vector<OptionalString>>(hash_taged_mget.begin(),
+                                                        hash_taged_mget.end());
     REDIS_ASSERT(res.size() == 2 && res[0] && *(res[0]) == "v" && res[1] && *(res[1]) == "v",
             "failed to test generic command");
 

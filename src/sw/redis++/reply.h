@@ -68,6 +68,12 @@ std::pair<T, U> parse(ParseTag<std::pair<T, U>>, redisReply &reply);
 template <typename ...Args>
 std::tuple<Args...> parse(ParseTag<std::tuple<Args...>>, redisReply &reply);
 
+template <typename T, typename std::enable_if<IsSequenceContainer<T>::value, int>::type = 0>
+T parse(ParseTag<T>, redisReply &reply);
+
+template <typename T, typename std::enable_if<IsAssociativeContainer<T>::value, int>::type = 0>
+T parse(ParseTag<T>, redisReply &reply);
+
 template <typename Output>
 long long parse_scan_reply(redisReply &reply, Output output);
 
@@ -256,6 +262,32 @@ std::tuple<Args...> parse(ParseTag<std::tuple<Args...>>, redisReply &reply) {
     }
 
     return detail::parse_tuple<Args...>(reply.element, 0);
+}
+
+template <typename T, typename std::enable_if<IsSequenceContainer<T>::value, int>::type>
+T parse(ParseTag<T>, redisReply &reply) {
+    if (!is_array(reply)) {
+        throw ProtoError("Expect ARRAY reply");
+    }
+
+    T container;
+
+    to_array(reply, std::back_inserter(container));
+
+    return container;
+}
+
+template <typename T, typename std::enable_if<IsAssociativeContainer<T>::value, int>::type>
+T parse(ParseTag<T>, redisReply &reply) {
+    if (!is_array(reply)) {
+        throw ProtoError("Expect ARRAY reply");
+    }
+
+    T container;
+
+    to_array(reply, std::inserter(container, container.end()));
+
+    return container;
 }
 
 template <typename Output>

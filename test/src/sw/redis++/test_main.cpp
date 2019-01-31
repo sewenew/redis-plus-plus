@@ -34,6 +34,7 @@
 #include "pipeline_transaction_test.h"
 #include "threads_test.h"
 #include "cluster_test.h"
+#include "stream_cmds_test.h"
 
 namespace {
 
@@ -124,6 +125,11 @@ int main(int argc, char **argv) {
         cluster_test.run();
 
         std::cout << "Pass cluster tests" << std::endl;
+
+        sw::redis::test::StreamCmdsTest stream_test(opts);
+        stream_test.run();
+
+        std::cout << "Pass stream commands tests" << std::endl;
 
         std::cout << "Pass all tests" << std::endl;
     } catch (const sw::redis::Error &e) {
