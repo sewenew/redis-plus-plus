@@ -1,23 +1,23 @@
 # redis-plus-plus
 
-- [Overview](https://github.com/sewenew/redis-plus-plus#overview)
-    - [Features](https://github.com/sewenew/redis-plus-plus#features)
-- [Installation](https://github.com/sewenew/redis-plus-plus#installation)
-    - [Install hiredis](https://github.com/sewenew/redis-plus-plus#install-hiredis)
-    - [Install redis-plus-plus](https://github.com/sewenew/redis-plus-plus#install-redis-plus-plus)
-    - [Run Tests (Optional)](https://github.com/sewenew/redis-plus-plus#run-tests-optional)
-    - [Use redis-plus-plus In Your Project](https://github.com/sewenew/redis-plus-plus#use-redis-plus-plus-in-your-project)
-- [Getting Started](https://github.com/sewenew/redis-plus-plus#getting-started)
-- [API Reference](https://github.com/sewenew/redis-plus-plus#api-reference)
-    - [Connection](https://github.com/sewenew/redis-plus-plus#connection)
-    - [Send Command to Redis Server](https://github.com/sewenew/redis-plus-plus#send-command-to-redis-server)
-    - [Generic Command Interface](https://github.com/sewenew/redis-plus-plus#generic-command-interface)
-    - [Publish/Subscribe](https://github.com/sewenew/redis-plus-plus#publishsubscribe)
-    - [Pipeline](https://github.com/sewenew/redis-plus-plus#pipeline)
-    - [Transaction](https://github.com/sewenew/redis-plus-plus#transaction)
-    - [Redis Cluster](https://github.com/sewenew/redis-plus-plus#redis-cluster)
-    - [Redis Stream](https://github.com/sewenew/redis-plus-plus#redis-stream)
-- [Author](https://github.com/sewenew/redis-plus-plus#author)
+- [Overview](#overview)
+    - [Features](#features)
+- [Installation](#installation)
+    - [Install hiredis](#install-hiredis)
+    - [Install redis-plus-plus](#install-redis-plus-plus)
+    - [Run Tests (Optional)](#run-tests-optional)
+    - [Use redis-plus-plus In Your Project](#use-redis-plus-plus-in-your-project)
+- [Getting Started](#getting-started)
+- [API Reference](#api-reference)
+    - [Connection](#connection)
+    - [Send Command to Redis Server](#send-command-to-redis-server)
+    - [Generic Command Interface](#generic-command-interface)
+    - [Publish/Subscribe](#publishsubscribe)
+    - [Pipeline](#pipeline)
+    - [Transaction](#transaction)
+    - [Redis Cluster](#redis-cluster)
+    - [Redis Stream](#redis-stream)
+- [Author](#author)
 
 ## Overview
 
@@ -488,7 +488,7 @@ Connections in the pool are lazily created. When the connection pool is initiali
 
 You don't need to check whether `Redis` object connects to server successfully. If `Redis` fails to create a connection to Redis server, or the connection is broken at some time, it throws an exception of type `Error` when you try to send command with `Redis`. Even when you get an exception, i.e. the connection is broken, you don't need to create a new `Redis` object. You can reuse the `Redis` object to send commands, and the `Redis` object will try to reconnect to server automatically. If it reconnects successfully, it sends command to server. Otherwise, it throws an exception again.
 
-See the [Exception section](https://github.com/sewenew/redis-plus-plus#exception) for details on exceptions.
+See the [Exception section](#exception) for details on exceptions.
 
 #### Reuse Redis object As Much As Possible
 
@@ -537,16 +537,16 @@ Let's take a closer look at these methods' parameters and return values.
 Most of these methods have the same parameters as the corresponding commands. The following is a list of parameter types:
 
 | Parameter Type | Explaination | Example | Note |
-| -------------- | ------------ | ------- | ---- |
-| **StringView** | Parameters of string type. Normally used for key, value, member name, field name and so on | *bool Redis::hset(const StringView &key, const StringView &field, const StringView &val)* | See the [StringView section](https://github.com/sewenew/redis-plus-plus#stringview) for details on `StringView` |
-| **long long** | Parameters of integer type. Normally used for index (e.g. list commands) or integer | *void ltrim(const StringView &key, long long start, long long stop)* <br> *long long decrby(const StringView &key, long long decrement)* | |
-| **double** | Parameters of floating-point type. Normally used for score (e.g. sorted set commands) or number of floating-point type | *double incrbyfloat(const StringView &key, double increment)* | |
-| **std::chrono::duration** <br> **std::chrono::time_point** | Time-related parameters | *bool expire(const StringView &key, const std::chrono::seconds &timeout)* <br> *bool expireat(const StringView &key, const std::chrono::time_point<std::chrono::system_clock, std::chrono::seconds> &tp)* | |
-| **std::pair<StringView, StringView>** | Used for Redis hash's (field, value) pair | *bool hset(const StringView &key, const std::pair<StringView, StringView> &item)* | |
-| **std::pair<double, double>** | Used for Redis geo's (longitude, latitude) pair | *OptionalLongLong georadius(const StringView &key, const std::pair<double, double> &location, double radius, GeoUnit unit, const StringView &destination, bool store_dist, long long count)* | |
-| **pair of iterators** | Use a pair of iterators to specify a range of input, so that we can pass the data in a STL container to these methods | *template <typename Input>* <br> *long long del(Input first, Input last)* | Throw an exception, if it's an empty range, i.e. *first == last* |
-| **std::initializer_list<T>** | Use an initializer list to specify a batch of input | *template <typename T>* <br> *long long del(std::initializer_list<T> il)* | |
-| **some options** | Options for some commands | *UpdateType*, *template <typename T> class BoundedInterval* | See [command_options.h](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/command_options.h) for details |
+| :------------: | ------------ | ------- | ---- |
+| **StringView** | Parameters of string type. Normally used for key, value, member name, field name and so on | ***bool Redis::hset(const StringView &key, const StringView &field, const StringView &val)*** | See the [StringView section](#stringview) for details on `StringView` |
+| **long long** | Parameters of integer type. Normally used for index (e.g. list commands) or integer | ***void ltrim(const StringView &key, long long start, long long stop)*** <br> ***long long decrby(const StringView &key, long long decrement)*** | |
+| **double** | Parameters of floating-point type. Normally used for score (e.g. sorted set commands) or number of floating-point type | ***double incrbyfloat(const StringView &key, double increment)*** | |
+| **std::chrono::duration** <br> **std::chrono::time_point** | Time-related parameters | ***bool expire(const StringView &key, const std::chrono::seconds &timeout)*** <br> ***bool expireat(const StringView &key, const std::chrono::time_point<std::chrono::system_clock, std::chrono::seconds> &tp)*** | |
+| **std::pair<StringView, StringView>** | Used for Redis hash's (field, value) pair | ***bool hset(const StringView &key, const std::pair<StringView, StringView> &item)*** | |
+| **std::pair<double, double>** | Used for Redis geo's (longitude, latitude) pair | ***OptionalLongLong georadius(const StringView &key, const std::pair<double, double> &location, double radius, GeoUnit unit, const StringView &destination, bool store_dist, long long count)*** | |
+| **pair of iterators** | Use a pair of iterators to specify a range of input, so that we can pass the data in a STL container to these methods | ***template < typename Input >*** <br> ***long long del(Input first, Input last)*** | Throw an exception, if it's an empty range, i.e. *first == last* |
+| **std::initializer_list< T >** | Use an initializer list to specify a batch of input | ***template < typename T >*** <br> ***long long del(std::initializer_list< T > il)*** | |
+| **some options** | Options for some commands | ***UpdateType***, ***template < typename T > class BoundedInterval*** | See [command_options.h](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/command_options.h) for details |
 
 ##### StringView
 
@@ -581,17 +581,17 @@ Also these replies might be *NULL*. For instance, when you try to `GET` the valu
 
 As we mentioned above, replies are parsed into return values of these methods. The following is a list of return types:
 
-| Parameter Type | Explaination | Example | Note |
-| -------------- | ------------ | ------- | ---- |
+| Return Type | Explaination | Example | Note |
+| :---------: | ------------ | ------- | ---- |
 | **void** | *Status Reply* that should always return a string of "OK" | *RENAME*, *SETEX* | |
 | **std::string** | *Status Reply* that NOT always return "OK", and *Bulk String Reply* | *PING*, *INFO* | |
-| **bool** | *Integer Reply* that always returns 0 or 1 | *EXPIRE*, *HSET* | See the [Boolean Return Value section](https://github.com/sewenew/redis-plus-plus#boolean-return-value) for the meaning of a boolean return value |
+| **bool** | *Integer Reply* that always returns 0 or 1 | *EXPIRE*, *HSET* | See the [Boolean Return Value section](#boolean-return-value) for the meaning of a boolean return value |
 | **long long** | *Integer Reply* that not always return 0 or 1 | *DEL*, *APPEND* | |
 | **double** | *Bulk String Reply* that represents a double | *INCRBYFLOAT*, *ZINCRBY* | |
 | **std::pair** | *Array Reply* with exactly 2 elements. Since the return value is always an array of 2 elements, we return the 2 elements as a `std::pair`'s first and second elements | *BLPOP* | |
 | **std::tuple** | *Array Reply* with fixed length and has more than 2 elements. Since length of the returned array is fixed, we return the array as a `std::tuple` | *BZPOPMAX* | |
-| **output iterator** | General *Array Reply* with non-fixed/dynamic length. We use STL-like interface to return this kind of array replies, so that you can insert the return value into a STL container easily | *MGET*, *LRANGE* | Also, sometimes the type of output iterator decides which options to send with the command. See the [Examples section](https://github.com/sewenew/redis-plus-plus#command-overloads) for details |
-| **Optional<T>** | For any reply of type `T` that might be *NULL* | *GET*, *LPOP*, *BLPOP*, *BZPOPMAX* | See the [Optional section](https://github.com/sewenew/redis-plus-plus#optional) for details on `Optional<T>` |
+| **output iterator** | General *Array Reply* with non-fixed/dynamic length. We use STL-like interface to return this kind of array replies, so that you can insert the return value into a STL container easily | *MGET*, *LRANGE* | Also, sometimes the type of output iterator decides which options to send with the command. See the [Examples section](#command-overloads) for details |
+| **Optional< T >** | For any reply of type `T` that might be *NULL* | *GET*, *LPOP*, *BLPOP*, *BZPOPMAX* | See the [Optional section](#optional) for details on `Optional<T>` |
 
 ##### Boolean Return Value
 
@@ -600,7 +600,7 @@ check [Redis commands manual](http://redis.io/commands) for what do `0` and `1` 
 
 For example, when we send `EXPIRE` command to Redis server, it returns `1` if the timeout was set, and it returns `0` if the key doesn't exist. Accordingly, if the timeout was set, `Redis::expire` returns `true`, and if the key doesn't exist, `Redis::expire` returns `false`.
 
-So, never use the return value to check if the command has been successfully sent to Redis server. Instead, if `Redis` failed to send command to server, it throws an exception of type `Error`. See the [Exception section](https://github.com/sewenew/redis-plus-plus#exception) for details on exceptions.
+So, never use the return value to check if the command has been successfully sent to Redis server. Instead, if `Redis` failed to send command to server, it throws an exception of type `Error`. See the [Exception section](#exception) for details on exceptions.
 
 ##### Optional
 
@@ -656,9 +656,9 @@ using OptionalStringPair = Optional<std::pair<std::string, std::string>>;
 - `ProtoError`: The command or reply is invalid, and we cannot process it with Redis protocol.
 - `OomError`: *hiredis* library got an out-of-memory error.
 - `ReplyError`: Redis server returned an error reply, e.g. we try to call `redis::lrange` on a Redis hash.
-- `WatchError`: Watched key has been modified. See [Watch section](https://github.com/sewenew/redis-plus-plus#watch) for details.
+- `WatchError`: Watched key has been modified. See [Watch section](#watch) for details.
 
-**NOTE**: *NULL REPLY*` is not taken as an exception. For example, if we try to `GET` a non-existent key, we'll get a *NULL Bulk String Reply*. Instead of throwing an exception, we return the *NULL REPLY* as a null `Optional<T>` object. Also see [Optional section](https://github.com/sewenew/redis-plus-plus#optional).
+**NOTE**: *NULL REPLY*` is not taken as an exception. For example, if we try to `GET` a non-existent key, we'll get a *NULL Bulk String Reply*. Instead of throwing an exception, we return the *NULL REPLY* as a null `Optional<T>` object. Also see [Optional section](#optional).
 
 #### Examples
 
@@ -1050,7 +1050,7 @@ redis.command<void>("client", "setname", "name");
 
 As I mentioned in the comments, the `SET` command not always returns `void`. Because if you try to set a (key, value) pair with *NX* or *XX* option, you might fail, and Redis will return a *NULL REPLY*. Besides the `SET` command, there're other commands whose return value is NOT a fixed type, you need to parse it by yourself. For example, `Redis::set` method rewrite the reply of `SET` command, and make it return `bool` type, i.e. if no *NX* or *XX* option specified, Redis server will always return an "OK" string, and `Redis::set` returns `true`; if *NX* or *XX* specified, and Redis server returns a *NULL REPLY*, `Redis::set` returns `false`.
 
-So `Redis` class also has other overloaded `command` methods, these methods return a `ReplyUPtr`, i.e. `std::unique_ptr<redisReply, ReplyDeleter>`, object. Normally you don't need to parse it manually. Instead, you only need to pass the reply to `template <typename T> T reply::parse(redisReply &)` to get a value of type `T`. Check the [Return Type section](https://github.com/sewenew/redis-plus-plus#return-type) for valid `T` types. If the command returns an array of elements, besides calling `reply::parse` to parse the reply to an STL container, you can also call `template <typename Output> reply::to_array(redisReply &reply, Output output)` to parse the result into an array or STL container with an output iterator.
+So `Redis` class also has other overloaded `command` methods, these methods return a `ReplyUPtr`, i.e. `std::unique_ptr<redisReply, ReplyDeleter>`, object. Normally you don't need to parse it manually. Instead, you only need to pass the reply to `template <typename T> T reply::parse(redisReply &)` to get a value of type `T`. Check the [Return Type section](#return-type) for valid `T` types. If the command returns an array of elements, besides calling `reply::parse` to parse the reply to an STL container, you can also call `template <typename Output> reply::to_array(redisReply &reply, Output output)` to parse the result into an array or STL container with an output iterator.
 
 Let's rewrite the above examples:
 
@@ -1266,7 +1266,7 @@ pipe.discard();
 - `template <typename Output> void get(std::size_t idx, Output output)`: If the reply is of type *Array Reply*, you can call this method to write the `ith` reply to an output iterator. Normally, compiler will deduce the type of the output iterator, and you don't need to specify the type parameter explicitly.
 - `redisReply& get(std::size_t idx)`: If the reply is NOT a fixed type, call this method to get a reference to `redisReply` object. In this case, you need to call `template <typename T> T reply::parse(redisReply &)` to parse the reply manually.
 
-Check the [Return Type section](https://github.com/sewenew/redis-plus-plus#return-type) for details on the return types of the result.
+Check the [Return Type section](#return-type) for details on the return types of the result.
 
 ```
 auto replies = pipe.set("key", "val").incr("num").lrange("list", 0, -1).exec();
@@ -1333,7 +1333,7 @@ tx.discard();
 
 #### Parse Replies
 
-See [Pipeline's Parse Replies section](https://github.com/sewenew/redis-plus-plus#parse-replies) for how to parse the replies.
+See [Pipeline's Parse Replies section](#parse-replies) for how to parse the replies.
 
 #### Piped Transaction
 
@@ -1464,7 +1464,7 @@ RedisCluster cluster4("tcp://127.0.0.1");
 
 #### Interfaces
 
-As we mentioned above, `RedisCluster`'s interfaces are similar to `Redis`. It supports most of `Redis`' interfaces, including the [generic command interface](https://github.com/sewenew/redis-plus-plus#generic-command-interface) (see `Redis`' [API Reference section](https://github.com/sewenew/redis-plus-plus#api-reference) for details), except the following:
+As we mentioned above, `RedisCluster`'s interfaces are similar to `Redis`. It supports most of `Redis`' interfaces, including the [generic command interface](#generic-command-interface) (see `Redis`' [API Reference section](#api-reference) for details), except the following:
 
 - Not support commands without key as argument, e.g. `PING`, `INFO`.
 - Not support Lua script without key parameters.
@@ -1476,11 +1476,11 @@ Since there's no key parameter, `RedisCluster` has no idea on to which node thes
 
 Also you can use the [hash tags](https://redis.io/topics/cluster-spec#keys-hash-tags) to send multiple-key commands.
 
-See the [example section](https://github.com/sewenew/redis-plus-plus#examples-2) for details.
+See the [example section](#examples-2) for details.
 
 ##### Publish/Subscribe
 
-You can publish and subscribe messages with `RedisCluster`. The interfaces are exactly the same as `Redis`, i.e. use `RedisCluster::publish` to publish messages, and use `RedisCluster::subscriber` to create a subscriber to consume messages. See [Publish/Subscribe section](https://github.com/sewenew/redis-plus-plus#publishsubscribe) for details.
+You can publish and subscribe messages with `RedisCluster`. The interfaces are exactly the same as `Redis`, i.e. use `RedisCluster::publish` to publish messages, and use `RedisCluster::subscriber` to create a subscriber to consume messages. See [Publish/Subscribe section](#publishsubscribe) for details.
 
 ##### Pipeline and Transaction
 
@@ -1494,7 +1494,7 @@ Pipeline RedisCluster::pipeline(const StringView &hash_tag);
 Transaction RedisCluster::transaction(const StringView &hash_tag, bool piped = false);
 ```
 
-With the created `Pipeline` or `Transaction` object, you can send commands with keys located on the same node as the given *hash_tag*. See [Examples section](https://github.com/sewenew/redis-plus-plus#examples-2) for an example.
+With the created `Pipeline` or `Transaction` object, you can send commands with keys located on the same node as the given *hash_tag*. See [Examples section](#examples-2) for an example.
 
 #### Examples
 
@@ -1575,7 +1575,7 @@ If master is down, the cluster will promote one of its replicas to be the new ma
 
 ### Redis Stream
 
-Since Redis 5.0, it introduces a new data type: *Redis Stream*. By now, `Redis` class doesn't have any member function for commands related to *Redis Stream*. However, you can use the [Generic Command Interface](https://github.com/sewenew/redis-plus-plus#generic-command-interface) to send *Redis Stream* commands.
+Since Redis 5.0, it introduces a new data type: *Redis Stream*. By now, `Redis` class doesn't have any member function for commands related to *Redis Stream*. However, you can use the [Generic Command Interface](#generic-command-interface) to send *Redis Stream* commands.
 
 ```
 auto redis = Redis("tcp://127.0.0.1");
