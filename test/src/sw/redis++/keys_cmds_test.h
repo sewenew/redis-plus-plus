@@ -25,20 +25,23 @@ namespace redis {
 
 namespace test {
 
+template <typename RedisInstance>
 class KeysCmdTest {
 public:
-    explicit KeysCmdTest(const ConnectionOptions &opts);
+    explicit KeysCmdTest(RedisInstance &instance) : _redis(instance) {}
 
     void run();
 
 private:
     void _test_key();
 
+    void _test_randomkey(Redis &instance);
+
     void _test_ttl();
 
-    void _test_scan();
+    void _test_scan(Redis &instance);
 
-    Redis _redis;
+    RedisInstance &_redis;
 };
 
 }
@@ -46,5 +49,7 @@ private:
 }
 
 }
+
+#include "keys_cmds_test.hpp"
 
 #endif // end SEWENEW_REDISPLUSPLUS_TEST_KEYS_CMDS_TEST_H

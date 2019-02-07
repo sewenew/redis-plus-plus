@@ -14,7 +14,9 @@
    limitations under the License.
  *************************************************************************/
 
-#include "connection_cmds_test.h"
+#ifndef SEWENEW_REDISPLUSPLUS_TEST_CONNECTION_CMDS_TEST_HPP
+#define SEWENEW_REDISPLUSPLUS_TEST_CONNECTION_CMDS_TEST_HPP
+
 #include "utils.h"
 
 namespace sw {
@@ -23,16 +25,20 @@ namespace redis {
 
 namespace test {
 
-ConnectionCmdTest::ConnectionCmdTest(const ConnectionOptions &opts) : _redis(opts) {}
+template <typename RedisInstance>
+void ConnectionCmdTest<RedisInstance>::run() {
+    cluster_specializing_test(*this, &ConnectionCmdTest<RedisInstance>::_run, _redis);
+}
 
-void ConnectionCmdTest::run() {
+template <typename RedisInstance>
+void ConnectionCmdTest<RedisInstance>::_run(Redis &instance) {
     auto message = std::string("hello");
 
-    REDIS_ASSERT(_redis.echo(message) == message, "failed to test echo");
+    REDIS_ASSERT(instance.echo(message) == message, "failed to test echo");
 
-    REDIS_ASSERT(_redis.ping() == "PONG", "failed to test ping");
+    REDIS_ASSERT(instance.ping() == "PONG", "failed to test ping");
 
-    REDIS_ASSERT(_redis.ping(message) == message, "failed to test ping");
+    REDIS_ASSERT(instance.ping(message) == message, "failed to test ping");
 }
 
 }
@@ -40,3 +46,5 @@ void ConnectionCmdTest::run() {
 }
 
 }
+
+#endif // end SEWENEW_REDISPLUSPLUS_TEST_CONNECTION_CMDS_TEST_HPP

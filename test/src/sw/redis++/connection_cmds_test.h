@@ -25,14 +25,17 @@ namespace redis {
 
 namespace test {
 
+template <typename RedisInstance>
 class ConnectionCmdTest {
 public:
-    explicit ConnectionCmdTest(const ConnectionOptions &opts);
+    explicit ConnectionCmdTest(RedisInstance &instance) : _redis(instance) {}
 
     void run();
 
 private:
-    Redis _redis;
+    void _run(Redis &redis);
+
+    RedisInstance &_redis;
 };
 
 }
@@ -40,5 +43,7 @@ private:
 }
 
 }
+
+#include "connection_cmds_test.hpp"
 
 #endif // end SEWENEW_REDISPLUSPLUS_TEST_CONNECTION_CMDS_TEST_H

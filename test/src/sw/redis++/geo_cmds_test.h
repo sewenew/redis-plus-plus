@@ -25,14 +25,15 @@ namespace redis {
 
 namespace test {
 
+template <typename RedisInstance>
 class GeoCmdTest {
 public:
-    explicit GeoCmdTest(const ConnectionOptions &opts);
+    explicit GeoCmdTest(RedisInstance &instance) : _redis(instance) {}
 
     void run();
 
 private:
-    Redis _redis;
+    RedisInstance &_redis;
 };
 
 }
@@ -40,5 +41,7 @@ private:
 }
 
 }
+
+#include "geo_cmds_test.hpp"
 
 #endif // end SEWENEW_REDISPLUSPLUS_TEST_GEO_CMDS_TEST_H

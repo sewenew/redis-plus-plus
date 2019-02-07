@@ -14,7 +14,9 @@
    limitations under the License.
  *************************************************************************/
 
-#include "geo_cmds_test.h"
+#ifndef SEWENEW_REDISPLUSPLUS_TEST_GEO_CMDS_TEST_HPP
+#define SEWENEW_REDISPLUSPLUS_TEST_GEO_CMDS_TEST_HPP
+
 #include <vector>
 #include <tuple>
 #include "utils.h"
@@ -25,13 +27,12 @@ namespace redis {
 
 namespace test {
 
-GeoCmdTest::GeoCmdTest(const ConnectionOptions &opts) : _redis(opts) {}
-
-void GeoCmdTest::run() {
+template <typename RedisInstance>
+void GeoCmdTest<RedisInstance>::run() {
     auto key = test_key("geo");
     auto dest = test_key("dest");
 
-    KeyDeleter deleter(_redis, {key, dest});
+    KeyDeleter<RedisInstance> deleter(_redis, {key, dest});
 
     auto members = {
         std::make_tuple("m1", 10.0, 11.0),
@@ -144,3 +145,5 @@ void GeoCmdTest::run() {
 }
 
 }
+
+#endif // end SEWENEW_REDISPLUSPLUS_TEST_GEO_CMDS_TEST_HPP

@@ -25,23 +25,25 @@ namespace redis {
 
 namespace test {
 
+template <typename RedisInstance>
 class PipelineTransactionTest {
 public:
-    PipelineTransactionTest(const ConnectionOptions &opts,
-                            const ConnectionOptions &cluster_opts);
+    explicit PipelineTransactionTest(RedisInstance &instance) : _redis(instance) {}
 
     void run();
 
 private:
+    Pipeline _pipeline(const StringView &key);
+
+    Transaction _transaction(const StringView &key, bool piped);
+
     void _test_pipeline(const StringView &key, Pipeline &pipe);
 
     void _test_transaction(const StringView &key, Transaction &tx);
 
     void _test_watch();
 
-    Redis _redis;
-
-    RedisCluster _cluster;
+    RedisInstance &_redis;
 };
 
 }
@@ -49,5 +51,7 @@ private:
 }
 
 }
+
+#include "pipeline_transaction_test.hpp"
 
 #endif // end SEWENEW_REDISPLUSPLUS_TEST_PIPELINE_TRANSACTION_TEST_H

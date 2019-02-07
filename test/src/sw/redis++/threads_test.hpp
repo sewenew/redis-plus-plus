@@ -14,7 +14,9 @@
    limitations under the License.
  *************************************************************************/
 
-#include "threads_test.h"
+#ifndef SEWENEW_REDISPLUSPLUS_TEST_THREADS_TEST_HPP
+#define SEWENEW_REDISPLUSPLUS_TEST_THREADS_TEST_HPP
+
 #include <thread>
 #include <chrono>
 #include <atomic>
@@ -27,32 +29,27 @@ namespace redis {
 
 namespace test {
 
-ThreadsTest::ThreadsTest(const ConnectionOptions &opts,
-                            const ConnectionOptions &cluster_opts) : _opts(opts),
-                                                                    _cluster_opts(cluster_opts) {}
-
-void ThreadsTest::run() {
+template <typename RedisInstance>
+void ThreadsTest<RedisInstance>::run() {
     // 100 * 10000 = 1 million writes
     auto thread_num = 100;
     auto times = 10000;
 
     // Default pool options: single connection and wait forever.
-    _test_multithreads(Redis(_opts), thread_num, times);
-
-    _test_multithreads(RedisCluster(_cluster_opts), thread_num, times);
+    _test_multithreads(RedisInstance(_opts), thread_num, times);
 
     // Pool with 10 connections.
     ConnectionPoolOptions pool_opts;
     pool_opts.size = 10;
-    _test_multithreads(Redis(_opts, pool_opts), thread_num, times);
-
-    _test_multithreads(RedisCluster(_cluster_opts, pool_opts), thread_num, times);
+    _test_multithreads(RedisInstance(_opts, pool_opts), thread_num, times);
 
     _test_timeout();
 }
 
-template <typename RedisType>
-void ThreadsTest::_test_multithreads(RedisType redis, int thread_num, int times) {
+template <typename RedisInstance>
+void ThreadsTest<RedisInstance>::_test_multithreads(RedisInstance redis,
+        int thread_num,
+        int times) {
     std::vector<std::string> keys;
     keys.reserve(thread_num);
     for (auto idx = 0; idx != thread_num; ++idx) {
@@ -60,10 +57,10 @@ void ThreadsTest::_test_multithreads(RedisType redis, int thread_num, int times)
         keys.push_back(key);
     }
 
-    using DeleterUPtr = std::unique_ptr<KeyDeleterTpl<RedisType>>;
+    using DeleterUPtr = std::unique_ptr<KeyDeleter<RedisInstance>>;
     std::vector<DeleterUPtr> deleters;
     for (const auto &key : keys) {
-        deleters.emplace_back(new KeyDeleterTpl<RedisType>(redis, key));
+        deleters.emplace_back(new KeyDeleter<RedisInstance>(redis, key));
     }
 
     std::vector<std::thread> workers;
@@ -95,36 +92,40 @@ void ThreadsTest::_test_multithreads(RedisType redis, int thread_num, int times)
     }
 }
 
-void ThreadsTest::_test_timeout() {
+template <typename RedisInstance>
+void ThreadsTest<RedisInstance>::_test_timeout() {
     using namespace std::chrono;
 
     ConnectionPoolOptions pool_opts;
     pool_opts.size = 1;
     pool_opts.wait_timeout = milliseconds(100);
 
-    auto redis = Redis(_opts, pool_opts);
+    auto redis = RedisInstance(_opts, pool_opts);
 
-    std::atomic<bool> slow_ping_is_running{false};
-    auto slow_ping = [&slow_ping_is_running](Connection &connection) {
-                        slow_ping_is_running = true;
+    auto key = test_key("key");
 
-                        // Sleep a while to simulate a slow ping.
+    std::atomic<bool> slow_get_is_running{false};
+    auto slow_get = [&slow_get_is_running](Connection &connection, const StringView &key) {
+                        slow_get_is_running = true;
+
+                        // Sleep a while to simulate a slow get.
                         std::this_thread::sleep_for(seconds(5));
-                        connection.send("PING");
+
+                        connection.send("GET %b", key.data(), key.size());
                     };
-    auto slow_ping_thread = std::thread([&redis, slow_ping]() {
-                                            redis.command(slow_ping);
+    auto slow_get_thread = std::thread([&redis, slow_get, &key]() {
+                                            redis.command(slow_get, key);
                                         });
 
-    auto ping_thread = std::thread([&redis, &slow_ping_is_running]() {
+    auto get_thread = std::thread([&redis, &slow_get_is_running, &key]() {
                                         try {
-                                            while (!slow_ping_is_running) {
+                                            while (!slow_get_is_running) {
                                                 std::this_thread::sleep_for(milliseconds(10));
                                             }
 
-                                            redis.ping();
+                                            redis.get(key);
 
-                                            // Slow ping is running, this thread should
+                                            // Slow get is running, this thread should
                                             // timeout before obtaining the connection.
                                             // So it never reaches here.
                                             REDIS_ASSERT(false, "failed to test pool timeout");
@@ -133,8 +134,8 @@ void ThreadsTest::_test_timeout() {
                                         }
                                     });
 
-    slow_ping_thread.join();
-    ping_thread.join();
+    slow_get_thread.join();
+    get_thread.join();
 }
 
 }
@@ -142,3 +143,5 @@ void ThreadsTest::_test_timeout() {
 }
 
 }
+
+#endif // end SEWENEW_REDISPLUSPLUS_TEST_THREADS_TEST_HPP

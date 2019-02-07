@@ -14,7 +14,9 @@
    limitations under the License.
  *************************************************************************/
 
-#include "set_cmds_test.h"
+#ifndef SEWENEW_REDISPLUSPLUS_TEST_SET_CMDS_TEST_HPP
+#define SEWENEW_REDISPLUSPLUS_TEST_SET_CMDS_TEST_HPP
+
 #include <unordered_set>
 #include <vector>
 #include "utils.h"
@@ -25,9 +27,8 @@ namespace redis {
 
 namespace test {
 
-SetCmdTest::SetCmdTest(const ConnectionOptions &opts) : _redis(opts) {}
-
-void SetCmdTest::run() {
+template <typename RedisInstance>
+void SetCmdTest<RedisInstance>::run() {
     _test_set();
 
     _test_multi_set();
@@ -35,10 +36,11 @@ void SetCmdTest::run() {
     _test_sscan();
 }
 
-void SetCmdTest::_test_set() {
+template <typename RedisInstance>
+void SetCmdTest<RedisInstance>::_test_set() {
     auto key = test_key("set");
 
-    KeyDeleter deleter(_redis, key);
+    KeyDeleter<RedisInstance> deleter(_redis, key);
 
     std::string m1("m1");
     std::string m2("m2");
@@ -87,7 +89,8 @@ void SetCmdTest::_test_set() {
     REDIS_ASSERT(_redis.srem(key, members) == 0, "failed to test srem with mulitple members");
 }
 
-void SetCmdTest::_test_multi_set() {
+template <typename RedisInstance>
+void SetCmdTest<RedisInstance>::_test_multi_set() {
     auto k1 = test_key("s1");
     auto k2 = test_key("s2");
     auto k3 = test_key("s3");
@@ -95,7 +98,7 @@ void SetCmdTest::_test_multi_set() {
     auto k5 = test_key("s5");
     auto k6 = test_key("s6");
 
-    KeyDeleter keys(_redis, {k1, k2, k3, k4, k5, k6});
+    KeyDeleter<RedisInstance> keys(_redis, {k1, k2, k3, k4, k5, k6});
 
     _redis.sadd(k1, {"a", "c"});
     _redis.sadd(k2, {"a", "b"});
@@ -134,10 +137,11 @@ void SetCmdTest::_test_multi_set() {
     REDIS_ASSERT(_redis.smove(k5, k6, "a"), "failed to test smove");
 }
 
-void SetCmdTest::_test_sscan() {
+template <typename RedisInstance>
+void SetCmdTest<RedisInstance>::_test_sscan() {
     auto key = test_key("sscan");
 
-    KeyDeleter deleter(_redis, key);
+    KeyDeleter<RedisInstance> deleter(_redis, key);
 
     std::unordered_set<std::string> members = {"m1", "m2", "m3"};
     _redis.sadd(key, members.begin(), members.end());
@@ -170,3 +174,5 @@ void SetCmdTest::_test_sscan() {
 }
 
 }
+
+#endif // end SEWENEW_REDISPLUSPLUS_TEST_SET_CMDS_TEST_HPP

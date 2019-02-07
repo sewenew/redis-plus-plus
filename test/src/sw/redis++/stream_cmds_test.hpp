@@ -14,7 +14,9 @@
    limitations under the License.
  *************************************************************************/
 
-#include "stream_cmds_test.h"
+#ifndef SEWENEW_REDISPLUSPLUS_TEST_STREAM_CMDS_TEST_HPP
+#define SEWENEW_REDISPLUSPLUS_TEST_STREAM_CMDS_TEST_HPP
+
 #include <vector>
 #include <string>
 #include <unordered_map>
@@ -26,13 +28,17 @@ namespace redis {
 
 namespace test {
 
-StreamCmdsTest::StreamCmdsTest(const ConnectionOptions &opts) : _redis(opts) {}
+template <typename RedisInstance>
+void StreamCmdsTest<RedisInstance>::run() {
+    cluster_specializing_test(*this, &StreamCmdsTest<RedisInstance>::_run, _redis);
+}
 
-void StreamCmdsTest::run() {
+template <typename RedisInstance>
+void StreamCmdsTest<RedisInstance>::_run(Redis &instance) {
     auto key = test_key("stream");
     auto not_exist_key = test_key("not_exist_key");
 
-    KeyDeleter deleter(_redis, {key, not_exist_key});
+    KeyDeleter<Redis> deleter(instance, {key, not_exist_key});
 
     using Result = std::unordered_map<std::string,
                     std::vector<
@@ -40,7 +46,7 @@ void StreamCmdsTest::run() {
                             std::string,
                             std::unordered_map<std::string, std::string>>>>;
 
-    auto res = _redis.command<Optional<Result>>("xread",
+    auto res = instance.command<Optional<Result>>("xread",
                                                 "count",
                                                 2,
                                                 "STREAMS",
@@ -50,9 +56,9 @@ void StreamCmdsTest::run() {
                                                 "0-0");
     REDIS_ASSERT(!res, "failed to test stream commands");
 
-    _redis.command("xadd", key, "*", "f1", "v1", "f2", "v2");
+    instance.command("xadd", key, "*", "f1", "v1", "f2", "v2");
 
-    res = _redis.command<Optional<Result>>("xread",
+    res = instance.command<Optional<Result>>("xread",
                                             "count",
                                             2,
                                             "STREAMS",
@@ -77,3 +83,5 @@ void StreamCmdsTest::run() {
 }
 
 }
+
+#endif // end SEWENEW_REDISPLUSPLUS_TEST_STREAM_CMDS_TEST_HPP

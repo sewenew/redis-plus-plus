@@ -14,7 +14,9 @@
    limitations under the License.
  *************************************************************************/
 
-#include "string_cmds_test.h"
+#ifndef SEWENEW_REDISPLUSPLUS_TEST_STRING_CMDS_TEST_HPP
+#define SEWENEW_REDISPLUSPLUS_TEST_STRING_CMDS_TEST_HPP
+
 #include <vector>
 #include "utils.h"
 
@@ -24,9 +26,8 @@ namespace redis {
 
 namespace test {
 
-StringCmdTest::StringCmdTest(const ConnectionOptions &opts) : _redis(opts) {}
-
-void StringCmdTest::run() {
+template <typename RedisInstance>
+void StringCmdTest<RedisInstance>::run() {
     _test_str();
 
     _test_bit();
@@ -38,10 +39,11 @@ void StringCmdTest::run() {
     _test_mgetset();
 }
 
-void StringCmdTest::_test_str() {
+template <typename RedisInstance>
+void StringCmdTest<RedisInstance>::_test_str() {
     auto key = test_key("str");
 
-    KeyDeleter deleter(_redis, key);
+    KeyDeleter<RedisInstance> deleter(_redis, key);
 
     std::string val("value");
 
@@ -77,10 +79,11 @@ void StringCmdTest::_test_str() {
     REDIS_ASSERT(_redis.getrange(key, 0, -1) == val + val, "failed to test setrange");
 }
 
-void StringCmdTest::_test_bit() {
+template <typename RedisInstance>
+void StringCmdTest<RedisInstance>::_test_bit() {
     auto key = test_key("bit");
 
-    KeyDeleter deleter(_redis, key);
+    KeyDeleter<RedisInstance> deleter(_redis, key);
 
     REDIS_ASSERT(_redis.bitcount(key) == 0, "failed to test bitcount on non-existent key");
 
@@ -118,7 +121,7 @@ void StringCmdTest::_test_bit() {
     auto src_key1 = test_key("bitop_src1");
     auto src_key2 = test_key("bitop_src2");
 
-    KeyDeleter deleters(_redis, {dest_key, src_key1, src_key2});
+    KeyDeleter<RedisInstance> deleters(_redis, {dest_key, src_key1, src_key2});
 
     // src_key1 -> 00010000
     _redis.setbit(src_key1, 3, 1);
@@ -134,10 +137,11 @@ void StringCmdTest::_test_bit() {
     REDIS_ASSERT(v && *v == std::string(2, 0), "failed to test bitop");
 }
 
-void StringCmdTest::_test_numeric() {
+template <typename RedisInstance>
+void StringCmdTest<RedisInstance>::_test_numeric() {
     auto key = test_key("numeric");
 
-    KeyDeleter deleter(_redis, key);
+    KeyDeleter<RedisInstance> deleter(_redis, key);
 
     REDIS_ASSERT(_redis.incr(key) == 1, "failed to test incr");
     REDIS_ASSERT(_redis.decr(key) == 0, "failed to test decr");
@@ -148,11 +152,12 @@ void StringCmdTest::_test_numeric() {
     REDIS_ASSERT(_redis.incrbyfloat(key, 1.5) == 1.5, "failed to test incrbyfloat");
 }
 
-void StringCmdTest::_test_getset() {
+template <typename RedisInstance>
+void StringCmdTest<RedisInstance>::_test_getset() {
     auto key = test_key("getset");
     auto non_exist_key = test_key("non-existent");
 
-    KeyDeleter deleter(_redis, {key, non_exist_key});
+    KeyDeleter<RedisInstance> deleter(_redis, {key, non_exist_key});
 
     std::string val("value");
     REDIS_ASSERT(_redis.set(key, val), "failed to test set");
@@ -185,7 +190,8 @@ void StringCmdTest::_test_getset() {
     REDIS_ASSERT(_redis.pttl(key) <= pttl.count(), "failed to test psetex");
 }
 
-void StringCmdTest::_test_mgetset() {
+template <typename RedisInstance>
+void StringCmdTest<RedisInstance>::_test_mgetset() {
     auto kvs = {std::make_pair(test_key("k1"), "v1"),
                 std::make_pair(test_key("k2"), "v2"),
                 std::make_pair(test_key("k3"), "v3")};
@@ -197,7 +203,7 @@ void StringCmdTest::_test_mgetset() {
         vals.push_back(kv.second);
     }
 
-    KeyDeleter deleter(_redis, keys.begin(), keys.end());
+    KeyDeleter<RedisInstance> deleter(_redis, keys.begin(), keys.end());
 
     _redis.mset(kvs);
 
@@ -223,3 +229,5 @@ void StringCmdTest::_test_mgetset() {
 }
 
 }
+
+#endif // end SEWENEW_REDISPLUSPLUS_TEST_STRING_CMDS_TEST_HPP

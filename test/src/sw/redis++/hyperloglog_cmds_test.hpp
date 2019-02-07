@@ -14,7 +14,9 @@
    limitations under the License.
  *************************************************************************/
 
-#include "hyperloglog_cmds_test.h"
+#ifndef SEWENEW_REDISPLUSPLUS_TEST_HYPERLOGLOG_CMDS_TEST_HPP
+#define SEWENEW_REDISPLUSPLUS_TEST_HYPERLOGLOG_CMDS_TEST_HPP
+
 #include "utils.h"
 
 namespace sw {
@@ -23,14 +25,13 @@ namespace redis {
 
 namespace test {
 
-HyperloglogCmdTest::HyperloglogCmdTest(const ConnectionOptions &opts) : _redis(opts) {}
-
-void HyperloglogCmdTest::run() {
+template <typename RedisInstance>
+void HyperloglogCmdTest<RedisInstance>::run() {
     auto k1 = test_key("k1");
     auto k2 = test_key("k2");
     auto k3 = test_key("k3");
 
-    KeyDeleter deleter(_redis, {k1, k2, k3});
+    KeyDeleter<RedisInstance> deleter(_redis, {k1, k2, k3});
 
     _redis.pfadd(k1, "a");
     auto members1 = {"b", "c", "d", "e", "f", "g"};
@@ -59,3 +60,5 @@ void HyperloglogCmdTest::run() {
 }
 
 }
+
+#endif // end SEWENEW_REDISPLUSPLUS_TEST_HYPERLOGLOG_CMDS_TEST_HPP

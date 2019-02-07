@@ -14,7 +14,9 @@
    limitations under the License.
  *************************************************************************/
 
-#include "zset_cmds_test.h"
+#ifndef SEWENEW_REDISPLUSPLUS_TEST_ZSET_CMDS_TEST_HPP
+#define SEWENEW_REDISPLUSPLUS_TEST_ZSET_CMDS_TEST_HPP
+
 #include <map>
 #include <unordered_map>
 #include <vector>
@@ -27,9 +29,8 @@ namespace redis {
 
 namespace test {
 
-ZSetCmdTest::ZSetCmdTest(const ConnectionOptions &opts) : _redis(opts) {}
-
-void ZSetCmdTest::run() {
+template <typename RedisInstance>
+void ZSetCmdTest<RedisInstance>::run() {
     _test_zset();
 
     _test_zscan();
@@ -45,10 +46,11 @@ void ZSetCmdTest::run() {
     _test_bzpop();
 }
 
-void ZSetCmdTest::_test_zset() {
+template <typename RedisInstance>
+void ZSetCmdTest<RedisInstance>::_test_zset() {
     auto key = test_key("zset");
 
-    KeyDeleter deleter(_redis, key);
+    KeyDeleter<RedisInstance> deleter(_redis, key);
 
     std::map<std::string, double> s = {
         std::make_pair("m1", 1.2),
@@ -87,10 +89,11 @@ void ZSetCmdTest::_test_zset() {
     REDIS_ASSERT(_redis.zrem(key, {"m1", "m2", "m3", "m4"}) == 2, "failed to test zrem");
 }
 
-void ZSetCmdTest::_test_zscan() {
+template <typename RedisInstance>
+void ZSetCmdTest<RedisInstance>::_test_zscan() {
     auto key = test_key("zscan");
 
-    KeyDeleter deleter(_redis, key);
+    KeyDeleter<RedisInstance> deleter(_redis, key);
 
     std::map<std::string, double> s = {
         std::make_pair("m1", 1.2),
@@ -110,10 +113,11 @@ void ZSetCmdTest::_test_zscan() {
     REDIS_ASSERT(res == s, "failed to test zscan");
 }
 
-void ZSetCmdTest::_test_range() {
+template <typename RedisInstance>
+void ZSetCmdTest<RedisInstance>::_test_range() {
     auto key = test_key("range");
 
-    KeyDeleter deleter(_redis, key);
+    KeyDeleter<RedisInstance> deleter(_redis, key);
 
     std::map<std::string, double> s = {
         std::make_pair("m1", 1),
@@ -187,10 +191,11 @@ void ZSetCmdTest::_test_range() {
             "failed to test zremrangebyscore");
 }
 
-void ZSetCmdTest::_test_lex() {
+template <typename RedisInstance>
+void ZSetCmdTest<RedisInstance>::_test_lex() {
     auto key = test_key("lex");
 
-    KeyDeleter deleter(_redis, key);
+    KeyDeleter<RedisInstance> deleter(_redis, key);
 
     auto s = {
         std::make_pair("m1", 0),
@@ -221,12 +226,13 @@ void ZSetCmdTest::_test_lex() {
             "failed to test zremrangebylex");
 }
 
-void ZSetCmdTest::_test_multi_zset() {
+template <typename RedisInstance>
+void ZSetCmdTest<RedisInstance>::_test_multi_zset() {
     auto k1 = test_key("k1");
     auto k2 = test_key("k2");
     auto k3 = test_key("k3");
 
-    KeyDeleter deleter(_redis, {k1, k2, k3});
+    KeyDeleter<RedisInstance> deleter(_redis, {k1, k2, k3});
 
     _redis.zadd(k1, {std::make_pair("a", 1), std::make_pair("b", 2)});
     _redis.zadd(k2, {std::make_pair("a", 2), std::make_pair("c", 3)});
@@ -263,10 +269,11 @@ void ZSetCmdTest::_test_multi_zset() {
     }
 }
 
-void ZSetCmdTest::_test_zpop() {
+template <typename RedisInstance>
+void ZSetCmdTest<RedisInstance>::_test_zpop() {
     auto key = test_key("zpop");
 
-    KeyDeleter deleter(_redis, key);
+    KeyDeleter<RedisInstance> deleter(_redis, key);
 
     _redis.zadd(key, {std::make_pair("m1", 1.1),
                         std::make_pair("m2", 2.2),
@@ -292,11 +299,12 @@ void ZSetCmdTest::_test_zpop() {
             "failed to test zpopmin");
 }
 
-void ZSetCmdTest::_test_bzpop() {
+template <typename RedisInstance>
+void ZSetCmdTest<RedisInstance>::_test_bzpop() {
     auto key1 = test_key("bzpop1");
     auto key2 = test_key("bzpop2");
 
-    KeyDeleter deleter(_redis, {key1, key2});
+    KeyDeleter<RedisInstance> deleter(_redis, {key1, key2});
 
     _redis.zadd(key1, {std::make_pair("m1", 1.1),
                         std::make_pair("m2", 2.2),
@@ -334,3 +342,5 @@ void ZSetCmdTest::_test_bzpop() {
 }
 
 }
+
+#endif // end SEWENEW_REDISPLUSPLUS_TEST_ZSET_CMDS_TEST_HPP

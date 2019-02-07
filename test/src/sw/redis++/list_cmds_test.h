@@ -25,9 +25,10 @@ namespace redis {
 
 namespace test {
 
+template <typename RedisInstance>
 class ListCmdTest {
 public:
-    explicit ListCmdTest(const ConnectionOptions &opts);
+    explicit ListCmdTest(RedisInstance &instance) : _redis(instance) {}
 
     void run();
 
@@ -40,7 +41,7 @@ private:
 
     void _test_blocking();
 
-    Redis _redis;
+    RedisInstance &_redis;
 };
 
 }
@@ -48,5 +49,7 @@ private:
 }
 
 }
+
+#include "list_cmds_test.hpp"
 
 #endif // end SEWENEW_REDISPLUSPLUS_TEST_LIST_CMDS_TEST_H

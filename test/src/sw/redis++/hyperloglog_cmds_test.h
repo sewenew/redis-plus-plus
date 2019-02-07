@@ -25,14 +25,15 @@ namespace redis {
 
 namespace test {
 
+template <typename RedisInstance>
 class HyperloglogCmdTest {
 public:
-    explicit HyperloglogCmdTest(const ConnectionOptions &opts);
+    explicit HyperloglogCmdTest(RedisInstance &instance) : _redis(instance) {}
 
     void run();
 
 private:
-    Redis _redis;
+    RedisInstance &_redis;
 };
 
 }
@@ -40,5 +41,7 @@ private:
 }
 
 }
+
+#include "hyperloglog_cmds_test.hpp"
 
 #endif // end SEWENEW_REDISPLUSPLUS_TEST_HYPERLOGLOG_CMDS_TEST_H

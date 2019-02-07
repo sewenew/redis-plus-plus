@@ -25,9 +25,10 @@ namespace redis {
 
 namespace test {
 
+template <typename RedisInstance>
 class HashCmdTest {
 public:
-    explicit HashCmdTest(const ConnectionOptions &opts);
+    explicit HashCmdTest(RedisInstance &instance) : _redis(instance) {}
 
     void run();
 
@@ -40,7 +41,7 @@ private:
 
     void _test_hscan();
 
-    Redis _redis;
+    RedisInstance &_redis;
 };
 
 }
@@ -48,5 +49,7 @@ private:
 }
 
 }
+
+#include "hash_cmds_test.hpp"
 
 #endif // end SEWENEW_REDISPLUSPLUS_TEST_HASH_CMDS_TEST_H

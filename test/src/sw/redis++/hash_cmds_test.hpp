@@ -14,7 +14,9 @@
    limitations under the License.
  *************************************************************************/
 
-#include "hash_cmds_test.h"
+#ifndef SEWENEW_REDISPLUSPLUS_TEST_HASH_CMDS_TEST_HPP
+#define SEWENEW_REDISPLUSPLUS_TEST_HASH_CMDS_TEST_HPP
+
 #include <unordered_map>
 #include "utils.h"
 
@@ -24,9 +26,8 @@ namespace redis {
 
 namespace test {
 
-HashCmdTest::HashCmdTest(const ConnectionOptions &opts) : _redis(opts) {}
-
-void HashCmdTest::run() {
+template <typename RedisInstance>
+void HashCmdTest<RedisInstance>::run() {
     _test_hash();
 
     _test_hash_batch();
@@ -36,10 +37,11 @@ void HashCmdTest::run() {
     _test_hscan();
 }
 
-void HashCmdTest::_test_hash() {
+template <typename RedisInstance>
+void HashCmdTest<RedisInstance>::_test_hash() {
     auto key = test_key("hash");
 
-    KeyDeleter deleter(_redis, key);
+    KeyDeleter<RedisInstance> deleter(_redis, key);
 
     auto f1 = std::string("f1");
     auto v1 = std::string("v1");
@@ -72,10 +74,11 @@ void HashCmdTest::_test_hash() {
     REDIS_ASSERT(_redis.hdel(key, {f1, f2, f3}) == 2, "failed to test hdel range");
 }
 
-void HashCmdTest::_test_hash_batch() {
+template <typename RedisInstance>
+void HashCmdTest<RedisInstance>::_test_hash_batch() {
     auto key = test_key("hash");
 
-    KeyDeleter deleter(_redis, key);
+    KeyDeleter<RedisInstance> deleter(_redis, key);
 
     auto f1 = std::string("f1");
     auto v1 = std::string("v1");
@@ -112,10 +115,11 @@ void HashCmdTest::_test_hash_batch() {
                 "failed to test hmget");
 }
 
-void HashCmdTest::_test_numeric() {
+template <typename RedisInstance>
+void HashCmdTest<RedisInstance>::_test_numeric() {
     auto key = test_key("numeric");
 
-    KeyDeleter deleter(_redis, key);
+    KeyDeleter<RedisInstance> deleter(_redis, key);
 
     auto field = "field";
 
@@ -124,10 +128,11 @@ void HashCmdTest::_test_numeric() {
     REDIS_ASSERT(_redis.hincrbyfloat(key, field, 1.5) == 1.5, "failed to test hincrbyfloat");
 }
 
-void HashCmdTest::_test_hscan() {
+template <typename RedisInstance>
+void HashCmdTest<RedisInstance>::_test_hscan() {
     auto key = test_key("hscan");
 
-    KeyDeleter deleter(_redis, key);
+    KeyDeleter<RedisInstance> deleter(_redis, key);
 
     auto items = std::unordered_map<std::string, std::string>{
         std::make_pair("f1", "v1"),
@@ -168,3 +173,5 @@ void HashCmdTest::_test_hscan() {
 }
 
 }
+
+#endif // end SEWENEW_REDISPLUSPLUS_TEST_HASH_CMDS_TEST_HPP

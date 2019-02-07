@@ -14,7 +14,9 @@
    limitations under the License.
  *************************************************************************/
 
-#include "list_cmds_test.h"
+#ifndef SEWENEW_REDISPLUSPLUS_TEST_LIST_CMDS_TEST_HPP
+#define SEWENEW_REDISPLUSPLUS_TEST_LIST_CMDS_TEST_HPP
+
 #include "utils.h"
 
 namespace sw {
@@ -23,9 +25,8 @@ namespace redis {
 
 namespace test {
 
-ListCmdTest::ListCmdTest(const ConnectionOptions &opts) : _redis(opts) {}
-
-void ListCmdTest::run() {
+template <typename RedisInstance>
+void ListCmdTest<RedisInstance>::run() {
     _test_lpoppush();
 
     _test_rpoppush();
@@ -35,10 +36,11 @@ void ListCmdTest::run() {
     _test_blocking();
 }
 
-void ListCmdTest::_test_lpoppush() {
+template <typename RedisInstance>
+void ListCmdTest<RedisInstance>::_test_lpoppush() {
     auto key = test_key("lpoppush");
 
-    KeyDeleter deleter(_redis, key);
+    KeyDeleter<RedisInstance> deleter(_redis, key);
 
     auto item = _redis.lpop(key);
     REDIS_ASSERT(!item, "failed to test lpop");
@@ -52,10 +54,11 @@ void ListCmdTest::_test_lpoppush() {
     REDIS_ASSERT(item && *item == "5", "failed to test lpop");
 }
 
-void ListCmdTest::_test_rpoppush() {
+template <typename RedisInstance>
+void ListCmdTest<RedisInstance>::_test_rpoppush() {
     auto key = test_key("rpoppush");
 
-    KeyDeleter deleter(_redis, key);
+    KeyDeleter<RedisInstance> deleter(_redis, key);
 
     auto item = _redis.rpop(key);
     REDIS_ASSERT(!item, "failed to test rpop");
@@ -69,10 +72,11 @@ void ListCmdTest::_test_rpoppush() {
     REDIS_ASSERT(item && *item == "5", "failed to test rpop");
 }
 
-void ListCmdTest::_test_list() {
+template <typename RedisInstance>
+void ListCmdTest<RedisInstance>::_test_list() {
     auto key = test_key("list");
 
-    KeyDeleter deleter(_redis, key);
+    KeyDeleter<RedisInstance> deleter(_redis, key);
 
     auto item = _redis.lindex(key, 0);
     REDIS_ASSERT(!item, "failed to test lindex");
@@ -97,14 +101,15 @@ void ListCmdTest::_test_list() {
     REDIS_ASSERT(res == std::vector<std::string>({"6", "4", "3"}), "failed to test ltrim");
 }
 
-void ListCmdTest::_test_blocking() {
+template <typename RedisInstance>
+void ListCmdTest<RedisInstance>::_test_blocking() {
     auto k1 = test_key("k1");
     auto k2 = test_key("k2");
     auto k3 = test_key("k3");
 
     auto keys = {k1, k2, k3};
 
-    KeyDeleter deleter(_redis, keys);
+    KeyDeleter<RedisInstance> deleter(_redis, keys);
 
     std::string val("value");
     _redis.lpush(k1, val);
@@ -131,3 +136,5 @@ void ListCmdTest::_test_blocking() {
 }
 
 }
+
+#endif // end SEWENEW_REDISPLUSPLUS_TEST_LIST_CMDS_TEST_HPP

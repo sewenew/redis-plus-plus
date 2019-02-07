@@ -17,7 +17,6 @@
 #ifndef SEWENEW_REDISPLUSPLUS_TEST_STREAM_CMDS_TEST_H
 #define SEWENEW_REDISPLUSPLUS_TEST_STREAM_CMDS_TEST_H
 
-#include <string>
 #include <sw/redis++/redis++.h>
 
 namespace sw {
@@ -26,14 +25,17 @@ namespace redis {
 
 namespace test {
 
+template <typename RedisInstance>
 class StreamCmdsTest {
 public:
-    explicit StreamCmdsTest(const ConnectionOptions &opts);
+    explicit StreamCmdsTest(RedisInstance &instance) : _redis(instance) {}
 
     void run();
 
 private:
-    Redis _redis;
+    void _run(Redis &instance);
+
+    RedisInstance &_redis;
 };
 
 }
@@ -41,5 +43,7 @@ private:
 }
 
 }
+
+#include "stream_cmds_test.hpp"
 
 #endif // end SEWENEW_REDISPLUSPLUS_TEST_STREAM_CMDS_TEST_H

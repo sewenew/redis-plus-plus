@@ -25,14 +25,17 @@ namespace redis {
 
 namespace test {
 
+template <typename RedisInstance>
 class ScriptCmdTest {
 public:
-    explicit ScriptCmdTest(const ConnectionOptions &opts);
+    explicit ScriptCmdTest(RedisInstance &instance) : _redis(instance) {}
 
     void run();
 
 private:
-    Redis _redis;
+    void _run(Redis &instance);
+
+    RedisInstance &_redis;
 };
 
 }
@@ -40,5 +43,7 @@ private:
 }
 
 }
+
+#include "script_cmds_test.hpp"
 
 #endif // end SEWENEW_REDISPLUSPLUS_TEST_SCRIPT_CMDS_TEST_H

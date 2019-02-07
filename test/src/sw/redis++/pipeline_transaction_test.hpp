@@ -14,7 +14,9 @@
    limitations under the License.
  *************************************************************************/
 
-#include "pipeline_transaction_test.h"
+#ifndef SEWENEW_REDISPLUSPLUS_TEST_PIPELINE_TRANSACTION_TEST_HPP
+#define SEWENEW_REDISPLUSPLUS_TEST_PIPELINE_TRANSACTION_TEST_HPP
+
 #include <string>
 #include "utils.h"
 
@@ -24,57 +26,56 @@ namespace redis {
 
 namespace test {
 
-PipelineTransactionTest::PipelineTransactionTest(const ConnectionOptions &opts,
-                                                    const ConnectionOptions &cluster_opts) :
-                                                        _redis(opts), _cluster(cluster_opts) {}
-
-void PipelineTransactionTest::run() {
+template <typename RedisInstance>
+void PipelineTransactionTest<RedisInstance>::run() {
     {
         auto key = test_key("pipeline");
-        KeyDeleter deleter(_redis, key);
-        auto pipe = _redis.pipeline();
-        _test_pipeline(key, pipe);
-    }
-
-    {
-        auto key = test_key("pipeline");
-        ClusterKeyDeleter deleter(_cluster, key);
-        auto pipe = _cluster.pipeline(key);
+        KeyDeleter<RedisInstance> deleter(_redis, key);
+        auto pipe = _pipeline(key);
         _test_pipeline(key, pipe);
     }
 
     {
         auto key = test_key("transaction");
-        KeyDeleter deleter(_redis, key);
-        auto tx = _redis.transaction(true);
+        KeyDeleter<RedisInstance> deleter(_redis, key);
+        auto tx = _transaction(key, true);
         _test_transaction(key, tx);
     }
 
     {
         auto key = test_key("transaction");
-        KeyDeleter deleter(_redis, key);
-        auto tx = _redis.transaction(false);
-        _test_transaction(key, tx);
-    }
-
-    {
-        auto key = test_key("transaction");
-        ClusterKeyDeleter deleter(_cluster, key);
-        auto tx = _cluster.transaction(key, true);
-        _test_transaction(key, tx);
-    }
-
-    {
-        auto key = test_key("transaction");
-        ClusterKeyDeleter deleter(_cluster, key);
-        auto tx = _cluster.transaction(key, false);
+        KeyDeleter<RedisInstance> deleter(_redis, key);
+        auto tx = _transaction(key, false);
         _test_transaction(key, tx);
     }
 
     _test_watch();
 }
 
-void PipelineTransactionTest::_test_pipeline(const StringView &key, Pipeline &pipe) {
+template <typename RedisInstance>
+Pipeline PipelineTransactionTest<RedisInstance>::_pipeline(const StringView &) {
+    return _redis.pipeline();
+}
+
+template <>
+inline Pipeline PipelineTransactionTest<RedisCluster>::_pipeline(const StringView &key) {
+    return _redis.pipeline(key);
+}
+
+template <typename RedisInstance>
+Transaction PipelineTransactionTest<RedisInstance>::_transaction(const StringView &, bool piped) {
+    return _redis.transaction(piped);
+}
+
+template <>
+inline Transaction PipelineTransactionTest<RedisCluster>::_transaction(const StringView &key,
+        bool piped) {
+    return _redis.transaction(key, piped);
+}
+
+template <typename RedisInstance>
+void PipelineTransactionTest<RedisInstance>::_test_pipeline(const StringView &key,
+        Pipeline &pipe) {
     std::string val("value");
     auto replies = pipe.set(key, val)
                         .get(key)
@@ -96,7 +97,9 @@ void PipelineTransactionTest::_test_pipeline(const StringView &key, Pipeline &pi
             "failed to test pipeline with string operations");
 }
 
-void PipelineTransactionTest::_test_transaction(const StringView &key, Transaction &tx) {
+template <typename RedisInstance>
+void PipelineTransactionTest<RedisInstance>::_test_transaction(const StringView &key,
+        Transaction &tx) {
     std::unordered_map<std::string, std::string> m = {
         std::make_pair("f1", "v1"),
         std::make_pair("f2", "v2"),
@@ -130,13 +133,14 @@ void PipelineTransactionTest::_test_transaction(const StringView &key, Transacti
     REDIS_ASSERT(replies.get<bool>(1), "failed to test transaction");
 }
 
-void PipelineTransactionTest::_test_watch() {
+template <typename RedisInstance>
+void PipelineTransactionTest<RedisInstance>::_test_watch() {
     auto key = test_key("watch");
 
-    KeyDeleter deleter(_redis, key);
+    KeyDeleter<RedisInstance> deleter(_redis, key);
 
     {
-        auto tx = _redis.transaction();
+        auto tx = _transaction(key, false);
 
         auto redis = tx.redis();
 
@@ -144,15 +148,16 @@ void PipelineTransactionTest::_test_watch() {
 
         auto replies = tx.set(key, "1").get(key).exec();
 
-        REDIS_ASSERT(replies.size() == 2 && replies.get<bool>(0) == true, "failed to test watch");
+        REDIS_ASSERT(replies.size() == 2
+                && replies.template get<bool>(0) == true, "failed to test watch");
 
-        auto val = replies.get<sw::redis::OptionalString>(1);
+        auto val = replies.template get<sw::redis::OptionalString>(1);
 
         REDIS_ASSERT(val && *val == "1", "failed to test watch");
     }
 
     try {
-        auto tx = _redis.transaction();
+        auto tx = _transaction(key, false);
 
         auto redis = tx.redis();
 
@@ -175,3 +180,5 @@ void PipelineTransactionTest::_test_watch() {
 }
 
 }
+
+#endif // end SEWENEW_REDISPLUSPLUS_TEST_PIPELINE_TRANSACTION_TEST_HPP

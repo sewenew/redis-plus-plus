@@ -25,9 +25,10 @@ namespace redis {
 
 namespace test {
 
+template <typename RedisInstance>
 class ZSetCmdTest {
 public:
-    explicit ZSetCmdTest(const ConnectionOptions &opts);
+    explicit ZSetCmdTest(RedisInstance &instance) : _redis(instance) {}
 
     void run();
 
@@ -46,7 +47,7 @@ private:
 
     void _test_bzpop();
 
-    Redis _redis;
+    RedisInstance &_redis;
 };
 
 }
@@ -54,5 +55,7 @@ private:
 }
 
 }
+
+#include "zset_cmds_test.hpp"
 
 #endif // end SEWENEW_REDISPLUSPLUS_TEST_ZSET_CMDS_TEST_H

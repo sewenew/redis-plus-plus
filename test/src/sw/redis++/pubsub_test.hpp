@@ -14,7 +14,9 @@
    limitations under the License.
  *************************************************************************/
 
-#include "pubsub_test.h"
+#ifndef SEWENEW_REDISPLUSPLUS_TEST_SUBPUB_TEST_HPP
+#define SEWENEW_REDISPLUSPLUS_TEST_SUBPUB_TEST_HPP
+
 #include <unordered_map>
 #include <unordered_set>
 #include "utils.h"
@@ -25,24 +27,18 @@ namespace redis {
 
 namespace test {
 
-PubSubTest::PubSubTest(const ConnectionOptions &opts,
-                        const ConnectionOptions &cluster_opts) :
-                            _redis(opts), _cluster(cluster_opts) {}
+template <typename RedisInstance>
+void PubSubTest<RedisInstance>::run() {
+    _test_sub_channel();
 
-void PubSubTest::run() {
-    _test_sub_channel(_redis);
-    _test_sub_channel(_cluster);
+    _test_sub_pattern();
 
-    _test_sub_pattern(_redis);
-    _test_sub_pattern(_cluster);
-
-    _test_unsubscribe(_redis);
-    _test_unsubscribe(_cluster);
+    _test_unsubscribe();
 }
 
-template <typename RedisType>
-void PubSubTest::_test_sub_channel(RedisType &redis) {
-    auto sub = redis.subscriber();
+template <typename RedisInstance>
+void PubSubTest<RedisInstance>::_test_sub_channel() {
+    auto sub = _redis.subscriber();
 
     auto msgs = {"msg1", "msg2"};
     auto channel1 = test_key("c1");
@@ -59,7 +55,7 @@ void PubSubTest::_test_sub_channel(RedisType &redis) {
     sub.consume();
 
     for (const auto &msg : msgs) {
-        redis.publish(channel1, msg);
+        _redis.publish(channel1, msg);
         sub.consume();
     }
 
@@ -112,7 +108,7 @@ void PubSubTest::_test_sub_channel(RedisType &redis) {
     }
 
     for (const auto &ele : messages) {
-        redis.publish(ele.first, ele.second);
+        _redis.publish(ele.first, ele.second);
         sub.consume();
     }
 
@@ -124,9 +120,9 @@ void PubSubTest::_test_sub_channel(RedisType &redis) {
     }
 }
 
-template <typename RedisType>
-void PubSubTest::_test_sub_pattern(RedisType &redis) {
-    auto sub = redis.subscriber();
+template <typename RedisInstance>
+void PubSubTest<RedisInstance>::_test_sub_pattern() {
+    auto sub = _redis.subscriber();
 
     auto msgs = {"msg1", "msg2"};
     auto pattern1 = test_key("pattern*");
@@ -148,7 +144,7 @@ void PubSubTest::_test_sub_pattern(RedisType &redis) {
     sub.consume();
 
     for (const auto &msg : msgs) {
-        redis.publish(channel1, msg);
+        _redis.publish(channel1, msg);
         sub.consume();
     }
 
@@ -208,7 +204,7 @@ void PubSubTest::_test_sub_pattern(RedisType &redis) {
     }
 
     for (const auto &ele : messages) {
-        redis.publish(ele.first, ele.second);
+        _redis.publish(ele.first, ele.second);
         sub.consume();
     }
 
@@ -220,9 +216,9 @@ void PubSubTest::_test_sub_pattern(RedisType &redis) {
     }
 }
 
-template <typename RedisType>
-void PubSubTest::_test_unsubscribe(RedisType &redis) {
-    auto sub = redis.subscriber();
+template <typename RedisInstance>
+void PubSubTest<RedisInstance>::_test_unsubscribe() {
+    auto sub = _redis.subscriber();
 
     sub.on_meta([](Subscriber::MsgType type,
                         OptionalString channel,
@@ -244,3 +240,5 @@ void PubSubTest::_test_unsubscribe(RedisType &redis) {
 }
 
 }
+
+#endif // end SEWENEW_REDISPLUSPLUS_TEST_SUBPUB_TEST_HPP

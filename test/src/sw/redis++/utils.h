@@ -41,23 +41,38 @@ inline void redis_assert(bool condition,
 }
 
 inline std::string test_key(const std::string &k) {
-    return "sw::redis::test::" + k;
+    // Key prefix with hash tag,
+    // so that we can call multiple-key commands on RedisCluster.
+    return "{sw::redis::test}::" + k;
 }
 
-template <typename RedisType>
-class KeyDeleterTpl {
+template <typename Test>
+void cluster_specializing_test(Test &test, void (Test::*func)(Redis &instance), Redis &instance) {
+    (test.*func)(instance);
+}
+
+template <typename Test>
+void cluster_specializing_test(Test &test,
+        void (Test::*func)(Redis &instance),
+        RedisCluster &cluster) {
+    auto instance = cluster.redis("hash-tag");
+    (test.*func)(instance);
+}
+
+template <typename RedisInstance>
+class KeyDeleter {
 public:
     template <typename Input>
-    KeyDeleterTpl(RedisType &redis, Input first, Input last) : _redis(redis), _keys(first, last) {
+    KeyDeleter(RedisInstance &redis, Input first, Input last) : _redis(redis), _keys(first, last) {
         _delete();
     }
 
-    KeyDeleterTpl(RedisType &redis, std::initializer_list<std::string> il) :
-                KeyDeleterTpl(redis, il.begin(), il.end()) {}
+    KeyDeleter(RedisInstance &redis, std::initializer_list<std::string> il) :
+                KeyDeleter(redis, il.begin(), il.end()) {}
 
-    KeyDeleterTpl(RedisType &redis, const std::string &key) : KeyDeleterTpl(redis, {key}) {}
+    KeyDeleter(RedisInstance &redis, const std::string &key) : KeyDeleter(redis, {key}) {}
 
-    ~KeyDeleterTpl() {
+    ~KeyDeleter() {
         _delete();
     }
 
@@ -68,13 +83,9 @@ private:
         }
     }
 
-    RedisType &_redis;
+    RedisInstance &_redis;
     std::vector<std::string> _keys;
 };
-
-using KeyDeleter = KeyDeleterTpl<Redis>;
-
-using ClusterKeyDeleter = KeyDeleterTpl<RedisCluster>;
 
 }
 

@@ -25,9 +25,10 @@ namespace redis {
 
 namespace test {
 
+template <typename RedisInstance>
 class SetCmdTest {
 public:
-    explicit SetCmdTest(const ConnectionOptions &opts);
+    explicit SetCmdTest(RedisInstance &instance) : _redis(instance) {}
 
     void run();
 
@@ -38,7 +39,7 @@ private:
 
     void _test_sscan();
 
-    Redis _redis;
+    RedisInstance &_redis;
 };
 
 }
@@ -46,5 +47,7 @@ private:
 }
 
 }
+
+#include "set_cmds_test.hpp"
 
 #endif // end SEWENEW_REDISPLUSPLUS_TEST_SET_CMDS_TEST_H

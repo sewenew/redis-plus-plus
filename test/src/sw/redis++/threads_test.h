@@ -25,21 +25,19 @@ namespace redis {
 
 namespace test {
 
+template <typename RedisInstance>
 class ThreadsTest {
 public:
-    ThreadsTest(const ConnectionOptions &opts, const ConnectionOptions &cluster_opts);
+    explicit ThreadsTest(const ConnectionOptions &opts) : _opts(opts) {}
 
     void run();
 
 private:
-    template <typename RedisType>
-    void _test_multithreads(RedisType redis, int threads_num, int times);
+    void _test_multithreads(RedisInstance redis, int threads_num, int times);
 
     void _test_timeout();
 
     ConnectionOptions _opts;
-
-    ConnectionOptions _cluster_opts;
 };
 
 }
@@ -47,5 +45,7 @@ private:
 }
 
 }
+
+#include "threads_test.hpp"
 
 #endif // end SEWENEW_REDISPLUSPLUS_TEST_THREADS_TEST_H

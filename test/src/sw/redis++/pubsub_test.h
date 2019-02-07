@@ -25,25 +25,21 @@ namespace redis {
 
 namespace test {
 
+template <typename RedisInstance>
 class PubSubTest {
 public:
-    PubSubTest(const ConnectionOptions &opts, const ConnectionOptions &cluster_opts);
+    explicit PubSubTest(RedisInstance &instance) : _redis(instance) {}
 
     void run();
 
 private:
-    template <typename RedisType>
-    void _test_sub_channel(RedisType &redis);
+    void _test_sub_channel();
 
-    template <typename RedisType>
-    void _test_sub_pattern(RedisType &redis);
+    void _test_sub_pattern();
 
-    template <typename RedisType>
-    void _test_unsubscribe(RedisType &redis);
+    void _test_unsubscribe();
 
-    Redis _redis;
-
-    RedisCluster _cluster;
+    RedisInstance &_redis;
 };
 
 }
@@ -51,5 +47,7 @@ private:
 }
 
 }
+
+#include "pubsub_test.hpp"
 
 #endif // end SEWENEW_REDISPLUSPLUS_TEST_SUBPUB_TEST_H

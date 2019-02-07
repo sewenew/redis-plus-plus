@@ -25,14 +25,18 @@ namespace redis {
 
 namespace test {
 
+template <typename RedisInstance>
 class SanityTest {
 public:
-    SanityTest(const ConnectionOptions &opts, const ConnectionOptions &cluster_opts);
+    SanityTest(const ConnectionOptions &opts, RedisInstance &instance)
+        : _opts(opts), _redis(instance) {}
 
     void run();
 
 private:
     void _test_uri_ctor();
+
+    void _ping(Redis &instance);
 
     void _test_move_ctor();
 
@@ -40,11 +44,25 @@ private:
 
     void _test_generic_command();
 
+    void _test_hash_tag();
+
+    void _test_hash_tag(std::initializer_list<std::string> keys);
+
+    std::string _test_key(const std::string &key);
+
+    void _test_ping(Redis &instance);
+
+    void _test_pipeline(const StringView &key, Pipeline &pipeline);
+
+    void _test_transaction(const StringView &key, Transaction &transaction);
+
+    Pipeline _pipeline(const StringView &key);
+
+    Transaction _transaction(const StringView &key);
+
     ConnectionOptions _opts;
 
-    Redis _redis;
-
-    RedisCluster _cluster;
+    RedisInstance &_redis;
 };
 
 }
@@ -52,5 +70,7 @@ private:
 }
 
 }
+
+#include "sanity_test.hpp"
 
 #endif // end SEWENEW_REDISPLUSPLUS_TEST_SANITY_TEST_H
