@@ -108,11 +108,13 @@ Apple LLVM version 10.0.0 (clang-1000.11.45.5)
 
 After compiling with cmake, you'll get a test program in *compile/test* directory: *compile/test/test_redis++*.
 
-In order to run the tests, you need to set up both a Redis instance, and a Redis Cluster. Since the test program will send most of Redis commands to the server and cluster, you need to set up Redis of the latest version (by now, it's 5.0). Otherwise, the tests might fail. For example, if you set up Redis 4.0 for testing, the test program will fail when it tries to send the `ZPOPMAX` command (a Redis 5.0 command) to the server. If you want to run the tests with other Redis versions, you have to comment out commands that haven't been supported by your Redis, from test source files in *redis-plus-plus/test/src/sw/redis++/* directory. Sorry for the inconvenience, and I'll fix this problem to make the test program work with any version of Redis in the future.
+In order to run the tests, you need to set up a Redis instance, and a Redis Cluster. Since the test program will send most of Redis commands to the server and cluster, you need to set up Redis of the latest version (by now, it's 5.0). Otherwise, the tests might fail. For example, if you set up Redis 4.0 for testing, the test program will fail when it tries to send the `ZPOPMAX` command (a Redis 5.0 command) to the server. If you want to run the tests with other Redis versions, you have to comment out commands that haven't been supported by your Redis, from test source files in *redis-plus-plus/test/src/sw/redis++/* directory. Sorry for the inconvenience, and I'll fix this problem to make the test program work with any version of Redis in the future.
 
 **NOTE**: The latest version of Redis is only a requirement for running the tests. In fact, you can use *redis-plus-plus* with Redis of any version, e.g. Redis 2.0, Redis 3.0, Redis 4.0, Redis 5.0.
 
-Then you can run the test program with the following command:
+**NEVER** run the test program in production envronment, since the keys, which the test program reads or writes, might conflict with your application.
+
+In order to run tests with both Redis and Redis Cluster, you can run the test program with the following command:
 
 ```
 ./compile/test/test_redis++ -h host -p port -a auth -n cluster_node -c cluster_port
@@ -121,6 +123,18 @@ Then you can run the test program with the following command:
 - *host* and *port* are the host and port number of the Redis instance.
 - *cluster_node* and *cluster_port* are the host and port number of Redis Cluster. You only need to set the host and port number of a single node in the cluster, *redis-plus-plus* will find other nodes automatically.
 - *auth* is the password of the Redis instance and Redis Cluster. The Redis instance and Redis Cluster must be configured with the same password. If there's no password configured, don't set this option.
+
+If you only want to run tests with Redis, you only need to specify *host*, *port* and *auth* options:
+
+```
+./compile/test/test_redis++ -h host -p port -a auth
+```
+
+Similarly, if you only want to run tests with Redis Cluster, just specify *cluster_node*, *cluster_port* and *auth* options:
+
+```
+./compile/test/test_redis++ -a auth -n cluster_node -c cluster_port
+```
 
 The test program will test running *redis-plus-plus* in multi-threads environment, and this test will cost a long time. If you want to skip it (not recommended), just comment out the following lines in *test/src/sw/redis++/test_main.cpp* file.
 
@@ -136,6 +150,23 @@ Pass all tests
 ```
 
 Otherwise, it prints the error message.
+
+#### Performance
+
+*redis-plus-plus* runs as fast as *hiredis*, since it's a wrapper of *hiredis*. You can run *test_redis++* in benchmark mode to check the performance in your environment.
+
+```
+./compile/test/test_redis++ -h host -p port -a auth -n cluster_node -c cluster_port -b -t thread_num -s connection_pool_size -r request_num -k key_len -v val_len
+```
+
+- *-b* option turns the test program into benchmark mode.
+- *thread_num* specifies the number of worker threads. `10` by default.
+- *connection_pool_size* specifies the size of the connection pool. `5` by default.
+- *request_num* specifies the total number of requests sent to server for each test. `100000` by default.
+- *key_len* specifies the length of the key for each operation. `10` by default.
+- *val_len* specifies the length of the value. `10` by default.
+
+The bechmark will generate `100` random binary keys for testing, and the size of these keys is specified by *key_len*. When the benchmark runs, it will read/write with these keys. So **NEVER** run the test program in your production environment, otherwise, it might inaccidently delete your data.
 
 ### Use redis-plus-plus In Your Project
 
