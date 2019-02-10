@@ -195,7 +195,7 @@ auto parse_options(int argc, char **argv)
         benchmark_opts = sw::redis::Optional<sw::redis::test::BenchmarkOptions>(tmp_benchmark_opts);
     }
 
-    return {std::move(opts), std::move(cluster_opts), std::move(benchmark_opts)};
+    return std::make_tuple(std::move(opts), std::move(cluster_opts), std::move(benchmark_opts));
 }
 
 template <typename RedisInstance>
