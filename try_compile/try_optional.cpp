@@ -1,6 +1,6 @@
 #include <optional>
 
-std::optional func() {
+std::optional<int> func() {
     return {};
 }
 
