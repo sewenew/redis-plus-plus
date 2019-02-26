@@ -581,7 +581,7 @@ Most of these methods have the same parameters as the corresponding commands. Th
 
 ##### StringView
 
-We use [std::string_view](http://en.cppreference.com/w/cpp/string/basic_string_view) as the type of string parameters. However, by now, not all compilers support `std::string_view`. So when compiling *redis-plus-plus*, CMAKE checks if your compiler supports `std::string_view`. If not, it uses our own simple [implementation](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/utils.h#L48). Since there are conversions from `std::string` and c-style string to `StringView`, you can just pass `std::string` or c-style string to methods that need a `StringView` parameter.
+[std::string_view](http://en.cppreference.com/w/cpp/string/basic_string_view) is a good option for the type of string parameters. However, by now, not all compilers support `std::string_view`. So we wrote a [simple version](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/utils.h#L48), i.e. `StringView`. Since there are conversions from `std::string` and c-style string to `StringView`, you can just pass `std::string` or c-style string to methods that need a `StringView` parameter.
 
 ```
 // bool Redis::hset(const StringView &key, const StringView &field, const StringView &val)
@@ -635,7 +635,7 @@ So, never use the return value to check if the command has been successfully sen
 
 ##### Optional
 
-We use [std::optional](http://en.cppreference.com/w/cpp/utility/optional) as return type, if Redis might return *NULL REPLY*. Again, since not all compilers support `std::optional` so far, we implement our own simple [version](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/utils.h#L85).
+[std::optional](http://en.cppreference.com/w/cpp/utility/optional) is a good option for return type, if Redis might return *NULL REPLY*. Again, since not all compilers support `std::optional` so far, we implement our own [simple version](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/utils.h#L85), i.e. `Optional<T>`.
 
 Take the [GET](https://redis.io/commands/get) and [MGET](https://redis.io/commands/mget) commands for example:
 

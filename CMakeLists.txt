@@ -34,17 +34,6 @@ set_target_properties(${SHARED_LIB} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
 set_target_properties(${STATIC_LIB} PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 set_target_properties(${SHARED_LIB} PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 
-# Some special headers.
-try_compile(HAVE_STRING_VIEW
-            "${CMAKE_CURRENT_BINARY_DIR}/try_compile"
-            "${CMAKE_CURRENT_SOURCE_DIR}/try_compile/try_string_view.cpp")
-
-try_compile(HAVE_OPTIONAL
-            "${CMAKE_CURRENT_BINARY_DIR}/try_compile"
-            "${CMAKE_CURRENT_SOURCE_DIR}/try_compile/try_optional.cpp")
-
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${PROJECT_SOURCE_DIR}/config.h)
-
 add_subdirectory(test)
 
 # Install static lib.
