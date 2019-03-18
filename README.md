@@ -138,7 +138,7 @@ Similarly, if you only want to run tests with Redis Cluster, just specify *clust
 
 The test program will test running *redis-plus-plus* in multi-threads environment, and this test will cost a long time. If you want to skip it (not recommended), just comment out the following lines in *test/src/sw/redis++/test_main.cpp* file.
 
-```
+```C++
 sw::redis::test::ThreadsTest threads_test(opts, cluster_node_opts);
 threads_test.run();
 ```
@@ -216,7 +216,7 @@ Check [this StackOverflow question](https://stackoverflow.com/questions/480764) 
 
 If you're using cmake to build your application, you need to add *hiredis* and *redis-plus-plus* dependencies in your *CMakeLists.txt*:
 
-```
+```CMake
 # <------------ add hiredis dependency --------------->
 find_path(HIREDIS_HEADER hiredis)
 target_include_directories(target PUBLIC ${HIREDIS_HEADER})
@@ -243,7 +243,7 @@ cmake -DCMAKE_PREFIX_PATH=/installation/path/to/the/two/libs ..
 
 ## Getting Started
 
-```
+```C++
 #include <sw/redis++/redis++.h>
 
 using namespace sw::redis;
@@ -456,7 +456,7 @@ try {
 
 You can initialize a `Redis` instance with `ConnectionOptions` and `ConnectionPoolOptions`. `ConnectionOptions` specifies options for connection to Redis server, and `ConnectionPoolOptions` specifies options for conneciton pool. `ConnectionPoolOptions` is optional. If not specified, `Redis` maintains a single connection to Redis server.
 
-```
+```C++
 ConnectionOptions connection_options;
 connection_options.host = "127.0.0.1";  // Required.
 connection_options.port = 6666; // Optional. The default port is 6379.
@@ -482,7 +482,7 @@ See [ConnectionOptions](https://github.com/sewenew/redis-plus-plus/blob/master/s
 
 **NOTE**: `Redis` class is movable but NOT copyable.
 
-```
+```C++
 // auto redis3 = redis1;    // this won't compile.
 
 // But it's movable.
@@ -491,7 +491,7 @@ auto redis3 = std::move(redis1);
 
 *redis-plus-plus* also supports connecting to Redis server with Unix Domain Socket.
 
-```
+```C++
 ConnectionOptions options;
 options.type = ConnectionType::UNIX;
 options.path = "/path/to/socket";
@@ -500,7 +500,7 @@ Redis redis(options);
 
 You can also connect to Redis server with a URI. However, in this case, you can only specify *host* and *port*, or *Unix Domain Socket path*. In order to specify other options, you need to use `ConnectionOptions` and `ConnectionPoolOptions`.
 
-```
+```C++
 // Single connection to the given host and port.
 Redis redis1("tcp://127.0.0.1:6666");
 
@@ -525,7 +525,7 @@ See the [Exception section](#exception) for details on exceptions.
 
 It's NOT cheap to create a `Redis` object, since it will create new connections to Redis server. So you'd better reuse `Redis` object as much as possible. Also, it's safe to call `Redis`' member functions in multi-thread environment, and you can share `Redis` object in multiple threads.
 
-```
+```C++
 // This is GOOD practice.
 auto redis = Redis("tcp://127.0.0.1");
 for (auto idx = 0; idx < 100; ++idx) {
@@ -546,7 +546,7 @@ for (auto idx = 0; idx < 100; ++idx) {
 
 You can send [Redis commands](https://redis.io/commands) through `Redis` object. `Redis` has one or more (overloaded) methods for each Redis command. The method has the same (lowercased) name as the corresponding command. For example, we have 3 overload methods for the `DEL key [key ...]` command:
 
-```
+```C++
 // Delete a single key.
 long long Redis::del(const StringView &key);
 
@@ -583,7 +583,7 @@ Most of these methods have the same parameters as the corresponding commands. Th
 
 [std::string_view](http://en.cppreference.com/w/cpp/string/basic_string_view) is a good option for the type of string parameters. However, by now, not all compilers support `std::string_view`. So we wrote a [simple version](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/utils.h#L48), i.e. `StringView`. Since there are conversions from `std::string` and c-style string to `StringView`, you can just pass `std::string` or c-style string to methods that need a `StringView` parameter.
 
-```
+```C++
 // bool Redis::hset(const StringView &key, const StringView &field, const StringView &val)
 
 // Pass c-style string to StringView.
@@ -639,7 +639,7 @@ So, never use the return value to check if the command has been successfully sen
 
 Take the [GET](https://redis.io/commands/get) and [MGET](https://redis.io/commands/mget) commands for example:
 
-```
+```C++
 // Or just: auto val = redis.get("key");
 Optional<std::string> val = redis.get("key");
 
@@ -666,7 +666,7 @@ for (const auto &val : values) {
 
 We also have some typedefs for some commonly used `Optional<T>`:
 
-```
+```C++
 using OptionalString = Optional<std::string>;
 
 using OptionalLongLong = Optional<long long>;
@@ -697,7 +697,7 @@ Let's see some examples on how to send commands to Redis server.
 
 ##### Various Parameter Types
 
-```
+```C++
 // ***** Parameters of StringView type *****
 
 // Implicitly construct StringView with c-style string.
@@ -837,7 +837,7 @@ redis.del({"k1", "k2", "k3"});
 
 ##### Various Return Types
 
-```
+```C++
 // ***** Return void *****
 
 redis.save();
@@ -933,7 +933,7 @@ redis.smembers("s1", std::back_inserter(s_vec));
 
 ##### SCAN Commands
 
-```
+```C++
 auto cursor = 0LL;
 auto pattern = "*pattern*";
 auto count = 5;
@@ -953,7 +953,7 @@ while (true) {
 
 Sometimes the type of output iterator decides which options to send with the command.
 
-```
+```C++
 // If the output iterator is an iterator of a container of string,
 // we send *ZRANGE* command without the *WITHSCORES* option.
 std::vector<std::string> members;
@@ -1020,7 +1020,7 @@ Please see [redis.h](https://github.com/sewenew/redis-plus-plus/blob/master/src/
 
 There're too many Redis commands, we haven't implemented all of them. However, you can use the generic `Redis::command` methods to send any commands to Redis. Unlike other client libraries, `Redis::command` doesn't use format string to combine command arguments into a command string. Instead, you can directly pass command arguments of `StringView` type or arithmetic type as parameters of `Redis::command`. For the reason why we don't use format string, please see [this discussion](https://github.com/sewenew/redis-plus-plus/pull/2).
 
-```
+```C++
 auto redis = Redis("tcp://127.0.0.1");
 
 // Redis class doesn't have built-in *CLIENT SETNAME* method.
@@ -1071,7 +1071,7 @@ redis.command(mget_cmd_strs.begin(), mget_cmd_strs.end(), std::back_inserter(res
 
 **NOTE**: The name of some Redis commands is composed with two strings, e.g. *CLIENT SETNAME*. In this case, you need to pass these two strings as two arguments for `Redis::command`.
 
-```
+```C++
 // This is GOOD.
 redis.command<void>("client", "setname", "name");
 
@@ -1085,7 +1085,7 @@ So `Redis` class also has other overloaded `command` methods, these methods retu
 
 Let's rewrite the above examples:
 
-```
+```C++
 auto redis = Redis("tcp://127.0.0.1");
 
 redis.command("client", "setname", "name");
@@ -1139,7 +1139,7 @@ reply::to_array(*r, std::back_inserter(result));
 
 In fact, there's one more `Redis::command` method:
 
-```
+```C++
 template <typename Cmd, typename ...Args>
 auto command(Cmd cmd, Args &&...args)
     -> typename std::enable_if<!std::is_convertible<Cmd, StringView>::value, ReplyUPtr>::type;
@@ -1190,7 +1190,7 @@ After receiving the message, `Subscriber::consume` calls the callback function t
 
 The following example is a common pattern for using `Subscriber`:
 
-```
+```C++
 // Create a Subscriber.
 auto sub = redis.subscriber();
 
@@ -1225,7 +1225,7 @@ while (true) {
 
 If `ConnectionOptions::socket_timeout` is set, you might get `TimeoutError` exception before receiving a message:
 
-```
+```C++
 while (true) {
     try {
         sub.consume();
@@ -1246,7 +1246,7 @@ while (true) {
 
 You can create a pipeline with `Redis::pipeline` method, which returns a `Pipeline` object.
 
-```
+```C++
 ConnectionOptions connection_options;
 ConnectionPoolOptions pool_options;
 
@@ -1263,7 +1263,7 @@ When creating a `Pipeline` object, `Redis::pipeline` method creates a new connec
 
 You can send Redis commands through the `Pipeline` object. Just like the `Redis` class, `Pipeline` has one or more (overloaded) methods for each Redis command. However, you CANNOT get the replies until you call `Pipeline::exec`. So these methods do NOT return the reply, instead they return the `Pipeline` object itself. And you can chain these methods calls.
 
-```
+```C++
 pipe.set("key", "val").incr("num").rpush("list", {0, 1, 2}).command("hset", "key", "field", "value");
 ```
 
@@ -1271,7 +1271,7 @@ pipe.set("key", "val").incr("num").rpush("list", {0, 1, 2}).command("hset", "key
 
 Once you finish sending commands to Redis, you can call `Pipeline::exec` to get replies of these commands. You can also chain `Pipeline::exec` with other commands.
 
-```
+```C++
 pipe.set("key", "val").incr("num");
 auto replies = pipe.exec();
 
@@ -1283,7 +1283,7 @@ In fact, these commands won't be sent to Redis, until you call `Pipeline::exec`.
 
 Also you can call `Pipeline::discard` to discard those piped commands.
 
-```
+```C++
 pipe.set("key", "val").incr("num");
 
 pipe.discard();
@@ -1299,7 +1299,7 @@ pipe.discard();
 
 Check the [Return Type section](#return-type) for details on the return types of the result.
 
-```
+```C++
 auto replies = pipe.set("key", "val").incr("num").lrange("list", 0, -1).exec();
 
 auto set_cmd_result = replies.get<bool>(0);
@@ -1326,7 +1326,7 @@ If any of `Pipeline`'s method throws an exception, the `Pipeline` object enters 
 
 You can create a transaction with `Redis::transaction` method, which returns a `Transaction` object.
 
-```
+```C++
 ConnectionOptions connection_options;
 ConnectionPoolOptions pool_options;
 
@@ -1345,7 +1345,7 @@ Also you don't need to send [MULTI](https://redis.io/commands/multi) command to 
 
 `Transaction` shares most of implementation with `Pipeline`. It has the same interfaces as `Pipeline`. You can send commands as what you do with `Pipeline` object.
 
-```
+```C++
 tx.set("key", "val").incr("num").lpush("list", {0, 1, 2}).command("hset", "key", "field", "val");
 ```
 
@@ -1353,7 +1353,7 @@ tx.set("key", "val").incr("num").lpush("list", {0, 1, 2}).command("hset", "key",
 
 When you call `Transaction::exec`, you explicitly ask Redis to execute those queued commands, and return the replies. Otherwise, these commands won't be executed. Also, you can call `Transaction::discard` to discard the execution, i.e. no command will be executed. Both `Transaction::exec` and `Transaction::discard` can be chained with other commands.
 
-```
+```C++
 auto replies = tx.set("key", "val").incr("num").exec();
 
 tx.set("key", "val").incr("num");
@@ -1370,7 +1370,7 @@ See [Pipeline's Parse Replies section](#parse-replies) for how to parse the repl
 
 Normally, we always send multiple commnds in a transaction. In order to improve the performance, you can send these commands in a pipeline. You can create a piped transaction by passing `true` as parameter of `Redis::transaction` method.
 
-```
+```C++
 // Create a piped transaction
 auto tx = redis.transaction(true);
 ```
@@ -1405,7 +1405,7 @@ However, with `Transaction` object, you CANNOT get the result of commands until 
 
 Let's see how to implement the above example with *redis-plus-plus*:
 
-```
+```C++
 auto redis = Redis("tcp://127.0.0.1");
 
 // Create a transaction.
@@ -1459,7 +1459,7 @@ while (true) {
 
 You can initialize a `RedisCluster` instance with `ConnectionOptions` and `ConnectionPoolOptions`. You only need to set one master node's host & port in `ConnectionOptions`, and `RedisCluster` will get other nodes' info automatically (with the *CLUSTER SLOTS* command). For each master node, it creates a connection pool with the specified `ConnectionPoolOptions`. If `ConnectionPoolOptions` is not specified, `RedisCluster` maintains a single connection to every master node.
 
-```
+```C++
 // Set a master node's host & port.
 ConnectionOptions connection_options;
 connection_options.host = "127.0.0.1";  // Required.
@@ -1479,7 +1479,7 @@ RedisCluster cluster2(connection_options, pool_options);
 
 You can also specify connection option with an URI. However, in this way, you can only use default `ConnectionPoolOptions`, i.e. pool of size 1, and CANNOT specify password.
 
-```
+```C++
 // Specify a master node's host & port.
 RedisCluster cluster3("tcp://127.0.0.1:7000");
 
@@ -1519,7 +1519,7 @@ You can also create `Pipeline` and `Transaction` objects with `RedisCluster`, bu
 
 Instead of specifing the node's IP and port, `RedisCluster`'s pipeline and transaction interfaces allow you to specify the node with a *hash tag*. `RedisCluster` will calculate the slot number with the given *hash tag*, and create a pipeline or transaction with the node holding the slot.
 
-```
+```C++
 Pipeline RedisCluster::pipeline(const StringView &hash_tag);
 
 Transaction RedisCluster::transaction(const StringView &hash_tag, bool piped = false);
@@ -1529,7 +1529,7 @@ With the created `Pipeline` or `Transaction` object, you can send commands with 
 
 #### Examples
 
-```
+```C++
 #include <sw/redis++/redis++.h>
 
 using namespace sw::redis;
@@ -1572,7 +1572,7 @@ r.command("client", "setname", "connection-name");
 
 **NOTE**: When you use `RedisCluster::redis(const StringView &hash_tag)` to create a `Redis` object, instead of picking a connection from the underlying connection pool, it creates a new connection to the corresponding Redis server. So this is NOT a cheap operation, and you should try to reuse this newly created `Redis` object as much as possible.
 
-```
+```C++
 // This is BAD! It's very inefficient.
 // NEVER DO IT!!!
 // After sending PING command, the newly created Redis object will be destroied.
@@ -1608,7 +1608,7 @@ If master is down, the cluster will promote one of its replicas to be the new ma
 
 Since Redis 5.0, it introduces a new data type: *Redis Stream*. By now, `Redis` class doesn't have any member function for commands related to *Redis Stream*. However, you can use the [Generic Command Interface](#generic-command-interface) to send *Redis Stream* commands.
 
-```
+```C++
 auto redis = Redis("tcp://127.0.0.1");
 
 // Add event to stream.
@@ -1633,7 +1633,7 @@ if (res) {
 
 This works fine with a standalone Redis instance. However, you CANNOT call `RedisCluster::command` to send `XREAD` command to Redis Cluster. Instead, you need to call `RedisCluster::redis(const StringView &hash_tag)` to get a `Redis` object first, and send `XREAD` command with that `Redis` object.
 
-```
+```C++
 auto cluster = RedisCluster("tcp://127.0.0.1:7000");
 
 // Add event to stream with RedisCluster object.
