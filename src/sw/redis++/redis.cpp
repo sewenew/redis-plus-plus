@@ -348,12 +348,6 @@ bool Redis::set(const StringView &key,
     return reply::parse<bool>(*reply);
 }
 
-long long Redis::setbit(const StringView &key, long long offset, long long value) {
-    auto reply = command(cmd::setbit, key, offset, value);
-
-    return reply::parse<long long>(*reply);
-}
-
 void Redis::setex(const StringView &key,
                     long long ttl,
                     const StringView &val) {

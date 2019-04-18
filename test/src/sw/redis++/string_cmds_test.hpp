@@ -89,13 +89,20 @@ void StringCmdTest<RedisInstance>::_test_bit() {
 
     REDIS_ASSERT(_redis.getbit(key, 5) == 0, "failed to test getbit");
 
-    REDIS_ASSERT(_redis.setbit(key, 1, 1) == 0, "failed to test setbit");
-    REDIS_ASSERT(_redis.setbit(key, 3, 1) == 0, "failed to test setbit");
-    REDIS_ASSERT(_redis.setbit(key, 7, 1) == 0, "failed to test setbit");
-    REDIS_ASSERT(_redis.setbit(key, 10, 1) == 0, "failed to test setbit");
-    REDIS_ASSERT(_redis.setbit(key, 10, 0) == 1, "failed to test setbit");
-    REDIS_ASSERT(_redis.setbit(key, 11, 1) == 0, "failed to test setbit");
-    REDIS_ASSERT(_redis.setbit(key, 21, 1) == 0, "failed to test setbit");
+    REDIS_ASSERT(_redis.template command<long long>("SETBIT", key, 1, 1) == 0,
+            "failed to test setbit");
+    REDIS_ASSERT(_redis.template command<long long>("SETBIT", key, 3, 1) == 0,
+            "failed to test setbit");
+    REDIS_ASSERT(_redis.template command<long long>("SETBIT", key, 7, 1) == 0,
+            "failed to test setbit");
+    REDIS_ASSERT(_redis.template command<long long>("SETBIT", key, 10, 1) == 0,
+            "failed to test setbit");
+    REDIS_ASSERT(_redis.template command<long long>("SETBIT", key, 10, 0) == 1,
+            "failed to test setbit");
+    REDIS_ASSERT(_redis.template command<long long>("SETBIT", key, 11, 1) == 0,
+            "failed to test setbit");
+    REDIS_ASSERT(_redis.template command<long long>("SETBIT", key, 21, 1) == 0,
+            "failed to test setbit");
 
     // key -> 01010001, 00010000, 00000100
 
@@ -124,10 +131,10 @@ void StringCmdTest<RedisInstance>::_test_bit() {
     KeyDeleter<RedisInstance> deleters(_redis, {dest_key, src_key1, src_key2});
 
     // src_key1 -> 00010000
-    _redis.setbit(src_key1, 3, 1);
+    _redis.template command<long long>("SETBIT", src_key1, 3, 1);
 
     // src_key2 -> 00000000, 00001000
-    _redis.setbit(src_key2, 12, 1);
+    _redis.template command<long long>("SETBIT", src_key2, 12, 1);
 
     REDIS_ASSERT(_redis.bitop(BitOp::AND, dest_key, {src_key1, src_key2}) == 2,
             "failed to test bitop");

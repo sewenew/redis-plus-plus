@@ -338,8 +338,6 @@ public:
                 const std::chrono::milliseconds &ttl = std::chrono::milliseconds(0),
                 UpdateType type = UpdateType::ALWAYS);
 
-    long long setbit(const StringView &key, long long offset, long long value);
-
     void setex(const StringView &key,
                 long long ttl,
                 const StringView &val);

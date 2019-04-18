@@ -432,12 +432,6 @@ public:
         return command(cmd::set, key, val, ttl.count(), type);
     }
 
-    QueuedRedis& setbit(const StringView &key,
-                        long long offset,
-                        long long value) {
-        return command(cmd::setbit, key, offset, value);
-    }
-
     QueuedRedis& setex(const StringView &key,
                         long long ttl,
                         const StringView &val) {

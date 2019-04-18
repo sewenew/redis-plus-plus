@@ -243,12 +243,6 @@ bool RedisCluster::set(const StringView &key,
     return reply::parse<bool>(*reply);
 }
 
-long long RedisCluster::setbit(const StringView &key, long long offset, long long value) {
-    auto reply = command(cmd::setbit, key, offset, value);
-
-    return reply::parse<long long>(*reply);
-}
-
 void RedisCluster::setex(const StringView &key,
                     long long ttl,
                     const StringView &val) {

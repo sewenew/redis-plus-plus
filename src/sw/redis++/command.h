@@ -405,16 +405,6 @@ void set(Connection &connection,
             long long ttl,
             UpdateType type);
 
-inline void setbit(Connection &connection,
-                    const StringView &key,
-                    long long offset,
-                    long long value) {
-    connection.send("SETBIT %b %lld %lld",
-                    key.data(), key.size(),
-                    offset,
-                    value);
-}
-
 inline void setex(Connection &connection,
                     const StringView &key,
                     long long ttl,
