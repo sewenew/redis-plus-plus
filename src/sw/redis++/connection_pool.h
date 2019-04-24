@@ -19,9 +19,11 @@
 
 #include <chrono>
 #include <mutex>
+#include <memory>
 #include <condition_variable>
 #include <deque>
 #include "connection.h"
+#include "sentinel.h"
 
 namespace sw {
 
@@ -43,6 +45,10 @@ public:
     ConnectionPool(const ConnectionPoolOptions &pool_opts,
                     const ConnectionOptions &connection_opts);
 
+    ConnectionPool(SimpleSentinel sentinel,
+                    const ConnectionPoolOptions &pool_opts,
+                    const ConnectionOptions &connection_opts);
+
     ConnectionPool() = default;
 
     ConnectionPool(ConnectionPool &&that);
@@ -60,15 +66,32 @@ public:
 
     void release(Connection connection);
 
+    // Create a new connection.
+    Connection create();
+
 private:
     void _move(ConnectionPool &&that);
 
     // NOT thread-safe
+    Connection _create();
+
+    Connection _create(SimpleSentinel &sentinel, const ConnectionOptions &opts, bool locked);
+
     Connection _fetch();
 
     void _wait_for_connection(std::unique_lock<std::mutex> &lock);
 
-    bool _need_reconnect(const Connection &connection);
+    bool _need_reconnect(const Connection &connection,
+                            const std::chrono::milliseconds &connection_lifetime) const;
+
+    void _update_connection_opts(const std::string &host, int port) {
+        _opts.host = host;
+        _opts.port = port;
+    }
+
+    bool _role_changed(const ConnectionOptions &opts) const {
+        return opts.port != _opts.port || opts.host != _opts.host;
+    }
 
     ConnectionOptions _opts;
 
@@ -81,6 +104,8 @@ private:
     std::mutex _mutex;
 
     std::condition_variable _cv;
+
+    SimpleSentinel _sentinel;
 };
 
 }

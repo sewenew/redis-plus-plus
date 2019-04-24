@@ -33,6 +33,28 @@ ConnectionPool::ConnectionPool(const ConnectionPoolOptions &pool_opts,
     // Lazily create connections.
 }
 
+ConnectionPool::ConnectionPool(SimpleSentinel sentinel,
+                                const ConnectionPoolOptions &pool_opts,
+                                const ConnectionOptions &connection_opts) :
+                                    _opts(connection_opts),
+                                    _pool_opts(pool_opts),
+                                    _sentinel(std::move(sentinel)) {
+    // In this case, the connection must be of TCP type.
+    if (_opts.type != ConnectionType::TCP) {
+        throw Error("Sentinel only supports TCP connection");
+    }
+
+    if (_opts.connect_timeout == std::chrono::milliseconds(0)
+            || _opts.socket_timeout == std::chrono::milliseconds(0)) {
+        throw Error("With sentinel, connection timeout and socket timeout cannot be 0");
+    }
+
+    // Cleanup connection options.
+    _update_connection_opts("", -1);
+
+    assert(_sentinel);
+}
+
 ConnectionPool::ConnectionPool(ConnectionPool &&that) {
     std::lock_guard<std::mutex> lock(that._mutex);
 
@@ -59,7 +81,7 @@ Connection ConnectionPool::fetch() {
             _wait_for_connection(lock);
         } else {
             // Lazily create a new connection.
-            auto connection = Connection(_opts);
+            auto connection = _create();
 
             ++_used_connections;
 
@@ -70,9 +92,31 @@ Connection ConnectionPool::fetch() {
     // _pool is NOT empty.
     auto connection = _fetch();
 
+    auto connection_lifetime = _pool_opts.connection_lifetime;
+
+    if (_sentinel) {
+        auto opts = connection.options();
+        auto role_changed = _role_changed(opts);
+        auto sentinel = _sentinel;
+
+        lock.unlock();
+
+        if (role_changed || _need_reconnect(connection, connection_lifetime)) {
+            try {
+                connection = _create(sentinel, opts, false);
+            } catch (const Error &e) {
+                // Failed to reconnect, return it to the pool, and retry latter.
+                release(std::move(connection));
+                throw;
+            }
+        }
+
+        return connection;
+    }
+
     lock.unlock();
 
-    if (_need_reconnect(connection)) {
+    if (_need_reconnect(connection, connection_lifetime)) {
         try {
             connection.reconnect();
         } catch (const Error &e) {
@@ -101,11 +145,62 @@ void ConnectionPool::release(Connection connection) {
     _cv.notify_one();
 }
 
+Connection ConnectionPool::create() {
+    std::unique_lock<std::mutex> lock(_mutex);
+
+    auto opts = _opts;
+
+    if (_sentinel) {
+        auto sentinel = _sentinel;
+
+        lock.unlock();
+
+        return sentinel.create(opts);
+    } else {
+        lock.unlock();
+
+        return Connection(opts);
+    }
+}
+
 void ConnectionPool::_move(ConnectionPool &&that) {
     _opts = std::move(that._opts);
     _pool_opts = std::move(that._pool_opts);
     _pool = std::move(that._pool);
     _used_connections = that._used_connections;
+    _sentinel = std::move(that._sentinel);
+}
+
+Connection ConnectionPool::_create() {
+    if (_sentinel) {
+        // Get Redis host and port info from sentinel.
+        return _create(_sentinel, _opts, true);
+    }
+
+    return Connection(_opts);
+}
+
+Connection ConnectionPool::_create(SimpleSentinel &sentinel,
+                                    const ConnectionOptions &opts,
+                                    bool locked) {
+    try {
+        auto connection = sentinel.create(opts);
+
+        std::unique_lock<std::mutex> lock(_mutex, std::defer_lock);
+        if (!locked) {
+            lock.lock();
+        }
+
+        const auto &opts = connection.options();
+        if (_role_changed(opts)) {
+            // Master/Slave has been changed, reconnect all connections.
+            _update_connection_opts(opts.host, opts.port);
+        }
+
+        return connection;
+    } catch (const StopIterError &e) {
+        throw Error("Failed to create connection with sentinel");
+    }
 }
 
 Connection ConnectionPool::_fetch() {
@@ -133,12 +228,12 @@ void ConnectionPool::_wait_for_connection(std::unique_lock<std::mutex> &lock) {
     }
 }
 
-bool ConnectionPool::_need_reconnect(const Connection &connection) {
+bool ConnectionPool::_need_reconnect(const Connection &connection,
+                                    const std::chrono::milliseconds &connection_lifetime) const {
     if (connection.broken()) {
         return true;
     }
 
-    auto connection_lifetime = _pool_opts.connection_lifetime;
     if (connection_lifetime > std::chrono::milliseconds(0)) {
         auto now = std::chrono::steady_clock::now();
         if (now - connection.last_active() > connection_lifetime) {

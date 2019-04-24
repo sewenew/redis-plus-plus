@@ -31,18 +31,15 @@ Redis::Redis(const ConnectionSPtr &connection) : _connection(connection) {
 }
 
 Pipeline Redis::pipeline() {
-    auto opts = _pool.connection_options();
-    return Pipeline(std::make_shared<Connection>(opts));
+    return Pipeline(std::make_shared<Connection>(_pool.create()));
 }
 
 Transaction Redis::transaction(bool piped) {
-    auto opts = _pool.connection_options();
-    return Transaction(std::make_shared<Connection>(opts), piped);
+    return Transaction(std::make_shared<Connection>(_pool.create()), piped);
 }
 
 Subscriber Redis::subscriber() {
-    auto opts = _pool.connection_options();
-    return Subscriber(Connection(opts));
+    return Subscriber(_pool.create());
 }
 
 // CONNECTION commands.

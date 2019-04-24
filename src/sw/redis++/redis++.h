@@ -20,5 +20,6 @@
 #include "redis.h"
 #include "redis_cluster.h"
 #include "queued_redis.h"
+#include "sentinel.h"
 
 #endif // end SEWENEW_REDISPLUSPLUS_REDISPLUSPLUS_H

@@ -155,6 +155,11 @@ private:
 
 using ConnectionSPtr = std::shared_ptr<Connection>;
 
+enum class Role {
+    MASTER,
+    SLAVE
+};
+
 // Inline implementaions.
 
 template <typename ...Args>

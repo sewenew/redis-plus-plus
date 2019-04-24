@@ -19,6 +19,7 @@
 
 #include <string>
 #include <chrono>
+#include <memory>
 #include <initializer_list>
 #include <tuple>
 #include "connection_pool.h"
@@ -28,6 +29,7 @@
 #include "subscriber.h"
 #include "pipeline.h"
 #include "transaction.h"
+#include "sentinel.h"
 
 namespace sw {
 
@@ -48,6 +50,13 @@ public:
     // Construct Redis instance with URI:
     // "tcp://127.0.0.1", "tcp://127.0.0.1:6379", or "unix://path/to/socket"
     explicit Redis(const std::string &uri);
+
+    Redis(const std::shared_ptr<Sentinel> &sentinel,
+            const std::string &master_name,
+            Role role,
+            const ConnectionOptions &connection_opts,
+            const ConnectionPoolOptions &pool_opts = {}) :
+                _pool(SimpleSentinel(sentinel, master_name, role), pool_opts, connection_opts) {}
 
     Redis(const Redis &) = delete;
     Redis& operator=(const Redis &) = delete;
@@ -116,7 +125,7 @@ public:
     //                   // and try to get 'key' on the default DB
     //
     // Obviously, this is NOT what we expect. So we DO NOT support SELECT command.
-    // In order to select a DB, we can specify the DB index with the ConnectionOption.
+    // In order to select a DB, we can specify the DB index with the ConnectionOptions.
     //
     // However, since Pipeline and Transaction always send multiple commands on a
     // single connection, these two classes have a *select* method.
