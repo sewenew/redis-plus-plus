@@ -95,8 +95,8 @@ Connection ConnectionPool::fetch() {
     auto connection_lifetime = _pool_opts.connection_lifetime;
 
     if (_sentinel) {
-        auto opts = connection.options();
-        auto role_changed = _role_changed(opts);
+        auto opts = _opts;
+        auto role_changed = _role_changed(connection.options());
         auto sentinel = _sentinel;
 
         lock.unlock();
@@ -155,7 +155,7 @@ Connection ConnectionPool::create() {
 
         lock.unlock();
 
-        return sentinel.create(opts);
+        return _create(sentinel, opts, false);
     } else {
         lock.unlock();
 
@@ -191,10 +191,10 @@ Connection ConnectionPool::_create(SimpleSentinel &sentinel,
             lock.lock();
         }
 
-        const auto &opts = connection.options();
-        if (_role_changed(opts)) {
+        const auto &connection_opts = connection.options();
+        if (_role_changed(connection_opts)) {
             // Master/Slave has been changed, reconnect all connections.
-            _update_connection_opts(opts.host, opts.port);
+            _update_connection_opts(connection_opts.host, connection_opts.port);
         }
 
         return connection;

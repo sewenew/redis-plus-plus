@@ -162,7 +162,7 @@ Connection Sentinel::slave(const std::string &master_name, const ConnectionOptio
                 continue;
             }
 
-            // Normally slaves list is NOT very large, so it won't be a performance problem.
+            // Normally slaves list is NOT very large, so there won't be a performance problem.
             auto slave_iter = std::find(slaves.begin(),
                                         slaves.end(),
                                         Node{opts.host, opts.port});
@@ -347,16 +347,13 @@ SimpleSentinel::SimpleSentinel(const std::shared_ptr<Sentinel> &sentinel,
 Connection SimpleSentinel::create(const ConnectionOptions &opts) {
     assert(_sentinel);
 
-    switch (_role) {
-    case Role::MASTER:
+    if (_role == Role::MASTER) {
         return _sentinel->master(_master_name, opts);
-
-    case Role::SLAVE:
-        return _sentinel->slave(_master_name, opts);
-
-    default:
-        assert(false);
     }
+
+    assert(_role == Role::SLAVE);
+
+    return _sentinel->slave(_master_name, opts);
 }
 
 }
