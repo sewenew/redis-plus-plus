@@ -16,6 +16,7 @@
     - [Pipeline](#pipeline)
     - [Transaction](#transaction)
     - [Redis Cluster](#redis-cluster)
+    - [Redis Sentinel](#redis-sentinel)
     - [Redis Stream](#redis-stream)
 - [Author](#author)
 
@@ -34,6 +35,7 @@ This is a C++ client for Redis. It's based on [hiredis](https://github.com/redis
 - Redis pipeline.
 - Redis transaction.
 - Redis Cluster.
+- Redis Sentinel.
 - STL-like interfaces.
 - Generic command interface.
 
@@ -1603,6 +1605,83 @@ If master is down, the cluster will promote one of its replicas to be the new ma
 
 - When the master is down, *redis-plus-plus* losts connection to it. In this case, if you try to send commands to this master, *redis-plus-plus* will try to update slot-node mapping from other nodes. If the mapping remains unchanged, i.e. new master hasn't been elected yet, it fails to send command to Redis Cluster and throws exception.
 - When the new master has been elected, the slot-node mapping will be updated by the cluster. In this case, if you send commands to the cluster, *redis-plus-plus* can get an update-to-date mapping, and sends commands to the new master.
+
+### Redis Sentinel
+
+[Redis Sentinel provides high availability for Redis](https://redis.io/topics/sentinel). If Redis master is down, Redis Sentinels will elect a new master from slaves, i.e. failover. Besides, Redis Sentinel can also act like a configuration provider for clients, and clients can query master or slave address from Redis Sentinel. So that if a failover occurs, clients can ask the new master address from Redis Sentinel.
+
+*redis-plus-plus* supports getting Redis master or slave's IP and port from Redis Sentinel. In order to use this feature, you only need to initialize `Redis` object with Redis Sentinel info, which is composed with 3 parts: `std::shared_ptr<Sentinel>`, master name and role (master or slave).
+
+Before using Redis Sentinel with *redis-plus-plus*, ensure that you have read Redis Sentinel's [doc](https://redis.io/topics/sentinel).
+
+#### Sentinel
+
+You can create a `std::shared_ptr<Sentinel>` object with `SentinelOptions`.
+
+```C++
+SentinelOptions sentinel_opts;
+sentinel_opts.nodes = {{"127.0.0.1", 9000},
+                        {"127.0.0.1", 9001},
+                        {"127.0.0.1", 9002}};   // Required. List of Redis Sentinel nodes.
+
+// Optional. Timeout before we successfully connect to Redis Sentinel.
+// By default, the timeout is 100ms.
+sentinel_opts.connect_timeout = std::chrono::milliseconds(200);
+
+// Optional. Timeout before we successfully send request to or receive response from Redis Sentinel.
+// By default, the timeout is 100ms.
+sentinel_opts.socket_timeout = std::chrono::milliseconds(200);
+
+auto sentinel = std::make_shared<Sentinel>(sentinel_opts);
+```
+
+`SentinelOptions::connect_timeout` and `SentinelOptions::socket_timeout` CANNOT be 0ms, i.e. no timeout and block forever. Otherwise, *redis-plus-plus* will throw an exception.
+
+See [SentinelOptions](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/sentinel.h#L33) for more options.
+
+#### Role
+
+Besides `std::shared_ptr<Sentinel>` and master name, you also need to specify a role. There are two roles: `Role::MASTER`, and `Role::SLAVE`.
+
+With `Role::MASTER`, *redis-plus-plus* will always connect to current master instance, even if a failover occurs. Each time when *redis-plus-plus* needs to create a new connection to master, or a connection is broken, and it needs to reconnect to master, *redis-plus-plus* will ask master address from Redis Sentinel, and connects to current master. If a failover occurs, *redis-plus-plus* can automatically get the address of the new master, and refresh all connections in the underlying connection pool.
+
+Similarly, with `Role::SLAVE`, *redis-plus-plus* will always connect to a slave instance. A master might have several slaves, *redis-plus-plus* will randomly pick one, and connect to it, i.e. all connections in the underlying connection pool, connect to the same slave instance. If the connection is broken, while this slave instance is still an alive slave, *redis-plus-plus* will reconnect to this slave. However, if this slave instance is down, or it has been promoted to be the master, *redis-plus-plus* will randomly connect to another slave. If there's no slave alive, it throws an exception.
+
+#### Create Redis With Sentinel
+
+When creating a `Redis` object with sentinel, besides the sentinel info, you should also provide `ConnectionOptions` and `ConnectionPoolOptions`. These two options are used to connect to Redis instance. `ConnectionPoolOptions` is optional, if not specified, it creates a single connection the instance.
+
+```C++
+ConnectionOptions connection_opts;
+connection_opts.password = "auth";  // Optional. No password by default.
+connection_opts.connect_timeout = std::chrono::milliseconds(100);   // Required.
+connection_opts.socket_timeout = std::chrono::milliseconds(100);    // Required.
+
+ConnectionPoolOptions pool_opts;
+pool_opts.size = 3; // Optional. The default size is 1.
+
+auto redis = Redis(sentinel, "master_name", Role::MASTER, connection_opts, pool_opts);
+```
+
+You might have noticed that we didn't specify the `host` and `port` fields for `ConnectionOptions`. Because, `Redis` will get these info from Redis Sentinel. Also, in this case, `ConnectionOptions::connect_timeout` and `ConnectionOptions::socket_timeout` CANNOT be 0ms, otherwise, it throws an exception. So you always need to specify these two timeouts manually.
+
+After creating the `Redis` object with sentinel, you can send commands with it, just like an ordinary `Redis` object.
+
+If you want to write to master, and scale read with slaves. You can use the following pattern:
+
+```C++
+auto sentinel = std::make_shared<Sentinel>(sentinel_opts);
+
+auto master = Redis(sentinel, "master_name", Role::MASTER, connection_opts, pool_opts);
+
+auto slave = Redis(sentinel, "master_name", Role::SLAVE, connection_opts, pool_opts);
+
+// Write to master.
+master.set("key", "value");
+
+// Read from slave.
+slave.get("key");
+```
 
 ### Redis Stream
 
