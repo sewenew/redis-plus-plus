@@ -113,55 +113,62 @@ auto parse_options(int argc, char **argv)
 
     int opt = 0;
     while ((opt = getopt(argc, argv, "h:p:a:n:c:k:v:r:t:bs:")) != -1) {
-        switch (opt) {
-        case 'h':
-            host = optarg;
-            break;
+        try {
+            switch (opt) {
+            case 'h':
+                host = optarg;
+                break;
 
-        case 'p':
-            port = std::stoi(optarg);
-            break;
+            case 'p':
+                port = std::stoi(optarg);
+                break;
 
-        case 'a':
-            auth = optarg;
-            break;
+            case 'a':
+                auth = optarg;
+                break;
 
-        case 'n':
-            cluster_node = optarg;
-            break;
+            case 'n':
+                cluster_node = optarg;
+                break;
 
-        case 'c':
-            cluster_port = std::stoi(optarg);
-            break;
+            case 'c':
+                cluster_port = std::stoi(optarg);
+                break;
 
-        case 'b':
-            benchmark = true;
-            break;
+            case 'b':
+                benchmark = true;
+                break;
 
-        case 'k':
-            tmp_benchmark_opts.key_len = std::stoi(optarg);
-            break;
+            case 'k':
+                tmp_benchmark_opts.key_len = std::stoi(optarg);
+                break;
 
-        case 'v':
-            tmp_benchmark_opts.val_len = std::stoi(optarg);
-            break;
+            case 'v':
+                tmp_benchmark_opts.val_len = std::stoi(optarg);
+                break;
 
-        case 'r':
-            tmp_benchmark_opts.total_request_num = std::stoi(optarg);
-            break;
+            case 'r':
+                tmp_benchmark_opts.total_request_num = std::stoi(optarg);
+                break;
 
-        case 't':
-            tmp_benchmark_opts.thread_num = std::stoi(optarg);
-            break;
+            case 't':
+                tmp_benchmark_opts.thread_num = std::stoi(optarg);
+                break;
 
-        case 's':
-            tmp_benchmark_opts.pool_size = std::stoi(optarg);
-            break;
+            case 's':
+                tmp_benchmark_opts.pool_size = std::stoi(optarg);
+                break;
 
-        default:
+            default:
+                throw sw::redis::Error("Unknow command line option");
+                break;
+            }
+        } catch (const sw::redis::Error &e) {
             print_help();
-            throw sw::redis::Error("Failed to parse connection options");
-            break;
+            throw;
+        } catch (const std::exception &e) {
+            print_help();
+            throw sw::redis::Error("Invalid command line option");
         }
     }
 
