@@ -14,19 +14,25 @@ set(PROJECT_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src/sw/redis++)
 
 file(GLOB PROJECT_SOURCE_FILES "${PROJECT_SOURCE_DIR}/*.cpp")
 
-set(STATIC_LIB static)
-set(SHARED_LIB shared)
+set(STATIC_LIB redis-plus-plus-static)
+set(SHARED_LIB redis-plus-plus-shared)
 
 add_library(${STATIC_LIB} STATIC ${PROJECT_SOURCE_FILES})
 add_library(${SHARED_LIB} SHARED ${PROJECT_SOURCE_FILES})
 
 # hiredis dependency
-find_path(HIREDIS_HEADER hiredis)
-target_include_directories(${STATIC_LIB} PUBLIC ${HIREDIS_HEADER})
-target_include_directories(${SHARED_LIB} PUBLIC ${HIREDIS_HEADER})
+add_subdirectory(hiredis)
+#find_path(HIREDIS_HEADER hiredis)
+set(HIREDIS_HEADER ${CMAKE_SOURCE_DIR})
 
-find_library(HIREDIS_LIB hiredis)
-target_link_libraries(${SHARED_LIB} ${HIREDIS_LIB})
+include_directories(${HIREDIS_HEADER} ${PROJECT_SOURCE_DIR})
+
+#target_include_directories(${STATIC_LIB} PUBLIC ${HIREDIS_HEADER})
+#target_include_directories(${SHARED_LIB} PUBLIC ${HIREDIS_HEADER})
+
+#find_library(HIREDIS_LIB hiredis)
+#target_link_libraries(${SHARED_LIB} ${HIREDIS_LIB})
+target_link_libraries(${SHARED_LIB} hiredis)
 
 set_target_properties(${STATIC_LIB} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
 set_target_properties(${SHARED_LIB} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
