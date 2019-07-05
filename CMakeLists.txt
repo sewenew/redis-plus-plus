@@ -20,18 +20,13 @@ set(SHARED_LIB redis-plus-plus-shared)
 add_library(${STATIC_LIB} STATIC ${PROJECT_SOURCE_FILES})
 add_library(${SHARED_LIB} SHARED ${PROJECT_SOURCE_FILES})
 
-# hiredis dependency
-add_subdirectory(hiredis)
-#find_path(HIREDIS_HEADER hiredis)
-set(HIREDIS_HEADER ${CMAKE_SOURCE_DIR})
-
+# Add hiredis and redis-plus-plus to target_include_directories
 include_directories(${HIREDIS_HEADER} ${PROJECT_SOURCE_DIR})
 
-#target_include_directories(${STATIC_LIB} PUBLIC ${HIREDIS_HEADER})
-#target_include_directories(${SHARED_LIB} PUBLIC ${HIREDIS_HEADER})
+# hiredis dependency
+add_subdirectory(hiredis)
+set(HIREDIS_HEADER ${CMAKE_SOURCE_DIR})
 
-#find_library(HIREDIS_LIB hiredis)
-#target_link_libraries(${SHARED_LIB} ${HIREDIS_LIB})
 target_link_libraries(${SHARED_LIB} hiredis)
 
 set_target_properties(${STATIC_LIB} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
