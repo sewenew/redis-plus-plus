@@ -7,11 +7,18 @@ else()
 endif()
 
 set(CMAKE_CXX_FLAGS "-std=c++11 -Wall -W -Werror -fPIC")
-
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-set(PROJECT_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src/sw/redis++)
+set(_THIS_DIR ${PROJECT_SOURCE_DIR}) # PROJECT_SOURCE_DIR is changed later
+set(HIREDIS_HEADER ${_THIS_DIR})
+set(REDIS_PLUS_PLUS_HEADER ${_THIS_DIR}/src)
+include_directories(${HIREDIS_HEADER} ${REDIS_PLUS_PLUS_HEADER})
 
+# hiredis dependency
+add_subdirectory(hiredis)
+
+# redis-plus-plus
+set(PROJECT_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src/sw/redis++)
 file(GLOB PROJECT_SOURCE_FILES "${PROJECT_SOURCE_DIR}/*.cpp")
 
 set(STATIC_LIB redis-plus-plus-static)
@@ -19,13 +26,6 @@ set(SHARED_LIB redis-plus-plus-shared)
 
 add_library(${STATIC_LIB} STATIC ${PROJECT_SOURCE_FILES})
 add_library(${SHARED_LIB} SHARED ${PROJECT_SOURCE_FILES})
-
-# Add hiredis and redis-plus-plus to target_include_directories
-include_directories(${HIREDIS_HEADER} ${PROJECT_SOURCE_DIR})
-
-# hiredis dependency
-add_subdirectory(hiredis)
-set(HIREDIS_HEADER ${CMAKE_SOURCE_DIR})
 
 target_link_libraries(${SHARED_LIB} hiredis)
 
