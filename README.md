@@ -1240,6 +1240,8 @@ while (true) {
 }
 ```
 
+The above examples use lambda as callback. If you're not familiar with lambda, you can also set a free function as callback. Check [this issue](https://github.com/sewenew/redis-plus-plus/issues/16) for detail.
+
 ### Pipeline
 
 [Pipeline](https://redis.io/topics/pipelining) is used to reduce *RTT* (Round Trip Time), and speed up Redis queries. *redis-plus-plus* supports pipeline with the `Pipeline` class.
