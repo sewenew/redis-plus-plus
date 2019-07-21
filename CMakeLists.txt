@@ -12,7 +12,6 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(_THIS_DIR ${PROJECT_SOURCE_DIR}) # PROJECT_SOURCE_DIR is changed later
 set(HIREDIS_HEADER ${_THIS_DIR})
 set(REDIS_PLUS_PLUS_HEADER ${_THIS_DIR}/src)
-include_directories(${HIREDIS_HEADER} ${REDIS_PLUS_PLUS_HEADER})
 
 # hiredis dependency
 add_subdirectory(hiredis)
@@ -26,6 +25,9 @@ set(SHARED_LIB redis-plus-plus-shared)
 
 add_library(${STATIC_LIB} STATIC ${PROJECT_SOURCE_FILES})
 add_library(${SHARED_LIB} SHARED ${PROJECT_SOURCE_FILES})
+
+target_include_directories(${STATIC_LIB} PUBLIC ${HIREDIS_HEADER} ${REDIS_PLUS_PLUS_HEADER})
+target_include_directories(${SHARED_LIB} PUBLIC ${HIREDIS_HEADER} ${REDIS_PLUS_PLUS_HEADER})
 
 target_link_libraries(${SHARED_LIB} hiredis)
 
