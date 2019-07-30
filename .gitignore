@@ -1,3 +1,6 @@
+# VS Code Remote extension files
+.devcontainer/*
+
 # Build dir
 build/**
 
