@@ -179,25 +179,25 @@ After compiling the code, you'll get both shared library and static library. Sin
 Take gcc as an example.
 
 ```
-g++ -std=c++11 -o app app.cpp /path/to/libhiredis.a /path/to/libredis++.a -pthread
+g++ -std=c++11 -o app app.cpp /path/to/libredis++.a /path/to/libhiredis.a -pthread
 ```
 
 If *hiredis* and *redis-plus-plus* are installed at non-default location, you should use `-I` option to specify the header path.
 
 ```
-g++ -std=c++11 -I/non-default/install/include/path -o app app.cpp /path/to/libhiredis.a /path/to/libredis++.a -pthread
+g++ -std=c++11 -I/non-default/install/include/path -o app app.cpp /path/to/libredis++.a /path/to/libhiredis.a -pthread
 ```
 
 #### Use Shared Libraries
 
 ```
-g++ -std=c++11 -o app app.cpp -lhiredis -lredis++ -pthread
+g++ -std=c++11 -o app app.cpp -lredis++ -lhiredis -pthread
 ```
 
 If *hiredis* and *redis-plus-plus* are installed at non-default location, you should use `-I` and `-L` options to specify the header and library paths.
 
 ```
-g++ -std=c++11 -I/non-default/install/include/path -L/non-default/install/lib/path -o app app.cpp -lhiredis -lredis++ -pthread
+g++ -std=c++11 -I/non-default/install/include/path -L/non-default/install/lib/path -o app app.cpp -lredis++ -lhiredis -pthread
 ```
 
 When linking with shared libraries, and running your application, you might get the following error message:
