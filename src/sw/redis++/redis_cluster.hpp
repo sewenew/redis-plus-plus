@@ -120,10 +120,6 @@ auto RedisCluster::command(Input first, Input last, Output output)
 
 template <typename Input>
 long long RedisCluster::del(Input first, Input last) {
-    if (first == last) {
-        throw Error("DEL: no key specified");
-    }
-
     auto reply = command(cmd::del_range<Input>, first, last);
 
     return reply::parse<long long>(*reply);
@@ -131,10 +127,6 @@ long long RedisCluster::del(Input first, Input last) {
 
 template <typename Input>
 long long RedisCluster::exists(Input first, Input last) {
-    if (first == last) {
-        throw Error("EXISTS: no key specified");
-    }
-
     auto reply = command(cmd::exists_range<Input>, first, last);
 
     return reply::parse<long long>(*reply);
@@ -169,10 +161,6 @@ inline void RedisCluster::restore(const StringView &key,
 
 template <typename Input>
 long long RedisCluster::touch(Input first, Input last) {
-    if (first == last) {
-        throw Error("TOUCH: no key specified");
-    }
-
     auto reply = command(cmd::touch_range<Input>, first, last);
 
     return reply::parse<long long>(*reply);
@@ -180,10 +168,6 @@ long long RedisCluster::touch(Input first, Input last) {
 
 template <typename Input>
 long long RedisCluster::unlink(Input first, Input last) {
-    if (first == last) {
-        throw Error("UNLINK: no key specified");
-    }
-
     auto reply = command(cmd::unlink_range<Input>, first, last);
 
     return reply::parse<long long>(*reply);
@@ -193,10 +177,6 @@ long long RedisCluster::unlink(Input first, Input last) {
 
 template <typename Input>
 long long RedisCluster::bitop(BitOp op, const StringView &destination, Input first, Input last) {
-    if (first == last) {
-        throw Error("BITOP: no key specified");
-    }
-
     auto reply = _command(cmd::bitop<Input>, destination, op, destination, first, last);
 
     return reply::parse<long long>(*reply);
@@ -204,10 +184,6 @@ long long RedisCluster::bitop(BitOp op, const StringView &destination, Input fir
 
 template <typename Input, typename Output>
 void RedisCluster::mget(Input first, Input last, Output output) {
-    if (first == last) {
-        throw Error("MGET: no key specified");
-    }
-
     auto reply = command(cmd::mget<Input>, first, last);
 
     reply::to_array(*reply, output);
@@ -215,10 +191,6 @@ void RedisCluster::mget(Input first, Input last, Output output) {
 
 template <typename Input>
 void RedisCluster::mset(Input first, Input last) {
-    if (first == last) {
-        throw Error("MSET: no key specified");
-    }
-
     auto reply = command(cmd::mset<Input>, first, last);
 
     reply::parse<void>(*reply);
@@ -226,10 +198,6 @@ void RedisCluster::mset(Input first, Input last) {
 
 template <typename Input>
 bool RedisCluster::msetnx(Input first, Input last) {
-    if (first == last) {
-        throw Error("MSETNX: no key specified");
-    }
-
     auto reply = command(cmd::msetnx<Input>, first, last);
 
     return reply::parse<bool>(*reply);
@@ -251,10 +219,6 @@ inline void RedisCluster::setex(const StringView &key,
 
 template <typename Input>
 OptionalStringPair RedisCluster::blpop(Input first, Input last, long long timeout) {
-    if (first == last) {
-        throw Error("BLPOP: no key specified");
-    }
-
     auto reply = command(cmd::blpop<Input>, first, last, timeout);
 
     return reply::parse<OptionalStringPair>(*reply);
@@ -269,10 +233,6 @@ OptionalStringPair RedisCluster::blpop(Input first,
 
 template <typename Input>
 OptionalStringPair RedisCluster::brpop(Input first, Input last, long long timeout) {
-    if (first == last) {
-        throw Error("BRPOP: no key specified");
-    }
-
     auto reply = command(cmd::brpop<Input>, first, last, timeout);
 
     return reply::parse<OptionalStringPair>(*reply);
@@ -293,10 +253,6 @@ inline OptionalString RedisCluster::brpoplpush(const StringView &source,
 
 template <typename Input>
 inline long long RedisCluster::lpush(const StringView &key, Input first, Input last) {
-    if (first == last) {
-        throw Error("LPUSH: no key specified");
-    }
-
     auto reply = command(cmd::lpush_range<Input>, key, first, last);
 
     return reply::parse<long long>(*reply);
@@ -311,10 +267,6 @@ inline void RedisCluster::lrange(const StringView &key, long long start, long lo
 
 template <typename Input>
 inline long long RedisCluster::rpush(const StringView &key, Input first, Input last) {
-    if (first == last) {
-        throw Error("RPUSH: no key specified");
-    }
-
     auto reply = command(cmd::rpush_range<Input>, key, first, last);
 
     return reply::parse<long long>(*reply);
@@ -324,10 +276,6 @@ inline long long RedisCluster::rpush(const StringView &key, Input first, Input l
 
 template <typename Input>
 inline long long RedisCluster::hdel(const StringView &key, Input first, Input last) {
-    if (first == last) {
-        throw Error("HDEL: no key specified");
-    }
-
     auto reply = command(cmd::hdel_range<Input>, key, first, last);
 
     return reply::parse<long long>(*reply);
@@ -349,10 +297,6 @@ inline void RedisCluster::hkeys(const StringView &key, Output output) {
 
 template <typename Input, typename Output>
 inline void RedisCluster::hmget(const StringView &key, Input first, Input last, Output output) {
-    if (first == last) {
-        throw Error("HMGET: no key specified");
-    }
-
     auto reply = command(cmd::hmget<Input>, key, first, last);
 
     reply::to_array(*reply, output);
@@ -360,10 +304,6 @@ inline void RedisCluster::hmget(const StringView &key, Input first, Input last, 
 
 template <typename Input>
 inline void RedisCluster::hmset(const StringView &key, Input first, Input last) {
-    if (first == last) {
-        throw Error("HMSET: no key specified");
-    }
-
     auto reply = command(cmd::hmset<Input>, key, first, last);
 
     reply::parse<void>(*reply);
@@ -414,10 +354,6 @@ inline void RedisCluster::hvals(const StringView &key, Output output) {
 
 template <typename Input>
 long long RedisCluster::sadd(const StringView &key, Input first, Input last) {
-    if (first == last) {
-        throw Error("SADD: no key specified");
-    }
-
     auto reply = command(cmd::sadd_range<Input>, key, first, last);
 
     return reply::parse<long long>(*reply);
@@ -425,10 +361,6 @@ long long RedisCluster::sadd(const StringView &key, Input first, Input last) {
 
 template <typename Input, typename Output>
 void RedisCluster::sdiff(Input first, Input last, Output output) {
-    if (first == last) {
-        throw Error("SDIFF: no key specified");
-    }
-
     auto reply = command(cmd::sdiff<Input>, first, last);
 
     reply::to_array(*reply, output);
@@ -438,10 +370,6 @@ template <typename Input>
 long long RedisCluster::sdiffstore(const StringView &destination,
                             Input first,
                             Input last) {
-    if (first == last) {
-        throw Error("SDIFFSTORE: no key specified");
-    }
-
     auto reply = command(cmd::sdiffstore<Input>, destination, first, last);
 
     return reply::parse<long long>(*reply);
@@ -449,10 +377,6 @@ long long RedisCluster::sdiffstore(const StringView &destination,
 
 template <typename Input, typename Output>
 void RedisCluster::sinter(Input first, Input last, Output output) {
-    if (first == last) {
-        throw Error("SINTER: no key specified");
-    }
-
     auto reply = command(cmd::sinter<Input>, first, last);
 
     reply::to_array(*reply, output);
@@ -462,10 +386,6 @@ template <typename Input>
 long long RedisCluster::sinterstore(const StringView &destination,
                             Input first,
                             Input last) {
-    if (first == last) {
-        throw Error("SINTERSTORE: no key specified");
-    }
-
     auto reply = command(cmd::sinterstore<Input>, destination, first, last);
 
     return reply::parse<long long>(*reply);
@@ -494,10 +414,6 @@ void RedisCluster::srandmember(const StringView &key, long long count, Output ou
 
 template <typename Input>
 long long RedisCluster::srem(const StringView &key, Input first, Input last) {
-    if (first == last) {
-        throw Error("SREM: no key specified");
-    }
-
     auto reply = command(cmd::srem_range<Input>, key, first, last);
 
     return reply::parse<long long>(*reply);
@@ -539,10 +455,6 @@ inline long long RedisCluster::sscan(const StringView &key,
 
 template <typename Input, typename Output>
 void RedisCluster::sunion(Input first, Input last, Output output) {
-    if (first == last) {
-        throw Error("SUNION: no key specified");
-    }
-
     auto reply = command(cmd::sunion<Input>, first, last);
 
     reply::to_array(*reply, output);
@@ -550,10 +462,6 @@ void RedisCluster::sunion(Input first, Input last, Output output) {
 
 template <typename Input>
 long long RedisCluster::sunionstore(const StringView &destination, Input first, Input last) {
-    if (first == last) {
-        throw Error("SUNIONSTORE: no key specified");
-    }
-
     auto reply = command(cmd::sunionstore<Input>, destination, first, last);
 
     return reply::parse<long long>(*reply);
@@ -609,10 +517,6 @@ long long RedisCluster::zadd(const StringView &key,
                         Input last,
                         UpdateType type,
                         bool changed) {
-    if (first == last) {
-        throw Error("ZADD: no key specified");
-    }
-
     auto reply = command(cmd::zadd_range<Input>, key, first, last, type, changed);
 
     return reply::parse<long long>(*reply);
@@ -630,10 +534,6 @@ long long RedisCluster::zinterstore(const StringView &destination,
                                 Input first,
                                 Input last,
                                 Aggregation type) {
-    if (first == last) {
-        throw Error("ZINTERSTORE: no key specified");
-    }
-
     auto reply = command(cmd::zinterstore<Input>,
                             destination,
                             first,
@@ -708,10 +608,6 @@ void RedisCluster::zrangebyscore(const StringView &key,
 
 template <typename Input>
 long long RedisCluster::zrem(const StringView &key, Input first, Input last) {
-    if (first == last) {
-        throw Error("ZREM: no key specified");
-    }
-
     auto reply = command(cmd::zrem_range<Input>, key, first, last);
 
     return reply::parse<long long>(*reply);
@@ -809,10 +705,6 @@ long long RedisCluster::zunionstore(const StringView &destination,
                                     Input first,
                                     Input last,
                                     Aggregation type) {
-    if (first == last) {
-        throw Error("ZUNIONSTORE: no key specified");
-    }
-
     auto reply = command(cmd::zunionstore<Input>,
                             destination,
                             first,
@@ -826,10 +718,6 @@ long long RedisCluster::zunionstore(const StringView &destination,
 
 template <typename Input>
 bool RedisCluster::pfadd(const StringView &key, Input first, Input last) {
-    if (first == last) {
-        throw Error("PFADD: no key specified");
-    }
-
     auto reply = command(cmd::pfadd_range<Input>, key, first, last);
 
     return reply::parse<bool>(*reply);
@@ -837,10 +725,6 @@ bool RedisCluster::pfadd(const StringView &key, Input first, Input last) {
 
 template <typename Input>
 long long RedisCluster::pfcount(Input first, Input last) {
-    if (first == last) {
-        throw Error("PFCOUNT: no key specified");
-    }
-
     auto reply = command(cmd::pfcount_range<Input>, first, last);
 
     return reply::parse<long long>(*reply);
@@ -850,10 +734,6 @@ template <typename Input>
 void RedisCluster::pfmerge(const StringView &destination,
                     Input first,
                     Input last) {
-    if (first == last) {
-        throw Error("PFMERGE: no key specified");
-    }
-
     auto reply = command(cmd::pfmerge<Input>, destination, first, last);
 
     reply::parse<void>(*reply);
@@ -865,10 +745,6 @@ template <typename Input>
 inline long long RedisCluster::geoadd(const StringView &key,
                                 Input first,
                                 Input last) {
-    if (first == last) {
-        throw Error("GEOADD: no key specified");
-    }
-
     auto reply = command(cmd::geoadd_range<Input>, key, first, last);
 
     return reply::parse<long long>(*reply);
@@ -876,10 +752,6 @@ inline long long RedisCluster::geoadd(const StringView &key,
 
 template <typename Input, typename Output>
 void RedisCluster::geohash(const StringView &key, Input first, Input last, Output output) {
-    if (first == last) {
-        throw Error("GEOHASH: no key specified");
-    }
-
     auto reply = command(cmd::geohash_range<Input>, key, first, last);
 
     reply::to_array(*reply, output);
@@ -887,10 +759,6 @@ void RedisCluster::geohash(const StringView &key, Input first, Input last, Outpu
 
 template <typename Input, typename Output>
 void RedisCluster::geopos(const StringView &key, Input first, Input last, Output output) {
-    if (first == last) {
-        throw Error("GEOPOS: no key specified");
-    }
-
     auto reply = command(cmd::geopos_range<Input>, key, first, last);
 
     reply::to_array(*reply, output);

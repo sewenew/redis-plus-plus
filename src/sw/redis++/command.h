@@ -116,7 +116,9 @@ inline void del(Connection &connection, const StringView &key) {
 
 template <typename Input>
 inline void del_range(Connection &connection, Input first, Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("DEL: no key specified");
+    }
 
     CmdArgs args;
     args << "DEL" << std::make_pair(first, last);
@@ -134,7 +136,9 @@ inline void exists(Connection &connection, const StringView &key) {
 
 template <typename Input>
 inline void exists_range(Connection &connection, Input first, Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("EXISTS: no key specified");
+    }
 
     CmdArgs args;
     args << "EXISTS" << std::make_pair(first, last);
@@ -234,7 +238,9 @@ inline void touch(Connection &connection, const StringView &key) {
 
 template <typename Input>
 inline void touch_range(Connection &connection, Input first, Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("TOUCH: no key specified");
+    }
 
     CmdArgs args;
     args << "TOUCH" << std::make_pair(first, last);
@@ -256,7 +262,9 @@ inline void unlink(Connection &connection, const StringView &key) {
 
 template <typename Input>
 inline void unlink_range(Connection &connection, Input first, Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("UNLINK: no key specified");
+    }
 
     CmdArgs args;
     args << "UNLINK" << std::make_pair(first, last);
@@ -361,7 +369,9 @@ inline void incrbyfloat(Connection &connection, const StringView &key, double in
 
 template <typename Input>
 inline void mget(Connection &connection, Input first, Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("MGET: no key specified");
+    }
 
     CmdArgs args;
     args << "MGET" << std::make_pair(first, last);
@@ -371,7 +381,9 @@ inline void mget(Connection &connection, Input first, Input last) {
 
 template <typename Input>
 inline void mset(Connection &connection, Input first, Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("MSET: no key specified");
+    }
 
     CmdArgs args;
     args << "MSET" << std::make_pair(first, last);
@@ -381,7 +393,9 @@ inline void mset(Connection &connection, Input first, Input last) {
 
 template <typename Input>
 inline void msetnx(Connection &connection, Input first, Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("MSETNX: no key specified");
+    }
 
     CmdArgs args;
     args << "MSETNX" << std::make_pair(first, last);
@@ -444,7 +458,9 @@ inline void blpop(Connection &connection,
                     Input first,
                     Input last,
                     long long timeout) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("BLPOP: no key specified");
+    }
 
     CmdArgs args;
     args << "BLPOP" << std::make_pair(first, last) << timeout;
@@ -457,7 +473,9 @@ inline void brpop(Connection &connection,
                     Input first,
                     Input last,
                     long long timeout) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("BRPOP: no key specified");
+    }
 
     CmdArgs args;
     args << "BRPOP" << std::make_pair(first, last) << timeout;
@@ -508,7 +526,9 @@ inline void lpush_range(Connection &connection,
                         const StringView &key,
                         Input first,
                         Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("LPUSH: no key specified");
+    }
 
     CmdArgs args;
     args << "LPUSH" << key << std::make_pair(first, last);
@@ -585,7 +605,9 @@ inline void rpush_range(Connection &connection,
                         const StringView &key,
                         Input first,
                         Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("RPUSH: no key specified");
+    }
 
     CmdArgs args;
     args << "RPUSH" << key << std::make_pair(first, last);
@@ -612,7 +634,9 @@ inline void hdel_range(Connection &connection,
                         const StringView &key,
                         Input first,
                         Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("HDEL: no key specified");
+    }
 
     CmdArgs args;
     args << "HDEL" << key << std::make_pair(first, last);
@@ -669,7 +693,9 @@ inline void hmget(Connection &connection,
                     const StringView &key,
                     Input first,
                     Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("HMGET: no key specified");
+    }
 
     CmdArgs args;
     args << "HMGET" << key << std::make_pair(first, last);
@@ -682,7 +708,9 @@ inline void hmset(Connection &connection,
                     const StringView &key,
                     Input first,
                     Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("HMSET: no key specified");
+    }
 
     CmdArgs args;
     args << "HMSET" << key << std::make_pair(first, last);
@@ -749,7 +777,9 @@ inline void sadd_range(Connection &connection,
                         const StringView &key,
                         Input first,
                         Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("SADD: no key specified");
+    }
 
     CmdArgs args;
     args << "SADD" << key << std::make_pair(first, last);
@@ -763,7 +793,9 @@ inline void scard(Connection &connection, const StringView &key) {
 
 template <typename Input>
 inline void sdiff(Connection &connection, Input first, Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("SDIFF: no key specified");
+    }
 
     CmdArgs args;
     args << "SDIFF" << std::make_pair(first, last);
@@ -776,7 +808,9 @@ inline void sdiffstore(Connection &connection,
                         const StringView &destination,
                         Input first,
                         Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("SDIFFSTORE: no key specified");
+    }
 
     CmdArgs args;
     args << "SDIFFSTORE" << destination << std::make_pair(first, last);
@@ -786,7 +820,9 @@ inline void sdiffstore(Connection &connection,
 
 template <typename Input>
 inline void sinter(Connection &connection, Input first, Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("SINTER: no key specified");
+    }
 
     CmdArgs args;
     args << "SINTER" << std::make_pair(first, last);
@@ -799,7 +835,9 @@ inline void sinterstore(Connection &connection,
                         const StringView &destination,
                         Input first,
                         Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("SINTERSTORE: no key specified");
+    }
 
     CmdArgs args;
     args << "SINTERSTORE" << destination << std::make_pair(first, last);
@@ -864,7 +902,9 @@ inline void srem_range(Connection &connection,
                     const StringView &key,
                     Input first,
                     Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("SREM: no key specified");
+    }
 
     CmdArgs args;
     args << "SREM" << key << std::make_pair(first, last);
@@ -886,7 +926,9 @@ inline void sscan(Connection &connection,
 
 template <typename Input>
 inline void sunion(Connection &connection, Input first, Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("SUNION: no key specified");
+    }
 
     CmdArgs args;
     args << "SUNION" << std::make_pair(first, last);
@@ -899,7 +941,9 @@ inline void sunionstore(Connection &connection,
                         const StringView &destination,
                         Input first,
                         Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("SUNIONSTORE: no key specified");
+    }
 
     CmdArgs args;
     args << "SUNIONSTORE" << destination << std::make_pair(first, last);
@@ -918,7 +962,9 @@ void bzpopmax_range(Connection &connection,
                     Input first,
                     Input last,
                     long long timeout) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("BZPOPMAX: no key specified");
+    }
 
     CmdArgs args;
     args << "BZPOPMAX" << std::make_pair(first, last) << timeout;
@@ -935,7 +981,9 @@ void bzpopmin_range(Connection &connection,
                     Input first,
                     Input last,
                     long long timeout) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("BZPOPMIN: no key specified");
+    }
 
     CmdArgs args;
     args << "BZPOPMIN" << std::make_pair(first, last) << timeout;
@@ -1099,7 +1147,9 @@ inline void zrem_range(Connection &connection,
                         const StringView &key,
                         Input first,
                         Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("ZREM: no key specified");
+    }
 
     CmdArgs args;
     args << "ZREM" << key << std::make_pair(first, last);
@@ -1253,7 +1303,9 @@ inline void pfadd_range(Connection &connection,
                         const StringView &key,
                         Input first,
                         Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("PFADD: no key specified");
+    }
 
     CmdArgs args;
     args << "PFADD" << key << std::make_pair(first, last);
@@ -1269,7 +1321,9 @@ template <typename Input>
 inline void pfcount_range(Connection &connection,
                             Input first,
                             Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("PFCOUNT: no key specified");
+    }
 
     CmdArgs args;
     args << "PFCOUNT" << std::make_pair(first, last);
@@ -1282,7 +1336,9 @@ inline void pfmerge(Connection &connection,
                     const StringView &destination,
                     Input first,
                     Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("PFMERGE: no key specified");
+    }
 
     CmdArgs args;
     args << "PFMERGE" << destination << std::make_pair(first, last);
@@ -1309,7 +1365,9 @@ inline void geoadd_range(Connection &connection,
                             const StringView &key,
                             Input first,
                             Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("GEOADD: no key specified");
+    }
 
     CmdArgs args;
     args << "GEOADD" << key;
@@ -1334,7 +1392,9 @@ inline void geohash_range(Connection &connection,
                             const StringView &key,
                             Input first,
                             Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("GEOHASH: no key specified");
+    }
 
     CmdArgs args;
     args << "GEOHASH" << key << std::make_pair(first, last);
@@ -1347,7 +1407,9 @@ inline void geopos_range(Connection &connection,
                             const StringView &key,
                             Input first,
                             Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("GEOPOS: no key specified");
+    }
 
     CmdArgs args;
     args << "GEOPOS" << key << std::make_pair(first, last);
@@ -1429,7 +1491,9 @@ inline void script_exists(Connection &connection, const StringView &sha) {
 
 template <typename Input>
 inline void script_exists_range(Connection &connection, Input first, Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("SCRIPT EXISTS: no key specified");
+    }
 
     CmdArgs args;
     args << "SCRIPT" << "EXISTS" << std::make_pair(first, last);
@@ -1590,6 +1654,8 @@ void zinterstore(std::false_type,
                     Input first,
                     Input last,
                     Aggregation aggr) {
+    assert(first != last);
+
     CmdArgs args;
     args << "ZINTERSTORE" << destination << std::distance(first, last)
         << std::make_pair(first, last);
@@ -1606,6 +1672,8 @@ void zinterstore(std::true_type,
                     Input first,
                     Input last,
                     Aggregation aggr) {
+    assert(first != last);
+
     CmdArgs args;
     args << "ZINTERSTORE" << destination << std::distance(first, last);
 
@@ -1631,6 +1699,8 @@ void zunionstore(std::false_type,
                     Input first,
                     Input last,
                     Aggregation aggr) {
+    assert(first != last);
+
     CmdArgs args;
     args << "ZUNIONSTORE" << destination << std::distance(first, last)
         << std::make_pair(first, last);
@@ -1647,6 +1717,8 @@ void zunionstore(std::true_type,
                     Input first,
                     Input last,
                     Aggregation aggr) {
+    assert(first != last);
+
     CmdArgs args;
     args << "ZUNIONSTORE" << destination << std::distance(first, last);
 
@@ -1703,7 +1775,9 @@ void bitop(Connection &connection,
             const StringView &destination,
             Input first,
             Input last) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("BITOP: no key specified");
+    }
 
     CmdArgs args;
     args << "BITOP";
@@ -1740,7 +1814,9 @@ void zadd_range(Connection &connection,
                 Input last,
                 UpdateType type,
                 bool changed) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("ZADD: no key specified");
+    }
 
     CmdArgs args;
 
@@ -1767,7 +1843,9 @@ void zinterstore(Connection &connection,
                     Input first,
                     Input last,
                     Aggregation aggr) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("ZINTERSTORE: no key specified");
+    }
 
     detail::zinterstore(typename IsKvPairIter<Input>::type(),
                         connection,
@@ -1783,7 +1861,9 @@ void zunionstore(Connection &connection,
                     Input first,
                     Input last,
                     Aggregation aggr) {
-    assert(first != last);
+    if (first == last) {
+        throw Error("ZUNIONSTORE: no key specified");
+    }
 
     detail::zunionstore(typename IsKvPairIter<Input>::type(),
                         connection,
