@@ -760,6 +760,14 @@ void Redis::watch(const StringView &key) {
     reply::parse<void>(*reply);
 }
 
+// Stream commands.
+
+long long Redis::xlen(const StringView &key) {
+    auto reply = command(cmd::xlen, key);
+
+    return reply::parse<long long>(*reply);
+}
+
 }
 
 }

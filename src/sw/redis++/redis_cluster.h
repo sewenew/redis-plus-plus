@@ -982,6 +982,34 @@ public:
 
     long long publish(const StringView &channel, const StringView &message);
 
+    // Stream commands.
+
+    template <typename Input>
+    long long xack(const StringView &key, const StringView &group, Input first, Input last);
+
+    template <typename T>
+    long long xack(const StringView &key, const StringView &group, std::initializer_list<T> il) {
+        return xack(key, group, il.begin(), il.end());
+    }
+
+    template <typename Input>
+    std::string xadd(const StringView &key, const StringView &id, Input first, Input last);
+
+    template <typename T>
+    std::string xadd(const StringView &key, const StringView &id, std::initializer_list<T> il) {
+        return xadd(key, id, il.begin(), il.end());
+    }
+
+    template <typename Input>
+    long long xdel(const StringView &key, Input first, Input last);
+
+    template <typename T>
+    long long xdel(const StringView &key, std::initializer_list<T> il) {
+        return xdel(key, il.begin(), il.end());
+    }
+
+    long long xlen(const StringView &key);
+
 private:
     class Command {
     public:

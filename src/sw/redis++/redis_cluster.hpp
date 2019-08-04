@@ -996,6 +996,47 @@ void RedisCluster::evalsha(const StringView &script,
     reply::to_array(*reply, output);
 }
 
+// Stream commands.
+
+template <typename Input>
+long long RedisCluster::xack(const StringView &key,
+                                const StringView &group,
+                                Input first,
+                                Input last) {
+    if (first == last) {
+        throw Error("XACK: no key specified");
+    }
+
+    auto reply = command(cmd::xack_range<Input>, key, group, first, last);
+
+    return reply::parse<long long>(*reply);
+}
+
+template <typename Input>
+std::string RedisCluster::xadd(const StringView &key,
+                                const StringView &id,
+                                Input first,
+                                Input last) {
+    if (first == last) {
+        throw Error("XADD: no key specified");
+    }
+
+    auto reply = command(cmd::xadd_range<Input>, key, id, first, last);
+
+    return reply::parse<std::string>(*reply);
+}
+
+template <typename Input>
+long long RedisCluster::xdel(const StringView &key, Input first, Input last) {
+    if (first == last) {
+        throw Error("XDEL: no key specified");
+    }
+
+    auto reply = command(cmd::xdel_range<Input>, key, first, last);
+
+    return reply::parse<long long>(*reply);
+}
+
 template <typename Cmd, typename Key, typename ...Args>
 auto RedisCluster::_generic_command(Cmd cmd, Key &&key, Args &&...args)
     -> typename std::enable_if<std::is_convertible<Key, StringView>::value,

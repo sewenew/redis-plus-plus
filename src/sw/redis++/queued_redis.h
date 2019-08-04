@@ -1375,6 +1375,42 @@ public:
         return command(cmd::publish, channel, message);
     }
 
+    // Stream commands.
+
+    template <typename Input>
+    QueuedRedis& xack(const StringView &key, const StringView &group, Input first, Input last) {
+        return command(cmd::xack_range<Input>, key, group, first, last);
+    }
+
+    template <typename T>
+    QueuedRedis& xack(const StringView &key, const StringView &group, std::initializer_list<T> il) {
+        return xack(key, group, il.begin(), il.end());
+    }
+
+    template <typename Input>
+    QueuedRedis& xadd(const StringView &key, const StringView &id, Input first, Input last) {
+        return command(cmd::xadd_range<Input>, key, id, first, last);
+    }
+
+    template <typename T>
+    QueuedRedis& xadd(const StringView &key, const StringView &id, std::initializer_list<T> il) {
+        return xadd(key, id, il.begin(), il.end());
+    }
+
+    template <typename Input>
+    QueuedRedis& xdel(const StringView &key, Input first, Input last) {
+        return command(cmd::xdel_range<Input>, key, first, last);
+    }
+
+    template <typename T>
+    QueuedRedis& xdel(const StringView &key, std::initializer_list<T> il) {
+        return xdel(key, il.begin(), il.end());
+    }
+
+    QueuedRedis& xlen(const StringView &key) {
+        return command(cmd::xlen, key);
+    }
+
 private:
     friend class Redis;
 

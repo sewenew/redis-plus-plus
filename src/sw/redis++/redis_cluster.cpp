@@ -630,6 +630,14 @@ long long RedisCluster::publish(const StringView &channel, const StringView &mes
     return reply::parse<long long>(*reply);
 }
 
+// Stream commands.
+
+long long RedisCluster::xlen(const StringView &key) {
+    auto reply = command(cmd::xlen, key);
+
+    return reply::parse<long long>(*reply);
+}
+
 void RedisCluster::_asking(Connection &connection) {
     // Send ASKING command.
     connection.send("ASKING");

@@ -1577,6 +1577,44 @@ inline void watch_range(Connection &connection, Input first, Input last) {
     connection.send(args);
 }
 
+// Stream commands.
+
+template <typename Input>
+void xack_range(Connection &connection,
+                const StringView &key,
+                const StringView &group,
+                Input first,
+                Input last) {
+    CmdArgs args;
+    args << "XACK" << key << group << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Input>
+void xadd_range(Connection &connection,
+                const StringView &key,
+                const StringView &id,
+                Input first,
+                Input last) {
+    CmdArgs args;
+    args << "XADD" << key << id << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Input>
+void xdel_range(Connection &connection, const StringView &key, Input first, Input last) {
+    CmdArgs args;
+    args << "XDEL" << key << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+inline void xlen(Connection &connection, const StringView &key) {
+    connection.send("XLEN %b", key.data(), key.size());
+}
+
 namespace detail {
 
 void set_update_type(CmdArgs &args, UpdateType type);
