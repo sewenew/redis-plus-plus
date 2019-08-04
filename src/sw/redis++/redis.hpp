@@ -1071,6 +1071,22 @@ std::string Redis::xadd(const StringView &key, const StringView &id, Input first
 }
 
 template <typename Input>
+std::string Redis::xadd(const StringView &key,
+                        const StringView &id,
+                        Input first,
+                        Input last,
+                        long long count,
+                        bool approx) {
+    if (first == last) {
+        throw Error("XADD: no key specified");
+    }
+
+    auto reply = command(cmd::xadd_maxlen_range<Input>, key, id, first, last, count, approx);
+
+    return reply::parse<std::string>(*reply);
+}
+
+template <typename Input>
 long long Redis::xdel(const StringView &key, Input first, Input last) {
     if (first == last) {
         throw Error("XDEL: no key specified");

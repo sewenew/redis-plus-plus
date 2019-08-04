@@ -1604,6 +1604,26 @@ void xadd_range(Connection &connection,
 }
 
 template <typename Input>
+void xadd_maxlen_range(Connection &connection,
+                        const StringView &key,
+                        const StringView &id,
+                        Input first,
+                        Input last,
+                        long long count,
+                        bool approx) {
+    CmdArgs args;
+    args << "XADD" << key << "MAXLEN";
+
+    if (approx) {
+        args << "~";
+    }
+
+    args << count << id << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Input>
 void xdel_range(Connection &connection, const StringView &key, Input first, Input last) {
     CmdArgs args;
     args << "XDEL" << key << std::make_pair(first, last);

@@ -1398,6 +1398,25 @@ public:
     }
 
     template <typename Input>
+    QueuedRedis& xadd(const StringView &key,
+                        const StringView &id,
+                        Input first,
+                        Input last,
+                        long long count,
+                        bool approx = true) {
+        return command(cmd::xadd_maxlen_range<Input>, key, id, first, last, count, approx);
+    }
+
+    template <typename T>
+    QueuedRedis& xadd(const StringView &key,
+                        const StringView &id,
+                        std::initializer_list<T> il,
+                        long long count,
+                        bool approx = true) {
+        return xadd(key, id, il.begin(), il.end(), count, approx);
+    }
+
+    template <typename Input>
     QueuedRedis& xdel(const StringView &key, Input first, Input last) {
         return command(cmd::xdel_range<Input>, key, first, last);
     }

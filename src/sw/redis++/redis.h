@@ -1112,6 +1112,23 @@ public:
     }
 
     template <typename Input>
+    std::string xadd(const StringView &key,
+                        const StringView &id,
+                        Input first,
+                        Input last,
+                        long long count,
+                        bool approx = true);
+
+    template <typename T>
+    std::string xadd(const StringView &key,
+                        const StringView &id,
+                        std::initializer_list<T> il,
+                        long long count,
+                        bool approx = true) {
+        return xadd(key, id, il.begin(), il.end(), count, approx);
+    }
+
+    template <typename Input>
     long long xdel(const StringView &key, Input first, Input last);
 
     template <typename T>
