@@ -1437,6 +1437,10 @@ public:
         return command(cmd::xrevrange, key, end, start, count);
     }
 
+    QueuedRedis& xtrim(const StringView &key, long long count, bool approx = true) {
+        return command(cmd::xtrim, key, count, approx);
+    }
+
 private:
     friend class Redis;
 

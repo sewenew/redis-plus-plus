@@ -194,6 +194,21 @@ void georadiusbymember_store(Connection &connection,
     connection.send(args);
 }
 
+// Stream commands.
+
+void xtrim(Connection &connection, const StringView &key, long long count, bool approx) {
+    CmdArgs args;
+    args << "XTRIM" << key << "MAXLEN";
+
+    if (approx) {
+        args << "~";
+    }
+
+    args << count;
+
+    connection.send(args);
+}
+
 namespace detail {
 
 void set_update_type(CmdArgs &args, UpdateType type) {

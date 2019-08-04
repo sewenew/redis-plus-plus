@@ -1659,6 +1659,8 @@ inline void xrevrange_count(Connection &connection,
                     count);
 }
 
+void xtrim(Connection &connection, const StringView &key, long long count, bool approx);
+
 namespace detail {
 
 void set_update_type(CmdArgs &args, UpdateType type);

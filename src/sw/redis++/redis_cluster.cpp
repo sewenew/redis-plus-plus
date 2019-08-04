@@ -638,6 +638,12 @@ long long RedisCluster::xlen(const StringView &key) {
     return reply::parse<long long>(*reply);
 }
 
+long long RedisCluster::xtrim(const StringView &key, long long count, bool approx) {
+    auto reply = command(cmd::xtrim, key, count, approx);
+
+    return reply::parse<long long>(*reply);
+}
+
 void RedisCluster::_asking(Connection &connection) {
     // Send ASKING command.
     connection.send("ASKING");

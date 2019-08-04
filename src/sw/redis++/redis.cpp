@@ -768,6 +768,12 @@ long long Redis::xlen(const StringView &key) {
     return reply::parse<long long>(*reply);
 }
 
+long long Redis::xtrim(const StringView &key, long long count, bool approx) {
+    auto reply = command(cmd::xtrim, key, count, approx);
+
+    return reply::parse<long long>(*reply);
+}
+
 }
 
 }

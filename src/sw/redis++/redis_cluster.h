@@ -1036,6 +1036,8 @@ public:
                     long long count,
                     Output output);
 
+    long long xtrim(const StringView &key, long long count, bool approx = true);
+
 private:
     class Command {
     public:
