@@ -1615,6 +1615,50 @@ inline void xlen(Connection &connection, const StringView &key) {
     connection.send("XLEN %b", key.data(), key.size());
 }
 
+inline void xrange(Connection &connection,
+                    const StringView &key,
+                    const StringView &start,
+                    const StringView &end) {
+    connection.send("XRANGE %b %b %b",
+                    key.data(), key.size(),
+                    start.data(), start.size(),
+                    end.data(), end.size());
+}
+
+inline void xrange_count(Connection &connection,
+                            const StringView &key,
+                            const StringView &start,
+                            const StringView &end,
+                            long long count) {
+    connection.send("XRANGE %b %b %b COUNT %lld",
+                    key.data(), key.size(),
+                    start.data(), start.size(),
+                    end.data(), end.size(),
+                    count);
+}
+
+inline void xrevrange(Connection &connection,
+                    const StringView &key,
+                    const StringView &end,
+                    const StringView &start) {
+    connection.send("XREVRANGE %b %b %b",
+                    key.data(), key.size(),
+                    end.data(), end.size(),
+                    start.data(), start.size());
+}
+
+inline void xrevrange_count(Connection &connection,
+                            const StringView &key,
+                            const StringView &end,
+                            const StringView &start,
+                            long long count) {
+    connection.send("XREVRANGE %b %b %b COUNT %lld",
+                    key.data(), key.size(),
+                    end.data(), end.size(),
+                    start.data(), start.size(),
+                    count);
+}
+
 namespace detail {
 
 void set_update_type(CmdArgs &args, UpdateType type);

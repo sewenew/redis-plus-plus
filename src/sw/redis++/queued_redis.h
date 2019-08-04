@@ -1411,6 +1411,32 @@ public:
         return command(cmd::xlen, key);
     }
 
+    QueuedRedis& xrange(const StringView &key,
+                        const StringView &start,
+                        const StringView &end) {
+        return command(cmd::xrange, key, start, end);
+    }
+
+    QueuedRedis& xrange(const StringView &key,
+                        const StringView &start,
+                        const StringView &end,
+                        long long count) {
+        return command(cmd::xrange, key, start, end, count);
+    }
+
+    QueuedRedis& xrevrange(const StringView &key,
+                            const StringView &end,
+                            const StringView &start) {
+        return command(cmd::xrevrange, key, end, start);
+    }
+
+    QueuedRedis& xrevrange(const StringView &key,
+                            const StringView &end,
+                            const StringView &start,
+                            long long count) {
+        return command(cmd::xrevrange, key, end, start, count);
+    }
+
 private:
     friend class Redis;
 

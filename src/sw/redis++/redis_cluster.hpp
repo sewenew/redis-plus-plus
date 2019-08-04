@@ -1037,6 +1037,48 @@ long long RedisCluster::xdel(const StringView &key, Input first, Input last) {
     return reply::parse<long long>(*reply);
 }
 
+template <typename Output>
+void RedisCluster::xrange(const StringView &key,
+                            const StringView &start,
+                            const StringView &end,
+                            Output output) {
+    auto reply = command(cmd::xrange, key, start, end);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Output>
+void RedisCluster::xrange(const StringView &key,
+                            const StringView &start,
+                            const StringView &end,
+                            long long count,
+                            Output output) {
+    auto reply = command(cmd::xrange_count, key, start, end, count);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Output>
+void RedisCluster::xrevrange(const StringView &key,
+                            const StringView &end,
+                            const StringView &start,
+                            Output output) {
+    auto reply = command(cmd::xrevrange, key, end, start);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Output>
+void RedisCluster::xrevrange(const StringView &key,
+                                const StringView &end,
+                                const StringView &start,
+                                long long count,
+                                Output output) {
+    auto reply = command(cmd::xrevrange_count, key, end, start, count);
+
+    reply::to_array(*reply, output);
+}
+
 template <typename Cmd, typename Key, typename ...Args>
 auto RedisCluster::_generic_command(Cmd cmd, Key &&key, Args &&...args)
     -> typename std::enable_if<std::is_convertible<Key, StringView>::value,

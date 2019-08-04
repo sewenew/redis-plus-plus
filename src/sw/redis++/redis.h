@@ -1121,6 +1121,32 @@ public:
 
     long long xlen(const StringView &key);
 
+    template <typename Output>
+    void xrange(const StringView &key,
+                const StringView &start,
+                const StringView &end,
+                Output output);
+
+    template <typename Output>
+    void xrange(const StringView &key,
+                const StringView &start,
+                const StringView &end,
+                long long count,
+                Output output);
+
+    template <typename Output>
+    void xrevrange(const StringView &key,
+                    const StringView &end,
+                    const StringView &start,
+                    Output output);
+
+    template <typename Output>
+    void xrevrange(const StringView &key,
+                    const StringView &end,
+                    const StringView &start,
+                    long long count,
+                    Output output);
+
 private:
     class ConnectionPoolGuard {
     public:
