@@ -1430,6 +1430,27 @@ public:
         return command(cmd::xlen, key);
     }
 
+    QueuedRedis& xpending(const StringView &key, const StringView &group) {
+        return command(cmd::xpending, key, group);
+    }
+
+    QueuedRedis& xpending(const StringView &key,
+                            const StringView &group,
+                            const StringView &start,
+                            const StringView &end,
+                            long long count) {
+        return command(key, group, start, end, count);
+    }
+
+    QueuedRedis& xpending(const StringView &key,
+                            const StringView &group,
+                            const StringView &start,
+                            const StringView &end,
+                            long long count,
+                            const StringView &consumer) {
+        return command(key, group, start, end, count, consumer);
+    }
+
     QueuedRedis& xrange(const StringView &key,
                         const StringView &start,
                         const StringView &end) {

@@ -21,6 +21,7 @@
 #include <string>
 #include <memory>
 #include <functional>
+#include <tuple>
 #include <hiredis/hiredis.h>
 #include "errors.h"
 #include "utils.h"
@@ -111,6 +112,10 @@ void rewrite_set_reply(redisReply &reply);
 
 // Rewrite georadius reply to OptionalLongLong type
 void rewrite_georadius_reply(redisReply &reply);
+
+template <typename Output>
+auto parse_xpending_reply(redisReply &reply, Output output)
+    -> std::tuple<long long, OptionalString, OptionalString>;
 
 }
 
@@ -322,6 +327,31 @@ void to_array(redisReply &reply, Output output) {
     }
 
     detail::to_array(typename IsKvPairIter<Output>::type(), reply, output);
+}
+
+template <typename Output>
+auto parse_xpending_reply(redisReply &reply, Output output)
+    -> std::tuple<long long, OptionalString, OptionalString> {
+    if (!is_array(reply) || reply.elements != 4) {
+        throw ProtoError("expect array reply with 4 elements");
+    }
+
+    for (std::size_t idx = 0; idx != reply.elements; ++idx) {
+        if (reply.element[idx] == nullptr) {
+            throw ProtoError("null array reply");
+        }
+    }
+
+    auto num = parse<long long>(*(reply.element[0]));
+    auto start = parse<OptionalString>(*(reply.element[1]));
+    auto end = parse<OptionalString>(*(reply.element[2]));
+
+    auto &entry_reply = *(reply.element[3]);
+    if (!is_nil(entry_reply)) {
+        to_array(entry_reply, output);
+    }
+
+    return std::make_tuple(num, std::move(start), std::move(end));
 }
 
 }

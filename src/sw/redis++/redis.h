@@ -1139,6 +1139,27 @@ public:
     long long xlen(const StringView &key);
 
     template <typename Output>
+    auto xpending(const StringView &key, const StringView &group, Output output)
+        -> std::tuple<long long, OptionalString, OptionalString>;
+
+    template <typename Output>
+    void xpending(const StringView &key,
+                    const StringView &group,
+                    const StringView &start,
+                    const StringView &end,
+                    long long count,
+                    Output output);
+
+    template <typename Output>
+    void xpending(const StringView &key,
+                    const StringView &group,
+                    const StringView &start,
+                    const StringView &end,
+                    long long count,
+                    const StringView &consumer,
+                    Output output);
+
+    template <typename Output>
     void xrange(const StringView &key,
                 const StringView &start,
                 const StringView &end,

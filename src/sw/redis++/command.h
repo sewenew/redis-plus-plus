@@ -1635,6 +1635,42 @@ inline void xlen(Connection &connection, const StringView &key) {
     connection.send("XLEN %b", key.data(), key.size());
 }
 
+inline void xpending(Connection &connection, const StringView &key, const StringView &group) {
+    connection.send("XPENDING %b %b",
+                    key.data(), key.size(),
+                    group.data(), group.size());
+}
+
+inline void xpending_detail(Connection &connection,
+                            const StringView &key,
+                            const StringView &group,
+                            const StringView &start,
+                            const StringView &end,
+                            long long count) {
+    connection.send("XPENDING %b %b %b %b %lld",
+                    key.data(), key.size(),
+                    group.data(), group.size(),
+                    start.data(), start.size(),
+                    end.data(), end.size(),
+                    count);
+}
+
+inline void xpending_per_consumer(Connection &connection,
+                                    const StringView &key,
+                                    const StringView &group,
+                                    const StringView &start,
+                                    const StringView &end,
+                                    long long count,
+                                    const StringView &consumer) {
+    connection.send("XPENDING %b %b %b %b %lld %b",
+                    key.data(), key.size(),
+                    group.data(), group.size(),
+                    start.data(), start.size(),
+                    end.data(), end.size(),
+                    count,
+                    consumer.data(), consumer.size());
+}
+
 inline void xrange(Connection &connection,
                     const StringView &key,
                     const StringView &start,

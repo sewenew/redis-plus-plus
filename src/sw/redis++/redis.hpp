@@ -1098,6 +1098,39 @@ long long Redis::xdel(const StringView &key, Input first, Input last) {
 }
 
 template <typename Output>
+auto Redis::xpending(const StringView &key, const StringView &group, Output output)
+    -> std::tuple<long long, OptionalString, OptionalString> {
+    auto reply = command(cmd::xpending, key, group);
+
+    return reply::parse_xpending_reply(*reply, output);
+}
+
+template <typename Output>
+void Redis::xpending(const StringView &key,
+                        const StringView &group,
+                        const StringView &start,
+                        const StringView &end,
+                        long long count,
+                        Output output) {
+    auto reply = command(cmd::xpending_detail, key, group, start, end, count);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Output>
+void Redis::xpending(const StringView &key,
+                        const StringView &group,
+                        const StringView &start,
+                        const StringView &end,
+                        long long count,
+                        const StringView &consumer,
+                        Output output) {
+    auto reply = command(cmd::xpending_detail, key, group, start, end, count, consumer);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Output>
 void Redis::xrange(const StringView &key,
                     const StringView &start,
                     const StringView &end,
