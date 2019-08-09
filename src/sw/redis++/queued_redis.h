@@ -1477,16 +1477,80 @@ public:
     template <typename Input>
     QueuedRedis& xread(Input first,
                         Input last,
-                        long long count,
-                        const std::chrono::milliseconds &timeout) {
-        return command(cmd::xread_block_range, first, last, count, timeout.count());
+                        const std::chrono::milliseconds &timeout,
+                        long long count) {
+        return command(cmd::xread_block_range, first, last, timeout.count(), count);
     }
 
     template <typename Input>
     QueuedRedis& xread(Input first,
                         Input last,
                         const std::chrono::milliseconds &timeout) {
-        return xread(first, last, 0, timeout);
+        return xread(first, last, timeout, 0);
+    }
+
+    template <typename Input>
+    QueuedRedis& xreadgroup(const StringView &group,
+                            const StringView &consumer,
+                            Input first,
+                            Input last,
+                            long long count,
+                            bool noack) {
+        return command(cmd::xreadgroup_range, group, consumer, first, last, count, noack);
+    }
+
+    template <typename Input>
+    QueuedRedis& xreadgroup(const StringView &group,
+                            const StringView &consumer,
+                            Input first,
+                            Input last,
+                            long long count) {
+        return xreadgroup(group, consumer, first ,last, count, false);
+    }
+
+    template <typename Input>
+    QueuedRedis& xreadgroup(const StringView &group,
+                            const StringView &consumer,
+                            Input first,
+                            Input last) {
+        return xreadgroup(group, consumer, first ,last, 0, false);
+    }
+
+    template <typename Input>
+    QueuedRedis& xreadgroup(const StringView &group,
+                            const StringView &consumer,
+                            Input first,
+                            Input last,
+                            const std::chrono::milliseconds &timeout,
+                            long long count,
+                            bool noack) {
+        return command(cmd::xreadgroup_block_range,
+                        group,
+                        consumer,
+                        first,
+                        last,
+                        timeout.count(),
+                        count,
+                        noack);
+    }
+
+    template <typename Input>
+    QueuedRedis& xreadgroup(const StringView &group,
+                            const StringView &consumer,
+                            Input first,
+                            Input last,
+                            const std::chrono::milliseconds &timeout,
+                            long long count) {
+        return xreadgroup(group, consumer, first, last, timeout, count, false);
+    }
+
+    template <typename Input>
+    QueuedRedis& xreadgroup(const StringView &group,
+                            const StringView &consumer,
+                            Input first,
+                            Input last,
+                            const std::chrono::milliseconds &timeout) {
+        return xreadgroup(group, consumer, first, last, timeout, 0, false);
     }
 
     QueuedRedis& xrevrange(const StringView &key,

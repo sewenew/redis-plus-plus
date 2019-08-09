@@ -1119,10 +1119,48 @@ void RedisCluster::xread(Input first, Input last, long long count, Output output
 template <typename Input, typename Output>
 void RedisCluster::xread(Input first,
                             Input last,
-                            long long count,
                             const std::chrono::milliseconds &timeout,
+                            long long count,
                             Output output) {
-    auto reply = command(cmd::xread_block_range, first, last, count, timeout.count());
+    auto reply = command(cmd::xread_block_range, first, last, timeout.count(), count);
+
+    if (!reply::is_nil(*reply)) {
+        reply::to_array(*reply, output);
+    }
+}
+
+template <typename Input, typename Output>
+void RedisCluster::xreadgroup(const StringView &group,
+                                const StringView &consumer,
+                                Input first,
+                                Input last,
+                                long long count,
+                                bool noack,
+                                Output output) {
+    auto reply = command(cmd::xreadgroup_range, group, consumer, first, last, count, noack);
+
+    if (!reply::is_nil(*reply)) {
+        reply::to_array(*reply, output);
+    }
+}
+
+template <typename Input, typename Output>
+void RedisCluster::xreadgroup(const StringView &group,
+                                const StringView &consumer,
+                                Input first,
+                                Input last,
+                                const std::chrono::milliseconds &timeout,
+                                long long count,
+                                bool noack,
+                                Output output) {
+    auto reply = command(cmd::xreadgroup_range,
+                            group,
+                            consumer,
+                            first,
+                            last,
+                            timeout.count(),
+                            count,
+                            noack);
 
     if (!reply::is_nil(*reply)) {
         reply::to_array(*reply, output);

@@ -1708,9 +1708,61 @@ void xread_range(Input first, Input last, long long count) {
 }
 
 template <typename Input>
-void xread_block_range(Input first, Input last, long long count, long long timeout) {
+void xread_block_range(Input first, Input last, long long timeout, long long count) {
     CmdArgs args;
     args << "XREAD" << "COUNT" << count << "BLOCK" << timeout << "STREAMS";
+
+    for (auto iter = first; iter != last; ++iter) {
+        args << iter->first;
+    }
+
+    for (auto iter = first; iter != last; ++iter) {
+        args << iter->second;
+    }
+}
+
+template <typename Input>
+void xreadgroup_range(const StringView &group,
+                        const StringView &consumer,
+                        Input first,
+                        Input last,
+                        long long count,
+                        bool noack) {
+    CmdArgs args;
+    args << "XREADGROUP" << "GROUP" << group << consumer << "COUNT" << count;
+
+    if (noack) {
+        args << "NOACK";
+    }
+
+    args << "STREAMS";
+
+    for (auto iter = first; iter != last; ++iter) {
+        args << iter->first;
+    }
+
+    for (auto iter = first; iter != last; ++iter) {
+        args << iter->second;
+    }
+}
+
+template <typename Input>
+void xreadgroup_block_range(const StringView &group,
+                            const StringView &consumer,
+                            Input first,
+                            Input last,
+                            long long timeout,
+                            long long count,
+                            bool noack) {
+    CmdArgs args;
+    args << "XREADGROUP" << "GROUP" << group << consumer
+        << "COUNT" << count << "BLOCK" << timeout;
+
+    if (noack) {
+        args << "NOACK";
+    }
+
+    args << "STREAMS";
 
     for (auto iter = first; iter != last; ++iter) {
         args << iter->first;

@@ -1072,8 +1072,8 @@ public:
     template <typename Input, typename Output>
     void xread(Input first,
                 Input last,
-                long long count,
                 const std::chrono::milliseconds &timeout,
+                long long count,
                 Output output);
 
     template <typename Input, typename Output>
@@ -1081,7 +1081,66 @@ public:
                 Input last,
                 const std::chrono::milliseconds &timeout,
                 Output output) {
-        xread(first, last, 0, timeout, output);
+        xread(first, last, timeout, 0, output);
+    }
+
+    template <typename Input, typename Output>
+    void xreadgroup(const StringView &group,
+                    const StringView &consumer,
+                    Input first,
+                    Input last,
+                    long long count,
+                    bool noack,
+                    Output output);
+
+    template <typename Input, typename Output>
+    void xreadgroup(const StringView &group,
+                    const StringView &consumer,
+                    Input first,
+                    Input last,
+                    long long count,
+                    Output output) {
+        xreadgroup(group, consumer, first ,last, count, false, output);
+    }
+
+    template <typename Input, typename Output>
+    void xreadgroup(const StringView &group,
+                    const StringView &consumer,
+                    Input first,
+                    Input last,
+                    Output output) {
+        xreadgroup(group, consumer, first ,last, 0, false, output);
+    }
+
+    template <typename Input, typename Output>
+    void xreadgroup(const StringView &group,
+                    const StringView &consumer,
+                    Input first,
+                    Input last,
+                    const std::chrono::milliseconds &timeout,
+                    long long count,
+                    bool noack,
+                    Output output);
+
+    template <typename Input, typename Output>
+    void xreadgroup(const StringView &group,
+                    const StringView &consumer,
+                    Input first,
+                    Input last,
+                    const std::chrono::milliseconds &timeout,
+                    long long count,
+                    Output output) {
+        xreadgroup(group, consumer, first, last, timeout, count, false, output);
+    }
+
+    template <typename Input, typename Output>
+    void xreadgroup(const StringView &group,
+                    const StringView &consumer,
+                    Input first,
+                    Input last,
+                    const std::chrono::milliseconds &timeout,
+                    Output output) {
+        xreadgroup(group, consumer, first, last, timeout, 0, false, output);
     }
 
     template <typename Output>
