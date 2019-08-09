@@ -1693,6 +1693,34 @@ inline void xrange_count(Connection &connection,
                     count);
 }
 
+template <typename Input>
+void xread_range(Input first, Input last, long long count) {
+    CmdArgs args;
+    args << "XREAD" << "COUNT" << count << "STREAMS";
+
+    for (auto iter = first; iter != last; ++iter) {
+        args << iter->first;
+    }
+
+    for (auto iter = first; iter != last; ++iter) {
+        args << iter->second;
+    }
+}
+
+template <typename Input>
+void xread_block_range(Input first, Input last, long long count, long long timeout) {
+    CmdArgs args;
+    args << "XREAD" << "COUNT" << count << "BLOCK" << timeout << "STREAMS";
+
+    for (auto iter = first; iter != last; ++iter) {
+        args << iter->first;
+    }
+
+    for (auto iter = first; iter != last; ++iter) {
+        args << iter->second;
+    }
+}
+
 inline void xrevrange(Connection &connection,
                     const StringView &key,
                     const StringView &end,

@@ -1464,6 +1464,31 @@ public:
         return command(cmd::xrange, key, start, end, count);
     }
 
+    template <typename Input>
+    QueuedRedis& xread(Input first, Input last, long long count) {
+        return command(cmd::xread_range, first, last, count);
+    }
+
+    template <typename Input>
+    QueuedRedis& xread(Input first, Input last) {
+        return xread(first, last, 0);
+    }
+
+    template <typename Input>
+    QueuedRedis& xread(Input first,
+                        Input last,
+                        long long count,
+                        const std::chrono::milliseconds &timeout) {
+        return command(cmd::xread_block_range, first, last, count, timeout.count());
+    }
+
+    template <typename Input>
+    QueuedRedis& xread(Input first,
+                        Input last,
+                        const std::chrono::milliseconds &timeout) {
+        return xread(first, last, 0, timeout);
+    }
+
     QueuedRedis& xrevrange(const StringView &key,
                             const StringView &end,
                             const StringView &start) {

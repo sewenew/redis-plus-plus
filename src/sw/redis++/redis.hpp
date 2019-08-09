@@ -1151,6 +1151,28 @@ void Redis::xrange(const StringView &key,
     reply::to_array(*reply, output);
 }
 
+template <typename Input, typename Output>
+void Redis::xread(Input first, Input last, long long count, Output output) {
+    auto reply = command(cmd::xread_range, first, last, count);
+
+    if (!reply::is_nil(*reply)) {
+        reply::to_array(*reply, output);
+    }
+}
+
+template <typename Input, typename Output>
+void Redis::xread(Input first,
+                Input last,
+                long long count,
+                const std::chrono::milliseconds &timeout,
+                Output output) {
+    auto reply = command(cmd::xread_block_range, first, last, count, timeout.count());
+
+    if (!reply::is_nil(*reply)) {
+        reply::to_array(*reply, output);
+    }
+}
+
 template <typename Output>
 void Redis::xrevrange(const StringView &key,
                         const StringView &end,

@@ -1172,6 +1172,29 @@ public:
                 long long count,
                 Output output);
 
+    template <typename Input, typename Output>
+    void xread(Input first, Input last, long long count, Output output);
+
+    template <typename Input, typename Output>
+    void xread(Input first, Input last, Output output) {
+        xread(first ,last, 0, output);
+    }
+
+    template <typename Input, typename Output>
+    void xread(Input first,
+                Input last,
+                long long count,
+                const std::chrono::milliseconds &timeout,
+                Output output);
+
+    template <typename Input, typename Output>
+    void xread(Input first,
+                Input last,
+                const std::chrono::milliseconds &timeout,
+                Output output) {
+        xread(first, last, 0, timeout, output);
+    }
+
     template <typename Output>
     void xrevrange(const StringView &key,
                     const StringView &end,
