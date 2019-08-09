@@ -1624,6 +1624,20 @@ void xadd_maxlen_range(Connection &connection,
 }
 
 template <typename Input>
+void xclaim_range(Connection &connection,
+                    const StringView &key,
+                    const StringView &group,
+                    const StringView &consumer,
+                    long long min_idle_time,
+                    Input first,
+                    Input last) {
+    CmdArgs args;
+    args << "XCLAIM" << key << group << consumer << min_idle_time << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Input>
 void xdel_range(Connection &connection, const StringView &key, Input first, Input last) {
     CmdArgs args;
     args << "XDEL" << key << std::make_pair(first, last);

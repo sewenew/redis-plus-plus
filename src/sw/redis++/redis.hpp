@@ -1086,6 +1086,25 @@ std::string Redis::xadd(const StringView &key,
     return reply::parse<std::string>(*reply);
 }
 
+template <typename Input, typename Output>
+void Redis::xclaim(const StringView &key,
+                    const StringView &group,
+                    const StringView &consumer,
+                    const std::chrono::milliseconds &min_idle_time,
+                    Input first,
+                    Input last,
+                    Output output) {
+    auto reply = command(cmd::xclaim_range,
+                            key,
+                            group,
+                            consumer,
+                            min_idle_time.count(),
+                            first,
+                            last);
+
+    reply::to_array(*reply, output);
+}
+
 template <typename Input>
 long long Redis::xdel(const StringView &key, Input first, Input last) {
     if (first == last) {

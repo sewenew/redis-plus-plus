@@ -1017,6 +1017,23 @@ public:
         return xadd(key, id, il.begin(), il.end(), count, approx);
     }
 
+    template <typename Input, typename Output>
+    void xclaim(const StringView &key,
+                const StringView &group,
+                const StringView &consumer,
+                const std::chrono::milliseconds &min_idle_time,
+                Input first,
+                Input last,
+                Output output);
+
+    template <typename T, typename Output>
+    void xclaim(const StringView &key,
+                const StringView &group,
+                const StringView &consumer,
+                const std::chrono::milliseconds &min_idle_time,
+                std::initializer_list<T> il,
+                Output output);
+
     template <typename Input>
     long long xdel(const StringView &key, Input first, Input last);
 

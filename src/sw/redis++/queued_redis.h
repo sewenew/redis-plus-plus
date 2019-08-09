@@ -1417,6 +1417,25 @@ public:
     }
 
     template <typename Input>
+    QueuedRedis& xclaim(const StringView &key,
+                const StringView &group,
+                const StringView &consumer,
+                const std::chrono::milliseconds &min_idle_time,
+                Input first,
+                Input last) {
+        return command(cmd::xclaim_range, key, group, consumer, min_idle_time.count(), first, last);
+    }
+
+    template <typename T>
+    QueuedRedis& xclaim(const StringView &key,
+                const StringView &group,
+                const StringView &consumer,
+                const std::chrono::milliseconds &min_idle_time,
+                std::initializer_list<T> il) {
+        return xclaim(key, group, consumer, min_idle_time, il.begin(), il.end());
+    }
+
+    template <typename Input>
     QueuedRedis& xdel(const StringView &key, Input first, Input last) {
         return command(cmd::xdel_range<Input>, key, first, last);
     }
