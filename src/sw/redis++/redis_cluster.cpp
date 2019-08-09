@@ -632,6 +632,37 @@ long long RedisCluster::publish(const StringView &channel, const StringView &mes
 
 // Stream commands.
 
+void RedisCluster::xgroup_create(const StringView &key,
+                                    const StringView &group,
+                                    const StringView &id,
+                                    bool mkstream) {
+    auto reply = command(cmd::xgroup_create, key, group, id, mkstream);
+
+    reply::parse<void>(*reply);
+}
+
+void RedisCluster::xgroup_setid(const StringView &key,
+                                const StringView &group,
+                                const StringView &id) {
+    auto reply = command(cmd::xgroup_setid, key, group, id);
+
+    reply::parse<void>(*reply);
+}
+
+long long RedisCluster::xgroup_destroy(const StringView &key, const StringView &group) {
+    auto reply = command(cmd::xgroup_destroy, key, group);
+
+    return reply::parse<long long>(*reply);
+}
+
+long long RedisCluster::xgroup_delconsumer(const StringView &key,
+                                            const StringView &group,
+                                            const StringView &consumer) {
+    auto reply = command(cmd::xgroup_delconsumer, key, group, consumer);
+
+    return reply::parse<long long>(*reply);
+}
+
 long long RedisCluster::xlen(const StringView &key) {
     auto reply = command(cmd::xlen, key);
 

@@ -1631,6 +1631,49 @@ void xdel_range(Connection &connection, const StringView &key, Input first, Inpu
     connection.send(args);
 }
 
+inline void xgroup_create(Connection &connection,
+                            const StringView &key,
+                            const StringView &group,
+                            const StringView &id,
+                            bool mkstream) {
+    CmdArgs args;
+    args << "XGROUP" << "CREATE" << key << group << id;
+
+    if (mkstream) {
+        args << "MKSTREAM";
+    }
+
+    connection.send(args);
+}
+
+inline void xgroup_setid(Connection &connection,
+                            const StringView &key,
+                            const StringView &group,
+                            const StringView &id) {
+    connection.send("XGROUP SETID %b %b %b",
+                    key.data(), key.size(),
+                    group.data(), group.size(),
+                    id.data(), id.size());
+}
+
+inline void xgroup_destroy(Connection &connection,
+                            const StringView &key,
+                            const StringView &group) {
+    connection.send("XGROUP DESTROY %b %b",
+                    key.data(), key.size(),
+                    group.data(), group.size());
+}
+
+inline void xgroup_delconsumer(Connection &connection,
+                                const StringView &key,
+                                const StringView &group,
+                                const StringView &consumer) {
+    connection.send("XGROUP DELCONSUMER %b %b %b",
+                    key.data(), key.size(),
+                    group.data(), group.size(),
+                    consumer.data(), consumer.size());
+}
+
 inline void xlen(Connection &connection, const StringView &key) {
     connection.send("XLEN %b", key.data(), key.size());
 }

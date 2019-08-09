@@ -1136,6 +1136,19 @@ public:
         return xdel(key, il.begin(), il.end());
     }
 
+    void xgroup_create(const StringView &key,
+                        const StringView &group,
+                        const StringView &id,
+                        bool mkstream = false);
+
+    void xgroup_setid(const StringView &key, const StringView &group, const StringView &id);
+
+    long long xgroup_destroy(const StringView &key, const StringView &group);
+
+    long long xgroup_delconsumer(const StringView &key,
+                                    const StringView &group,
+                                    const StringView &consumer);
+
     long long xlen(const StringView &key);
 
     template <typename Output>

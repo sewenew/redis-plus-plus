@@ -1426,6 +1426,29 @@ public:
         return xdel(key, il.begin(), il.end());
     }
 
+    QueuedRedis& xgroup_create(const StringView &key,
+                                const StringView &group,
+                                const StringView &id,
+                                bool mkstream = false) {
+        return command(cmd::xgroup_create, key, group, id, mkstream);
+    }
+
+    QueuedRedis& xgroup_setid(const StringView &key,
+                                const StringView &group,
+                                const StringView &id) {
+        return command(cmd::xgroup_setid, key, group, id);
+    }
+
+    QueuedRedis& xgroup_destroy(const StringView &key, const StringView &group) {
+        return command(cmd::xgroup_destroy, key, group);
+    }
+
+    QueuedRedis& xgroup_delconsumer(const StringView &key,
+                                    const StringView &group,
+                                    const StringView &consumer) {
+        return command(cmd::xgroup_delconsumer, key, group, consumer);
+    }
+
     QueuedRedis& xlen(const StringView &key) {
         return command(cmd::xlen, key);
     }

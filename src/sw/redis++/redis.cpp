@@ -762,6 +762,35 @@ void Redis::watch(const StringView &key) {
 
 // Stream commands.
 
+void Redis::xgroup_create(const StringView &key,
+                            const StringView &group,
+                            const StringView &id,
+                            bool mkstream) {
+    auto reply = command(cmd::xgroup_create, key, group, id, mkstream);
+
+    reply::parse<void>(*reply);
+}
+
+void Redis::xgroup_setid(const StringView &key, const StringView &group, const StringView &id) {
+    auto reply = command(cmd::xgroup_setid, key, group, id);
+
+    reply::parse<void>(*reply);
+}
+
+long long Redis::xgroup_destroy(const StringView &key, const StringView &group) {
+    auto reply = command(cmd::xgroup_destroy, key, group);
+
+    return reply::parse<long long>(*reply);
+}
+
+long long Redis::xgroup_delconsumer(const StringView &key,
+                                const StringView &group,
+                                const StringView &consumer) {
+    auto reply = command(cmd::xgroup_delconsumer, key, group, consumer);
+
+    return reply::parse<long long>(*reply);
+}
+
 long long Redis::xlen(const StringView &key) {
     auto reply = command(cmd::xlen, key);
 
