@@ -1423,7 +1423,13 @@ public:
                 const std::chrono::milliseconds &min_idle_time,
                 Input first,
                 Input last) {
-        return command(cmd::xclaim_range, key, group, consumer, min_idle_time.count(), first, last);
+        return command(cmd::xclaim_range<Input>,
+                        key,
+                        group,
+                        consumer,
+                        min_idle_time.count(),
+                        first,
+                        last);
     }
 
     template <typename T>
@@ -1508,7 +1514,7 @@ public:
 
     template <typename Input>
     QueuedRedis& xread(Input first, Input last, long long count) {
-        return command(cmd::xread_range, first, last, count);
+        return command(cmd::xread_range<Input>, first, last, count);
     }
 
     template <typename Input>
@@ -1521,7 +1527,7 @@ public:
                         Input last,
                         const std::chrono::milliseconds &timeout,
                         long long count) {
-        return command(cmd::xread_block_range, first, last, timeout.count(), count);
+        return command(cmd::xread_block_range<Input>, first, last, timeout.count(), count);
     }
 
     template <typename Input>
@@ -1538,7 +1544,7 @@ public:
                             Input last,
                             long long count,
                             bool noack) {
-        return command(cmd::xreadgroup_range, group, consumer, first, last, count, noack);
+        return command(cmd::xreadgroup_range<Input>, group, consumer, first, last, count, noack);
     }
 
     template <typename Input>
@@ -1566,7 +1572,7 @@ public:
                             const std::chrono::milliseconds &timeout,
                             long long count,
                             bool noack) {
-        return command(cmd::xreadgroup_block_range,
+        return command(cmd::xreadgroup_block_range<Input>,
                         group,
                         consumer,
                         first,

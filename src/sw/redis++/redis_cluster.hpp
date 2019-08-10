@@ -1038,7 +1038,7 @@ void RedisCluster::xclaim(const StringView &key,
                             Input first,
                             Input last,
                             Output output) {
-    auto reply = command(cmd::xclaim_range,
+    auto reply = command(cmd::xclaim_range<Input>,
                             key,
                             group,
                             consumer,
@@ -1116,7 +1116,7 @@ void RedisCluster::xread(Input first, Input last, long long count, Output output
         throw Error("XREAD: no key specified");
     }
 
-    auto reply = command(cmd::xread_range, first, last, count);
+    auto reply = command(cmd::xread_range<Input>, first, last, count);
 
     if (!reply::is_nil(*reply)) {
         reply::to_array(*reply, output);
@@ -1133,7 +1133,7 @@ void RedisCluster::xread(Input first,
         throw Error("XREAD: no key specified");
     }
 
-    auto reply = command(cmd::xread_block_range, first, last, timeout.count(), count);
+    auto reply = command(cmd::xread_block_range<Input>, first, last, timeout.count(), count);
 
     if (!reply::is_nil(*reply)) {
         reply::to_array(*reply, output);
@@ -1152,7 +1152,7 @@ void RedisCluster::xreadgroup(const StringView &group,
         throw Error("XREADGROUP: no key specified");
     }
 
-    auto reply = _command(cmd::xreadgroup_range,
+    auto reply = _command(cmd::xreadgroup_range<Input>,
                             first->first,
                             group,
                             consumer,
@@ -1179,7 +1179,7 @@ void RedisCluster::xreadgroup(const StringView &group,
         throw Error("XREADGROUP: no key specified");
     }
 
-    auto reply = _command(cmd::xreadgroup_range,
+    auto reply = _command(cmd::xreadgroup_range<Input>,
                             first->first,
                             group,
                             consumer,
