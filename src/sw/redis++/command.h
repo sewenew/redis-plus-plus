@@ -1751,7 +1751,7 @@ inline void xrange_count(Connection &connection,
 }
 
 template <typename Input>
-void xread_range(Input first, Input last, long long count) {
+void xread_range(Connection &connection, Input first, Input last, long long count) {
     CmdArgs args;
     args << "XREAD" << "COUNT" << count << "STREAMS";
 
@@ -1762,10 +1762,16 @@ void xread_range(Input first, Input last, long long count) {
     for (auto iter = first; iter != last; ++iter) {
         args << iter->second;
     }
+
+    connection.send(args);
 }
 
 template <typename Input>
-void xread_block_range(Input first, Input last, long long timeout, long long count) {
+void xread_block_range(Connection &connection,
+                        Input first,
+                        Input last,
+                        long long timeout,
+                        long long count) {
     CmdArgs args;
     args << "XREAD" << "COUNT" << count << "BLOCK" << timeout << "STREAMS";
 
@@ -1776,10 +1782,13 @@ void xread_block_range(Input first, Input last, long long timeout, long long cou
     for (auto iter = first; iter != last; ++iter) {
         args << iter->second;
     }
+
+    connection.send(args);
 }
 
 template <typename Input>
-void xreadgroup_range(const StringView &group,
+void xreadgroup_range(Connection &connection,
+                        const StringView &group,
                         const StringView &consumer,
                         Input first,
                         Input last,
@@ -1801,10 +1810,13 @@ void xreadgroup_range(const StringView &group,
     for (auto iter = first; iter != last; ++iter) {
         args << iter->second;
     }
+
+    connection.send(args);
 }
 
 template <typename Input>
-void xreadgroup_block_range(const StringView &group,
+void xreadgroup_block_range(Connection &connection,
+                            const StringView &group,
                             const StringView &consumer,
                             Input first,
                             Input last,
@@ -1828,6 +1840,8 @@ void xreadgroup_block_range(const StringView &group,
     for (auto iter = first; iter != last; ++iter) {
         args << iter->second;
     }
+
+    connection.send(args);
 }
 
 inline void xrevrange(Connection &connection,
