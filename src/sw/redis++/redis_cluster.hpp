@@ -1003,10 +1003,6 @@ long long RedisCluster::xack(const StringView &key,
                                 const StringView &group,
                                 Input first,
                                 Input last) {
-    if (first == last) {
-        throw Error("XACK: no key specified");
-    }
-
     auto reply = command(cmd::xack_range<Input>, key, group, first, last);
 
     return reply::parse<long long>(*reply);
@@ -1017,10 +1013,6 @@ std::string RedisCluster::xadd(const StringView &key,
                                 const StringView &id,
                                 Input first,
                                 Input last) {
-    if (first == last) {
-        throw Error("XADD: no key specified");
-    }
-
     auto reply = command(cmd::xadd_range<Input>, key, id, first, last);
 
     return reply::parse<std::string>(*reply);
@@ -1033,10 +1025,6 @@ std::string RedisCluster::xadd(const StringView &key,
                                 Input last,
                                 long long count,
                                 bool approx) {
-    if (first == last) {
-        throw Error("XADD: no key specified");
-    }
-
     auto reply = command(cmd::xadd_maxlen_range<Input>, key, id, first, last, count, approx);
 
     return reply::parse<std::string>(*reply);
@@ -1063,10 +1051,6 @@ void RedisCluster::xclaim(const StringView &key,
 
 template <typename Input>
 long long RedisCluster::xdel(const StringView &key, Input first, Input last) {
-    if (first == last) {
-        throw Error("XDEL: no key specified");
-    }
-
     auto reply = command(cmd::xdel_range<Input>, key, first, last);
 
     return reply::parse<long long>(*reply);
@@ -1128,6 +1112,10 @@ void RedisCluster::xrange(const StringView &key,
 
 template <typename Input, typename Output>
 void RedisCluster::xread(Input first, Input last, long long count, Output output) {
+    if (first == last) {
+        throw Error("XREAD: no key specified");
+    }
+
     auto reply = command(cmd::xread_range, first, last, count);
 
     if (!reply::is_nil(*reply)) {
@@ -1141,6 +1129,10 @@ void RedisCluster::xread(Input first,
                             const std::chrono::milliseconds &timeout,
                             long long count,
                             Output output) {
+    if (first == last) {
+        throw Error("XREAD: no key specified");
+    }
+
     auto reply = command(cmd::xread_block_range, first, last, timeout.count(), count);
 
     if (!reply::is_nil(*reply)) {
@@ -1156,7 +1148,18 @@ void RedisCluster::xreadgroup(const StringView &group,
                                 long long count,
                                 bool noack,
                                 Output output) {
-    auto reply = command(cmd::xreadgroup_range, group, consumer, first, last, count, noack);
+    if (first == last) {
+        throw Error("XREADGROUP: no key specified");
+    }
+
+    auto reply = _command(cmd::xreadgroup_range,
+                            first->first,
+                            group,
+                            consumer,
+                            first,
+                            last,
+                            count,
+                            noack);
 
     if (!reply::is_nil(*reply)) {
         reply::to_array(*reply, output);
@@ -1172,7 +1175,12 @@ void RedisCluster::xreadgroup(const StringView &group,
                                 long long count,
                                 bool noack,
                                 Output output) {
-    auto reply = command(cmd::xreadgroup_range,
+    if (first == last) {
+        throw Error("XREADGROUP: no key specified");
+    }
+
+    auto reply = _command(cmd::xreadgroup_range,
+                            first->first,
                             group,
                             consumer,
                             first,
