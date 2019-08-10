@@ -33,7 +33,12 @@ public:
     void run();
 
 private:
-    void _run(Redis &instance);
+    using Item = std::pair<std::string, std::unordered_map<std::string, std::string>>;
+    using Result = std::unordered_map<std::string, std::vector<Item>>;
+
+    void _test_stream_cmds();
+
+    void _test_group_cmds();
 
     RedisInstance &_redis;
 };

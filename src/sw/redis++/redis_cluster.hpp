@@ -1084,7 +1084,7 @@ void RedisCluster::xpending(const StringView &key,
                             long long count,
                             const StringView &consumer,
                             Output output) {
-    auto reply = command(cmd::xpending_detail, key, group, start, end, count, consumer);
+    auto reply = command(cmd::xpending_per_consumer, key, group, start, end, count, consumer);
 
     reply::to_array(*reply, output);
 }
@@ -1179,7 +1179,7 @@ void RedisCluster::xreadgroup(const StringView &group,
         throw Error("XREADGROUP: no key specified");
     }
 
-    auto reply = _command(cmd::xreadgroup_range<Input>,
+    auto reply = _command(cmd::xreadgroup_block_range<Input>,
                             first->first,
                             group,
                             consumer,

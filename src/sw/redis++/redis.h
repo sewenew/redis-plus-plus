@@ -1143,7 +1143,9 @@ public:
                 const StringView &consumer,
                 const std::chrono::milliseconds &min_idle_time,
                 std::initializer_list<T> il,
-                Output output);
+                Output output) {
+        xclaim(key, group, consumer, min_idle_time, il.begin(), il.end(), output);
+    }
 
     template <typename Input>
     long long xdel(const StringView &key, Input first, Input last);

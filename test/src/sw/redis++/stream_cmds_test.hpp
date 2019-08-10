@@ -19,6 +19,8 @@
 
 #include <vector>
 #include <string>
+#include <thread>
+#include <chrono>
 #include <unordered_map>
 #include "utils.h"
 
@@ -30,52 +32,146 @@ namespace test {
 
 template <typename RedisInstance>
 void StreamCmdsTest<RedisInstance>::run() {
-    cluster_specializing_test(*this, &StreamCmdsTest<RedisInstance>::_run, _redis);
+    _test_stream_cmds();
+
+    _test_group_cmds();
 }
 
 template <typename RedisInstance>
-void StreamCmdsTest<RedisInstance>::_run(Redis &instance) {
+void StreamCmdsTest<RedisInstance>::_test_stream_cmds() {
     auto key = test_key("stream");
-    auto not_exist_key = test_key("not_exist_key");
 
-    KeyDeleter<Redis> deleter(instance, {key, not_exist_key});
+    KeyDeleter<RedisInstance> deleter(_redis, key);
 
-    using Result = std::unordered_map<std::string,
-                    std::vector<
-                        std::pair<
-                            std::string,
-                            std::unordered_map<std::string, std::string>>>>;
+    std::vector<std::pair<std::string, std::string>> attrs = {
+        {"f1", "v1"},
+        {"f2", "v2"}
+    };
+    auto id = "1565427842-0";
+    REDIS_ASSERT(_redis.xadd(key, id, attrs.begin(), attrs.end()) == id,
+            "failed to test xadd");
 
-    auto res = instance.command<Optional<Result>>("xread",
-                                                "count",
-                                                2,
-                                                "STREAMS",
-                                                key,
-                                                not_exist_key,
-                                                "0-0",
-                                                "0-0");
-    REDIS_ASSERT(!res, "failed to test stream commands");
+    std::vector<std::pair<std::string, std::string>> keys = {std::make_pair(key, "0-0")};
+    Result result;
+    _redis.xread(keys.begin(), keys.end(), 1, std::inserter(result, result.end()));
 
-    instance.command("xadd", key, "*", "f1", "v1", "f2", "v2");
+    REDIS_ASSERT(result.size() == 1
+            && result.find(key) != result.end()
+            && result[key].size() == 1
+            && result[key][0].first == id
+            && result[key][0].second.size() == 2,
+            "failed to test xread");
 
-    res = instance.command<Optional<Result>>("xread",
-                                            "count",
-                                            2,
-                                            "STREAMS",
-                                            key,
-                                            not_exist_key,
-                                            "0-0",
-                                            "0-0");
-    REDIS_ASSERT(res && res->size() == 1 && res->begin()->first == key
-            && res->begin()->second.size() == 1,
-            "failed to test stream commands");
+    result.clear();
+    keys = {std::make_pair(key, id)};
+    _redis.xread(keys.begin(),
+                    keys.end(),
+                    std::chrono::seconds(1),
+                    2,
+                    std::inserter(result, result.end()));
+    REDIS_ASSERT(result.size() == 0, "failed to test xread");
 
-    const auto &fields = (res->begin()->second)[0].second;
-    REDIS_ASSERT((fields == std::unordered_map<std::string, std::string>{
-                    std::make_pair("f1", "v1"),
-                    std::make_pair("f2", "v2")
-                }),
-            "failed to test stream commands");
+    id = "1565427842-1";
+    REDIS_ASSERT(_redis.xadd(key, id, attrs.begin(), attrs.end()) == id,
+            "failed to test xadd");
+
+    REDIS_ASSERT(_redis.xlen(key) == 2, "failed to test xlen");
+
+    REDIS_ASSERT(_redis.xtrim(key, 1, false) == 1, "failed to test xtrim");
+
+    std::vector<Item> items;
+    _redis.xrange(key, "-", "+", std::back_inserter(items));
+    REDIS_ASSERT(items.size() == 1 && items[0].first == id, "failed to test xrange");
+
+    items.clear();
+    _redis.xrevrange(key, "+", "-", std::back_inserter(items));
+    REDIS_ASSERT(items.size() == 1 && items[0].first == id, "failed to test xrevrange");
+
+    REDIS_ASSERT(_redis.xdel(key, {id, "111-111"}) == 1, "failed to test xdel");
+}
+
+template <typename RedisInstance>
+void StreamCmdsTest<RedisInstance>::_test_group_cmds() {
+    auto key = test_key("stream");
+
+    KeyDeleter<RedisInstance> deleter(_redis, key);
+
+    auto group = "group";
+    auto consumer1 = "consumer1";
+
+    _redis.xgroup_create(key, group, "$", true);
+
+    std::vector<std::pair<std::string, std::string>> attrs = {
+        {"f1", "v1"},
+        {"f2", "v2"}
+    };
+    auto id = _redis.xadd(key, "*", attrs.begin(), attrs.end());
+    std::vector<std::pair<std::string, std::string>> keys = {std::make_pair(key, "0-0")};
+
+    Result result;
+    _redis.xreadgroup(group,
+            consumer1,
+            keys.begin(),
+            keys.end(),
+            1,
+            std::inserter(result, result.end()));
+    REDIS_ASSERT(result.size() == 1
+            && result.find(key) != result.end()
+            && result[key].size() == 1
+            && result[key][0].first == id,
+            "failed to test xreadgroup");
+
+    result.clear();
+    keys = {std::make_pair(key, ">")};
+    _redis.xreadgroup(group,
+            "not-exist-consumer",
+            keys.begin(),
+            keys.end(),
+            1,
+            std::inserter(result, result.end()));
+    REDIS_ASSERT(result.size() == 0, "failed to test xreadgroup");
+
+    result.clear();
+    keys = {std::make_pair(key, ">")};
+    _redis.xreadgroup(group,
+            consumer1,
+            keys.begin(),
+            keys.end(),
+            std::chrono::seconds(1),
+            1,
+            std::inserter(result, result.end()));
+    REDIS_ASSERT(result.size() == 0, "failed to test xreadgroup");
+
+    using PendingResult = std::vector<std::tuple<std::string, std::string, long long, long long>>;
+    PendingResult pending_result;
+    _redis.xpending(key, group, "-", "+", 1, consumer1, std::back_inserter(pending_result));
+
+    REDIS_ASSERT(pending_result.size() == 1
+            && std::get<0>(pending_result[0]) == id
+            && std::get<1>(pending_result[0]) == consumer1,
+            "failed to test xpending");
+
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    auto consumer2 = "consumer2";
+    std::vector<Item> items;
+    auto ids = {id};
+    _redis.xclaim(key,
+            group,
+            consumer2,
+            std::chrono::milliseconds(10),
+            ids,
+            std::back_inserter(items));
+    REDIS_ASSERT(items.size() == 1 && items[0].first == id, "failed to test xclaim");
+
+    REDIS_ASSERT(_redis.xgroup_delconsumer(key, group, consumer1) == 0,
+            "failed to test xgroup_delconsumer");
+
+    REDIS_ASSERT(_redis.xgroup_delconsumer(key, group, consumer2) == 1,
+            "failed to test xgroup_delconsumer");
+
+    REDIS_ASSERT(_redis.xgroup_destroy(key, group) == 1,
+            "failed to test xgroup_destroy");
 }
 
 }

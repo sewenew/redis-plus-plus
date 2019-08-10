@@ -1487,7 +1487,7 @@ public:
                             const StringView &start,
                             const StringView &end,
                             long long count) {
-        return command(key, group, start, end, count);
+        return command(cmd::xpending_detail, key, group, start, end, count);
     }
 
     QueuedRedis& xpending(const StringView &key,
@@ -1496,7 +1496,7 @@ public:
                             const StringView &end,
                             long long count,
                             const StringView &consumer) {
-        return command(key, group, start, end, count, consumer);
+        return command(cmd::xpending_per_consumer, key, group, start, end, count, consumer);
     }
 
     QueuedRedis& xrange(const StringView &key,
