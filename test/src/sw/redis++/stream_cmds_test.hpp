@@ -106,7 +106,7 @@ void StreamCmdsTest<RedisInstance>::_test_group_cmds() {
         {"f2", "v2"}
     };
     auto id = _redis.xadd(key, "*", attrs.begin(), attrs.end());
-    std::vector<std::pair<std::string, std::string>> keys = {std::make_pair(key, "0-0")};
+    auto keys = {std::make_pair(key, ">")};
 
     Result result;
     _redis.xreadgroup(group,
@@ -122,7 +122,6 @@ void StreamCmdsTest<RedisInstance>::_test_group_cmds() {
             "failed to test xreadgroup");
 
     result.clear();
-    keys = {std::make_pair(key, ">")};
     _redis.xreadgroup(group,
             "not-exist-consumer",
             keys.begin(),
@@ -132,7 +131,6 @@ void StreamCmdsTest<RedisInstance>::_test_group_cmds() {
     REDIS_ASSERT(result.size() == 0, "failed to test xreadgroup");
 
     result.clear();
-    keys = {std::make_pair(key, ">")};
     _redis.xreadgroup(group,
             consumer1,
             keys.begin(),
