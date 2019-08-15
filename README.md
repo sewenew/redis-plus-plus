@@ -1687,52 +1687,84 @@ slave.get("key");
 
 ### Redis Stream
 
-Since Redis 5.0, it introduces a new data type: *Redis Stream*. By now, `Redis` class doesn't have any member function for commands related to *Redis Stream*. However, you can use the [Generic Command Interface](#generic-command-interface) to send *Redis Stream* commands.
+Since Redis 5.0, it introduces a new data type: *Redis Stream*. *redis-plus-plus* has built-in methods for all stream commands except the *XINFO* command (of course, you can use the [Generic Command Interface](#generic-command-interface) to send *XINFO* command).
+
+However, the replies of some streams commands, i.e. *XPENDING*, *XREAD*, are complex. So I'll give some examples to show you how to work with these built-in methods.
+
+#### Examples
 
 ```C++
 auto redis = Redis("tcp://127.0.0.1");
 
-// Add event to stream.
-redis.command("XADD", "key", "*", "f1", "v1", "f2", "v2");
+using Attrs = std::vector<std::pair<std::string, std::string>>;
 
-// unordered_map<key, vector<pair<id, unordered_map<field, value>>>>
-using Result = std::unordered_map<std::string,
-                std::vector<
-                    std::pair<
-                        std::string,
-                        std::unordered_map<std::string, std::string>>>>;
+// You can also use std::unordered_map, if you don't care the order of attributes:
+// using Attrs = std::unordered_map<std::string, std::string>;
 
-// If the given streams don't exist or no event available, XREAD returns nil reply.
-// So the return value is of type Optional<Result>.
-auto res = redis.command<Optional<Result>>("XREAD", "count", 2, "STREAMS", key, "0-0");
+Attrs attrs = { {"f1", "v1"}, {"f2", "v2"} };
 
-// If we get some events.
-if (res) {
-    // Process the result.
-}
-```
+// Add an item into the stream. This method returns the auto generated id.
+auto id = redis.xadd("key", "*", attrs.begin(), attrs.end());
 
-This works fine with a standalone Redis instance. However, you CANNOT call `RedisCluster::command` to send `XREAD` command to Redis Cluster. Instead, you need to call `RedisCluster::redis(const StringView &hash_tag)` to get a `Redis` object first, and send `XREAD` command with that `Redis` object.
+// Each item is assigned with an id: pair<id, attributes>.
+using Item = std::pair<std::string, Attrs>;
+using ItemStream = std::vector<Item>;
 
-```C++
-auto cluster = RedisCluster("tcp://127.0.0.1:7000");
+// If you don't care the order of items in the stream, you can also use unordered_map:
+// using ItemStream = std::unordered_map<std::string, Attrs>;
 
-// Add event to stream with RedisCluster object.
-cluster.command("XADD", "key", "*", "f1", "v1", "f2", "v2");
+// Read items from a stream, and return at most 10 items.
+// You need to specify a key and an id (timestamp + offset).
+std::unordered_map<std::string, ItemStream> result;
+redis.xread("key", id, 10, std::inserter(result, result.end()));
 
-// unordered_map<key, vector<pair<id, unordered_map<field, value>>>>
-using Result = std::unordered_map<std::string,
-                std::vector<
-                    std::pair<
-                        std::string,
-                        std::unordered_map<std::string, std::string>>>>;
+// Read from multiple streams. For each stream, you need to specify a key and an id.
+std::unordered_map<std::string, std::string> keys = { {"key", id}, {"another-key", "0-0"} };
+redis.xread(keys.begin(), keys.end(), 10, std::inserter(result, result.end()));
 
-// In order to send XREAD command to Redis Cluster,
-// we need to get the Redis instance that holds the key.
-auto redis = cluster.redis("key");
+// Block for at most 1 second if currently there's no data in the stream.
+redis.xread("key", id, std::chrono::seconds(1), 10, std::inserter(result, result.end()));
 
-// Send XREAD command with this instance.
-auto res = redis.command<Optional<Result>>("XREAD", "count", 2, "STREAMS", key, "0-0");
+// Block for multiple streams.
+redis.xread(keys.begin(), keys.end(), std::chrono::seconds(1), 10, std::inserter(result, result.end()));
+
+// Read items in a range:
+ItemStream item_stream;
+redis.xrange("key", "-", "+", std::back_inserter(item_stream));
+
+// Trim the stream to a given number of items. After the operation, the stream length is NOT exactly
+// 10. Instead, it might be much larger than 10.
+// `XTRIM key MAXLEN 10`
+redis.xtrim("key", 10);
+
+// In order to trim the stream to exactly 10 items, specify the third argument, i.e. approx, as false.
+// `XTRIM key MAXLEN ~ 10`
+redis.xtrim("key", 10, false);
+
+// Delete an item from the stream.
+redis.xdel("key", id);
+
+// Create a consumer group.
+redis.xgroup_create("key", "group", "$");
+
+// If the stream doesn't exist, you can set the fourth argument, i.e. MKSTREAM, to be true.
+// redis.xgroup_create("key", "group", "$", true);
+
+id = redis.xadd("key", "*", attrs.begin(), attrs.end());
+
+// Read item by a consumer of a consumer group.
+redis.xreadgroup("group", "consumer", "key", ">", 1, std::inserter(result, result.end()));
+
+using PendingItem = std::tuple<std::string, std::string, long long, long long>;
+std::vector<PendingItem> pending_items;
+
+// Get pending items of a speicified consumer.
+redis.xpending("key", "group", "-", "+", 1, "consumer", std::back_inserter(pending_items));
+
+redis.xack("key", "group", id);
+
+redis.xgroup_delconsumer("key", "group", "consumer");
+redis.xgroup_destroy("key", "group");
 ```
 
 If you have any problem on sending stream commands to Redis, please feel free to let me know.
