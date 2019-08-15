@@ -1095,6 +1095,8 @@ public:
 
     // Stream commands.
 
+    long long xack(const StringView &key, const StringView &group, const StringView &id);
+
     template <typename Input>
     long long xack(const StringView &key, const StringView &group, Input first, Input last);
 
@@ -1128,6 +1130,14 @@ public:
         return xadd(key, id, il.begin(), il.end(), count, approx);
     }
 
+    template <typename Output>
+    void xclaim(const StringView &key,
+                const StringView &group,
+                const StringView &consumer,
+                const std::chrono::milliseconds &min_idle_time,
+                const StringView &id,
+                Output output);
+
     template <typename Input, typename Output>
     void xclaim(const StringView &key,
                 const StringView &group,
@@ -1146,6 +1156,8 @@ public:
                 Output output) {
         xclaim(key, group, consumer, min_idle_time, il.begin(), il.end(), output);
     }
+
+    long long xdel(const StringView &key, const StringView &id);
 
     template <typename Input>
     long long xdel(const StringView &key, Input first, Input last);
@@ -1204,85 +1216,182 @@ public:
                 long long count,
                 Output output);
 
-    template <typename Input, typename Output>
-    void xread(Input first, Input last, long long count, Output output);
+    template <typename Output>
+    void xread(const StringView &key,
+                const StringView &id,
+                long long count,
+                Output output);
 
-    template <typename Input, typename Output>
-    void xread(Input first, Input last, Output output) {
-        xread(first ,last, 0, output);
+    template <typename Output>
+    void xread(const StringView &key,
+                const StringView &id,
+                Output output) {
+        xread(key, id, 0, output);
     }
 
     template <typename Input, typename Output>
-    void xread(Input first,
-                Input last,
+    auto xread(Input first, Input last, long long count, Output output)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value>::type;
+
+    template <typename Input, typename Output>
+    auto xread(Input first, Input last, Output output)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value>::type {
+        xread(first ,last, 0, output);
+    }
+
+    template <typename Output>
+    void xread(const StringView &key,
+                const StringView &id,
                 const std::chrono::milliseconds &timeout,
                 long long count,
                 Output output);
 
-    template <typename Input, typename Output>
-    void xread(Input first,
-                Input last,
+    template <typename Output>
+    void xread(const StringView &key,
+                const StringView &id,
                 const std::chrono::milliseconds &timeout,
                 Output output) {
-        xread(first, last, timeout, 0, output);
+        xread(key, id, timeout, 0, output);
     }
 
     template <typename Input, typename Output>
+    auto xread(Input first,
+                Input last,
+                const std::chrono::milliseconds &timeout,
+                long long count,
+                Output output)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value>::type;
+
+    template <typename Input, typename Output>
+    auto xread(Input first,
+                Input last,
+                const std::chrono::milliseconds &timeout,
+                Output output)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value>::type {
+        xread(first, last, timeout, 0, output);
+    }
+
+    template <typename Output>
     void xreadgroup(const StringView &group,
+                    const StringView &consumer,
+                    const StringView &key,
+                    const StringView &id,
+                    long long count,
+                    bool noack,
+                    Output output);
+
+    template <typename Output>
+    void xreadgroup(const StringView &group,
+                    const StringView &consumer,
+                    const StringView &key,
+                    const StringView &id,
+                    long long count,
+                    Output output) {
+        xreadgroup(group, consumer, key, id, count, false, output);
+    }
+
+    template <typename Output>
+    void xreadgroup(const StringView &group,
+                    const StringView &consumer,
+                    const StringView &key,
+                    const StringView &id,
+                    Output output) {
+        xreadgroup(group, consumer, key, id, 0, false, output);
+    }
+
+    template <typename Input, typename Output>
+    auto xreadgroup(const StringView &group,
                     const StringView &consumer,
                     Input first,
                     Input last,
                     long long count,
                     bool noack,
-                    Output output);
+                    Output output)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value>::type;
 
     template <typename Input, typename Output>
-    void xreadgroup(const StringView &group,
+    auto xreadgroup(const StringView &group,
                     const StringView &consumer,
                     Input first,
                     Input last,
                     long long count,
-                    Output output) {
+                    Output output)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value>::type {
         xreadgroup(group, consumer, first ,last, count, false, output);
     }
 
     template <typename Input, typename Output>
-    void xreadgroup(const StringView &group,
+    auto xreadgroup(const StringView &group,
                     const StringView &consumer,
                     Input first,
                     Input last,
-                    Output output) {
+                    Output output)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value>::type {
         xreadgroup(group, consumer, first ,last, 0, false, output);
     }
 
-    template <typename Input, typename Output>
+    template <typename Output>
     void xreadgroup(const StringView &group,
+                    const StringView &consumer,
+                    const StringView &key,
+                    const StringView &id,
+                    const std::chrono::milliseconds &timeout,
+                    long long count,
+                    bool noack,
+                    Output output);
+
+    template <typename Output>
+    void xreadgroup(const StringView &group,
+                    const StringView &consumer,
+                    const StringView &key,
+                    const StringView &id,
+                    const std::chrono::milliseconds &timeout,
+                    long long count,
+                    Output output) {
+        xreadgroup(group, consumer, key, id, timeout, count, false, output);
+    }
+
+    template <typename Output>
+    void xreadgroup(const StringView &group,
+                    const StringView &consumer,
+                    const StringView &key,
+                    const StringView &id,
+                    const std::chrono::milliseconds &timeout,
+                    Output output) {
+        xreadgroup(group, consumer, key, id, timeout, 0, false, output);
+    }
+
+    template <typename Input, typename Output>
+    auto xreadgroup(const StringView &group,
                     const StringView &consumer,
                     Input first,
                     Input last,
                     const std::chrono::milliseconds &timeout,
                     long long count,
                     bool noack,
-                    Output output);
+                    Output output)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value>::type;
 
     template <typename Input, typename Output>
-    void xreadgroup(const StringView &group,
+    auto xreadgroup(const StringView &group,
                     const StringView &consumer,
                     Input first,
                     Input last,
                     const std::chrono::milliseconds &timeout,
                     long long count,
-                    Output output) {
+                    Output output)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value>::type {
         xreadgroup(group, consumer, first, last, timeout, count, false, output);
     }
 
     template <typename Input, typename Output>
-    void xreadgroup(const StringView &group,
+    auto xreadgroup(const StringView &group,
                     const StringView &consumer,
                     Input first,
                     Input last,
                     const std::chrono::milliseconds &timeout,
-                    Output output) {
+                    Output output)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value>::type {
         xreadgroup(group, consumer, first, last, timeout, 0, false, output);
     }
 

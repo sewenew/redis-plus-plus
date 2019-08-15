@@ -1377,6 +1377,10 @@ public:
 
     // Stream commands.
 
+    QueuedRedis& xack(const StringView &key, const StringView &group, const StringView &id) {
+        return command(cmd::xack, key, group, id);
+    }
+
     template <typename Input>
     QueuedRedis& xack(const StringView &key, const StringView &group, Input first, Input last) {
         return command(cmd::xack_range<Input>, key, group, first, last);
@@ -1416,6 +1420,14 @@ public:
         return xadd(key, id, il.begin(), il.end(), count, approx);
     }
 
+    QueuedRedis& xclaim(const StringView &key,
+                        const StringView &group,
+                        const StringView &consumer,
+                        const std::chrono::milliseconds &min_idle_time,
+                        const StringView &id) {
+        return command(cmd::xclaim, key, group, consumer, min_idle_time.count(), id);
+    }
+
     template <typename Input>
     QueuedRedis& xclaim(const StringView &key,
                 const StringView &group,
@@ -1439,6 +1451,10 @@ public:
                 const std::chrono::milliseconds &min_idle_time,
                 std::initializer_list<T> il) {
         return xclaim(key, group, consumer, min_idle_time, il.begin(), il.end());
+    }
+
+    QueuedRedis& xdel(const StringView &key, const StringView &id) {
+        return command(cmd::xdel, key, id);
     }
 
     template <typename Input>
@@ -1512,66 +1528,154 @@ public:
         return command(cmd::xrange, key, start, end, count);
     }
 
+    QueuedRedis& xread(const StringView &key, const StringView &id, long long count) {
+        return command(cmd::xread, key, id, count);
+    }
+
+    QueuedRedis& xread(const StringView &key, const StringView &id) {
+        return xread(key, id, 0);
+    }
+
     template <typename Input>
-    QueuedRedis& xread(Input first, Input last, long long count) {
+    auto xread(Input first, Input last, long long count)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value,
+                                    QueuedRedis&>::type {
         return command(cmd::xread_range<Input>, first, last, count);
     }
 
     template <typename Input>
-    QueuedRedis& xread(Input first, Input last) {
+    auto xread(Input first, Input last)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value,
+                                    QueuedRedis&>::type {
         return xread(first, last, 0);
     }
 
-    template <typename Input>
-    QueuedRedis& xread(Input first,
-                        Input last,
+    QueuedRedis& xread(const StringView &key,
+                        const StringView &id,
                         const std::chrono::milliseconds &timeout,
                         long long count) {
+        return command(cmd::xread_block, key, id, timeout.count(), count);
+    }
+
+    QueuedRedis& xread(const StringView &key,
+                        const StringView &id,
+                        const std::chrono::milliseconds &timeout) {
+        return xread(key, id, timeout, 0);
+    }
+
+    template <typename Input>
+    auto xread(Input first,
+                Input last,
+                const std::chrono::milliseconds &timeout,
+                long long count)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value,
+                                    QueuedRedis&>::type {
         return command(cmd::xread_block_range<Input>, first, last, timeout.count(), count);
     }
 
     template <typename Input>
-    QueuedRedis& xread(Input first,
-                        Input last,
-                        const std::chrono::milliseconds &timeout) {
+    auto xread(Input first,
+                Input last,
+                const std::chrono::milliseconds &timeout)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value,
+                                    QueuedRedis&>::type {
         return xread(first, last, timeout, 0);
     }
 
-    template <typename Input>
     QueuedRedis& xreadgroup(const StringView &group,
                             const StringView &consumer,
-                            Input first,
-                            Input last,
+                            const StringView &key,
+                            const StringView &id,
                             long long count,
                             bool noack) {
+        return command(cmd::xreadgroup, group, consumer, key, id, count, noack);
+    }
+
+    QueuedRedis& xreadgroup(const StringView &group,
+                            const StringView &consumer,
+                            const StringView &key,
+                            const StringView &id,
+                            long long count) {
+        return xreadgroup(group, consumer, key, id, count, false);
+    }
+
+    template <typename Input>
+    auto xreadgroup(const StringView &group,
+                    const StringView &consumer,
+                    Input first,
+                    Input last,
+                    long long count,
+                    bool noack)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value,
+                                    QueuedRedis&>::type {
         return command(cmd::xreadgroup_range<Input>, group, consumer, first, last, count, noack);
     }
 
     template <typename Input>
-    QueuedRedis& xreadgroup(const StringView &group,
-                            const StringView &consumer,
-                            Input first,
-                            Input last,
-                            long long count) {
+    auto xreadgroup(const StringView &group,
+                    const StringView &consumer,
+                    Input first,
+                    Input last,
+                    long long count)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value,
+                                    QueuedRedis&>::type {
         return xreadgroup(group, consumer, first ,last, count, false);
     }
 
     template <typename Input>
-    QueuedRedis& xreadgroup(const StringView &group,
-                            const StringView &consumer,
-                            Input first,
-                            Input last) {
+    auto xreadgroup(const StringView &group,
+                    const StringView &consumer,
+                    Input first,
+                    Input last)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value,
+                                    QueuedRedis&>::type {
         return xreadgroup(group, consumer, first ,last, 0, false);
     }
 
-    template <typename Input>
     QueuedRedis& xreadgroup(const StringView &group,
                             const StringView &consumer,
-                            Input first,
-                            Input last,
+                            const StringView &key,
+                            const StringView &id,
                             const std::chrono::milliseconds &timeout,
                             long long count,
                             bool noack) {
+        return command(cmd::xreadgroup_block,
+                        group,
+                        consumer,
+                        key,
+                        id,
+                        timeout.count(),
+                        count,
+                        noack);
+    }
+
+    QueuedRedis& xreadgroup(const StringView &group,
+                            const StringView &consumer,
+                            const StringView &key,
+                            const StringView &id,
+                            const std::chrono::milliseconds &timeout,
+                            long long count) {
+        return xreadgroup(group, consumer, key, id, timeout, count, false);
+    }
+
+    QueuedRedis& xreadgroup(const StringView &group,
+                            const StringView &consumer,
+                            const StringView &key,
+                            const StringView &id,
+                            const std::chrono::milliseconds &timeout) {
+        return xreadgroup(group, consumer, key, id, timeout, 0, false);
+    }
+
+    template <typename Input>
+    auto xreadgroup(const StringView &group,
+                    const StringView &consumer,
+                    Input first,
+                    Input last,
+                    const std::chrono::milliseconds &timeout,
+                    long long count,
+                    bool noack)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value,
+                                    QueuedRedis&>::type {
         return command(cmd::xreadgroup_block_range<Input>,
                         group,
                         consumer,
@@ -1583,21 +1687,25 @@ public:
     }
 
     template <typename Input>
-    QueuedRedis& xreadgroup(const StringView &group,
-                            const StringView &consumer,
-                            Input first,
-                            Input last,
-                            const std::chrono::milliseconds &timeout,
-                            long long count) {
+    auto xreadgroup(const StringView &group,
+                    const StringView &consumer,
+                    Input first,
+                    Input last,
+                    const std::chrono::milliseconds &timeout,
+                    long long count)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value,
+                                    QueuedRedis&>::type {
         return xreadgroup(group, consumer, first, last, timeout, count, false);
     }
 
     template <typename Input>
-    QueuedRedis& xreadgroup(const StringView &group,
-                            const StringView &consumer,
-                            Input first,
-                            Input last,
-                            const std::chrono::milliseconds &timeout) {
+    auto xreadgroup(const StringView &group,
+                    const StringView &consumer,
+                    Input first,
+                    Input last,
+                    const std::chrono::milliseconds &timeout)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value,
+                                    QueuedRedis&>::type {
         return xreadgroup(group, consumer, first, last, timeout, 0, false);
     }
 

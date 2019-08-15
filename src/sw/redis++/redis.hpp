@@ -1074,6 +1074,18 @@ std::string Redis::xadd(const StringView &key,
     return reply::parse<std::string>(*reply);
 }
 
+template <typename Output>
+void Redis::xclaim(const StringView &key,
+                    const StringView &group,
+                    const StringView &consumer,
+                    const std::chrono::milliseconds &min_idle_time,
+                    const StringView &id,
+                    Output output) {
+    auto reply = command(cmd::xclaim, key, group, consumer, min_idle_time.count(), id);
+
+    reply::to_array(*reply, output);
+}
+
 template <typename Input, typename Output>
 void Redis::xclaim(const StringView &key,
                     const StringView &group,
@@ -1154,8 +1166,21 @@ void Redis::xrange(const StringView &key,
     reply::to_array(*reply, output);
 }
 
+template <typename Output>
+void Redis::xread(const StringView &key,
+                    const StringView &id,
+                    long long count,
+                    Output output) {
+    auto reply = command(cmd::xread, key, id, count);
+
+    if (!reply::is_nil(*reply)) {
+        reply::to_array(*reply, output);
+    }
+}
+
 template <typename Input, typename Output>
-void Redis::xread(Input first, Input last, long long count, Output output) {
+auto Redis::xread(Input first, Input last, long long count, Output output)
+    -> typename std::enable_if<!std::is_convertible<Input, StringView>::value>::type {
     if (first == last) {
         throw Error("XREAD: no key specified");
     }
@@ -1167,12 +1192,26 @@ void Redis::xread(Input first, Input last, long long count, Output output) {
     }
 }
 
+template <typename Output>
+void Redis::xread(const StringView &key,
+                    const StringView &id,
+                    const std::chrono::milliseconds &timeout,
+                    long long count,
+                    Output output) {
+    auto reply = command(cmd::xread_block, key, id, timeout.count(), count);
+
+    if (!reply::is_nil(*reply)) {
+        reply::to_array(*reply, output);
+    }
+}
+
 template <typename Input, typename Output>
-void Redis::xread(Input first,
-                Input last,
-                const std::chrono::milliseconds &timeout,
-                long long count,
-                Output output) {
+auto Redis::xread(Input first,
+                    Input last,
+                    const std::chrono::milliseconds &timeout,
+                    long long count,
+                    Output output)
+    -> typename std::enable_if<!std::is_convertible<Input, StringView>::value>::type {
     if (first == last) {
         throw Error("XREAD: no key specified");
     }
@@ -1184,14 +1223,30 @@ void Redis::xread(Input first,
     }
 }
 
-template <typename Input, typename Output>
+template <typename Output>
 void Redis::xreadgroup(const StringView &group,
+                        const StringView &consumer,
+                        const StringView &key,
+                        const StringView &id,
+                        long long count,
+                        bool noack,
+                        Output output) {
+    auto reply = command(cmd::xreadgroup, group, consumer, key, id, count, noack);
+
+    if (!reply::is_nil(*reply)) {
+        reply::to_array(*reply, output);
+    }
+}
+
+template <typename Input, typename Output>
+auto Redis::xreadgroup(const StringView &group,
                         const StringView &consumer,
                         Input first,
                         Input last,
                         long long count,
                         bool noack,
-                        Output output) {
+                        Output output)
+    -> typename std::enable_if<!std::is_convertible<Input, StringView>::value>::type {
     if (first == last) {
         throw Error("XREADGROUP: no key specified");
     }
@@ -1203,15 +1258,39 @@ void Redis::xreadgroup(const StringView &group,
     }
 }
 
-template <typename Input, typename Output>
+template <typename Output>
 void Redis::xreadgroup(const StringView &group,
+                        const StringView &consumer,
+                        const StringView &key,
+                        const StringView &id,
+                        const std::chrono::milliseconds &timeout,
+                        long long count,
+                        bool noack,
+                        Output output) {
+    auto reply = command(cmd::xreadgroup_block,
+                            group,
+                            consumer,
+                            key,
+                            id,
+                            timeout.count(),
+                            count,
+                            noack);
+
+    if (!reply::is_nil(*reply)) {
+        reply::to_array(*reply, output);
+    }
+}
+
+template <typename Input, typename Output>
+auto Redis::xreadgroup(const StringView &group,
                         const StringView &consumer,
                         Input first,
                         Input last,
                         const std::chrono::milliseconds &timeout,
                         long long count,
                         bool noack,
-                        Output output) {
+                        Output output)
+    -> typename std::enable_if<!std::is_convertible<Input, StringView>::value>::type {
     if (first == last) {
         throw Error("XREADGROUP: no key specified");
     }

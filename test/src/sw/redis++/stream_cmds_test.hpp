@@ -63,9 +63,26 @@ void StreamCmdsTest<RedisInstance>::_test_stream_cmds() {
             "failed to test xread");
 
     result.clear();
+    _redis.xread(key, std::string("0-0"), 1, std::inserter(result, result.end()));
+
+    REDIS_ASSERT(result.size() == 1
+            && result.find(key) != result.end()
+            && result[key].size() == 1
+            && result[key][0].first == id
+            && result[key][0].second.size() == 2,
+            "failed to test xread");
+
+    result.clear();
     keys = {std::make_pair(key, id)};
     _redis.xread(keys.begin(),
                     keys.end(),
+                    std::chrono::seconds(1),
+                    2,
+                    std::inserter(result, result.end()));
+    REDIS_ASSERT(result.size() == 0, "failed to test xread");
+
+    _redis.xread(key,
+                    id,
                     std::chrono::seconds(1),
                     2,
                     std::inserter(result, result.end()));
@@ -123,6 +140,15 @@ void StreamCmdsTest<RedisInstance>::_test_group_cmds() {
 
     result.clear();
     _redis.xreadgroup(group,
+            consumer1,
+            key,
+            std::string(">"),
+            1,
+            std::inserter(result, result.end()));
+    REDIS_ASSERT(result.size() == 0, "failed to test xreadgroup");
+
+    result.clear();
+    _redis.xreadgroup(group,
             "not-exist-consumer",
             keys.begin(),
             keys.end(),
@@ -135,6 +161,16 @@ void StreamCmdsTest<RedisInstance>::_test_group_cmds() {
             consumer1,
             keys.begin(),
             keys.end(),
+            std::chrono::seconds(1),
+            1,
+            std::inserter(result, result.end()));
+    REDIS_ASSERT(result.size() == 0, "failed to test xreadgroup");
+
+    result.clear();
+    _redis.xreadgroup(group,
+            consumer1,
+            key,
+            ">",
             std::chrono::seconds(1),
             1,
             std::inserter(result, result.end()));
@@ -162,10 +198,18 @@ void StreamCmdsTest<RedisInstance>::_test_group_cmds() {
             std::back_inserter(items));
     REDIS_ASSERT(items.size() == 1 && items[0].first == id, "failed to test xclaim");
 
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    items.clear();
+    _redis.xclaim(key, group, consumer1, std::chrono::milliseconds(10), id, std::back_inserter(items));
+    REDIS_ASSERT(items.size() == 1 && items[0].first == id, "failed to test xclaim: " + std::to_string(items.size()));
+
+    _redis.xack(key, group, id);
+
     REDIS_ASSERT(_redis.xgroup_delconsumer(key, group, consumer1) == 0,
             "failed to test xgroup_delconsumer");
 
-    REDIS_ASSERT(_redis.xgroup_delconsumer(key, group, consumer2) == 1,
+    REDIS_ASSERT(_redis.xgroup_delconsumer(key, group, consumer2) == 0,
             "failed to test xgroup_delconsumer");
 
     REDIS_ASSERT(_redis.xgroup_destroy(key, group) == 1,

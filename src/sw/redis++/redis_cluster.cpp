@@ -632,6 +632,18 @@ long long RedisCluster::publish(const StringView &channel, const StringView &mes
 
 // Stream commands.
 
+long long RedisCluster::xack(const StringView &key, const StringView &group, const StringView &id) {
+    auto reply = command(cmd::xack, key, group, id);
+
+    return reply::parse<long long>(*reply);
+}
+
+long long RedisCluster::xdel(const StringView &key, const StringView &id) {
+    auto reply = command(cmd::xdel, key, id);
+
+    return reply::parse<long long>(*reply);
+}
+
 void RedisCluster::xgroup_create(const StringView &key,
                                     const StringView &group,
                                     const StringView &id,

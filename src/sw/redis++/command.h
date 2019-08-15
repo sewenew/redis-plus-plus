@@ -1579,6 +1579,16 @@ inline void watch_range(Connection &connection, Input first, Input last) {
 
 // Stream commands.
 
+inline void xack(Connection &connection,
+                    const StringView &key,
+                    const StringView &group,
+                    const StringView &id) {
+    connection.send("XACK %b %b %b",
+                    key.data(), key.size(),
+                    group.data(), group.size(),
+                    id.data(), id.size());
+}
+
 template <typename Input>
 void xack_range(Connection &connection,
                 const StringView &key,
@@ -1623,6 +1633,20 @@ void xadd_maxlen_range(Connection &connection,
     connection.send(args);
 }
 
+inline void xclaim(Connection &connection,
+                    const StringView &key,
+                    const StringView &group,
+                    const StringView &consumer,
+                    long long min_idle_time,
+                    const StringView &id) {
+    connection.send("XCLAIM %b %b %b %lld %b",
+                    key.data(), key.size(),
+                    group.data(), group.size(),
+                    consumer.data(), consumer.size(),
+                    min_idle_time,
+                    id.data(), id.size());
+}
+
 template <typename Input>
 void xclaim_range(Connection &connection,
                     const StringView &key,
@@ -1635,6 +1659,10 @@ void xclaim_range(Connection &connection,
     args << "XCLAIM" << key << group << consumer << min_idle_time << std::make_pair(first, last);
 
     connection.send(args);
+}
+
+inline void xdel(Connection &connection, const StringView &key, const StringView &id) {
+    connection.send("XDEL %b %b", key.data(), key.size(), id.data(), id.size());
 }
 
 template <typename Input>
@@ -1750,6 +1778,16 @@ inline void xrange_count(Connection &connection,
                     count);
 }
 
+inline void xread(Connection &connection,
+                    const StringView &key,
+                    const StringView &id,
+                    long long count) {
+    connection.send("XREAD COUNT %lld STREAMS %b %b",
+                    count,
+                    key.data(), key.size(),
+                    id.data(), id.size());
+}
+
 template <typename Input>
 void xread_range(Connection &connection, Input first, Input last, long long count) {
     CmdArgs args;
@@ -1764,6 +1802,18 @@ void xread_range(Connection &connection, Input first, Input last, long long coun
     }
 
     connection.send(args);
+}
+
+inline void xread_block(Connection &connection,
+                        const StringView &key,
+                        const StringView &id,
+                        long long timeout,
+                        long long count) {
+    connection.send("XREAD COUNT %lld BLOCK %lld STREAMS %b %b",
+                    count,
+                    timeout,
+                    key.data(), key.size(),
+                    id.data(), id.size());
 }
 
 template <typename Input>
@@ -1782,6 +1832,25 @@ void xread_block_range(Connection &connection,
     for (auto iter = first; iter != last; ++iter) {
         args << iter->second;
     }
+
+    connection.send(args);
+}
+
+inline void xreadgroup(Connection &connection,
+                        const StringView &group,
+                        const StringView &consumer,
+                        const StringView &key,
+                        const StringView &id,
+                        long long count,
+                        bool noack) {
+    CmdArgs args;
+    args << "XREADGROUP" << "GROUP" << group << consumer << "COUNT" << count;
+
+    if (noack) {
+        args << "NOACK";
+    }
+
+    args << "STREAMS" << key << id;
 
     connection.send(args);
 }
@@ -1810,6 +1879,27 @@ void xreadgroup_range(Connection &connection,
     for (auto iter = first; iter != last; ++iter) {
         args << iter->second;
     }
+
+    connection.send(args);
+}
+
+inline void xreadgroup_block(Connection &connection,
+                                const StringView &group,
+                                const StringView &consumer,
+                                const StringView &key,
+                                const StringView &id,
+                                long long timeout,
+                                long long count,
+                                bool noack) {
+    CmdArgs args;
+    args << "XREADGROUP" << "GROUP" << group << consumer
+        << "COUNT" << count << "BLOCK" << timeout;
+
+    if (noack) {
+        args << "NOACK";
+    }
+
+    args << "STREAMS" << key << id;
 
     connection.send(args);
 }

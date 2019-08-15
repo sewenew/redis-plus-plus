@@ -762,6 +762,18 @@ void Redis::watch(const StringView &key) {
 
 // Stream commands.
 
+long long Redis::xack(const StringView &key, const StringView &group, const StringView &id) {
+    auto reply = command(cmd::xack, key, group, id);
+
+    return reply::parse<long long>(*reply);
+}
+
+long long Redis::xdel(const StringView &key, const StringView &id) {
+    auto reply = command(cmd::xdel, key, id);
+
+    return reply::parse<long long>(*reply);
+}
+
 void Redis::xgroup_create(const StringView &key,
                             const StringView &group,
                             const StringView &id,
