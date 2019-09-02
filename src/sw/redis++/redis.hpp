@@ -243,7 +243,7 @@ long long Redis::bitop(BitOp op, const StringView &destination, Input first, Inp
         throw Error("BITOP: no key specified");
     }
 
-    auto reply = command(cmd::bitop<Input>, op, destination, first, last);
+    auto reply = command(cmd::bitop_range<Input>, op, destination, first, last);
 
     return reply::parse<long long>(*reply);
 }

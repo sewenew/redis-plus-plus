@@ -161,6 +161,12 @@ long long RedisCluster::bitcount(const StringView &key, long long start, long lo
     return reply::parse<long long>(*reply);
 }
 
+long long RedisCluster::bitop(BitOp op, const StringView &destination, const StringView &key) {
+    auto reply = _command(cmd::bitop, destination, op, destination, key);
+
+    return reply::parse<long long>(*reply);
+}
+
 long long RedisCluster::bitpos(const StringView &key,
                             long long bit,
                             long long start,

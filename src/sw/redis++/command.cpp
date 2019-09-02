@@ -42,6 +42,19 @@ void restore(Connection &connection,
 
 // STRING commands.
 
+void bitop(Connection &connection,
+            BitOp op,
+            const StringView &destination,
+            const StringView &key) {
+    CmdArgs args;
+
+    detail::set_bitop(args, op);
+
+    args << destination << key;
+
+    connection.send(args);
+}
+
 void set(Connection &connection,
             const StringView &key,
             const StringView &val,
@@ -210,6 +223,31 @@ void xtrim(Connection &connection, const StringView &key, long long count, bool 
 }
 
 namespace detail {
+
+void set_bitop(CmdArgs &args, BitOp op) {
+    args << "BITOP";
+
+    switch (op) {
+    case BitOp::AND:
+        args << "AND";
+        break;
+
+    case BitOp::OR:
+        args << "OR";
+        break;
+
+    case BitOp::XOR:
+        args << "XOR";
+        break;
+
+    case BitOp::NOT:
+        args << "NOT";
+        break;
+
+    default:
+        throw Error("Unknown bit operations");
+    }
+}
 
 void set_update_type(CmdArgs &args, UpdateType type) {
     switch (type) {

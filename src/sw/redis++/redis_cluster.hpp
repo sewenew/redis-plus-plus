@@ -197,7 +197,7 @@ long long RedisCluster::bitop(BitOp op, const StringView &destination, Input fir
         throw Error("BITOP: no key specified");
     }
 
-    auto reply = _command(cmd::bitop<Input>, destination, op, destination, first, last);
+    auto reply = _command(cmd::bitop_range<Input>, destination, op, destination, first, last);
 
     return reply::parse<long long>(*reply);
 }

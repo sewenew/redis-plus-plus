@@ -263,6 +263,12 @@ long long Redis::bitcount(const StringView &key, long long start, long long end)
     return reply::parse<long long>(*reply);
 }
 
+long long Redis::bitop(BitOp op, const StringView &destination, const StringView &key) {
+    auto reply = command(cmd::bitop, op, destination, key);
+
+    return reply::parse<long long>(*reply);
+}
+
 long long Redis::bitpos(const StringView &key,
                             long long bit,
                             long long start,

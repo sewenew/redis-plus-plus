@@ -285,12 +285,17 @@ inline void bitcount(Connection &connection,
                     start, end);
 }
 
-template <typename Input>
 void bitop(Connection &connection,
             BitOp op,
             const StringView &destination,
-            Input first,
-            Input last);
+            const StringView &key);
+
+template <typename Input>
+void bitop_range(Connection &connection,
+                    BitOp op,
+                    const StringView &destination,
+                    Input first,
+                    Input last);
 
 inline void bitpos(Connection &connection,
                     const StringView &key,
@@ -1960,6 +1965,8 @@ void xtrim(Connection &connection, const StringView &key, long long count, bool 
 
 namespace detail {
 
+void set_bitop(CmdArgs &args, BitOp op);
+
 void set_update_type(CmdArgs &args, UpdateType type);
 
 void set_aggregation_type(CmdArgs &args, Aggregation type);
@@ -2079,35 +2086,16 @@ namespace redis {
 namespace cmd {
 
 template <typename Input>
-void bitop(Connection &connection,
-            BitOp op,
-            const StringView &destination,
-            Input first,
-            Input last) {
+void bitop_range(Connection &connection,
+                    BitOp op,
+                    const StringView &destination,
+                    Input first,
+                    Input last) {
     assert(first != last);
 
     CmdArgs args;
-    args << "BITOP";
-    switch (op) {
-    case BitOp::AND:
-        args << "AND";
-        break;
 
-    case BitOp::OR:
-        args << "OR";
-        break;
-
-    case BitOp::XOR:
-        args << "XOR";
-        break;
-
-    case BitOp::NOT:
-        args << "NOT";
-        break;
-
-    default:
-        throw Error("Unknown bit operations");
-    }
+    detail::set_bitop(args, op);
 
     args << destination << std::make_pair(first, last);
 

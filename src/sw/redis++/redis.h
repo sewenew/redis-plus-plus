@@ -279,6 +279,8 @@ public:
 
     long long bitcount(const StringView &key, long long start = 0, long long end = -1);
 
+    long long bitop(BitOp op, const StringView &destination, const StringView &key);
+
     template <typename Input>
     long long bitop(BitOp op, const StringView &destination, Input first, Input last);
 

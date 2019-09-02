@@ -323,12 +323,18 @@ public:
         return command(cmd::bitcount, key, start, end);
     }
 
+    QueuedRedis& bitop(BitOp op,
+                        const StringView &destination,
+                        const StringView &key) {
+        return command(cmd::bitop, op, destination, key);
+    }
+
     template <typename Input>
     QueuedRedis& bitop(BitOp op,
                         const StringView &destination,
                         Input first,
                         Input last) {
-        return command(cmd::bitop<Input>, op, destination, first, last);
+        return command(cmd::bitop_range<Input>, op, destination, first, last);
     }
 
     template <typename T>
