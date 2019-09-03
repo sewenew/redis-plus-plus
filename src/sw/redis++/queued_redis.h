@@ -466,9 +466,18 @@ public:
 
     // LIST commands.
 
+    QueuedRedis& blpop(const StringView &key, long long timeout) {
+        return command(cmd::blpop, key, timeout);
+    }
+
+    QueuedRedis& blpop(const StringView &key,
+                        const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+        return blpop(key, timeout.count());
+    }
+
     template <typename Input>
     QueuedRedis& blpop(Input first, Input last, long long timeout) {
-        return command(cmd::blpop<Input>, first, last, timeout);
+        return command(cmd::blpop_range<Input>, first, last, timeout);
     }
 
     template <typename T>

@@ -444,11 +444,17 @@ inline void strlen(Connection &connection, const StringView &key) {
 
 // LIST commands.
 
+inline void blpop(Connection &connection, const StringView &key, long long timeout) {
+    connection.send("BLPOP %b %lld",
+                    key.data(), key.size(),
+                    timeout);
+}
+
 template <typename Input>
-inline void blpop(Connection &connection,
-                    Input first,
-                    Input last,
-                    long long timeout) {
+inline void blpop_range(Connection &connection,
+                        Input first,
+                        Input last,
+                        long long timeout) {
     assert(first != last);
 
     CmdArgs args;

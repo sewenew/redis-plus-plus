@@ -379,6 +379,16 @@ long long Redis::strlen(const StringView &key) {
 
 // LIST commands.
 
+OptionalStringPair Redis::blpop(const StringView &key, long long timeout) {
+    auto reply = command(cmd::blpop, key, timeout);
+
+    return reply::parse<OptionalStringPair>(*reply);
+}
+
+OptionalStringPair Redis::blpop(const StringView &key, const std::chrono::seconds &timeout) {
+    return blpop(key, timeout.count());
+}
+
 OptionalString Redis::brpoplpush(const StringView &source,
                                     const StringView &destination,
                                     long long timeout) {

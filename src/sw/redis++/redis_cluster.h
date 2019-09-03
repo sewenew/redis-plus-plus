@@ -279,6 +279,11 @@ public:
 
     // LIST commands.
 
+    OptionalStringPair blpop(const StringView &key, long long timeout);
+
+    OptionalStringPair blpop(const StringView &key,
+                                const std::chrono::seconds &timeout = std::chrono::seconds{0});
+
     template <typename Input>
     OptionalStringPair blpop(Input first, Input last, long long timeout);
 

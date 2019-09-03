@@ -120,6 +120,13 @@ void ListCmdTest<RedisInstance>::_test_blocking() {
     res = _redis.brpop(keys, std::chrono::seconds(1));
     REDIS_ASSERT(!res, "failed to test brpop with timeout");
 
+    _redis.lpush(k1, val);
+    res = _redis.blpop(k1);
+    REDIS_ASSERT(res && *res == std::make_pair(k1, val), "failed to test blpop");
+
+    res = _redis.blpop(k1, std::chrono::seconds(1));
+    REDIS_ASSERT(!res, "failed to test blpop with timeout");
+
     auto str = _redis.brpoplpush(k2, k3, std::chrono::seconds(1));
     REDIS_ASSERT(!str, "failed to test brpoplpush with timeout");
 
