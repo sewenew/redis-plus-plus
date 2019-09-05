@@ -319,7 +319,7 @@ OptionalStringPair Redis::brpop(Input first, Input last, long long timeout) {
         throw Error("BRPOP: no key specified");
     }
 
-    auto reply = command(cmd::brpop<Input>, first, last, timeout);
+    auto reply = command(cmd::brpop_range<Input>, first, last, timeout);
 
     return reply::parse<OptionalStringPair>(*reply);
 }

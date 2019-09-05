@@ -303,6 +303,11 @@ public:
         return blpop(il.begin(), il.end(), timeout);
     }
 
+    OptionalStringPair brpop(const StringView &key, long long timeout);
+
+    OptionalStringPair brpop(const StringView &key,
+                                const std::chrono::seconds &timeout = std::chrono::seconds{0});
+
     template <typename Input>
     OptionalStringPair brpop(Input first, Input last, long long timeout);
 

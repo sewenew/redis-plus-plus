@@ -389,6 +389,16 @@ OptionalStringPair Redis::blpop(const StringView &key, const std::chrono::second
     return blpop(key, timeout.count());
 }
 
+OptionalStringPair Redis::brpop(const StringView &key, long long timeout) {
+    auto reply = command(cmd::brpop, key, timeout);
+
+    return reply::parse<OptionalStringPair>(*reply);
+}
+
+OptionalStringPair Redis::brpop(const StringView &key, const std::chrono::seconds &timeout) {
+    return brpop(key, timeout.count());
+}
+
 OptionalString Redis::brpoplpush(const StringView &source,
                                     const StringView &destination,
                                     long long timeout) {

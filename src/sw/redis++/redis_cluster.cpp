@@ -287,6 +287,16 @@ OptionalStringPair RedisCluster::blpop(const StringView &key, const std::chrono:
     return blpop(key, timeout.count());
 }
 
+OptionalStringPair RedisCluster::brpop(const StringView &key, long long timeout) {
+    auto reply = command(cmd::brpop, key, timeout);
+
+    return reply::parse<OptionalStringPair>(*reply);
+}
+
+OptionalStringPair RedisCluster::brpop(const StringView &key, const std::chrono::seconds &timeout) {
+    return brpop(key, timeout.count());
+}
+
 OptionalString RedisCluster::brpoplpush(const StringView &source,
                                     const StringView &destination,
                                     long long timeout) {

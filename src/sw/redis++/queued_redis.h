@@ -498,9 +498,18 @@ public:
         return blpop(il.begin(), il.end(), timeout);
     }
 
+    QueuedRedis& brpop(const StringView &key, long long timeout) {
+        return command(cmd::brpop, key, timeout);
+    }
+
+    QueuedRedis& brpop(const StringView &key,
+                        const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+        return brpop(key, timeout.count());
+    }
+
     template <typename Input>
     QueuedRedis& brpop(Input first, Input last, long long timeout) {
-        return command(cmd::brpop<Input>, first, last, timeout);
+        return command(cmd::brpop_range<Input>, first, last, timeout);
     }
 
     template <typename T>

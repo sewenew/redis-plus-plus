@@ -463,11 +463,17 @@ inline void blpop_range(Connection &connection,
     connection.send(args);
 }
 
+inline void brpop(Connection &connection, const StringView &key, long long timeout) {
+    connection.send("BRPOP %b %lld",
+                    key.data(), key.size(),
+                    timeout);
+}
+
 template <typename Input>
-inline void brpop(Connection &connection,
-                    Input first,
-                    Input last,
-                    long long timeout) {
+inline void brpop_range(Connection &connection,
+                        Input first,
+                        Input last,
+                        long long timeout) {
     assert(first != last);
 
     CmdArgs args;
