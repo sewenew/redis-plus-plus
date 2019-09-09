@@ -488,7 +488,7 @@ long long Redis::sdiffstore(const StringView &destination,
         throw Error("SDIFFSTORE: no key specified");
     }
 
-    auto reply = command(cmd::sdiffstore<Input>, destination, first, last);
+    auto reply = command(cmd::sdiffstore_range<Input>, destination, first, last);
 
     return reply::parse<long long>(*reply);
 }

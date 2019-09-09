@@ -769,11 +769,15 @@ public:
         return sdiff(il.begin(), il.end());
     }
 
+    QueuedRedis& sdiffstore(const StringView &destination, const StringView &key) {
+        return command(cmd::sdiffstore, destination, key);
+    }
+
     template <typename Input>
     QueuedRedis& sdiffstore(const StringView &destination,
                             Input first,
                             Input last) {
-        return command(cmd::sdiffstore<Input>, destination, first, last);
+        return command(cmd::sdiffstore_range<Input>, destination, first, last);
     }
 
     template <typename T>

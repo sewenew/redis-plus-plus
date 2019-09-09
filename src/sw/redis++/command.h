@@ -788,11 +788,19 @@ inline void sdiff(Connection &connection, Input first, Input last) {
     connection.send(args);
 }
 
-template <typename Input>
 inline void sdiffstore(Connection &connection,
                         const StringView &destination,
-                        Input first,
-                        Input last) {
+                        const StringView &key) {
+    connection.send("SDIFFSTORE %b %b",
+                    destination.data(), destination.size(),
+                    key.data(), key.size());
+}
+
+template <typename Input>
+inline void sdiffstore_range(Connection &connection,
+                                const StringView &destination,
+                                Input first,
+                                Input last) {
     assert(first != last);
 
     CmdArgs args;

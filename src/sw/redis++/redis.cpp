@@ -564,6 +564,12 @@ long long Redis::scard(const StringView &key) {
     return reply::parse<long long>(*reply);
 }
 
+long long Redis::sdiffstore(const StringView &destination, const StringView &key) {
+    auto reply = command(cmd::sdiffstore, destination, key);
+
+    return reply::parse<long long>(*reply);
+}
+
 bool Redis::sismember(const StringView &key, const StringView &member) {
     auto reply = command(cmd::sismember, key, member);
 

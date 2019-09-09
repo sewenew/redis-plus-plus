@@ -486,6 +486,8 @@ public:
         sdiff(il.begin(), il.end(), output);
     }
 
+    long long sdiffstore(const StringView &destination, const StringView &key);
+
     template <typename Input>
     long long sdiffstore(const StringView &destination,
                             Input first,

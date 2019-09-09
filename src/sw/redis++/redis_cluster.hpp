@@ -436,13 +436,13 @@ void RedisCluster::sdiff(Input first, Input last, Output output) {
 
 template <typename Input>
 long long RedisCluster::sdiffstore(const StringView &destination,
-                            Input first,
-                            Input last) {
+                                    Input first,
+                                    Input last) {
     if (first == last) {
         throw Error("SDIFFSTORE: no key specified");
     }
 
-    auto reply = command(cmd::sdiffstore<Input>, destination, first, last);
+    auto reply = command(cmd::sdiffstore_range<Input>, destination, first, last);
 
     return reply::parse<long long>(*reply);
 }
