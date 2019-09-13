@@ -460,13 +460,13 @@ void RedisCluster::sinter(Input first, Input last, Output output) {
 
 template <typename Input>
 long long RedisCluster::sinterstore(const StringView &destination,
-                            Input first,
-                            Input last) {
+                                    Input first,
+                                    Input last) {
     if (first == last) {
         throw Error("SINTERSTORE: no key specified");
     }
 
-    auto reply = command(cmd::sinterstore<Input>, destination, first, last);
+    auto reply = command(cmd::sinterstore_range<Input>, destination, first, last);
 
     return reply::parse<long long>(*reply);
 }

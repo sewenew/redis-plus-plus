@@ -819,11 +819,19 @@ inline void sinter(Connection &connection, Input first, Input last) {
     connection.send(args);
 }
 
-template <typename Input>
 inline void sinterstore(Connection &connection,
                         const StringView &destination,
-                        Input first,
-                        Input last) {
+                        const StringView &key) {
+    connection.send("SINTERSTORE %b %b",
+                    destination.data(), destination.size(),
+                    key.data(), key.size());
+}
+
+template <typename Input>
+inline void sinterstore_range(Connection &connection,
+                                const StringView &destination,
+                                Input first,
+                                Input last) {
     assert(first != last);
 
     CmdArgs args;

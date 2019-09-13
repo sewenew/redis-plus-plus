@@ -795,11 +795,15 @@ public:
         return sinter(il.begin(), il.end());
     }
 
+    QueuedRedis& sinterstore(const StringView &destination, const StringView &key) {
+        return command(cmd::sinterstore, destination, key);
+    }
+
     template <typename Input>
     QueuedRedis& sinterstore(const StringView &destination,
                                 Input first,
                                 Input last) {
-        return command(cmd::sinterstore<Input>, destination, first, last);
+        return command(cmd::sinterstore_range<Input>, destination, first, last);
     }
 
     template <typename T>

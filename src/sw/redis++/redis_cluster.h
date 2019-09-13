@@ -507,6 +507,8 @@ public:
         sinter(il.begin(), il.end(), output);
     }
 
+    long long sinterstore(const StringView &destination, const StringView &key);
+
     template <typename Input>
     long long sinterstore(const StringView &destination,
                             Input first,

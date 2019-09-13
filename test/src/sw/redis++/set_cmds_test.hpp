@@ -116,6 +116,8 @@ void SetCmdTest<RedisInstance>::_test_multi_set() {
 
     REDIS_ASSERT(_redis.sdiffstore(k3, k1) == 2, "failed to test sdiffstore");
 
+    REDIS_ASSERT(_redis.sinterstore(k3, k1) == 2, "failed to test sinterstore");
+
     std::vector<std::string> sinter;
     _redis.sinter({k1, k2}, std::back_inserter(sinter));
     REDIS_ASSERT(sinter == std::vector<std::string>({"a"}), "failed to test sinter");

@@ -468,6 +468,12 @@ long long RedisCluster::sdiffstore(const StringView &destination, const StringVi
     return reply::parse<long long>(*reply);
 }
 
+long long RedisCluster::sinterstore(const StringView &destination, const StringView &key) {
+    auto reply = command(cmd::sinterstore, destination, key);
+
+    return reply::parse<long long>(*reply);
+}
+
 bool RedisCluster::sismember(const StringView &key, const StringView &member) {
     auto reply = command(cmd::sismember, key, member);
 

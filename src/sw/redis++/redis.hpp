@@ -512,7 +512,7 @@ long long Redis::sinterstore(const StringView &destination,
         throw Error("SINTERSTORE: no key specified");
     }
 
-    auto reply = command(cmd::sinterstore<Input>, destination, first, last);
+    auto reply = command(cmd::sinterstore_range<Input>, destination, first, last);
 
     return reply::parse<long long>(*reply);
 }
