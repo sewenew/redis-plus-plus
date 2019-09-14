@@ -667,6 +667,8 @@ public:
         sunion(il.begin(), il.end(), output);
     }
 
+    long long sunionstore(const StringView &destination, const StringView &key);
+
     template <typename Input>
     long long sunionstore(const StringView &destination, Input first, Input last);
 

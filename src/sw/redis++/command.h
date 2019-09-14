@@ -927,11 +927,19 @@ inline void sunion(Connection &connection, Input first, Input last) {
     connection.send(args);
 }
 
-template <typename Input>
 inline void sunionstore(Connection &connection,
                         const StringView &destination,
-                        Input first,
-                        Input last) {
+                        const StringView &key) {
+    connection.send("SUNIONSTORE %b %b",
+                    destination.data(), destination.size(),
+                    key.data(), key.size());
+}
+
+template <typename Input>
+inline void sunionstore_range(Connection &connection,
+                                const StringView &destination,
+                                Input first,
+                                Input last) {
     assert(first != last);
 
     CmdArgs args;

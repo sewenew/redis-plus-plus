@@ -554,7 +554,7 @@ long long RedisCluster::sunionstore(const StringView &destination, Input first, 
         throw Error("SUNIONSTORE: no key specified");
     }
 
-    auto reply = command(cmd::sunionstore<Input>, destination, first, last);
+    auto reply = command(cmd::sunionstore_range<Input>, destination, first, last);
 
     return reply::parse<long long>(*reply);
 }

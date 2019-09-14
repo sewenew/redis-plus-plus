@@ -889,9 +889,13 @@ public:
         return sunion(il.begin(), il.end());
     }
 
+    QueuedRedis& sunionstore(const StringView &destination, const StringView &key) {
+        return command(cmd::sunionstore, destination, key);
+    }
+
     template <typename Input>
     QueuedRedis& sunionstore(const StringView &destination, Input first, Input last) {
-        return command(cmd::sunionstore<Input>, destination, first, last);
+        return command(cmd::sunionstore_range<Input>, destination, first, last);
     }
 
     template <typename T>

@@ -506,6 +506,12 @@ long long RedisCluster::srem(const StringView &key, const StringView &member) {
     return reply::parse<long long>(*reply);
 }
 
+long long RedisCluster::sunionstore(const StringView &destination, const StringView &key) {
+    auto reply = command(cmd::sunionstore, destination, key);
+
+    return reply::parse<long long>(*reply);
+}
+
 // SORTED SET commands.
 
 auto RedisCluster::bzpopmax(const StringView &key, long long timeout)
