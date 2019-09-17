@@ -1000,12 +1000,18 @@ public:
         return command(cmd::zincrby, key, increment, member);
     }
 
+    QueuedRedis& zinterstore(const StringView &destination,
+                                const StringView &key,
+                                double weight) {
+        return command(cmd::zinterstore, destination, key, weight);
+    }
+
     template <typename Input>
     QueuedRedis& zinterstore(const StringView &destination,
                                 Input first,
                                 Input last,
                                 Aggregation type = Aggregation::SUM) {
-        return command(cmd::zinterstore<Input>, destination, first, last, type);
+        return command(cmd::zinterstore_range<Input>, destination, first, last, type);
     }
 
     template <typename T>

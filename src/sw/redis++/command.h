@@ -1027,12 +1027,22 @@ inline void zincrby(Connection &connection,
                     member.data(), member.size());
 }
 
+inline void zinterstore(Connection &connection,
+                        const StringView &destination,
+                        const StringView &key,
+                        double weight) {
+    connection.send("ZINTERSTORE %b 1 %b WEIGHTS %f",
+                    destination.data(), destination.size(),
+                    key.data(), key.size(),
+                    weight);
+}
+
 template <typename Input>
-void zinterstore(Connection &connection,
-                    const StringView &destination,
-                    Input first,
-                    Input last,
-                    Aggregation aggr);
+void zinterstore_range(Connection &connection,
+                        const StringView &destination,
+                        Input first,
+                        Input last,
+                        Aggregation aggr);
 
 template <typename Interval>
 inline void zlexcount(Connection &connection,
@@ -2167,11 +2177,11 @@ void zadd_range(Connection &connection,
 }
 
 template <typename Input>
-void zinterstore(Connection &connection,
-                    const StringView &destination,
-                    Input first,
-                    Input last,
-                    Aggregation aggr) {
+void zinterstore_range(Connection &connection,
+                        const StringView &destination,
+                        Input first,
+                        Input last,
+                        Aggregation aggr) {
     assert(first != last);
 
     detail::zinterstore(typename IsKvPairIter<Input>::type(),

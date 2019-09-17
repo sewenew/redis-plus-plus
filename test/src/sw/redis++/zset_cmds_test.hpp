@@ -241,6 +241,8 @@ void ZSetCmdTest<RedisInstance>::_test_multi_zset() {
     auto score = _redis.zscore(k3, "a");
     REDIS_ASSERT(bool(score) && *score == 3, "failed to test zinterstore");
 
+    REDIS_ASSERT(_redis.zinterstore(k3, k1, 2) == 2, "failed to test zinterstore");
+
     _redis.del(k3);
 
     REDIS_ASSERT(_redis.zinterstore(k3, {k1, k2}, Aggregation::MAX) == 1,

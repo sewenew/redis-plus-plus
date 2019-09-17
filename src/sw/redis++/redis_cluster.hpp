@@ -634,7 +634,7 @@ long long RedisCluster::zinterstore(const StringView &destination,
         throw Error("ZINTERSTORE: no key specified");
     }
 
-    auto reply = command(cmd::zinterstore<Input>,
+    auto reply = command(cmd::zinterstore_range<Input>,
                             destination,
                             first,
                             last,

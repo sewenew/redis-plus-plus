@@ -682,6 +682,8 @@ public:
 
     double zincrby(const StringView &key, double increment, const StringView &member);
 
+    long long zinterstore(const StringView &destination, const StringView &key, double weight);
+
     template <typename Input>
     long long zinterstore(const StringView &destination,
                             Input first,

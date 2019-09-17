@@ -652,6 +652,12 @@ double Redis::zincrby(const StringView &key, double increment, const StringView 
     return reply::parse<double>(*reply);
 }
 
+long long Redis::zinterstore(const StringView &destination, const StringView &key, double weight) {
+    auto reply = command(cmd::zinterstore, destination, key, weight);
+
+    return reply::parse<long long>(*reply);
+}
+
 Optional<std::pair<std::string, double>> Redis::zpopmax(const StringView &key) {
     auto reply = command(cmd::zpopmax, key, 1);
 

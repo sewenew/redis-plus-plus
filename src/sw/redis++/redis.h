@@ -768,6 +768,33 @@ public:
 
     double zincrby(const StringView &key, double increment, const StringView &member);
 
+    // There's no aggregation type parameter for single key overload, since these 3 types
+    // have the same effect.
+    long long zinterstore(const StringView &destination, const StringView &key, double weight);
+
+    // If *Input* is an iterator of a container of string,
+    // we use the default weight, i.e. 1, and send
+    // *ZINTERSTORE destination numkeys key [key ...] [AGGREGATE SUM|MIN|MAX]* command.
+    // If *Input* is an iterator of a container of pair<string, double>, i.e. key-weight pair,
+    // we send the command with the given weights:
+    // *ZINTERSTORE destination numkeys key [key ...]
+    // [WEIGHTS weight [weight ...]] [AGGREGATE SUM|MIN|MAX]*
+    //
+    // The following code use the default weight:
+    //
+    // vector<string> keys = {"k1", "k2", "k3"};
+    // redis.zinterstore(destination, keys.begin(), keys.end());
+    //
+    // On the other hand, the following code use the given weights:
+    //
+    // vector<pair<string, double>> keys_with_weights = {{"k1", 1}, {"k2", 2}, {"k3", 3}};
+    // redis.zinterstore(destination, keys_with_weights.begin(), keys_with_weights.end());
+    //
+    // NOTE: `keys_with_weights` can also be of type `unordered_map<string, double>`.
+    // However, it will be slower than vector<pair<string, double>>, since we use
+    // `distance(first, last)` to calculate the *numkeys* parameter.
+    //
+    // This also applies to *ZUNIONSTORE* command.
     template <typename Input>
     long long zinterstore(const StringView &destination,
                             Input first,
@@ -906,6 +933,7 @@ public:
 
     OptionalDouble zscore(const StringView &key, const StringView &member);
 
+    // See *zinterstore* comment for how to use this method.
     template <typename Input>
     long long zunionstore(const StringView &destination,
                             Input first,
