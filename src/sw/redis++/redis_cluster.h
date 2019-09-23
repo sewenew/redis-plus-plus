@@ -822,6 +822,8 @@ public:
 
     OptionalDouble zscore(const StringView &key, const StringView &member);
 
+    long long zunionstore(const StringView &destination, const StringView &key, double weight);
+
     template <typename Input>
     long long zunionstore(const StringView &destination,
                             Input first,

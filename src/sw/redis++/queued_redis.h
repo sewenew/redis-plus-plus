@@ -1185,12 +1185,18 @@ public:
         return command(cmd::zscore, key, member);
     }
 
+    QueuedRedis& zunionstore(const StringView &destination,
+                                const StringView &key,
+                                double weight) {
+        return command(cmd::zunionstore, destination, key, weight);
+    }
+
     template <typename Input>
     QueuedRedis& zunionstore(const StringView &destination,
                                 Input first,
                                 Input last,
                                 Aggregation type = Aggregation::SUM) {
-        return command(cmd::zunionstore<Input>, destination, first, last, type);
+        return command(cmd::zunionstore_range<Input>, destination, first, last, type);
     }
 
     template <typename T>

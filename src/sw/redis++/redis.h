@@ -933,6 +933,10 @@ public:
 
     OptionalDouble zscore(const StringView &key, const StringView &member);
 
+    // There's no aggregation type parameter for single key overload, since these 3 types
+    // have the same effect.
+    long long zunionstore(const StringView &destination, const StringView &key, double weight);
+
     // See *zinterstore* comment for how to use this method.
     template <typename Input>
     long long zunionstore(const StringView &destination,

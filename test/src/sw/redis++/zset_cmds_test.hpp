@@ -269,6 +269,8 @@ void ZSetCmdTest<RedisInstance>::_test_multi_zset() {
             REDIS_ASSERT(false, "failed to test zuionstore");
         }
     }
+
+    REDIS_ASSERT(_redis.zunionstore(k3, k1, 2) == 2, "failed to test zunionstore");
 }
 
 template <typename RedisInstance>

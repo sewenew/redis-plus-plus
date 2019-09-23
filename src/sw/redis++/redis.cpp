@@ -700,6 +700,12 @@ OptionalDouble Redis::zscore(const StringView &key, const StringView &member) {
     return reply::parse<OptionalDouble>(*reply);
 }
 
+long long Redis::zunionstore(const StringView &destination, const StringView &key, double weight) {
+    auto reply = command(cmd::zunionstore, destination, key, weight);
+
+    return reply::parse<long long>(*reply);
+}
+
 // HYPERLOGLOG commands.
 
 bool Redis::pfadd(const StringView &key, const StringView &element) {

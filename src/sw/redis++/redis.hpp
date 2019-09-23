@@ -859,7 +859,7 @@ long long Redis::zunionstore(const StringView &destination,
         throw Error("ZUNIONSTORE: no key specified");
     }
 
-    auto reply = command(cmd::zunionstore<Input>,
+    auto reply = command(cmd::zunionstore_range<Input>,
                             destination,
                             first,
                             last,

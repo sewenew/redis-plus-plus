@@ -1282,12 +1282,22 @@ inline void zscore(Connection &connection,
                     member.data(), member.size());
 }
 
+inline void zunionstore(Connection &connection,
+                        const StringView &destination,
+                        const StringView &key,
+                        double weight) {
+    connection.send("ZUNIONSTORE %b 1 %b WEIGHTS %f",
+                    destination.data(), destination.size(),
+                    key.data(), key.size(),
+                    weight);
+}
+
 template <typename Input>
-void zunionstore(Connection &connection,
-                    const StringView &destination,
-                    Input first,
-                    Input last,
-                    Aggregation aggr);
+void zunionstore_range(Connection &connection,
+                        const StringView &destination,
+                        Input first,
+                        Input last,
+                        Aggregation aggr);
 
 // HYPERLOGLOG commands.
 
@@ -2193,11 +2203,11 @@ void zinterstore_range(Connection &connection,
 }
 
 template <typename Input>
-void zunionstore(Connection &connection,
-                    const StringView &destination,
-                    Input first,
-                    Input last,
-                    Aggregation aggr) {
+void zunionstore_range(Connection &connection,
+                        const StringView &destination,
+                        Input first,
+                        Input last,
+                        Aggregation aggr) {
     assert(first != last);
 
     detail::zunionstore(typename IsKvPairIter<Input>::type(),
