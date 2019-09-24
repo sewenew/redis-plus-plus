@@ -720,6 +720,12 @@ long long Redis::pfcount(const StringView &key) {
     return reply::parse<long long>(*reply);
 }
 
+void Redis::pfmerge(const StringView &destination, const StringView &key) {
+    auto reply = command(cmd::pfmerge, destination, key);
+
+    reply::parse<void>(*reply);
+}
+
 // GEO commands.
 
 long long Redis::geoadd(const StringView &key,

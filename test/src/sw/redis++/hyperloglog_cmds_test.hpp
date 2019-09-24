@@ -53,6 +53,9 @@ void HyperloglogCmdTest<RedisInstance>::run() {
     cnt = _redis.pfcount(k3);
     err = cnt * 1.0 / total;
     REDIS_ASSERT(err < 1.02 && err > 0.98, "failed to test pfcount");
+
+    _redis.pfmerge(k3, k1);
+    REDIS_ASSERT(cnt == _redis.pfcount(k3), "failed to test pfmerge");
 }
 
 }

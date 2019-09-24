@@ -1236,9 +1236,13 @@ public:
         return pfcount(il.begin(), il.end());
     }
 
+    QueuedRedis& pfmerge(const StringView &destination, const StringView &key) {
+        return command(cmd::pfmerge, destination, key);
+    }
+
     template <typename Input>
     QueuedRedis& pfmerge(const StringView &destination, Input first, Input last) {
-        return command(cmd::pfmerge<Input>, destination, first, last);
+        return command(cmd::pfmerge_range<Input>, destination, first, last);
     }
 
     template <typename T>

@@ -900,7 +900,7 @@ void Redis::pfmerge(const StringView &destination,
         throw Error("PFMERGE: no key specified");
     }
 
-    auto reply = command(cmd::pfmerge<Input>, destination, first, last);
+    auto reply = command(cmd::pfmerge_range<Input>, destination, first, last);
 
     reply::parse<void>(*reply);
 }

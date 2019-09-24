@@ -973,6 +973,8 @@ public:
         return pfcount(il.begin(), il.end());
     }
 
+    void pfmerge(const StringView &destination, const StringView &key);
+
     template <typename Input>
     void pfmerge(const StringView &destination, Input first, Input last);
 

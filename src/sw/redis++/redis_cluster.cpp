@@ -622,6 +622,12 @@ long long RedisCluster::pfcount(const StringView &key) {
     return reply::parse<long long>(*reply);
 }
 
+void RedisCluster::pfmerge(const StringView &destination, const StringView &key) {
+    auto reply = command(cmd::pfmerge, destination, key);
+
+    reply::parse<void>(*reply);
+}
+
 // GEO commands.
 
 long long RedisCluster::geoadd(const StringView &key,

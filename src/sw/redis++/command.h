@@ -1338,11 +1338,17 @@ inline void pfcount_range(Connection &connection,
     connection.send(args);
 }
 
+inline void pfmerge(Connection &connection, const StringView &destination, const StringView &key) {
+    connection.send("PFMERGE %b %b",
+                    destination.data(), destination.size(),
+                    key.data(), key.size());
+}
+
 template <typename Input>
-inline void pfmerge(Connection &connection,
-                    const StringView &destination,
-                    Input first,
-                    Input last) {
+inline void pfmerge_range(Connection &connection,
+                            const StringView &destination,
+                            Input first,
+                            Input last) {
     assert(first != last);
 
     CmdArgs args;
