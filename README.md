@@ -96,16 +96,17 @@ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/path/to/hiredis -DCMAKE_IN
 *redis-plus-plus* has been fully tested with the following compilers:
 
 ```
-gcc version 4.8.5 20150623 (Red Hat 4.8.5-36) (GCC)
+gcc version 4.8.5 20150623 (Red Hat 4.8.5-39) (GCC)
 gcc version 5.5.0 20171010 (Ubuntu 5.5.0-12ubuntu1)
 gcc version 6.5.0 20181026 (Ubuntu 6.5.0-2ubuntu1~18.04)
-gcc version 7.3.0 (Ubuntu 7.3.0-27ubuntu1~18.04)
+gcc version 7.4.0 (Ubuntu 7.4.0-1ubuntu1~18.04.1)
+gcc version 8.3.0 (Ubuntu 8.3.0-6ubuntu1~18.04.1)
 clang version 3.9.1-19ubuntu1 (tags/RELEASE_391/rc2)
 clang version 4.0.1-10 (tags/RELEASE_401/final)
 clang version 5.0.1-4 (tags/RELEASE_501/final)
 clang version 6.0.0-1ubuntu2 (tags/RELEASE_600/final)
 clang version 7.0.0-3~ubuntu0.18.04.1 (tags/RELEASE_700/final)
-Apple LLVM version 10.0.0 (clang-1000.11.45.5)
+Apple clang version 11.0.0 (clang-1100.0.33.8)
 ```
 
 After compiling with cmake, you'll get a test program in *compile/test* directory: *compile/test/test_redis++*.
@@ -295,7 +296,8 @@ try {
     redis.hgetall("hash", std::inserter(m, m.begin()));
 
     // Get value only.
-    std::vector<std::string> vals;
+    // NOTE: since field might NOT exist, so we need to parse it to OptionalString.
+    std::vector<OptionalString> vals;
     redis.hmget("hash", {"field1", "field2"}, std::back_inserter(vals));
 
     // ***** SET commands *****
