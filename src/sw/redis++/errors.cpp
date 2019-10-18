@@ -49,8 +49,7 @@ void throw_error(redisContext &context, const std::string &err_info) {
 
     switch (err_code) {
     case REDIS_ERR_IO:
-        if (errno == EAGAIN) {
-            context.err = 0;
+        if (errno == EAGAIN || errno == EINTR) {
             throw TimeoutError(err_msg);
         } else {
             throw IoError(err_msg);

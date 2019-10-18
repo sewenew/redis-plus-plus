@@ -76,7 +76,13 @@ void Subscriber::punsubscribe(const StringView &pattern) {
 void Subscriber::consume() {
     _check_connection();
 
-    auto reply = _connection.recv();
+    ReplyUPtr reply;
+    try {
+        reply = _connection.recv();
+    } catch (const TimeoutError &) {
+        _connection.reset();
+        throw;
+    }
 
     assert(reply);
 

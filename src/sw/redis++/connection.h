@@ -101,6 +101,10 @@ public:
         return _ctx->err != REDIS_OK;
     }
 
+    void reset() noexcept {
+        _ctx->err = 0;
+    }
+
     void reconnect();
 
     auto last_active() const
