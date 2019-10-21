@@ -449,6 +449,19 @@ inline long long Redis::hscan(const StringView &key,
     return hscan(key, cursor, "*", 10, output);
 }
 
+template <typename Input>
+auto Redis::hset(const StringView &key, Input first, Input last)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value,
+                                    long long>::type {
+    if (first == last) {
+        throw Error("HSET: no key specified");
+    }
+
+    auto reply = command(cmd::hset_range<Input>, key, first, last);
+
+    return reply::parse<long long>(*reply);
+}
+
 template <typename Output>
 inline void Redis::hvals(const StringView &key, Output output) {
     auto reply = command(cmd::hvals, key);

@@ -455,6 +455,15 @@ public:
 
     bool hset(const StringView &key, const std::pair<StringView, StringView> &item);
 
+    template <typename Input>
+    auto hset(const StringView &key, Input first, Input last)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value, long long>::type;
+
+    template <typename T>
+    long long hset(const StringView &key, std::initializer_list<T> il) {
+        return hset(key, il.begin(), il.end());
+    }
+
     bool hsetnx(const StringView &key, const StringView &field, const StringView &val);
 
     bool hsetnx(const StringView &key, const std::pair<StringView, StringView> &item);

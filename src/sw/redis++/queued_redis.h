@@ -723,6 +723,18 @@ public:
         return hset(key, item.first, item.second);
     }
 
+    template <typename Input>
+    auto hset(const StringView &key, Input first, Input last)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value,
+                                    QueuedRedis&>::type {
+        return command(cmd::hset_range<Input>, key, first, last);
+    }
+
+    template <typename T>
+    QueuedRedis& hset(const StringView &key, std::initializer_list<T> il) {
+        return hset(key, il.begin(), il.end());
+    }
+
     QueuedRedis& hsetnx(const StringView &key, const StringView &field, const StringView &val) {
         return command(cmd::hsetnx, key, field, val);
     }

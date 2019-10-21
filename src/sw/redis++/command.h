@@ -729,6 +729,16 @@ inline void hset(Connection &connection,
                     val.data(), val.size());
 }
 
+template <typename Input>
+void hset_range(Connection &connection, const StringView &key, Input first, Input last) {
+    assert(first != last);
+
+    CmdArgs args;
+    args << "HSET" << key << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
 inline void hsetnx(Connection &connection,
                     const StringView &key,
                     const StringView &field,
