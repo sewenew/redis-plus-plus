@@ -152,6 +152,13 @@ void throw_error(redisContext &context, const std::string &err_info);
 
 void throw_error(const redisReply &reply);
 
+template <typename Input>
+inline void range_check(const char *cmd, Input first, Input last) {
+    if (first == last) {
+        throw Error(std::string(cmd) + ": no key specified");
+    }
+}
+
 }
 
 }

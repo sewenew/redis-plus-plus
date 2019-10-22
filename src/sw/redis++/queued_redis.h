@@ -26,6 +26,7 @@
 #include "reply.h"
 #include "command.h"
 #include "redis.h"
+#include "errors.h"
 
 namespace sw {
 
@@ -139,6 +140,8 @@ public:
 
     template <typename Input>
     QueuedRedis& del(Input first, Input last) {
+        range_check("DEL", first, last);
+
         return command(cmd::del_range<Input>, first, last);
     }
 
@@ -157,6 +160,8 @@ public:
 
     template <typename Input>
     QueuedRedis& exists(Input first, Input last) {
+        range_check("EXISTS", first, last);
+
         return command(cmd::exists_range<Input>, first, last);
     }
 
@@ -273,6 +278,8 @@ public:
 
     template <typename Input>
     QueuedRedis& touch(Input first, Input last) {
+        range_check("TOUCH", first, last);
+
         return command(cmd::touch_range<Input>, first, last);
     }
 
@@ -295,6 +302,8 @@ public:
 
     template <typename Input>
     QueuedRedis& unlink(Input first, Input last) {
+        range_check("UNLINK", first, last);
+
         return command(cmd::unlink_range<Input>, first, last);
     }
 
@@ -334,6 +343,8 @@ public:
                         const StringView &destination,
                         Input first,
                         Input last) {
+        range_check("BITOP", first, last);
+
         return command(cmd::bitop_range<Input>, op, destination, first, last);
     }
 
@@ -389,6 +400,8 @@ public:
 
     template <typename Input>
     QueuedRedis& mget(Input first, Input last) {
+        range_check("MGET", first, last);
+
         return command(cmd::mget<Input>, first, last);
     }
 
@@ -399,6 +412,8 @@ public:
 
     template <typename Input>
     QueuedRedis& mset(Input first, Input last) {
+        range_check("MSET", first, last);
+
         return command(cmd::mset<Input>, first, last);
     }
 
@@ -409,6 +424,8 @@ public:
 
     template <typename Input>
     QueuedRedis& msetnx(Input first, Input last) {
+        range_check("MSETNX", first, last);
+
         return command(cmd::msetnx<Input>, first, last);
     }
 
@@ -477,6 +494,8 @@ public:
 
     template <typename Input>
     QueuedRedis& blpop(Input first, Input last, long long timeout) {
+        range_check("BLPOP", first, last);
+
         return command(cmd::blpop_range<Input>, first, last, timeout);
     }
 
@@ -509,6 +528,8 @@ public:
 
     template <typename Input>
     QueuedRedis& brpop(Input first, Input last, long long timeout) {
+        range_check("BRPOP", first, last);
+
         return command(cmd::brpop_range<Input>, first, last, timeout);
     }
 
@@ -567,6 +588,8 @@ public:
 
     template <typename Input>
     QueuedRedis& lpush(const StringView &key, Input first, Input last) {
+        range_check("LPUSH", first, last);
+
         return command(cmd::lpush_range<Input>, key, first, last);
     }
 
@@ -611,6 +634,8 @@ public:
 
     template <typename Input>
     QueuedRedis& rpush(const StringView &key, Input first, Input last) {
+        range_check("RPUSH", first, last);
+
         return command(cmd::rpush_range<Input>, key, first, last);
     }
 
@@ -631,6 +656,8 @@ public:
 
     template <typename Input>
     QueuedRedis& hdel(const StringView &key, Input first, Input last) {
+        range_check("HDEL", first, last);
+
         return command(cmd::hdel_range<Input>, key, first, last);
     }
 
@@ -673,6 +700,8 @@ public:
 
     template <typename Input>
     QueuedRedis& hmget(const StringView &key, Input first, Input last) {
+        range_check("HMGET", first, last);
+
         return command(cmd::hmget<Input>, key, first, last);
     }
 
@@ -683,6 +712,8 @@ public:
 
     template <typename Input>
     QueuedRedis& hmset(const StringView &key, Input first, Input last) {
+        range_check("HMSET", first, last);
+
         return command(cmd::hmset<Input>, key, first, last);
     }
 
@@ -727,6 +758,8 @@ public:
     auto hset(const StringView &key, Input first, Input last)
         -> typename std::enable_if<!std::is_convertible<Input, StringView>::value,
                                     QueuedRedis&>::type {
+        range_check("HSET", first, last);
+
         return command(cmd::hset_range<Input>, key, first, last);
     }
 
@@ -759,6 +792,8 @@ public:
 
     template <typename Input>
     QueuedRedis& sadd(const StringView &key, Input first, Input last) {
+        range_check("SADD", first, last);
+
         return command(cmd::sadd_range<Input>, key, first, last);
     }
 
@@ -773,6 +808,8 @@ public:
 
     template <typename Input>
     QueuedRedis& sdiff(Input first, Input last) {
+        range_check("SDIFF", first, last);
+
         return command(cmd::sdiff<Input>, first, last);
     }
 
@@ -789,6 +826,8 @@ public:
     QueuedRedis& sdiffstore(const StringView &destination,
                             Input first,
                             Input last) {
+        range_check("SDIFFSTORE", first, last);
+
         return command(cmd::sdiffstore_range<Input>, destination, first, last);
     }
 
@@ -799,6 +838,8 @@ public:
 
     template <typename Input>
     QueuedRedis& sinter(Input first, Input last) {
+        range_check("SINTER", first, last);
+
         return command(cmd::sinter<Input>, first, last);
     }
 
@@ -815,6 +856,8 @@ public:
     QueuedRedis& sinterstore(const StringView &destination,
                                 Input first,
                                 Input last) {
+        range_check("SINTERSTORE", first, last);
+
         return command(cmd::sinterstore_range<Input>, destination, first, last);
     }
 
@@ -859,6 +902,8 @@ public:
 
     template <typename Input>
     QueuedRedis& srem(const StringView &key, Input first, Input last) {
+        range_check("SREM", first, last);
+
         return command(cmd::srem_range<Input>, key, first, last);
     }
 
@@ -893,6 +938,8 @@ public:
 
     template <typename Input>
     QueuedRedis& sunion(Input first, Input last) {
+        range_check("SUNION", first, last);
+
         return command(cmd::sunion<Input>, first, last);
     }
 
@@ -907,6 +954,8 @@ public:
 
     template <typename Input>
     QueuedRedis& sunionstore(const StringView &destination, Input first, Input last) {
+        range_check("SUNIONSTORE", first, last);
+
         return command(cmd::sunionstore_range<Input>, destination, first, last);
     }
 
@@ -928,6 +977,8 @@ public:
 
     template <typename Input>
     QueuedRedis& bzpopmax(Input first, Input last, long long timeout) {
+        range_check("BZPOPMAX", first, last);
+
         return command(cmd::bzpopmax_range<Input>, first, last, timeout);
     }
 
@@ -960,6 +1011,8 @@ public:
 
     template <typename Input>
     QueuedRedis& bzpopmin(Input first, Input last, long long timeout) {
+        range_check("BZPOPMIN", first, last);
+
         return command(cmd::bzpopmin_range<Input>, first, last, timeout);
     }
 
@@ -996,6 +1049,8 @@ public:
                         Input last,
                         UpdateType type = UpdateType::ALWAYS,
                         bool changed = false) {
+        range_check("ZADD", first, last);
+
         return command(cmd::zadd_range<Input>, key, first, last, type, changed);
     }
 
@@ -1023,6 +1078,8 @@ public:
                                 Input first,
                                 Input last,
                                 Aggregation type = Aggregation::SUM) {
+        range_check("ZINTERSTORE", first, last);
+
         return command(cmd::zinterstore_range<Input>, destination, first, last, type);
     }
 
@@ -1106,6 +1163,8 @@ public:
 
     template <typename Input>
     QueuedRedis& zrem(const StringView &key, Input first, Input last) {
+        range_check("ZREM", first, last);
+
         return command(cmd::zrem_range<Input>, key, first, last);
     }
 
@@ -1208,6 +1267,8 @@ public:
                                 Input first,
                                 Input last,
                                 Aggregation type = Aggregation::SUM) {
+        range_check("ZUNIONSTORE", first, last);
+
         return command(cmd::zunionstore_range<Input>, destination, first, last, type);
     }
 
@@ -1226,6 +1287,8 @@ public:
 
     template <typename Input>
     QueuedRedis& pfadd(const StringView &key, Input first, Input last) {
+        range_check("PFADD", first, last);
+
         return command(cmd::pfadd_range<Input>, key, first, last);
     }
 
@@ -1240,6 +1303,8 @@ public:
 
     template <typename Input>
     QueuedRedis& pfcount(Input first, Input last) {
+        range_check("PFCOUNT", first, last);
+
         return command(cmd::pfcount_range<Input>, first, last);
     }
 
@@ -1254,6 +1319,8 @@ public:
 
     template <typename Input>
     QueuedRedis& pfmerge(const StringView &destination, Input first, Input last) {
+        range_check("PFMERGE", first, last);
+
         return command(cmd::pfmerge_range<Input>, destination, first, last);
     }
 
@@ -1273,6 +1340,8 @@ public:
     QueuedRedis& geoadd(const StringView &key,
                         Input first,
                         Input last) {
+        range_check("GEOADD", first, last);
+
         return command(cmd::geoadd_range<Input>, key, first, last);
     }
 
@@ -1290,6 +1359,8 @@ public:
 
     template <typename Input>
     QueuedRedis& geohash(const StringView &key, Input first, Input last) {
+        range_check("GEOHASH", first, last);
+
         return command(cmd::geohash_range<Input>, key, first, last);
     }
 
@@ -1300,6 +1371,8 @@ public:
 
     template <typename Input>
     QueuedRedis& geopos(const StringView &key, Input first, Input last) {
+        range_check("GEOPOS", first, last);
+
         return command(cmd::geopos_range<Input>, key, first, last);
     }
 
@@ -1413,6 +1486,8 @@ public:
 
     template <typename Input>
     QueuedRedis& script_exists(Input first, Input last) {
+        range_check("SCRIPT EXISTS", first, last);
+
         return command(cmd::script_exists_range<Input>, first, last);
     }
 
@@ -1447,6 +1522,8 @@ public:
 
     template <typename Input>
     QueuedRedis& xack(const StringView &key, const StringView &group, Input first, Input last) {
+        range_check("XACK", first, last);
+
         return command(cmd::xack_range<Input>, key, group, first, last);
     }
 
@@ -1457,6 +1534,8 @@ public:
 
     template <typename Input>
     QueuedRedis& xadd(const StringView &key, const StringView &id, Input first, Input last) {
+        range_check("XADD", first, last);
+
         return command(cmd::xadd_range<Input>, key, id, first, last);
     }
 
@@ -1472,6 +1551,8 @@ public:
                         Input last,
                         long long count,
                         bool approx = true) {
+        range_check("XADD", first, last);
+
         return command(cmd::xadd_maxlen_range<Input>, key, id, first, last, count, approx);
     }
 
@@ -1499,6 +1580,8 @@ public:
                 const std::chrono::milliseconds &min_idle_time,
                 Input first,
                 Input last) {
+        range_check("XCLAIM", first, last);
+
         return command(cmd::xclaim_range<Input>,
                         key,
                         group,
@@ -1523,6 +1606,8 @@ public:
 
     template <typename Input>
     QueuedRedis& xdel(const StringView &key, Input first, Input last) {
+        range_check("XDEL", first, last);
+
         return command(cmd::xdel_range<Input>, key, first, last);
     }
 
@@ -1604,6 +1689,8 @@ public:
     auto xread(Input first, Input last, long long count)
         -> typename std::enable_if<!std::is_convertible<Input, StringView>::value,
                                     QueuedRedis&>::type {
+        range_check("XREAD", first, last);
+
         return command(cmd::xread_range<Input>, first, last, count);
     }
 
@@ -1634,6 +1721,8 @@ public:
                 long long count)
         -> typename std::enable_if<!std::is_convertible<Input, StringView>::value,
                                     QueuedRedis&>::type {
+        range_check("XREAD", first, last);
+
         return command(cmd::xread_block_range<Input>, first, last, timeout.count(), count);
     }
 
@@ -1672,6 +1761,8 @@ public:
                     bool noack)
         -> typename std::enable_if<!std::is_convertible<Input, StringView>::value,
                                     QueuedRedis&>::type {
+        range_check("XREADGROUP", first, last);
+
         return command(cmd::xreadgroup_range<Input>, group, consumer, first, last, count, noack);
     }
 
@@ -1740,6 +1831,8 @@ public:
                     bool noack)
         -> typename std::enable_if<!std::is_convertible<Input, StringView>::value,
                                     QueuedRedis&>::type {
+        range_check("XREADGROUP", first, last);
+
         return command(cmd::xreadgroup_block_range<Input>,
                         group,
                         consumer,
