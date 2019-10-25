@@ -121,6 +121,8 @@ public:
 
     ReplyUPtr recv();
 
+    ReplyUPtr recv(int timeout_microseconds);
+
     const ConnectionOptions& options() const {
         return _opts;
     }

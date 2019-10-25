@@ -16,6 +16,7 @@
 
 #include "connection.h"
 #include <cassert>
+#include <sys/time.h>
 #include "reply.h"
 #include "command.h"
 #include "command_args.h"
@@ -259,6 +260,33 @@ ReplyUPtr Connection::recv() {
         throw_error(*ctx, "Failed to get reply");
     }
 
+    assert(!broken() && r != nullptr);
+
+    auto reply = ReplyUPtr(static_cast<redisReply*>(r));
+
+    if (reply::is_error(*reply)) {
+        throw_error(*reply);
+    }
+
+    return reply;
+}
+
+ReplyUPtr Connection::recv(int timeout_microseconds) {
+    auto *ctx = _context();
+
+    assert(ctx != nullptr);
+
+    struct timeval tv = { 0, timeout_microseconds }; 
+    if (redisSetTimeout(ctx, tv) != REDIS_OK) {
+        throw_error(*ctx, "Failed to set timeout");
+    }
+    
+    void *r = nullptr;
+    int err = redisGetReply(ctx, &r);
+    if (err != REDIS_OK) {
+        throw_error(*ctx, "Failed to get reply");
+    }
+    
     assert(!broken() && r != nullptr);
 
     auto reply = ReplyUPtr(static_cast<redisReply*>(r));

@@ -112,6 +112,45 @@ void Subscriber::consume() {
     }
 }
 
+void Subscriber::consume(int timeout_microseconds) {
+    _check_connection();
+
+    ReplyUPtr reply;
+    try {
+        reply = _connection.recv(timeout_microseconds);
+    } catch (const TimeoutError &) {
+        _connection.reset();
+        throw;
+    }
+
+    assert(reply);
+
+    if (!reply::is_array(*reply) || reply->elements < 1 || reply->element == nullptr) {
+        throw ProtoError("Invalid subscribe message");
+    }
+
+    auto type = _msg_type(reply->element[0]);
+    switch (type) {
+    case MsgType::MESSAGE:
+        _handle_message(*reply);
+        break;
+
+    case MsgType::PMESSAGE:
+        _handle_pmessage(*reply);
+        break;
+
+    case MsgType::SUBSCRIBE:
+    case MsgType::UNSUBSCRIBE:
+    case MsgType::PSUBSCRIBE:
+    case MsgType::PUNSUBSCRIBE:
+        _handle_meta(type, *reply);
+        break;
+
+    default:
+        assert(false);
+    }
+}
+
 Subscriber::MsgType Subscriber::_msg_type(redisReply *reply) const {
     if (reply == nullptr) {
         throw ProtoError("Null type reply.");

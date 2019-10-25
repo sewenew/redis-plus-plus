@@ -134,6 +134,16 @@ public:
 
     void consume();
 
+    void consume(int timeout_microseconds);
+    
+    bool is_connection_broken() {
+        return _connection.broken() ? true: false;
+    }
+
+    void reconnect() {
+        _connection.reconnect();
+    }
+
 private:
     friend class Redis;
 
