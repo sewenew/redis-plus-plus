@@ -1,11 +1,11 @@
 /**************************************************************************
-   Copyright (c) 2017 sewenew
+   Copyright (c) 2019
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
    You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+	   http://www.apache.org/licenses/LICENSE-2.0
 
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,13 +14,34 @@
    limitations under the License.
  *************************************************************************/
 
-#ifndef SEWENEW_REDISPLUSPLUS_REDISPLUSPLUS_H
-#define SEWENEW_REDISPLUSPLUS_REDISPLUSPLUS_H
+#ifndef REDISPLUSPLUS_TEST_REDLOCK_TEST_H
+#define REDISPLUSPLUS_TEST_REDLOCK_TEST_H
 
-#include "redis.h"
-#include "redis_cluster.h"
-#include "queued_redis.h"
-#include "sentinel.h"
-#include "redlock.hpp"
+#include <sw/redis++/redis++.h>
 
-#endif // end SEWENEW_REDISPLUSPLUS_REDISPLUSPLUS_H
+namespace sw {
+
+namespace redis {
+
+namespace test {
+
+template <typename RedisInstance>
+class RedlockTest {
+public:
+	explicit RedlockTest(RedisInstance &instance) : _redis(instance) {}
+
+	void run();
+
+private:
+	RedisInstance &_redis;
+};
+
+} // namespace test
+
+} // namespace redis
+
+} // namespace sw
+
+#include "redlock_test.hpp"
+
+#endif // end REDISPLUSPLUS_TEST_REDLOCK_TEST_H

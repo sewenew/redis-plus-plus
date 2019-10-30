@@ -17,7 +17,16 @@ find_path(HIREDIS_HEADER hiredis)
 target_include_directories(${PROJECT_NAME} PUBLIC ${HIREDIS_HEADER})
 
 find_library(HIREDIS_STATIC_LIB libhiredis.a)
-target_link_libraries(${PROJECT_NAME} ${HIREDIS_STATIC_LIB})
+
+find_package (OpenSSL)
+
+if (OPENSSL_FOUND)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC -DUSE_OPENSSL)
+  include_directories(${OPENSSL_INCLUDE_DIR})
+  target_link_libraries(${PROJECT_NAME} ${HIREDIS_STATIC_LIB} ${OPENSSL_CRYPTO_LIBRARY})
+else (OPENSSL_FOUND)
+  target_link_libraries(${PROJECT_NAME} ${HIREDIS_STATIC_LIB})
+endif (OPENSSL_FOUND)
 
 # redis++ dependency
 target_include_directories(${PROJECT_NAME} PUBLIC ../src)
@@ -30,4 +39,8 @@ ENDIF(CMAKE_SYSTEM_NAME MATCHES "(Solaris|SunOS)" )
 
 find_package(Threads REQUIRED)
 
-target_link_libraries(${PROJECT_NAME} ${REDIS_PLUS_PLUS_LIB} ${CMAKE_THREAD_LIBS_INIT})
+if (OPENSSL_FOUND)
+  target_link_libraries(${PROJECT_NAME} ${REDIS_PLUS_PLUS_LIB} ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_CRYPTO_LIBRARY})
+else (OPENSSL_FOUND)
+  target_link_libraries(${PROJECT_NAME} ${REDIS_PLUS_PLUS_LIB} ${CMAKE_THREAD_LIBS_INIT})
+endif (OPENSSL_FOUND)
