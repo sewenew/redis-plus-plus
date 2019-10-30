@@ -97,7 +97,7 @@ void RedlockTest<RedisInstance>::run() {
 	Redlock<RedisInstance> redLock(_redis, randomBuffer);
 
 	const auto lockKey = test_key("some_random_key_name.lock");
-	const std::chrono::milliseconds ttl(100);
+	const std::chrono::milliseconds ttl(200);
 
 	// 1. Test if we can obtain a lock.
 	if (redLock.lock(lockKey, ttl)) {
