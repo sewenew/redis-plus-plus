@@ -64,11 +64,19 @@ public:
     }
 
     std::chrono::milliseconds try_lock(const std::chrono::milliseconds &ttl) {
-        return _mut.try_lock(_lock_val, ttl);
+        auto time_left = _mut.try_lock(_lock_val, ttl);
+        _owned = true;
+        return time_left;
     }
 
     void unlock() {
-        _mut.unlock(_lock_val);
+        try {
+            _mut.unlock(_lock_val);
+            _owned = false;
+        } catch (const Error &err) {
+            _owned = false;
+            throw;
+        }
     }
 
 private:
