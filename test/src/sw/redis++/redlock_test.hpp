@@ -163,6 +163,32 @@ void RedlockTest<RedisInstance>::run() {
 	else {
 		REDIS_ASSERT(0, "unable to obtain a lock.");
 	}
+
+	// 5. Test if the an extended lock times out at the right time.
+	if (redLock.lock(lockKey, ttl)) {
+		// We'll sleep 2/3 of the ttl.
+		usleep(ttl.count() * 1000 * 2 / 3);
+		// Now we have 1/3 of the ttl left, so we extend it by ttl.
+		if (redLock.extend_lock(lockKey, ttl)) {
+			// We'll sleep ttl + 100 millis and see if the lock is gone.
+			usleep((ttl.count() * 1000) + 100);
+			// Locking it should not fail.
+			if (redLock.lock(lockKey, ttl)) {
+				redLock.unlock(lockKey);
+			}
+			else {
+				redLock.unlock(lockKey);
+				REDIS_ASSERT(0, "redlock extend_lock failed to release after TTL.");
+			}
+		}
+		else {
+			redLock.unlock(lockKey);
+			REDIS_ASSERT(0, "redlock extend_lock failed, although the lock exists.");
+		}
+	}
+	else {
+		REDIS_ASSERT(0, "unable to obtain a lock.");
+	}
 }
 
 } // namespace test

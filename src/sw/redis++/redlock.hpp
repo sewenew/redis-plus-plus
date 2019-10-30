@@ -50,7 +50,7 @@ end \
 "),
 		_extendLockScript("\
 if redis.call(\"GET\",KEYS[1]) == ARGV[1] then \
-  return redis.call(\"expire\",KEYS[1],ARGV[2]) \
+  return redis.call(\"pexpire\",KEYS[1],ARGV[2]) \
 else \
   return 0 \
 end \
