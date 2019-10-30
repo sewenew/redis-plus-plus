@@ -189,6 +189,26 @@ void RedlockTest<RedisInstance>::run() {
 	else {
 		REDIS_ASSERT(0, "unable to obtain a lock.");
 	}
+
+	// 6. Test if ~Redlock() releases all the locked keys.
+	{
+		Redlock<RedisInstance> tmpRedLock(_redis, randomBuffer);
+		if (tmpRedLock.lock(lockKey, ttl)) {
+			// Don't unlock, as we're testing the destructor's unlock.
+		}
+		else {
+			REDIS_ASSERT(0, "unable to obtain a lock.");
+		}
+	}
+	// We destructed within TTL, so we should be able to lock,
+	// if the destructor unlocked the key.
+	if (redLock.lock(lockKey, ttl)) {
+		redLock.unlock(lockKey);
+	}
+	else {
+		redLock.unlock(lockKey);
+		REDIS_ASSERT(0, "The Redlock destructor failed to unlock.");
+	}
 }
 
 } // namespace test

@@ -60,6 +60,12 @@ end \
 	{
 	}
 
+	~Redlock() {
+		while (_randomNumberMap.size() > 0) {
+			unlock(_randomNumberMap.begin()->first);
+		}
+	}
+
 	// Only locks if no lock for the supplied key exists.
 	// The lock will stay valid until unlock() is called,
 	// or until the ttl period expired.
