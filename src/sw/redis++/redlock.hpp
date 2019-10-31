@@ -90,7 +90,6 @@ end \
 	void unlock(const std::string& key);
 
 private:
-	void checkAndLoad(Redis& instance, const std::string& sha1, const std::string& scriptString);
 	std::string loadScript(const std::string& script);
 
 	RandomBufferInterface& _randomBuffer;

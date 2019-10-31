@@ -20,27 +20,21 @@ namespace sw {
 
 namespace redis {
 
-template <typename T>
-void Redlock<T>::checkAndLoad(Redis& instance, const std::string& sha1, const std::string& scriptString) {
-	std::list<bool> replyList;
-	instance.script_exists({sha1, std::string("")}, std::back_inserter(replyList));
-	if (replyList.size() != 2) {
-		throw Error("script_exists returned an invalid list size.");
-	}
-	else if (!*replyList.begin()) {
-		instance.script_load(scriptString);
-	}
-}
-
 template <>
 bool Redlock<RedisCluster>::extend_lock(const std::string& key, const std::chrono::milliseconds& ttl) {
 	bool result = false;
 	auto item = _randomNumberMap.find(key);
 	if (item != _randomNumberMap.end()) {
 		Redis instance = _instance.redis(key);
-		checkAndLoad(instance, _extendLockSHA1, _extendLockScript);
-		result = instance.evalsha<long long>(_extendLockSHA1, {key}, {item->second, std::to_string(ttl.count())});
-	}
+		try {
+			result = instance.evalsha<long long>(_extendLockSHA1, {key}, {item->second, std::to_string(ttl.count())});
+		} catch (const Error &e) {
+			// We now assume that the key moved to a node that does not have
+			// the script loaded into its lua cache yet. Load and retry.
+			instance.script_load(_extendLockScript);
+			result = instance.evalsha<long long>(_extendLockSHA1, {key}, {item->second, std::to_string(ttl.count())});
+		}
+	 }
 	return result;
 }
 
@@ -59,8 +53,14 @@ void Redlock<RedisCluster>::unlock(const std::string& key) {
 	auto item = _randomNumberMap.find(key);
 	if (item != _randomNumberMap.end()) {
 		Redis instance = _instance.redis(key);
-		checkAndLoad(instance, _unlockSHA1, _unlockScript);
-		instance.evalsha<long long>(_unlockSHA1, {key}, {item->second});
+		try {
+			instance.evalsha<long long>(_unlockSHA1, {key}, {item->second});
+		} catch (const Error &e) {
+			// We now assume that the key moved to a node that does not have
+			// the script loaded into its lua cache yet. Load and retry.
+			instance.script_load(_unlockScript);
+			instance.evalsha<long long>(_unlockSHA1, {key}, {item->second});
+		}
 		_randomNumberMap.erase(item);
 	}
 }
