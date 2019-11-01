@@ -21,5 +21,6 @@
 #include "redis_cluster.h"
 #include "queued_redis.h"
 #include "sentinel.h"
+#include "recipes/redlock.h"
 
 #endif // end SEWENEW_REDISPLUSPLUS_REDISPLUSPLUS_H

@@ -17,12 +17,12 @@
 #ifndef SEWENEW_REDISPLUSPLUS_RECIPES_REDLOCK_H
 #define SEWENEW_REDISPLUSPLUS_RECIPES_REDLOCK_H
 
-#include <cassert>
 #include <random>
 #include <chrono>
 #include <string>
-//#include "../redis++.h"
-#include <sw/redis++/redis++.h>
+#include <vector>
+#include <functional>
+#include "../redis++.h"
 
 namespace sw {
 
@@ -30,9 +30,24 @@ namespace redis {
 
 class RedMutex {
 public:
-    RedMutex(Redis &redis, const std::string &resource) : _redis(redis), _resource(resource) {}
+    // Lock with a single Redis master.
+    RedMutex(Redis &master, const std::string &resource);
 
-    std::chrono::milliseconds try_lock(const std::string &val, const std::chrono::milliseconds &ttl);
+    // Distributed version, i.e. lock with a list of Redis masters.
+    // Only successfully acquire the lock if we can lock on more than half masters.
+    RedMutex(std::initializer_list<std::reference_wrapper<Redis>> masters,
+                const std::string &resource);
+
+    RedMutex(const RedMutex &) = delete;
+    RedMutex& operator=(const RedMutex &) = delete;
+
+    RedMutex(RedMutex &&) = delete;
+    RedMutex& operator=(RedMutex &&) = delete;
+
+    ~RedMutex() = default;
+
+    std::chrono::milliseconds try_lock(const std::string &val,
+            const std::chrono::milliseconds &ttl);
 
     bool try_lock(const std::string &val,
             const std::chrono::time_point<std::chrono::system_clock> &tp);
@@ -43,19 +58,36 @@ public:
     void unlock(const std::string &val);
 
 private:
+    void _unlock_master(Redis &master, const std::string &val);
+
+    bool _try_lock(const std::string &val, const std::chrono::milliseconds &ttl);
+
+    bool _try_lock_master(Redis &master,
+            const std::string &val,
+            const std::chrono::milliseconds &ttl);
+
+    bool _extend_lock_master(Redis &master,
+            const std::string &val,
+            const std::chrono::time_point<std::chrono::system_clock> &tp);
+
+    std::size_t _quorum() const {
+        return _masters.size() / 2 + 1;
+    }
+
     using SysTime = std::chrono::time_point<std::chrono::system_clock>;
 
     std::chrono::milliseconds _ttl(const SysTime &tp) const;
 
-    Redis &_redis;
+    using RedisRef = std::reference_wrapper<Redis>;
+
+    std::vector<RedisRef> _masters;
 
     std::string _resource;
 };
 
-template <typename Mutex>
 class RedLock {
 public:
-    RedLock(Mutex &mut, std::defer_lock_t) : _mut(mut), _lock_val(_lock_id()) {}
+    RedLock(RedMutex &mut, std::defer_lock_t) : _mut(mut), _lock_val(_lock_id()) {}
 
     ~RedLock() {
         if (_owned) {
@@ -63,10 +95,32 @@ public:
         }
     }
 
+    // Try to acquire the lock for *ttl* milliseconds.
+    // Returns how much time still left for the lock, i.e. lock validity time.
     std::chrono::milliseconds try_lock(const std::chrono::milliseconds &ttl) {
         auto time_left = _mut.try_lock(_lock_val, ttl);
         _owned = true;
         return time_left;
+    }
+
+    // Try to acquire the lock, and hold until *tp*.
+    bool try_lock(const std::chrono::time_point<std::chrono::system_clock> &tp) {
+        if (_mut.try_lock(_lock_val, tp)) {
+            _owned = true;
+        }
+
+        return _owned;
+    }
+
+    // Try to extend the lock, and hold it until *tp*.
+    bool extend_lock(const std::chrono::time_point<std::chrono::system_clock> &tp) {
+        if (_mut.extend_lock(_lock_val, tp)) {
+            _owned = true;
+        } else {
+            _owned = false;
+        }
+
+        return _owned;
     }
 
     void unlock() {
@@ -80,30 +134,9 @@ public:
     }
 
 private:
-    std::string _lock_id() {
-        std::random_device dev;
-        std::mt19937 random_gen(dev());
-        int range = 10 + 26 + 26 - 1;
-        std::uniform_int_distribution<> dist(0, range);
-        std::string id;
-        id.reserve(20);
-        for (int i = 0; i != 20; ++i) {
-            auto idx = dist(random_gen);
-            if (idx < 10) {
-                id.push_back('0' + idx);
-            } else if (idx < 10 + 26) {
-                id.push_back('a' + idx - 10);
-            } else if (idx < 10 + 26 + 26) {
-                id.push_back('A' + idx - 10 - 26);
-            } else {
-                assert(false);
-            }
-        }
+    std::string _lock_id() const;
 
-        return id;
-    }
-
-    Mutex &_mut;
+    RedMutex &_mut;
 
     bool _owned = false;
 

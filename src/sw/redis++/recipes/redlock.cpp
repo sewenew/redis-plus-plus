@@ -15,30 +15,36 @@
  *************************************************************************/
 
 #include "redlock.h"
+#include <cassert>
 
 namespace sw {
 
 namespace redis {
 
-std::chrono::milliseconds RedMutex::try_lock(const std::string &val, const std::chrono::milliseconds &ttl) {
+RedMutex::RedMutex(Redis &master, const std::string &resource) : _resource(resource) {
+    _masters.push_back(std::ref(master));
+}
+
+RedMutex::RedMutex(std::initializer_list<std::reference_wrapper<Redis>> masters,
+                    const std::string &resource)
+                        : _masters(masters.begin(), masters.end()), _resource(resource) {}
+
+std::chrono::milliseconds RedMutex::try_lock(const std::string &val,
+        const std::chrono::milliseconds &ttl) {
     auto start = std::chrono::steady_clock::now();
 
-    if (!_redis.set(_resource, val, ttl, UpdateType::NOT_EXIST)) {
-        throw Error("failed to lock " + _resource);
-    }
+    auto lock_ok = _try_lock(val, ttl);
 
     auto stop = std::chrono::steady_clock::now();
     auto elapse = stop - start;
 
     auto time_left = std::chrono::duration_cast<std::chrono::milliseconds>(ttl - elapse);
 
-    if (time_left < std::chrono::milliseconds(0)) {
-        // No time left for the lock.
-        try {
-            unlock(_resource);
-        } catch (const Error &err) {
-            throw Error("failed to lock " + _resource);
-        }
+    if (!lock_ok || time_left < std::chrono::milliseconds(0)) {
+        // Failed to lock more than half masters, or no time left for the lock.
+        unlock(_resource);
+
+        throw Error("failed to lock: " + _resource);
     }
 
     return time_left;
@@ -57,7 +63,20 @@ bool RedMutex::try_lock(const std::string &val,
 
 bool RedMutex::extend_lock(const std::string &val,
         const std::chrono::time_point<std::chrono::system_clock> &tp) {
-    auto tx = _redis.transaction(true);
+    auto lock_cnt = 0U;
+    for (auto &master : _masters) {
+        if (_extend_lock_master(master.get(), val, tp)) {
+            ++lock_cnt;
+        }
+    }
+
+    return lock_cnt >= _quorum();
+}
+
+bool RedMutex::_extend_lock_master(Redis &master,
+        const std::string &val,
+        const std::chrono::time_point<std::chrono::system_clock> &tp) {
+    auto tx = master.transaction(true);
     auto r = tx.redis();
     try {
         auto ttl = _ttl(tp);
@@ -68,7 +87,7 @@ bool RedMutex::extend_lock(const std::string &val,
         if (id && *id == val) {
             auto reply = tx.pexpire(_resource, ttl).exec();
             if (!reply.get<bool>(0)) {
-                throw Error("this should not happen");
+                return false;
             }
         }
     } catch (const Error &err) {
@@ -80,7 +99,17 @@ bool RedMutex::extend_lock(const std::string &val,
 }
 
 void RedMutex::unlock(const std::string &val) {
-    auto tx = _redis.transaction(true);
+    for (auto &master : _masters) {
+        try {
+            _unlock_master(master.get(), val);
+        } catch (const Error &err) {
+            // Ignore errors, and continue to unlock other maters.
+        }
+    }
+}
+
+void RedMutex::_unlock_master(Redis &master, const std::string &val) {
+    auto tx = master.transaction(true);
     auto r = tx.redis();
     try {
         r.watch(_resource);
@@ -92,9 +121,26 @@ void RedMutex::unlock(const std::string &val) {
                 throw Error("this should not happen");
             }
         }
-    } catch(const WatchError &err) {
+    } catch (const WatchError &err) {
         // key has been modified. Do nothing, just let it go.
     }
+}
+
+bool RedMutex::_try_lock(const std::string &val, const std::chrono::milliseconds &ttl) {
+    std::size_t lock_cnt = 0U;
+    for (auto &master : _masters) {
+        if (_try_lock_master(master.get(), val, ttl)) {
+            ++lock_cnt;
+        }
+    }
+
+    return lock_cnt >= _quorum();
+}
+
+bool RedMutex::_try_lock_master(Redis &master,
+        const std::string &val,
+        const std::chrono::milliseconds &ttl) {
+    return master.set(_resource, val, ttl, UpdateType::NOT_EXIST);
 }
 
 std::chrono::milliseconds RedMutex::_ttl(const SysTime &tp) const {
@@ -107,6 +153,28 @@ std::chrono::milliseconds RedMutex::_ttl(const SysTime &tp) const {
     return std::chrono::duration_cast<std::chrono::milliseconds>(ttl);
 }
 
+std::string RedLock::_lock_id() const {
+    std::random_device dev;
+    std::mt19937 random_gen(dev());
+    int range = 10 + 26 + 26 - 1;
+    std::uniform_int_distribution<> dist(0, range);
+    std::string id;
+    id.reserve(20);
+    for (int i = 0; i != 20; ++i) {
+        auto idx = dist(random_gen);
+        if (idx < 10) {
+            id.push_back('0' + idx);
+        } else if (idx < 10 + 26) {
+            id.push_back('a' + idx - 10);
+        } else if (idx < 10 + 26 + 26) {
+            id.push_back('A' + idx - 10 - 26);
+        } else {
+            assert(false);
+        }
+    }
+
+    return id;
+}
 }
 
 }
