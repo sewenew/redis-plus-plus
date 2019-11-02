@@ -16,6 +16,7 @@
 
 #include "redlock.h"
 #include <cassert>
+#include <thread>
 
 namespace sw {
 
@@ -53,7 +54,7 @@ std::chrono::milliseconds RedMutex::try_lock(const std::string &val,
 bool RedMutex::try_lock(const std::string &val,
         const std::chrono::time_point<std::chrono::system_clock> &tp) {
     try {
-        try_lock(val, _ttl(tp));
+        try_lock(val, RedLockUtils::ttl(tp));
     } catch (const Error &err) {
         return false;
     }
@@ -79,7 +80,7 @@ bool RedMutex::_extend_lock_master(Redis &master,
     auto tx = master.transaction(true);
     auto r = tx.redis();
     try {
-        auto ttl = _ttl(tp);
+        auto ttl = RedLockUtils::ttl(tp);
 
         r.watch(_resource);
 
@@ -143,7 +144,7 @@ bool RedMutex::_try_lock_master(Redis &master,
     return master.set(_resource, val, ttl, UpdateType::NOT_EXIST);
 }
 
-std::chrono::milliseconds RedMutex::_ttl(const SysTime &tp) const {
+std::chrono::milliseconds RedLockUtils::ttl(const SysTime &tp) {
     auto cur = std::chrono::system_clock::now();
     auto ttl = tp - cur;
     if (ttl.count() < 0) {
@@ -153,7 +154,7 @@ std::chrono::milliseconds RedMutex::_ttl(const SysTime &tp) const {
     return std::chrono::duration_cast<std::chrono::milliseconds>(ttl);
 }
 
-std::string RedLock::_lock_id() const {
+std::string RedLockUtils::lock_id() {
     std::random_device dev;
     std::mt19937 random_gen(dev());
     int range = 10 + 26 + 26 - 1;
@@ -175,6 +176,137 @@ std::string RedLock::_lock_id() const {
 
     return id;
 }
+
+RedLockMutexVessel::RedLockMutexVessel(Redis& instance) :
+    RedLockMutexVessel({instance})
+{
+}
+
+RedLockMutexVessel::RedLockMutexVessel(std::initializer_list<std::reference_wrapper<Redis>> instances) :
+    _instances(instances.begin(), instances.end())
+{
+}
+
+bool RedLockMutexVessel::_extend_lock_instance(Redis& instance,
+                                         const std::string& resource,
+                                         const std::string& random_string,
+                                         const std::chrono::milliseconds& ttl)
+{
+    const static std::string script = R"(
+if redis.call("GET",KEYS[1]) == ARGV[1] then
+  return redis.call("pexpire",KEYS[1],ARGV[2])
+else
+  return 0
+end
+)";
+    auto result = instance.eval<long long>(script, {resource}, {random_string, std::to_string(ttl.count())});
+    return result != 0;
+}
+
+void RedLockMutexVessel::_unlock_instance(Redis& instance,
+                                    const std::string& resource,
+                                    const std::string& random_string)
+{
+    const std::string script = R"(
+if redis.call("GET",KEYS[1]) == ARGV[1] then
+  return redis.call("del",KEYS[1])
+else
+  return 0
+end
+)";
+    instance.eval<long long>(script, {resource}, {random_string});
+}
+
+bool RedLockMutexVessel::_lock_instance(Redis& instance,
+                                  const std::string& resource,
+                                  const std::string& random_string,
+                                  const std::chrono::milliseconds& ttl)
+{
+    const auto result = instance.set(resource, random_string, ttl, UpdateType::NOT_EXIST);
+    return result;
+}
+
+RedLockMutexVessel::LockInfo RedLockMutexVessel::lock(const std::string& resource,
+                                          const std::string& random_string,
+                                          const std::chrono::milliseconds& ttl,
+                                          int retry_count,
+                                          const std::chrono::milliseconds& retry_delay,
+                                          double clock_drift_factor)
+{
+    LockInfo lock_info = {false, std::chrono::steady_clock::now(), ttl, resource, random_string};
+
+    for (int i=0; i<retry_count; i++) {
+        int num_locked = 0;
+        for (auto& instance : _instances) {
+            if (_lock_instance(instance, lock_info.resource, lock_info.random_string, ttl)) {
+                num_locked++;
+            }
+        }
+
+        const auto drift = std::chrono::milliseconds(int(ttl.count() * clock_drift_factor) + 2);
+        lock_info.time_remaining = std::chrono::duration_cast<std::chrono::milliseconds>
+            (lock_info.startTime + ttl - std::chrono::steady_clock::now() - drift);
+
+        if (lock_info.time_remaining.count() <= 0) {
+            unlock(lock_info);
+            break; // The should not retry after the TTL expiration.
+        }
+        if (num_locked >= _quorum()) {
+            lock_info.locked = true;
+            break; // We have the lock.
+        }
+
+        unlock(lock_info);
+
+        // Sleep, only if it's _not_ the last attempt.
+        if (i != retry_count - 1) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(std::rand() * retry_delay.count() / RAND_MAX));
+        }
+    }
+    return lock_info;
+}
+
+RedLockMutexVessel::LockInfo RedLockMutexVessel::extend_lock(const RedLockMutexVessel::LockInfo& lock_info,
+                                                 const std::chrono::milliseconds& ttl,
+                                                 double clock_drift_factor)
+{
+    if (lock_info.locked) {
+        LockInfo extended_lock_info = {false, std::chrono::steady_clock::now(), ttl, lock_info.resource, lock_info.random_string};
+        const auto time_remaining = std::chrono::duration_cast<std::chrono::milliseconds>
+            (lock_info.startTime + lock_info.time_remaining - extended_lock_info.startTime);
+
+        if (time_remaining.count() > 0) {
+            int num_locked = 0;
+            for (auto& instance : _instances) {
+                if (_extend_lock_instance(instance, lock_info.resource, lock_info.random_string, ttl)) {
+                    num_locked++;
+                }
+            }
+            const auto drift = std::chrono::milliseconds(int(ttl.count() * clock_drift_factor) + 2);
+            extended_lock_info.time_remaining = std::chrono::duration_cast<std::chrono::milliseconds>
+                (extended_lock_info.startTime + ttl - std::chrono::steady_clock::now() - drift);
+
+            if (num_locked >= _quorum() && extended_lock_info.time_remaining.count() > 0) {
+                extended_lock_info.locked = true;
+            }
+            else {
+                unlock(lock_info);
+            }
+        }
+        return extended_lock_info;
+    }
+    else {
+        return lock_info;
+    }
+}
+
+void RedLockMutexVessel::unlock(const LockInfo& lock_info)
+{
+    for (auto& instance : _instances) {
+        _unlock_instance(instance, lock_info.resource, lock_info.random_string);
+    }
+}
+
 }
 
 }

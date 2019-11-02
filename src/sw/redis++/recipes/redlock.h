@@ -28,6 +28,15 @@ namespace sw {
 
 namespace redis {
 
+class RedLockUtils {
+public:
+    using SysTime = std::chrono::time_point<std::chrono::system_clock>;
+
+    static std::chrono::milliseconds ttl(const SysTime &tp);
+
+    static std::string lock_id();
+};
+
 class RedMutex {
 public:
     // Lock with a single Redis master.
@@ -74,10 +83,6 @@ private:
         return _masters.size() / 2 + 1;
     }
 
-    using SysTime = std::chrono::time_point<std::chrono::system_clock>;
-
-    std::chrono::milliseconds _ttl(const SysTime &tp) const;
-
     using RedisRef = std::reference_wrapper<Redis>;
 
     std::vector<RedisRef> _masters;
@@ -85,9 +90,10 @@ private:
     std::string _resource;
 };
 
+template <typename RedisInstance>
 class RedLock {
 public:
-    RedLock(RedMutex &mut, std::defer_lock_t) : _mut(mut), _lock_val(_lock_id()) {}
+    RedLock(RedisInstance &mut, std::defer_lock_t) : _mut(mut), _lock_val(RedLockUtils::lock_id()) {}
 
     ~RedLock() {
         if (_owned) {
@@ -134,13 +140,145 @@ public:
     }
 
 private:
-    std::string _lock_id() const;
 
-    RedMutex &_mut;
+    RedisInstance &_mut;
 
     bool _owned = false;
 
     std::string _lock_val;
+};
+
+class RedLockMutexVessel
+{
+public:
+
+    // This class does _not_ implement RedMutexInterface, as it gives
+    // the user the ability to use an instance of it for multiple resources.
+    // More than one resource can thus be locked and tracked with a single
+    // instantiation of this class.
+
+    explicit RedLockMutexVessel(Redis& instance);
+    explicit RedLockMutexVessel(std::initializer_list<std::reference_wrapper<Redis>> instances);
+
+    RedLockMutexVessel(const RedLockMutexVessel &) = delete;
+    RedLockMutexVessel& operator=(const RedLockMutexVessel &) = delete;
+
+    RedLockMutexVessel(RedLockMutexVessel &&) = delete;
+    RedLockMutexVessel& operator=(RedLockMutexVessel &&) = delete;
+
+    ~RedLockMutexVessel() = default;
+
+    // The LockInfo struct can be used for chaining a lock to
+    // one or more extend_locks and finally to an unlock.
+    // All the lock's information is contained, so multiple
+    // locks could be handled with a single RedLockMutexVessel instance.
+    struct LockInfo {
+        bool locked;
+        std::chrono::time_point<std::chrono::steady_clock> startTime;
+        std::chrono::milliseconds time_remaining;
+        std::string resource;
+        std::string random_string;
+    };
+
+    // RedLockMutexVessel::lock will (re)try to get a lock until either:
+    //  - it gets a lock on (n/2)+1 of the instances.
+    //  - a period of TTL elapsed.
+    //  - the number of retries was reached.
+    //  - an exception was thrown.
+    LockInfo lock(const std::string& resource,
+                  const std::string& random_string,
+                  const std::chrono::milliseconds& ttl,
+                  int retry_count = 3,
+                  const std::chrono::milliseconds& retry_delay = std::chrono::milliseconds(200),
+                  double clock_drift_factor = 0.01);
+
+    // RedLockMutexVessel::extend_lock is exactly the same as RedLockMutexVessel::lock,
+    // but needs LockInfo from a previously acquired lock.
+    LockInfo extend_lock(const LockInfo& lock_info,
+                         const std::chrono::milliseconds& ttl,
+                         double clock_drift_factor = 0.01);
+
+    // RedLockMutexVessel::unlock unlocks all locked instances,
+    // that was locked with LockInfo,
+    void unlock(const LockInfo& lock_info);
+
+private:
+
+    bool _lock_instance(Redis& instance,
+                        const std::string& resource,
+                        const std::string& random_string,
+                        const std::chrono::milliseconds& ttl);
+
+    bool _extend_lock_instance(Redis& instance,
+                               const std::string& resource,
+                               const std::string& random_string,
+                               const std::chrono::milliseconds& ttl);
+
+    void _unlock_instance(Redis& instance,
+                          const std::string& resource,
+                          const std::string& random_string);
+
+    int _quorum() const {
+        return _instances.size() / 2 + 1;
+    }
+
+    std::vector<std::reference_wrapper<Redis>> _instances;
+};
+
+class RedLockMutex
+{
+public:
+    explicit RedLockMutex(Redis& instance, const std::string& resource) :
+        _redlock_mutex(instance), _resource(resource) {}
+
+    explicit RedLockMutex(std::initializer_list<std::reference_wrapper<Redis>> instances,
+                    const std::string &resource) :
+        _redlock_mutex(instances), _resource(resource) {}
+
+    RedLockMutex(const RedLockMutex &) = delete;
+    RedLockMutex& operator=(const RedLockMutex &) = delete;
+
+    RedLockMutex(RedLockMutex &&) = delete;
+    RedLockMutex& operator=(RedLockMutex &&) = delete;
+
+    virtual ~RedLockMutex() = default;
+
+    std::chrono::milliseconds try_lock(const std::string& random_string,
+                                       const std::chrono::milliseconds& ttl)
+    {
+        const auto lock_info = _redlock_mutex.lock(_resource, random_string, ttl, 1);
+        if (!lock_info.locked) {
+            throw Error("failed to lock: " + _resource);
+        }
+        return lock_info.time_remaining;
+    }
+
+    bool try_lock(const std::string &random_string,
+                  const std::chrono::time_point<std::chrono::system_clock> &tp)
+    {
+        const auto lock_info = _redlock_mutex.lock(_resource, random_string, RedLockUtils::ttl(tp), 1);
+        return lock_info.locked;
+    }
+
+    bool extend_lock(const std::string &random_string,
+                     const std::chrono::time_point<std::chrono::system_clock> &tp)
+    {
+        const auto ttl = RedLockUtils::ttl(tp);
+        const RedLockMutexVessel::LockInfo lock_info =
+            {true, std::chrono::steady_clock::now(), ttl, _resource, random_string};
+        const auto result = _redlock_mutex.extend_lock(lock_info, ttl);
+        return result.locked;
+    }
+
+    void unlock(const std::string &random_string)
+    {
+        _redlock_mutex.unlock({true, std::chrono::steady_clock::now(),
+                              std::chrono::milliseconds(0), _resource, random_string});
+    }
+
+private:
+    RedLockMutexVessel _redlock_mutex;
+    const std::string _resource;
 };
 
 }
