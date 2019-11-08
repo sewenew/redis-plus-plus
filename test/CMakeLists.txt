@@ -31,6 +31,14 @@ if(REDIS_PLUS_PLUS_USE_TLS)
     target_link_libraries(${PROJECT_NAME} ${TEST_HIREDIS_TLS_LIB} ${OPENSSL_LIBRARIES})
 endif()
 
+find_package(OpenSSL)
+
+if(OPENSSL_FOUND)
+  target_compile_definitions(${PROJECT_NAME} PUBLIC -DUSE_OPENSSL)
+  target_include_directories(${PROJECT_NAME} PRIVATE ${OPENSSL_INCLUDE_DIR})
+  target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES})
+endif()
+
 # redis++ dependency
 target_include_directories(${PROJECT_NAME} PRIVATE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../src>
