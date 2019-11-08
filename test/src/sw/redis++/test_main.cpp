@@ -20,6 +20,7 @@
 #include <iostream>
 #include <sw/redis++/redis++.h>
 #include "sanity_test.h"
+#include "redlock_test.h"
 #include "connection_cmds_test.h"
 #include "keys_cmds_test.h"
 #include "string_cmds_test.h"
@@ -218,6 +219,11 @@ void run_test(const sw::redis::ConnectionOptions &opts) {
     connection_test.run();
 
     std::cout << "Pass connection commands tests" << std::endl;
+
+    sw::redis::test::RedLockTest<RedisInstance> redlock_test(instance);
+    redlock_test.run();
+
+    std::cout << "Pass redlock tests" << std::endl;
 
     sw::redis::test::KeysCmdTest<RedisInstance> keys_test(instance);
     keys_test.run();
