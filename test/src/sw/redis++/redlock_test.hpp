@@ -79,11 +79,11 @@ private:
 #else // !USE_OPENSSL
 
 template <int N = 20>
-class RandomBuffer : public sw::redis::RandomBufferInterface
+class RandomBuffer : public RandomBufferInterface
 {
 public:
     std::string get_updated_string() {
-        return RedLockMutexVessel::lock_id();
+        return RedLockUtils::lock_id();
     }
 };
 
@@ -150,7 +150,7 @@ void RedLockTest<Redis>::run() {
         for (int i=0; i<n; i++) {
             mutex_list.push(new RedLockMutex(std::ref(_redis), RedLockUtils::lock_id()));
             const std::chrono::time_point<std::chrono::system_clock> tp = std::chrono::system_clock::now() + multi_lock_ttl;
-            if (!(mutex_list.back()->try_lock(random_string, tp))) {
+            if (mutex_list.back()->try_lock(random_string, tp) < std::chrono::milliseconds(0)) {
                 std::cout << "Num locks = " << i << std::endl;;
                 REDIS_ASSERT(0, "unable to obtain a lock");
             }
@@ -172,7 +172,7 @@ void RedLockTest<Redis>::run() {
         for (int i=0; i<n; i++) {
             const std::chrono::time_point<std::chrono::system_clock> tp = std::chrono::system_clock::now() + multi_lock_ttl;
             mutex_list.push(new RedMutex(std::ref(_redis), RedLockUtils::lock_id()));
-            if (!(mutex_list.back()->try_lock(random_string, tp))) {
+            if (mutex_list.back()->try_lock(random_string, tp) < std::chrono::milliseconds(0)) {
                 REDIS_ASSERT(0, "unable to obtain a lock");
             }
         }

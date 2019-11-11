@@ -45,43 +45,57 @@ std::chrono::milliseconds RedMutex::try_lock(const std::string &val,
         // Failed to lock more than half masters, or no time left for the lock.
         unlock(_resource);
 
-        throw Error("failed to lock: " + _resource);
+        return std::chrono::milliseconds(-1);
     }
 
     return time_left;
 }
 
-bool RedMutex::try_lock(const std::string &val,
+std::chrono::milliseconds RedMutex::try_lock(const std::string &val,
         const std::chrono::time_point<std::chrono::system_clock> &tp) {
-    try {
-        try_lock(val, RedLockUtils::ttl(tp));
-    } catch (const Error &err) {
-        return false;
-    }
-
-    return true;
+    return try_lock(val, RedLockUtils::ttl(tp));
 }
 
-bool RedMutex::extend_lock(const std::string &val,
-        const std::chrono::time_point<std::chrono::system_clock> &tp) {
+std::chrono::milliseconds RedMutex::extend_lock(const std::string &val,
+        const std::chrono::milliseconds &ttl) {
+    // TODO: this method is almost duplicate with `try_lock`. I'll refactor it soon.
+    auto start = std::chrono::steady_clock::now();
+
     auto lock_cnt = 0U;
     for (auto &master : _masters) {
-        if (_extend_lock_master(master.get(), val, tp)) {
+        if (_extend_lock_master(master.get(), val, ttl)) {
             ++lock_cnt;
         }
     }
 
-    return lock_cnt >= _quorum();
+    auto lock_ok = lock_cnt >= _quorum();
+
+    auto stop = std::chrono::steady_clock::now();
+    auto elapse = stop - start;
+
+    auto time_left = std::chrono::duration_cast<std::chrono::milliseconds>(ttl - elapse);
+
+    if (!lock_ok || time_left < std::chrono::milliseconds(0)) {
+        // Failed to lock more than half masters, or no time left for the lock.
+        unlock(_resource);
+
+        return std::chrono::milliseconds(-1);
+    }
+
+    return time_left;
+}
+
+std::chrono::milliseconds RedMutex::extend_lock(const std::string &val,
+        const std::chrono::time_point<std::chrono::system_clock> &tp) {
+    return extend_lock(val, RedLockUtils::ttl(tp));
 }
 
 bool RedMutex::_extend_lock_master(Redis &master,
         const std::string &val,
-        const std::chrono::time_point<std::chrono::system_clock> &tp) {
+        const std::chrono::milliseconds &ttl) {
     auto tx = master.transaction(true);
     auto r = tx.redis();
     try {
-        auto ttl = RedLockUtils::ttl(tp);
-
         r.watch(_resource);
 
         auto id = r.get(_resource);
@@ -119,7 +133,7 @@ void RedMutex::_unlock_master(Redis &master, const std::string &val) {
         if (id && *id == val) {
             auto reply = tx.del(_resource).exec();
             if (reply.get<long long>(0) != 1) {
-                throw Error("this should not happen");
+                throw Error("Redis internal error: WATCH " + _resource + "failed");
             }
         }
     } catch (const WatchError &err) {
@@ -170,7 +184,7 @@ std::string RedLockUtils::lock_id() {
         } else if (idx < 10 + 26 + 26) {
             id.push_back('A' + idx - 10 - 26);
         } else {
-            assert(false);
+            assert(false && "Index out of range in RedLock::_lock_id()");
         }
     }
 
@@ -178,7 +192,7 @@ std::string RedLockUtils::lock_id() {
 }
 
 RedLockMutexVessel::RedLockMutexVessel(Redis& instance) :
-    RedLockMutexVessel({instance})
+    RedLockMutexVessel({{instance}})
 {
 }
 
