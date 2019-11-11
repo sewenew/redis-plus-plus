@@ -58,10 +58,13 @@ public:
     std::chrono::milliseconds try_lock(const std::string &val,
             const std::chrono::milliseconds &ttl);
 
-    bool try_lock(const std::string &val,
+    std::chrono::milliseconds try_lock(const std::string &val,
             const std::chrono::time_point<std::chrono::system_clock> &tp);
 
-    bool extend_lock(const std::string &val,
+    std::chrono::milliseconds extend_lock(const std::string &val,
+            const std::chrono::milliseconds &ttl);
+
+    std::chrono::milliseconds extend_lock(const std::string &val,
             const std::chrono::time_point<std::chrono::system_clock> &tp);
 
     void unlock(const std::string &val);
@@ -77,7 +80,7 @@ private:
 
     bool _extend_lock_master(Redis &master,
             const std::string &val,
-            const std::chrono::time_point<std::chrono::system_clock> &tp);
+            const std::chrono::milliseconds &ttl);
 
     std::size_t _quorum() const {
         return _masters.size() / 2 + 1;
@@ -96,56 +99,76 @@ public:
     RedLock(RedisInstance &mut, std::defer_lock_t) : _mut(mut), _lock_val(RedLockUtils::lock_id()) {}
 
     ~RedLock() {
-        if (_owned) {
+        if (owns_lock()) {
             unlock();
         }
     }
 
     // Try to acquire the lock for *ttl* milliseconds.
     // Returns how much time still left for the lock, i.e. lock validity time.
-    std::chrono::milliseconds try_lock(const std::chrono::milliseconds &ttl) {
+    bool try_lock(const std::chrono::milliseconds &ttl) {
         auto time_left = _mut.try_lock(_lock_val, ttl);
-        _owned = true;
-        return time_left;
+        if (time_left <= std::chrono::milliseconds(0)) {
+            return false;
+        }
+
+        _release_tp = std::chrono::steady_clock::now() + time_left;
+
+        return true;
     }
 
     // Try to acquire the lock, and hold until *tp*.
     bool try_lock(const std::chrono::time_point<std::chrono::system_clock> &tp) {
-        if (_mut.try_lock(_lock_val, tp)) {
-            _owned = true;
-        }
-
-        return _owned;
+        return try_lock(RedLockUtils::ttl(tp));
     }
 
     // Try to extend the lock, and hold it until *tp*.
-    bool extend_lock(const std::chrono::time_point<std::chrono::system_clock> &tp) {
-        if (_mut.extend_lock(_lock_val, tp)) {
-            _owned = true;
-        } else {
-            _owned = false;
+    bool extend_lock(const std::chrono::milliseconds &ttl) {
+        // TODO: this method is almost duplicate with `try_lock`, and I'll refactor it soon.
+        auto time_left = _mut.extend_lock(_lock_val, ttl);
+        if (time_left <= std::chrono::milliseconds(0)) {
+            return false;
         }
 
-        return _owned;
+        _release_tp = std::chrono::steady_clock::now() + time_left;
+
+        return true;
+    }
+
+    bool extend_lock(const std::chrono::time_point<std::chrono::system_clock> &tp) {
+        return extend_lock(RedLockUtils::ttl(tp));
     }
 
     void unlock() {
         try {
             _mut.unlock(_lock_val);
-            _owned = false;
+            _release_tp = std::chrono::time_point<std::chrono::steady_clock>{};
         } catch (const Error &err) {
-            _owned = false;
+            _release_tp = std::chrono::time_point<std::chrono::steady_clock>{};
             throw;
         }
     }
 
-private:
+    bool owns_lock() const {
+        if (ttl() <= std::chrono::milliseconds(0)) {
+            return false;
+        }
 
+        return true;
+    }
+
+    std::chrono::milliseconds ttl() const {
+        auto t = std::chrono::steady_clock::now();
+        return std::chrono::duration_cast<std::chrono::milliseconds>(_release_tp - t);
+    }
+
+private:
     RedisInstance &_mut;
 
-    bool _owned = false;
-
     std::string _lock_val;
+
+    // The time point that we must release the lock.
+    std::chrono::time_point<std::chrono::steady_clock> _release_tp{};
 };
 
 class RedLockMutexVessel
@@ -241,33 +264,34 @@ public:
     RedLockMutex(RedLockMutex &&) = delete;
     RedLockMutex& operator=(RedLockMutex &&) = delete;
 
-    virtual ~RedLockMutex() = default;
-
     std::chrono::milliseconds try_lock(const std::string& random_string,
                                        const std::chrono::milliseconds& ttl)
     {
         const auto lock_info = _redlock_mutex.lock(_resource, random_string, ttl, 1);
         if (!lock_info.locked) {
-            throw Error("failed to lock: " + _resource);
+            return std::chrono::milliseconds(-1);
         }
         return lock_info.time_remaining;
     }
 
-    bool try_lock(const std::string &random_string,
+    std::chrono::milliseconds try_lock(const std::string &random_string,
                   const std::chrono::time_point<std::chrono::system_clock> &tp)
     {
-        const auto lock_info = _redlock_mutex.lock(_resource, random_string, RedLockUtils::ttl(tp), 1);
-        return lock_info.locked;
+        return try_lock(random_string, RedLockUtils::ttl(tp));
     }
 
-    bool extend_lock(const std::string &random_string,
-                     const std::chrono::time_point<std::chrono::system_clock> &tp)
+    std::chrono::milliseconds extend_lock(const std::string &random_string,
+                     const std::chrono::milliseconds &ttl)
     {
-        const auto ttl = RedLockUtils::ttl(tp);
         const RedLockMutexVessel::LockInfo lock_info =
             {true, std::chrono::steady_clock::now(), ttl, _resource, random_string};
         const auto result = _redlock_mutex.extend_lock(lock_info, ttl);
-        return result.locked;
+        return result.time_remaining;
+    }
+
+    std::chrono::milliseconds extend_lock(const std::string &random_string,
+                     const std::chrono::time_point<std::chrono::system_clock> &tp) {
+        return extend_lock(random_string, RedLockUtils::ttl(tp));
     }
 
     void unlock(const std::string &random_string)
