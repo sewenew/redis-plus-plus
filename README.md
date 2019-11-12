@@ -11,6 +11,7 @@
 - [API Reference](#api-reference)
     - [Connection](#connection)
     - [Send Command to Redis Server](#send-command-to-redis-server)
+    - [Exception](#exception)
     - [Generic Command Interface](#generic-command-interface)
     - [Publish/Subscribe](#publishsubscribe)
     - [Pipeline](#pipeline)
@@ -680,21 +681,6 @@ using OptionalDouble = Optional<double>;
 using OptionalStringPair = Optional<std::pair<std::string, std::string>>;
 ```
 
-#### Exception
-
-`Redis` throws exceptions if it receives an *Error Reply* or something bad happens, e.g. failed to create a connection to server, or connection to server is broken. All exceptions derived from `Error` class. See [errors.h](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/errors.h) for details.
-
-- `Error`: Generic error. It's also the base class of other exceptions.
-- `IoError`: There's some IO error with the connection.
-- `TimeoutError`: Read or write operation was timed out. It's a derived class of `IoError`.
-- `ClosedError`: Redis server closed the connection.
-- `ProtoError`: The command or reply is invalid, and we cannot process it with Redis protocol.
-- `OomError`: *hiredis* library got an out-of-memory error.
-- `ReplyError`: Redis server returned an error reply, e.g. we try to call `redis::lrange` on a Redis hash.
-- `WatchError`: Watched key has been modified. See [Watch section](#watch) for details.
-
-**NOTE**: *NULL REPLY*` is not taken as an exception. For example, if we try to `GET` a non-existent key, we'll get a *NULL Bulk String Reply*. Instead of throwing an exception, we return the *NULL REPLY* as a null `Optional<T>` object. Also see [Optional section](#optional).
-
 #### Examples
 
 Let's see some examples on how to send commands to Redis server.
@@ -1020,6 +1006,47 @@ redis.georadius("geo",
 
 Please see [redis.h](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/redis.h) for more API references, and see the [tests](https://github.com/sewenew/redis-plus-plus/tree/master/test/src/sw/redis%2B%2B) for more examples.
 
+### Exception
+
+`Redis` throws exceptions if it receives an *Error Reply* or something bad happens, e.g. failed to create a connection to server, or connection to server is broken. All exceptions derived from `Error` class. See [errors.h](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/errors.h) for details.
+
+- `Error`: Generic error. It's derived from `std::exception`, and it's also the base class of other exceptions.
+- `IoError`: There's some IO error with the connection.
+- `TimeoutError`: Read or write operation was timed out. It's a derived class of `IoError`.
+- `ClosedError`: Redis server closed the connection.
+- `ProtoError`: The command or reply is invalid, and we cannot process it with Redis protocol.
+- `OomError`: *hiredis* library got an out-of-memory error.
+- `ReplyError`: Redis server returned an error reply, e.g. we try to call `redis::lrange` on a Redis hash.
+- `WatchError`: Watched key has been modified. See [Watch section](#watch) for details.
+
+**NOTE**: *NULL REPLY* is not taken as an exception. For example, if we try to `GET` a non-existent key, we'll get a *NULL Bulk String Reply*. Instead of throwing an exception, we return the *NULL REPLY* as a null `Optional<T>` object. Also see [Optional section](#optional).
+
+Normally, when exception happens, you don't need to create a `Redis` object. It's exception safe, and you can reuse the `Redis` object. Even if the connection to Redis server is broken, and it throws some exception, say, `IoError`. The next time when you send command with the `Redis` object, it will try to reconnect to Redis server automatically. This rule also applies to `RedisCluster`. However, if `Pipeline`, `Transcation` and `Subscriber` throws exception, you need to destroy the object, and create a new one. See the corresponding documentation for details.
+
+#### Examples
+
+The following is an example on how to catch these exceptions:
+
+```
+try {
+    redis.set("key", "value");
+
+    // Wrong type error
+    redis.lpush("key", {"a", "b", "c"});
+} catch (const ReplyError &err) {
+    // WRONGTYPE Operation against a key holding the wrong kind of value
+    cout << err.what() << endl;
+} catch (const TimeoutError &err) {
+    // reading or writing timeout
+} catch (const ClosedError &err) {
+    // the connection has been closed.
+} catch (const IoError &err) {
+    // there's an IO error on the connection.
+} catch (const Error &err) {
+   // other errors
+}
+```
+
 ### Generic Command Interface
 
 There're too many Redis commands, we haven't implemented all of them. However, you can use the generic `Redis::command` methods to send any commands to Redis. Unlike other client libraries, `Redis::command` doesn't use format string to combine command arguments into a command string. Instead, you can directly pass command arguments of `StringView` type or arithmetic type as parameters of `Redis::command`. For the reason why we don't use format string, please see [this discussion](https://github.com/sewenew/redis-plus-plus/pull/2).
@@ -1162,6 +1189,10 @@ With `Subscriber`, you can call `Subscriber::subscribe`, `Subscriber::unsubscrib
 #### Thread Safety
 
 `Subscriber` is NOT thread-safe. If you want to call its member functions in multi-thread environment, you need to synchronize between threads manually.
+
+#### Exception
+
+If any of the `Subscriber`'s method throws an exception other than `ReplyError` or `TimeoutError`, you CANNOT use it any more. Instead, you have to destroy the `Subscriber` object, and create a new one.
 
 #### Subscriber Callbacks
 
@@ -1318,7 +1349,7 @@ replies.get(2, std::back_inserter(list_cmd_result));
 
 #### Exception
 
-If any of `Pipeline`'s method throws an exception, the `Pipeline` object enters an invalid state. You CANNOT use it any more, but only destroy the object, and create a new one.
+If any of `Pipeline`'s method throws an exception other than `ReplyError`, the `Pipeline` object enters an invalid state. You CANNOT use it any more, but only destroy the object, and create a new one.
 
 #### Thread Safety
 
@@ -1385,7 +1416,7 @@ With this piped transaction, all commands are sent to Redis in a pipeline.
 
 #### Exception
 
-If any of `Transaction`'s method throws an exception other than `WatchError`, the `Transaction` object enters an invalid state. You CANNOT use it any more, but only destroy the object and create a new one.
+If any of `Transaction`'s method throws an exception other than `WatchError` or `ReplyError`, the `Transaction` object enters an invalid state. You CANNOT use it any more, but only destroy the object and create a new one.
 
 #### Thread Safety
 
@@ -1509,7 +1540,7 @@ As we mentioned above, `RedisCluster`'s interfaces are similar to `Redis`. It su
 Since there's no key parameter, `RedisCluster` has no idea on to which node these commands should be sent. However there're 2 workarounds for this problem:
 
 - If you want to send these commands to a specific node, you can create a `Redis` object with that node's host and port, and use the `Redis` object to do the work.
-- Instead of host and port, you can also call `Redis RedisCluster::redis(const StringView &hash_tag)` to create a `Redis` object with a hash-tag specifying the node. In this case, the returned `Redis` object creates a new connection to Redis server.
+- Instead of host and port, you can also call `Redis RedisCluster::redis(const StringView &hash_tag)` to create a `Redis` object with a hash-tag specifying the node. In this case, the returned `Redis` object creates a new connection to Redis server. **NOTE**: the returned `Redis` object, **IS NOT THREAD SAFE!**. Also, when using the returned `Redis` object, if it throws exception, you need to destroy it, and create a new one with the `RedisCluster::redis` method.
 
 Also you can use the [hash tags](https://redis.io/topics/cluster-spec#keys-hash-tags) to send multiple-key commands.
 
