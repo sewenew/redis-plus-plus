@@ -34,18 +34,20 @@ std::chrono::milliseconds RedMutex::try_lock(const std::string &val,
         const std::chrono::milliseconds &ttl) {
     auto start = std::chrono::steady_clock::now();
 
-    auto lock_ok = _try_lock(val, ttl);
+    if (!_try_lock(val, ttl)) {
+        // Failed to lock more than half masters.
+        unlock(_resource);
+
+        return std::chrono::milliseconds(-1);
+    }
 
     auto stop = std::chrono::steady_clock::now();
     auto elapse = stop - start;
 
     auto time_left = std::chrono::duration_cast<std::chrono::milliseconds>(ttl - elapse);
-
-    if (!lock_ok || time_left < std::chrono::milliseconds(0)) {
-        // Failed to lock more than half masters, or no time left for the lock.
+    if (time_left <= std::chrono::milliseconds(0)) {
+        // No time left for the lock.
         unlock(_resource);
-
-        return std::chrono::milliseconds(-1);
     }
 
     return time_left;
@@ -69,17 +71,20 @@ std::chrono::milliseconds RedMutex::extend_lock(const std::string &val,
     }
 
     auto lock_ok = lock_cnt >= _quorum();
+    if (!lock_ok) {
+        // Failed to lock more than half masters.
+        unlock(_resource);
+
+        return std::chrono::milliseconds(-1);
+    }
 
     auto stop = std::chrono::steady_clock::now();
     auto elapse = stop - start;
 
     auto time_left = std::chrono::duration_cast<std::chrono::milliseconds>(ttl - elapse);
-
-    if (!lock_ok || time_left < std::chrono::milliseconds(0)) {
-        // Failed to lock more than half masters, or no time left for the lock.
+    if (time_left <= std::chrono::milliseconds(0)) {
+        // No time left for the lock.
         unlock(_resource);
-
-        return std::chrono::milliseconds(-1);
     }
 
     return time_left;
@@ -161,7 +166,7 @@ bool RedMutex::_try_lock_master(Redis &master,
 std::chrono::milliseconds RedLockUtils::ttl(const SysTime &tp) {
     auto cur = std::chrono::system_clock::now();
     auto ttl = tp - cur;
-    if (ttl.count() < 0) {
+    if (ttl.count() <= 0) {
         throw Error("time already pasts");
     }
 
