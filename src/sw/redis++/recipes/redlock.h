@@ -286,7 +286,12 @@ public:
         const RedLockMutexVessel::LockInfo lock_info =
             {true, std::chrono::steady_clock::now(), ttl, _resource, random_string};
         const auto result = _redlock_mutex.extend_lock(lock_info, ttl);
-        return result.time_remaining;
+        if (!result.locked) {
+            return std::chrono::milliseconds(-1);
+        }
+        else {
+            return result.time_remaining;
+        }
     }
 
     std::chrono::milliseconds extend_lock(const std::string &random_string,
