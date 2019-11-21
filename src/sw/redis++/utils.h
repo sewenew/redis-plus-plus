@@ -21,12 +21,28 @@
 #include <string>
 #include <type_traits>
 
+// If C++17 is supported, include standard headers std::optional and std::string_view.
+#ifdef M_CPP17_AVAILABLE
+#include <optional>
+#include <string_view>
+#endif
+
 namespace sw {
 
 namespace redis {
 
-// By now, not all compilers support std::string_view,
-// so we make our own implementation.
+// If C++17 is supported, use aliases of std::optional<T> and std::string_view.
+#ifdef M_CPP17_AVAILABLE
+
+template <typename T>
+using Optional = std::optional<T>;
+
+using StringView = std::string_view;
+
+#else
+
+// If C++17 is not supported, use our custom implementations of C++17 features
+// std::string_view and std::optional<T>.
 class StringView {
 public:
     constexpr StringView() noexcept = default;
@@ -101,6 +117,8 @@ public:
 private:
     std::pair<bool, T> _value;
 };
+
+#endif // end M_CPP17_AVAILABLE
 
 using OptionalString = Optional<std::string>;
 
@@ -262,8 +280,8 @@ struct IsAssociativeContainer
 
 uint16_t crc16(const char *buf, int len);
 
-}
+} // redis
 
-}
+} // sw
 
 #endif // end SEWENEW_REDISPLUSPLUS_UTILS_H
