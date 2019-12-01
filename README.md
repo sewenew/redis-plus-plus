@@ -19,6 +19,7 @@
     - [Redis Cluster](#redis-cluster)
     - [Redis Sentinel](#redis-sentinel)
     - [Redis Stream](#redis-stream)
+- [Redis Recipes](#redis-recipes)
 - [Author](#author)
 
 ## Overview
@@ -1801,6 +1802,55 @@ redis.xgroup_destroy("key", "group");
 ```
 
 If you have any problem on sending stream commands to Redis, please feel free to let me know.
+
+## Redis Recipes
+
+We can create many interesting data structures and algorithms based on Redis, such as [Redlock](https://redis.io/topics/distlock). We call these data structures and algorithms as **Redis Recipes**. *redis-plus-plus* will support some of these recipes.
+
+**NOTE**: These recipes will be first implemented on the [recipes branch](https://github.com/sewenew/redis-plus-plus/tree/recipes). I'd like to hear your feedback on the API of these recipes, and when these APIs become stable, I'll merge the code into the master branch. So APIs on the *recipes* branch are NOT stable, and might be changed in the future.
+
+### Redlock
+
+[Redlock](https://redis.io/topics/distlock) is a distributed lock based on Redis. Thanks to @wingunder's [suggestion](https://github.com/sewenew/redis-plus-plus/issues/24), *redis-plus-plus* supports Redlock now. @wingunder and I made two different implementation of Redlock: one based on Lua script, and the other based on transaction. The Lua script version should be faster, and also it has many other parameters to control the behavior. However, in some case, you cannot run Lua script on Redis, then you can try the transaction version. I might merge these two versions into a single one in the future.
+
+#### Examples
+
+```
+auto redis1 = Redis("tcp://127.0.0.1:7000");
+auto redis2 = Redis("tcp://127.0.0.1:7001");
+auto redis3 = Redis("tcp://127.0.0.1:7002");
+
+// Lua script version:
+{
+    RedLockMutex mtx({redis1, redis2, redis3}, "resource");
+
+    // Not locked.
+    RedLock<RedLockMutex> lock(mtx, std::defer_lock);
+
+    // Try to get the lock, and keep 30 seconds.
+    // It returns the validity time of the lock, i.e. the lock is only
+    // valid in *validity_time*, after that the lock might be acquired by others.
+    // If failed to acquire the lock, throw an exception of Error type.
+    auto validity_time = lock.try_lock(std::chrono::seconds(30));
+
+    // Extend the lock before the lock expired.
+    validity_time = lock.extend_lock(std::chrono::seconds(10));
+} // The lock will be unlocked automatically when it's destroied.
+
+// Trasaction version:
+{
+    RedMutex mtx({redis1, redis2, redis3}, "resource");
+
+    RedLock<ReMutex> lock(mtx, std::defer_lock);
+    auto validity_time = lock.try_lock(std::chrono::seconds(30));
+    validity_time = lock.extend_lock(std::chrono::seconds(30));
+
+    // You can also unlock explicitly.
+    lock.unlock();
+}
+```
+
+Please the [code](https://github.com/sewenew/redis-plus-plus/blob/recipes/src/sw/redis%2B%2B/recipes/redlock.h) for detail. I'll enhance the doc in the future.
 
 ## Author
 
