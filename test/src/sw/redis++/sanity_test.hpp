@@ -54,7 +54,7 @@ void SanityTest<RedisInstance>::_test_uri_ctor() {
     std::string uri;
     switch (_opts.type) {
     case sw::redis::ConnectionType::TCP:
-        uri = "tcp://" + _opts.host + ":" + std::to_string(_opts.port);
+        uri = _build_uri(_opts);
         break;
 
     case sw::redis::ConnectionType::UNIX:
@@ -71,14 +71,29 @@ void SanityTest<RedisInstance>::_test_uri_ctor() {
 }
 
 template <typename RedisInstance>
-void SanityTest<RedisInstance>::_ping(Redis &instance) {
-    try {
-        auto pong = instance.ping();
-        REDIS_ASSERT(pong == "PONG", "Failed to test constructing Redis with uri");
-    } catch (const sw::redis::ReplyError &e) {
-        REDIS_ASSERT(e.what() == std::string("NOAUTH Authentication required."),
-                "Failed to test constructing Redis with uri");
+std::string SanityTest<RedisInstance>::_build_uri(const ConnectionOptions &opts) const {
+    auto scheme = "tcp://";
+    auto uri = opts.host + ":" + std::to_string(opts.port) + "/" + std::to_string(opts.db);
+
+    std::string auth;
+    if (opts.user != "default") {
+        auth += opts.user + ":";
     }
+
+    if (!opts.password.empty()) {
+        auth += opts.password;
+    }
+
+    if (!auth.empty()) {
+        auth += "@";
+    }
+
+    return scheme + auth + uri;
+}
+
+template <typename RedisInstance>
+void SanityTest<RedisInstance>::_ping(Redis &instance) {
+    REDIS_ASSERT(instance.ping() == "PONG", "Failed to test constructing Redis with uri");
 }
 
 template <typename RedisInstance>

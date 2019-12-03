@@ -16,6 +16,7 @@
 
 #include "connection.h"
 #include <cassert>
+#include <tuple>
 #include "reply.h"
 #include "command.h"
 #include "command_args.h"
@@ -25,64 +26,108 @@ namespace sw {
 namespace redis {
 
 ConnectionOptions::ConnectionOptions(const std::string &uri) :
-                                        ConnectionOptions(_parse_options(uri)) {}
+                                        ConnectionOptions(_parse_uri(uri)) {}
 
-ConnectionOptions ConnectionOptions::_parse_options(const std::string &uri) const {
+ConnectionOptions ConnectionOptions::_parse_uri(const std::string &uri) const {
     std::string type;
+    std::string auth;
     std::string path;
-    std::tie(type, path) = _split_string(uri, "://");
+    std::tie(type, auth, path) = _split_uri(uri);
 
-    if (path.empty()) {
-        throw Error("Invalid URI: no path");
-    }
+    ConnectionOptions opts;
+
+    _set_auth_opts(auth, opts);
+
+    auto db = 0;
+    std::tie(path, db) = _split_path(path);
+
+    opts.db = db;
 
     if (type == "tcp") {
-        return _parse_tcp_options(path);
+        _set_tcp_opts(path, opts);
     } else if (type == "unix") {
-        return _parse_unix_options(path);
+        _set_unix_opts(path, opts);
     } else {
-        throw Error("Invalid URI: invalid type");
-    }
-}
-
-ConnectionOptions ConnectionOptions::_parse_tcp_options(const std::string &path) const {
-    ConnectionOptions options;
-
-    options.type = ConnectionType::TCP;
-
-    std::string host;
-    std::string port;
-    std::tie(host, port) = _split_string(path, ":");
-
-    options.host = host;
-    try {
-        if (!port.empty()) {
-            options.port = std::stoi(port);
-        } // else use default port, i.e. 6379.
-    } catch (const std::exception &) {
-        throw Error("Invalid URL: invalid port");
+        throw Error("invalid URI: invalid type");
     }
 
-    return options;
+    return opts;
 }
 
-ConnectionOptions ConnectionOptions::_parse_unix_options(const std::string &path) const {
-    ConnectionOptions options;
-
-    options.type = ConnectionType::UNIX;
-    options.path = path;
-
-    return options;
-}
-
-auto ConnectionOptions::_split_string(const std::string &str, const std::string &delimiter) const ->
-        std::pair<std::string, std::string> {
-    auto pos = str.rfind(delimiter);
+auto ConnectionOptions::_split_uri(const std::string &uri) const
+    -> std::tuple<std::string, std::string, std::string> {
+    auto pos = uri.find("://");
     if (pos == std::string::npos) {
-        return {str, ""};
+        throw Error("invalid URI: no scheme");
     }
 
-    return {str.substr(0, pos), str.substr(pos + delimiter.size())};
+    auto type = uri.substr(0, pos);
+
+    auto start = pos + 3;
+    pos = uri.find("@", start);
+    if (pos == std::string::npos) {
+        // No auth info.
+        return std::make_tuple(type, std::string{}, uri.substr(start));
+    }
+
+    auto auth = uri.substr(start, pos - start);
+
+    return std::make_tuple(type, auth, uri.substr(pos + 1));
+}
+
+auto ConnectionOptions::_split_path(const std::string &path) const
+    -> std::tuple<std::string, int> {
+    auto pos = path.rfind("/");
+    if (pos != std::string::npos) {
+        // Might specified a db number.
+        try {
+            auto db = std::stoi(path.substr(pos + 1));
+
+            return std::make_tuple(path.substr(0, pos), db);
+        } catch (const std::exception &) {
+            // Not a db number, and it might be a path to unix domain socket.
+        }
+    }
+
+    // No db number specified, and use default one, i.e. 0.
+    return std::make_tuple(path, 0);
+}
+
+void ConnectionOptions::_set_auth_opts(const std::string &auth, ConnectionOptions &opts) const {
+    if (auth.empty()) {
+        // No auth info.
+        return;
+    }
+
+    auto pos = auth.find(":");
+    if (pos == std::string::npos) {
+        // No user name.
+        opts.password = auth;
+    } else {
+        opts.user = auth.substr(0, pos);
+        opts.password = auth.substr(pos + 1);
+    }
+}
+
+void ConnectionOptions::_set_tcp_opts(const std::string &path, ConnectionOptions &opts) const {
+    opts.type = ConnectionType::TCP;
+
+    auto pos = path.find(":");
+    if (pos != std::string::npos) {
+        // Port number specified.
+        try {
+            opts.port = std::stoi(path.substr(pos + 1));
+        } catch (const std::exception &) {
+            throw Error("invalid URI: invalid port");
+        }
+    } // else use default port, i.e. 6379.
+
+    opts.host = path.substr(0, pos);
+}
+
+void ConnectionOptions::_set_unix_opts(const std::string &path, ConnectionOptions &opts) const {
+    opts.type = ConnectionType::UNIX;
+    opts.path = path;
 }
 
 class Connection::Connector {

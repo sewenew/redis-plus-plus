@@ -59,6 +59,8 @@ public:
 
     std::string path;
 
+    std::string user = "default";
+
     std::string password;
 
     int db = 0;
@@ -70,14 +72,19 @@ public:
     std::chrono::milliseconds socket_timeout{0};
 
 private:
-    ConnectionOptions _parse_options(const std::string &uri) const;
+    ConnectionOptions _parse_uri(const std::string &uri) const;
 
-    ConnectionOptions _parse_tcp_options(const std::string &path) const;
+    auto _split_uri(const std::string &uri) const
+        -> std::tuple<std::string, std::string, std::string>;
 
-    ConnectionOptions _parse_unix_options(const std::string &path) const;
+    auto _split_path(const std::string &path) const
+        -> std::tuple<std::string, int>;
 
-    auto _split_string(const std::string &str, const std::string &delimiter) const ->
-            std::pair<std::string, std::string>;
+    void _set_auth_opts(const std::string &auth, ConnectionOptions &opts) const;
+
+    void _set_tcp_opts(const std::string &path, ConnectionOptions &opts) const;
+
+    void _set_unix_opts(const std::string &path, ConnectionOptions &opts) const;
 };
 
 class CmdArgs;
