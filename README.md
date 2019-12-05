@@ -1811,7 +1811,7 @@ We can create many interesting data structures and algorithms based on Redis, su
 
 ### Redlock
 
-[Redlock](https://redis.io/topics/distlock) is a distributed lock based on Redis. Thanks to @wingunder's [suggestion](https://github.com/sewenew/redis-plus-plus/issues/24), *redis-plus-plus* supports Redlock now. @wingunder and I made two different implementation of Redlock: one based on Lua script, and the other based on transaction. The Lua script version should be faster, and also it has many other parameters to control the behavior. However, in some case, you cannot run Lua script on Redis, then you can try the transaction version. I might merge these two versions into a single one in the future.
+[Redlock](https://redis.io/topics/distlock) is a distributed lock based on Redis. Thanks to @wingunder's [suggestion](https://github.com/sewenew/redis-plus-plus/issues/24), *redis-plus-plus* supports Redlock now. @wingunder and I made two different implementation of Redlock: one based on Lua script, and the other based on transaction. The Lua script version should be faster, and also it has many other parameters to control the behavior. However, if you are not allowed to, or don't want to run Lua scripts inside Redis, you could try using the transaction version.
 
 #### Examples
 
@@ -1835,17 +1835,20 @@ auto redis3 = Redis("tcp://127.0.0.1:7002");
 
     // Extend the lock before the lock expired.
     validity_time = lock.extend_lock(std::chrono::seconds(10));
-} // The lock will be unlocked automatically when it's destroied.
 
-// Trasaction version:
+    // You can unlock explicitly.
+    lock.unlock();
+} // If unlock() is not called, the lock will be unlocked automatically when it's destroied.
+
+// Transaction version:
 {
     RedMutex mtx({redis1, redis2, redis3}, "resource");
 
-    RedLock<ReMutex> lock(mtx, std::defer_lock);
+    RedLock<RedMutex> lock(mtx, std::defer_lock);
     auto validity_time = lock.try_lock(std::chrono::seconds(30));
     validity_time = lock.extend_lock(std::chrono::seconds(30));
 
-    // You can also unlock explicitly.
+    // You can unlock explicitly.
     lock.unlock();
 }
 ```
