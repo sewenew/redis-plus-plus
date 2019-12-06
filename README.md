@@ -20,6 +20,7 @@
     - [Redis Sentinel](#redis-sentinel)
     - [Redis Stream](#redis-stream)
 - [Redis Recipes](#redis-recipes)
+    - [Redlock](#redlock)
 - [Author](#author)
 
 ## Overview
@@ -1853,7 +1854,7 @@ auto redis3 = Redis("tcp://127.0.0.1:7002");
 }
 ```
 
-Please the [code](https://github.com/sewenew/redis-plus-plus/blob/recipes/src/sw/redis%2B%2B/recipes/redlock.h) for detail. I'll enhance the doc in the future.
+Please refer to the [code](https://github.com/sewenew/redis-plus-plus/blob/recipes/src/sw/redis%2B%2B/recipes/redlock.h) for detail. I'll enhance the doc in the future.
 
 ## Author
 
