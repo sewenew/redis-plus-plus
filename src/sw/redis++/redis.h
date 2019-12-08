@@ -49,6 +49,8 @@ public:
 
     // Construct Redis instance with URI:
     // "tcp://127.0.0.1", "tcp://127.0.0.1:6379", or "unix://path/to/socket"
+    // Full scheme: "tcp://user:pass@127.0.0.1:6379/0"
+    // Check this issue for detail: https://github.com/sewenew/redis-plus-plus/issues/37
     explicit Redis(const std::string &uri);
 
     Redis(const std::shared_ptr<Sentinel> &sentinel,

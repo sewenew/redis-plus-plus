@@ -505,7 +505,24 @@ options.path = "/path/to/socket";
 Redis redis(options);
 ```
 
-You can also connect to Redis server with a URI. However, in this case, you can only specify *host* and *port*, or *Unix Domain Socket path*. In order to specify other options, you need to use `ConnectionOptions` and `ConnectionPoolOptions`.
+You can also connect to Redis server with a URI:
+
+```
+tcp://[[username:]password@]host[:port][/db]
+
+unix://[[username:]password@]path-to-unix-domain-socket[/db]
+```
+
+The *scheme* and *host* parts are required, and others are optional. If you're connecting to Redis with Unix Domain Socket, you should use the *unix* scheme, otherwise, you should use *tcp* scheme. The following is a list of default values for those optional parts:
+
+- username: *default*
+- password: empty string, i.e. no password
+- port: 6379
+- db: 0
+
+**NOTE**: [Redis 6.0 supports ACL](https://redis.io/topics/acl), and you can specify a username for the connection. However, before Redis 6.0, you cannot do that.
+
+In order to specify other options, e.g. `socket_timeout`, you need to use `ConnectionOptions` and `ConnectionPoolOptions`.
 
 ```C++
 // Single connection to the given host and port.
@@ -514,8 +531,14 @@ Redis redis1("tcp://127.0.0.1:6666");
 // Use default port, i.e. 6379.
 Redis redis2("tcp://127.0.0.1");
 
+// Connect to Redis with password, and default port.
+Redis redis3("tcp://pass@127.0.0.1");
+
+// Connect to Redis and select the 2nd (db number starts from 0) database.
+Redis redis4("tcp://127.0.0.1:6379/2");
+
 // Connect to Unix Domain Socket.
-Redis redis3("unix://path/to/socket");
+Redis redis5("unix://path/to/socket");
 ```
 
 #### Lazily Create Connection
