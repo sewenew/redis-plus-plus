@@ -646,6 +646,20 @@ OptionalDouble RedisCluster::geodist(const StringView &key,
     return reply::parse<OptionalDouble>(*reply);
 }
 
+OptionalString RedisCluster::geohash(const StringView &key, const StringView &member) {
+    auto reply = command(cmd::geohash, key, member);
+
+    return reply::parse_leniently<OptionalString>(*reply);
+}
+
+Optional<std::pair<double, double>> RedisCluster::geopos(const StringView &key,
+                                                            const StringView &member) {
+    auto reply = command(cmd::geopos, key, member);
+
+    return reply::parse_leniently<Optional<std::pair<double, double>>>(*reply);
+}
+
+
 OptionalLongLong RedisCluster::georadius(const StringView &key,
                                     const std::pair<double, double> &loc,
                                     double radius,

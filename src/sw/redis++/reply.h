@@ -50,6 +50,9 @@ inline T parse(redisReply &reply) {
     return parse(ParseTag<T>(), reply);
 }
 
+template <typename T>
+T parse_leniently(redisReply &reply);
+
 void parse(ParseTag<void>, redisReply &reply);
 
 std::string parse(ParseTag<std::string>, redisReply &reply);
@@ -213,6 +216,22 @@ auto parse_tuple(redisReply **reply, std::size_t idx) ->
                             parse_tuple<Args...>(reply, idx + 1));
 }
 
+}
+
+template <typename T>
+T parse_leniently(redisReply &reply) {
+    if (is_array(reply) && reply.elements == 1) {
+        if (reply.element == nullptr) {
+            throw ProtoError("null array reply");
+        }
+
+        auto *ele = reply.element[0];
+        if (ele != nullptr) {
+            return parse<T>(*ele);
+        } // else fall through
+    }
+
+    return parse<T>(reply);
 }
 
 template <typename T>

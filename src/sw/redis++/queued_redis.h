@@ -1357,6 +1357,11 @@ public:
         return command(cmd::geodist, key, member1, member2, unit);
     }
 
+    // Call reply::parse_leniently to parse the reply.
+    QueuedRedis& geohash(const StringView &key, const StringView &member) {
+        return command(cmd::geohash, key, member);
+    }
+
     template <typename Input>
     QueuedRedis& geohash(const StringView &key, Input first, Input last) {
         range_check("GEOHASH", first, last);
@@ -1367,6 +1372,11 @@ public:
     template <typename T>
     QueuedRedis& geohash(const StringView &key, std::initializer_list<T> il) {
         return geohash(key, il.begin(), il.end());
+    }
+
+    // Call reply::parse_leniently to parse the reply.
+    QueuedRedis& geopos(const StringView &key, const StringView &member) {
+        return command(cmd::geopos, key, member);
     }
 
     template <typename Input>
@@ -1482,6 +1492,11 @@ public:
                             std::initializer_list<StringView> keys,
                             std::initializer_list<StringView> args) {
         return command(cmd::evalsha, script, keys, args);
+    }
+
+    // Call reply::parse_leniently to parse the reply.
+    QueuedRedis& script_exists(const StringView &sha1) {
+        return command(cmd::script_exists, sha1);
     }
 
     template <typename Input>

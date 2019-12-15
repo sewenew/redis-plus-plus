@@ -1015,6 +1015,8 @@ public:
                             const StringView &member2,
                             GeoUnit unit = GeoUnit::M);
 
+    OptionalString geohash(const StringView &key, const StringView &member);
+
     template <typename Input, typename Output>
     void geohash(const StringView &key, Input first, Input last, Output output);
 
@@ -1022,6 +1024,8 @@ public:
     void geohash(const StringView &key, std::initializer_list<T> il, Output output) {
         geohash(key, il.begin(), il.end(), output);
     }
+
+    Optional<std::pair<double, double>> geopos(const StringView &key, const StringView &member);
 
     template <typename Input, typename Output>
     void geopos(const StringView &key, Input first, Input last, Output output);
@@ -1126,6 +1130,8 @@ public:
                     std::initializer_list<StringView> keys,
                     std::initializer_list<StringView> args,
                     Output output);
+
+    bool script_exists(const StringView &sha1);
 
     template <typename Input, typename Output>
     void script_exists(Input first, Input last, Output output);
