@@ -237,7 +237,13 @@ T parse_leniently(redisReply &reply) {
 template <typename T>
 Optional<T> parse(ParseTag<Optional<T>>, redisReply &reply) {
     if (reply::is_nil(reply)) {
+        // Because of a GCC bug, we cannot return {} for -std=c++17
+        // Refer to https://gcc.gnu.org/bugzilla/show_bug.cgi?id=86465
+#if defined REDIS_PLUS_PLUS_HAS_OPTIONAL
+        return std::nullopt;
+#else
         return {};
+#endif
     }
 
     return Optional<T>(parse<T>(reply));

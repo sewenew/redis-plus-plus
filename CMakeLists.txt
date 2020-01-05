@@ -6,7 +6,11 @@ else()
     cmake_minimum_required(VERSION 2.8.0)
 endif()
 
-set(CMAKE_CXX_FLAGS "-std=c++11 -Wall -W -Werror -fPIC")
+if (NOT DEFINED REDIS_PLUS_PLUS_CXX_STANDARD)
+    set(REDIS_PLUS_PLUS_CXX_STANDARD 11)
+endif()
+
+set(CMAKE_CXX_FLAGS "-std=c++${REDIS_PLUS_PLUS_CXX_STANDARD} -Wall -W -Werror -fPIC")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 

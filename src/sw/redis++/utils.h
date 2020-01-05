@@ -17,13 +17,39 @@
 #ifndef SEWENEW_REDISPLUSPLUS_UTILS_H
 #define SEWENEW_REDISPLUSPLUS_UTILS_H
 
+// Refer to https://gcc.gnu.org/onlinedocs/cpp/_005f_005fhas_005finclude.html
+#if __cplusplus >= 201703L
+#  if defined __has_include
+#    if __has_include(<string_view>)
+#      define REDIS_PLUS_PLUS_HAS_STRING_VIEW
+#    endif
+#    if __has_include(<optional>)
+#      define REDIS_PLUS_PLUS_HAS_OPTIONAL
+#    endif
+#  endif
+#endif
+
 #include <cstring>
 #include <string>
 #include <type_traits>
 
+#if defined REDIS_PLUS_PLUS_HAS_STRING_VIEW
+#include <string_view>
+#endif
+
+#if defined REDIS_PLUS_PLUS_HAS_OPTIONAL
+#include <optional>
+#endif
+
 namespace sw {
 
 namespace redis {
+
+#if defined REDIS_PLUS_PLUS_HAS_STRING_VIEW
+
+using StringView = std::string_view;
+
+#else
 
 // By now, not all compilers support std::string_view,
 // so we make our own implementation.
@@ -53,6 +79,15 @@ private:
     const char *_data = nullptr;
     std::size_t _size = 0;
 };
+
+#endif
+
+#if defined REDIS_PLUS_PLUS_HAS_OPTIONAL
+
+template <typename T>
+using Optional = std::optional<T>;
+
+#else
 
 template <typename T>
 class Optional {
@@ -101,6 +136,8 @@ public:
 private:
     std::pair<bool, T> _value;
 };
+
+#endif
 
 using OptionalString = Optional<std::string>;
 

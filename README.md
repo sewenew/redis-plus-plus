@@ -25,7 +25,7 @@
 
 ## Overview
 
-This is a C++ client for Redis. It's based on [hiredis](https://github.com/redis/hiredis), and written in C++ 11.
+This is a C++ client for Redis. It's based on [hiredis](https://github.com/redis/hiredis), and written in C++ 11 / C++ 17.
 
 **NOTE**: I'm not a native speaker. So if the documentation is unclear, please feel free to open an issue or pull request. I'll response ASAP.
 
@@ -94,6 +94,12 @@ If *hiredis* is installed at non-default location, you should use `CMAKE_PREFIX_
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/path/to/hiredis -DCMAKE_INSTALL_PREFIX=/path/to/install/redis-plus-plus ..
 ```
 
+By default, *redis-plus-plus* is built with `-std=c++11` standard. If you want to use the [std::string_view](#stringview) and [std::optional](#optional) features, you can also build *redis-plus-plus* with `-std=c++17` standard by specifying `-DREDIS_PLUS_PLUS_CXX_STANDARD=17` with the cmake command.
+
+```
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/path/to/hiredis -DCMAKE_INSTALL_PREFIX=/path/to/install/redis-plus-plus -DREDIS_PLUS_PLUS_CXX_STANDARD=17 ..
+```
+
 ### Run Tests (Optional)
 
 *redis-plus-plus* has been fully tested with the following compilers:
@@ -104,12 +110,14 @@ gcc version 5.5.0 20171010 (Ubuntu 5.5.0-12ubuntu1)
 gcc version 6.5.0 20181026 (Ubuntu 6.5.0-2ubuntu1~18.04)
 gcc version 7.4.0 (Ubuntu 7.4.0-1ubuntu1~18.04.1)
 gcc version 8.3.0 (Ubuntu 8.3.0-6ubuntu1~18.04.1)
+gcc version 9.2.1 20191008 (Ubuntu 9.2.1-9ubuntu2)
 clang version 3.9.1-19ubuntu1 (tags/RELEASE_391/rc2)
 clang version 4.0.1-10 (tags/RELEASE_401/final)
 clang version 5.0.1-4 (tags/RELEASE_501/final)
 clang version 6.0.0-1ubuntu2 (tags/RELEASE_600/final)
 clang version 7.0.0-3~ubuntu0.18.04.1 (tags/RELEASE_700/final)
-Apple clang version 11.0.0 (clang-1100.0.33.8)
+clang version 8.0.1-3build1 (tags/RELEASE_801/final)
+Apple clang version 11.0.0 (clang-1100.0.33.12)
 ```
 
 After compiling with cmake, you'll get a test program in *compile/test* directory: *compile/test/test_redis++*.
@@ -611,7 +619,9 @@ Most of these methods have the same parameters as the corresponding commands. Th
 
 ##### StringView
 
-[std::string_view](http://en.cppreference.com/w/cpp/string/basic_string_view) is a good option for the type of string parameters. However, by now, not all compilers support `std::string_view`. So we wrote a [simple version](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/utils.h#L48), i.e. `StringView`. Since there are conversions from `std::string` and c-style string to `StringView`, you can just pass `std::string` or c-style string to methods that need a `StringView` parameter.
+[std::string_view](http://en.cppreference.com/w/cpp/string/basic_string_view) is a good option for the type of string parameters. However, by now, not all compilers support `std::string_view`. So if you build *redis-plus-plus* with `-std=c++11` standard (i.e. the default behavior), we wrote a [simple version](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/utils.h#L56), i.e. `StringView`. Instead, if you build *redis-plus-plus* with `-std=c++17` standard (i.e. by specifying `-DREDIS_PLUS_PLUS_CXX_STANDARD=17` with cmake command), you can use `std::string_view`, and we have a typedef for it: `using StringView = std::string_view`.
+
+Since there are conversions from `std::string` and c-style string to `StringView`, you can just pass `std::string` or c-style string to methods that need a `StringView` parameter.
 
 ```C++
 // bool Redis::hset(const StringView &key, const StringView &field, const StringView &val)
@@ -665,7 +675,7 @@ So, never use the return value to check if the command has been successfully sen
 
 ##### Optional
 
-[std::optional](http://en.cppreference.com/w/cpp/utility/optional) is a good option for return type, if Redis might return *NULL REPLY*. Again, since not all compilers support `std::optional` so far, we implement our own [simple version](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/utils.h#L85), i.e. `Optional<T>`.
+[std::optional](http://en.cppreference.com/w/cpp/utility/optional) is a good option for return type, if Redis might return *NULL REPLY*. Again, since not all compilers support `std::optional` so far, if you build *redis-plus-plus* with `-std=c++11` standard (i.e. the default behavior), we implement our own [simple version](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/utils.h#L93), i.e. `template Optional<T>`. Instead, if you build *redis-plus-plus* with `-std=c++17` standard (i.e. by specifying `-DREDIS_PLUS_PLUS_CXX_STANDARD=17` with cmake command), you can use `std::optional`, and we have a typedef for it: `template <typename T> using Optional = std::optional<T>`.
 
 Take the [GET](https://redis.io/commands/get) and [MGET](https://redis.io/commands/mget) commands for example:
 
@@ -1616,7 +1626,7 @@ redis_cluster.lpush("list", {"1", "2", "3"});
 std::vector<std::string> list;
 redis_cluster.lrange("list", 0, -1, std::back_inserter(list));
 
-// Pipline.
+// Pipeline.
 auto pipe = redis_cluster.pipeline("counter");
 auto replies = pipe.incr("{counter}:1").incr("{counter}:2").exec();
 
