@@ -1,6 +1,6 @@
 project(redis++)
 
-option(BUILD_TESTING "Build tests for redis++" ON)
+option(REDIS_PLUS_PLUS_BUILD_TEST "Build tests for redis++" ON)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     cmake_minimum_required(VERSION 3.0.0)
