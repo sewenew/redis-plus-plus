@@ -40,8 +40,8 @@ set_target_properties(${SHARED_LIB} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
 set_target_properties(${STATIC_LIB} PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 set_target_properties(${SHARED_LIB} PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 
-if(BUILD_TESTING)
-    add_subdirectory(tests)
+if(REDIS_PLUS_PLUS_BUILD_TEST)
+    add_subdirectory(test)
 endif()
 
 # Install static lib.
