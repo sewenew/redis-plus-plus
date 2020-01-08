@@ -1,5 +1,7 @@
 project(redis++)
 
+option(REDIS_PLUS_PLUS_BUILD_TEST "Build tests for redis++" ON)
+
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     cmake_minimum_required(VERSION 3.0.0)
 else()
@@ -38,7 +40,9 @@ set_target_properties(${SHARED_LIB} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
 set_target_properties(${STATIC_LIB} PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 set_target_properties(${SHARED_LIB} PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 
-add_subdirectory(test)
+if(REDIS_PLUS_PLUS_BUILD_TEST)
+    add_subdirectory(test)
+endif()
 
 # Install static lib.
 install(TARGETS ${STATIC_LIB}
