@@ -1,7 +1,5 @@
 project(redis++)
 
-option(REDIS_PLUS_PLUS_BUILD_TEST "Build tests for redis++" ON)
-
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     cmake_minimum_required(VERSION 3.0.0)
 else()
@@ -11,6 +9,8 @@ endif()
 if (NOT DEFINED REDIS_PLUS_PLUS_CXX_STANDARD)
     set(REDIS_PLUS_PLUS_CXX_STANDARD 11)
 endif()
+
+message(STATUS "The CXX standard is c++${REDIS_PLUS_PLUS_CXX_STANDARD}")
 
 set(CMAKE_CXX_FLAGS "-std=c++${REDIS_PLUS_PLUS_CXX_STANDARD} -Wall -W -Werror -fPIC")
 
@@ -39,6 +39,8 @@ set_target_properties(${SHARED_LIB} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
 
 set_target_properties(${STATIC_LIB} PROPERTIES CLEAN_DIRECT_OUTPUT 1)
 set_target_properties(${SHARED_LIB} PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+
+option(REDIS_PLUS_PLUS_BUILD_TEST "Build tests for redis++" ON)
 
 if(REDIS_PLUS_PLUS_BUILD_TEST)
     add_subdirectory(test)

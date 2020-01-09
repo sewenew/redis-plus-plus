@@ -94,10 +94,16 @@ If *hiredis* is installed at non-default location, you should use `CMAKE_PREFIX_
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/path/to/hiredis -DCMAKE_INSTALL_PREFIX=/path/to/install/redis-plus-plus ..
 ```
 
-By default, *redis-plus-plus* is built with `-std=c++11` standard. If you want to use the [std::string_view](#stringview) and [std::optional](#optional) features, you can also build *redis-plus-plus* with `-std=c++17` standard by specifying `-DREDIS_PLUS_PLUS_CXX_STANDARD=17` with the cmake command.
+By default, *redis-plus-plus* is built with `-std=c++11` standard. If you want to use the [std::string_view](#stringview) and [std::optional](#optional) features, you can also build *redis-plus-plus* with `-std=c++17` standard by specifying the following cmake flag: `-DREDIS_PLUS_PLUS_CXX_STANDARD=17`.
 
 ```
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/path/to/hiredis -DCMAKE_INSTALL_PREFIX=/path/to/install/redis-plus-plus -DREDIS_PLUS_PLUS_CXX_STANDARD=17 ..
+```
+
+When compiling *redis-plus-plus*, it also compiles a test program, which might take a while. However, you can disable building test with the following cmake option: `-DREDIS_PLUS_PLUS_BUILD_TEST=OFF`.
+
+```
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/path/to/hiredis -DCMAKE_INSTALL_PREFIX=/path/to/install/redis-plus-plus -DREDIS_PLUS_PLUS_BUILD_TEST=OFF ..
 ```
 
 ### Run Tests (Optional)
@@ -120,7 +126,7 @@ clang version 8.0.1-3build1 (tags/RELEASE_801/final)
 Apple clang version 11.0.0 (clang-1100.0.33.12)
 ```
 
-After compiling with cmake, you'll get a test program in *compile/test* directory: *compile/test/test_redis++*.
+If you build *redis-plus-plus* with `-DREDIS_PLUS_PLUS_BUILD_TEST=ON` (the default behavior), you'll get a test program in *compile/test* directory: *compile/test/test_redis++*.
 
 In order to run the tests, you need to set up a Redis instance, and a Redis Cluster. Since the test program will send most of Redis commands to the server and cluster, you need to set up Redis of the latest version (by now, it's 5.0). Otherwise, the tests might fail. For example, if you set up Redis 4.0 for testing, the test program will fail when it tries to send the `ZPOPMAX` command (a Redis 5.0 command) to the server. If you want to run the tests with other Redis versions, you have to comment out commands that haven't been supported by your Redis, from test source files in *redis-plus-plus/test/src/sw/redis++/* directory. Sorry for the inconvenience, and I'll fix this problem to make the test program work with any version of Redis in the future.
 
