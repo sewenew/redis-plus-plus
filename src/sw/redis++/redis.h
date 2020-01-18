@@ -180,12 +180,40 @@ public:
         return exists(il.begin(), il.end());
     }
 
+    /// @brief Set a timeout on key.
+    /// @param key Key.
+    /// @param timeout Timeout in seconds.
+    /// @return Whether timeout has been set.
+    /// @retval true If timeout has been set.
+    /// @retval false If key does not exist.
+    /// @see https://redis.io/commands/expire
     bool expire(const StringView &key, long long timeout);
 
+    /// @brief Set a timeout on key.
+    /// @param key Key.
+    /// @param timeout Timeout in seconds.
+    /// @return Whether timeout has been set.
+    /// @retval true If timeout has been set.
+    /// @retval false If key does not exist.
+    /// @see https://redis.io/commands/expire
     bool expire(const StringView &key, const std::chrono::seconds &timeout);
 
+    /// @brief Set a timeout on key, i.e. expire the key at a future time point.
+    /// @param key Key.
+    /// @param timestamp Time in seconds since UNIX epoch.
+    /// @return Whether timeout has been set.
+    /// @retval true If timeout has been set.
+    /// @retval false If key does not exist.
+    /// @see https://redis.io/commands/expireat
     bool expireat(const StringView &key, long long timestamp);
 
+    /// @brief Set a timeout on key, i.e. expire the key at a future time point.
+    /// @param key Key.
+    /// @param timestamp Time in seconds since UNIX epoch.
+    /// @return Whether timeout has been set.
+    /// @retval true If timeout has been set.
+    /// @retval false If key does not exist.
+    /// @see https://redis.io/commands/expireat
     bool expireat(const StringView &key,
                     const std::chrono::time_point<std::chrono::system_clock,
                                                     std::chrono::seconds> &tp);
@@ -193,16 +221,57 @@ public:
     template <typename Output>
     void keys(const StringView &pattern, Output output);
 
+    /// @brief Move a key to the given database.
+    /// @param key Key.
+    /// @param db The destination database.
+    /// @return Whether key has been moved.
+    /// @retval true If key has been moved.
+    /// @retval false If key was not moved.
+    /// @see https://redis.io/commands/move
     bool move(const StringView &key, long long db);
 
+    /// @brief Remove timeout on key.
+    /// @param key Key.
+    /// @return Whether timeout has been removed.
+    /// @retval true If timeout has been removed.
+    /// @retval false If key does not exist, or does not have an associated timeout.
+    /// @see https://redis.io/commands/persist
     bool persist(const StringView &key);
 
+    /// @brief Set a timeout on key.
+    /// @param key Key.
+    /// @param timeout Timeout in milliseconds.
+    /// @return Whether timeout has been set.
+    /// @retval true If timeout has been set.
+    /// @retval false If key does not exist.
+    /// @see https://redis.io/commands/pexpire
     bool pexpire(const StringView &key, long long timeout);
 
+    /// @brief Set a timeout on key.
+    /// @param key Key.
+    /// @param timeout Timeout in milliseconds.
+    /// @return Whether timeout has been set.
+    /// @retval true If timeout has been set.
+    /// @retval false If key does not exist.
+    /// @see https://redis.io/commands/pexpire
     bool pexpire(const StringView &key, const std::chrono::milliseconds &timeout);
 
+    /// @brief Set a timeout on key, i.e. expire the key at a future time point.
+    /// @param key Key.
+    /// @param timestamp Time in milliseconds since UNIX epoch.
+    /// @return Whether timeout has been set.
+    /// @retval true If timeout has been set.
+    /// @retval false If key does not exist.
+    /// @see https://redis.io/commands/pexpireat
     bool pexpireat(const StringView &key, long long timestamp);
 
+    /// @brief Set a timeout on key, i.e. expire the key at a future time point.
+    /// @param key Key.
+    /// @param timestamp Time in milliseconds since UNIX epoch.
+    /// @return Whether timeout has been set.
+    /// @retval true If timeout has been set.
+    /// @retval false If key does not exist.
+    /// @see https://redis.io/commands/pexpireat
     bool pexpireat(const StringView &key,
                     const std::chrono::time_point<std::chrono::system_clock,
                                                     std::chrono::milliseconds> &tp);
@@ -213,6 +282,13 @@ public:
 
     void rename(const StringView &key, const StringView &newkey);
 
+    /// @brief Rename key to newkey if newkey does not exist.
+    /// @param key Key to be renamed.
+    /// @param newkey The new name of the key.
+    /// @return Whether key has been renamed.
+    /// @retval true If key has been renamed.
+    /// @retval false If newkey already exists.
+    /// @see https://redis.io/commands/renamenx
     bool renamenx(const StringView &key, const StringView &newkey);
 
     void restore(const StringView &key,
@@ -330,9 +406,35 @@ public:
         mset(il.begin(), il.end());
     }
 
+    /// @brief Set the given key-value pairs if all specified keys do not exist.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// std::vector<std::pair<std::string, std::string>> kvs1;
+    /// redis.msetnx(kvs1.begin(), kvs1.end());
+    /// std::unordered_map<std::string, std::string> kvs2;
+    /// redis.msetnx(kvs2.begin(), kvs2.end());
+    /// @endcode
+    /// @param first Iterator to the first key-value pair.
+    /// @param last Off-the-end iterator of the given range.
+    /// @return Whether all keys have been set.
+    /// @retval true If all keys have been set.
+    /// @retval false If no key was set, i.e. at least one key already exist.
+    /// @see https://redis.io/commands/msetnx
     template <typename Input>
     bool msetnx(Input first, Input last);
 
+    /// @brief Set the given key-value pairs if all specified keys do not exist.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// redis.msetnx({make_pair("k1", "v1"), make_pair("k2", "v2")});
+    /// @endcode
+    /// @param il Initializer list of key-value pairs.
+    /// @return Whether all keys have been set.
+    /// @retval true If all keys have been set.
+    /// @retval false If no key was set, i.e. at least one key already exist.
+    /// @see https://redis.io/commands/msetnx
     template <typename T>
     bool msetnx(std::initializer_list<T> il) {
         return msetnx(il.begin(), il.end());
@@ -346,6 +448,19 @@ public:
                 const std::chrono::milliseconds &ttl,
                 const StringView &val);
 
+    /// @brief Set a key-value pair.
+    /// @param key Key.
+    /// @param val Value.
+    /// @param ttl Timeout on the key. If `ttl` is 0ms, do not set timeout.
+    /// @param type Options for set command:
+    ///             - UpdateType::EXIST: Set the key only if it already exists.
+    ///             - UpdateType::NOT_EXIST: Set the key only if it does not exist.
+    ///             - UpdateType::ALWAYS: Always set the key no matter whether it exists.
+    /// @return Whether the key has been set.
+    /// @retval true If the key has been set.
+    /// @retval false If the key was not set, because of the given option.
+    /// @see https://redis.io/commands/set
+    // TODO: Support KEEPTTL option for Redis 6.0
     bool set(const StringView &key,
                 const StringView &val,
                 const std::chrono::milliseconds &ttl = std::chrono::milliseconds(0),
@@ -359,6 +474,13 @@ public:
                 const std::chrono::seconds &ttl,
                 const StringView &val);
 
+    /// @brief Set the key if it does not exist.
+    /// @param key Key.
+    /// @param val Value.
+    /// @return Whether the key has been set.
+    /// @retval true If the key has been set.
+    /// @retval false If the key was not set, i.e. the key already exists.
+    /// @see https://redis.io/commands/setnx
     bool setnx(const StringView &key, const StringView &val);
 
     long long setrange(const StringView &key, long long offset, const StringView &val);
@@ -483,6 +605,13 @@ public:
         return hdel(key, il.begin(), il.end());
     }
 
+    /// @brief Check if the given field exists in hash.
+    /// @param key Key where the hash is stored.
+    /// @param field Field.
+    /// @return Whether the field exists.
+    /// @retval true If the field exists in hash.
+    /// @retval false If the field does not exist.
+    /// @see https://redis.io/commands/hexists
     bool hexists(const StringView &key, const StringView &field);
 
     OptionalString hget(const StringView &key, const StringView &field);
@@ -539,8 +668,31 @@ public:
                     long long cursor,
                     Output output);
 
+    /// @brief Set hash field to value.
+    /// @param key Key where the hash is stored.
+    /// @param field Field.
+    /// @param val Value.
+    /// @return Whether the given field is a new field.
+    /// @retval true If the given field didn't exist, and a new field has been added.
+    /// @retval false If the given field already exists, and its value has been overwritten.
+    /// @see https://redis.io/commands/hset
+    /// @note When `hset` returns false, it does not mean that the method failed to set the field.
+    ///       Instead, it means that the field already exists, and we've overwritten its value.
+    ///       If `hset` fails, it will throw an exception of `Exception` type.
+    /// @see https://github.com/sewenew/redis-plus-plus/issues/9
     bool hset(const StringView &key, const StringView &field, const StringView &val);
 
+    /// @brief Set hash field to value.
+    /// @param key Key where the hash is stored.
+    /// @param item The field-value pair to be set.
+    /// @return Whether the given field is a new field.
+    /// @retval true If the given field didn't exist, and a new field has been added.
+    /// @retval false If the given field already exists, and its value has been overwritten.
+    /// @see https://redis.io/commands/hset
+    /// @note When `hset` returns false, it does not mean that the method failed to set the field.
+    ///       Instead, it means that the field already exists, and we've overwritten its value.
+    ///       If `hset` fails, it will throw an exception of `Exception` type.
+    /// @see https://github.com/sewenew/redis-plus-plus/issues/9
     bool hset(const StringView &key, const std::pair<StringView, StringView> &item);
 
     template <typename Input>
@@ -552,8 +704,23 @@ public:
         return hset(key, il.begin(), il.end());
     }
 
+    /// @brief Set hash field to value, only if the given field does not exist.
+    /// @param key Key where the hash is stored.
+    /// @param field Field.
+    /// @param val Value.
+    /// @return Whether the field has been set.
+    /// @retval true If the field has been set.
+    /// @retval false If failed to set the field, i.e. the field already exists.
+    /// @see https://redis.io/commands/hsetnx
     bool hsetnx(const StringView &key, const StringView &field, const StringView &val);
 
+    /// @brief Set hash field to value, only if the given field does not exist.
+    /// @param key Key where the hash is stored.
+    /// @param item The field-value pair to be set.
+    /// @return Whether the field has been set.
+    /// @retval true If the field has been set.
+    /// @retval false If failed to set the field, i.e. the field already exists.
+    /// @see https://redis.io/commands/hsetnx
     bool hsetnx(const StringView &key, const std::pair<StringView, StringView> &item);
 
     long long hstrlen(const StringView &key, const StringView &field);
@@ -617,11 +784,25 @@ public:
         return sinterstore(destination, il.begin(), il.end());
     }
 
+    /// @brief Test if `member` exists in the set stored at key.
+    /// @param key Key where the set is stored.
+    /// @param member Member to be checked.
+    /// @return Whether `member` exists in the set.
+    /// @retval true If it exists in the set.
+    /// @retval false If it does not exist in the set, or the given key does not exist.
+    /// @see https://redis.io/commands/sismember
     bool sismember(const StringView &key, const StringView &member);
 
     template <typename Output>
     void smembers(const StringView &key, Output output);
 
+    /// @brief Move `member` from one set to another.
+    /// @param source Key of the set in which the member currently exists.
+    /// @param destination Key of the destination set.
+    /// @return Whether the member has been moved.
+    /// @retval true If the member has been moved.
+    /// @retval false If `member` does not exist in `source`.
+    /// @see https://redis.io/commands/smove
     bool smove(const StringView &source,
                 const StringView &destination,
                 const StringView &member);
@@ -964,11 +1145,33 @@ public:
 
     // HYPERLOGLOG commands.
 
+    /// @brief Add the given element to a hyperloglog.
+    /// @param key Key of the hyperloglog.
+    /// @param element Element to be added.
+    /// @return Whether any of hyperloglog's internal register has been altered.
+    /// @retval true If at least one internal register has been altered.
+    /// @retval false If none of internal registers has been altered.
+    /// @see https://redis.io/commands/pfadd
     bool pfadd(const StringView &key, const StringView &element);
 
+    /// @brief Add the given elements to a hyperloglog.
+    /// @param key Key of the hyperloglog.
+    /// @param first Iterator to the first element.
+    /// @param last Off-the-end iterator to the given range.
+    /// @return Whether any of hyperloglog's internal register has been altered.
+    /// @retval true If at least one internal register has been altered.
+    /// @retval false If none of internal registers has been altered.
+    /// @see https://redis.io/commands/pfadd
     template <typename Input>
     bool pfadd(const StringView &key, Input first, Input last);
 
+    /// @brief Add the given elements to a hyperloglog.
+    /// @param key Key of the hyperloglog.
+    /// @param il Initializer list of elements to be added.
+    /// @return Whether any of hyperloglog's internal register has been altered.
+    /// @retval true If at least one internal register has been altered.
+    /// @retval false If none of internal registers has been altered.
+    /// @see https://redis.io/commands/pfadd
     template <typename T>
     bool pfadd(const StringView &key, std::initializer_list<T> il) {
         return pfadd(key, il.begin(), il.end());
@@ -1131,6 +1334,12 @@ public:
                     std::initializer_list<StringView> args,
                     Output output);
 
+    /// @brief Check if the given script exists.
+    /// @param sha1 SHA1 digest of the script.
+    /// @return Whether the script exists.
+    /// @retval true If the script exists.
+    /// @retval false If the script does not exist.
+    /// @see https://redis.io/commands/script-exists
     bool script_exists(const StringView &sha1);
 
     template <typename Input, typename Output>
