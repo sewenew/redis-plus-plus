@@ -66,10 +66,29 @@ public:
     Redis(Redis &&) = default;
     Redis& operator=(Redis &&) = default;
 
+    /// @brief Create a pipeline.
+    /// @return The created pipeline.
+    /// @see https://github.com/sewenew/redis-plus-plus#pipeline
+    /// @note Instead of picking a connection from the underlying connection pool,
+    ///       this method will create a new connection to Redis. So it's not a cheap operation,
+    ///       and you'd better reuse the returned object as much as possible.
     Pipeline pipeline();
 
+    /// @brief Create a transaction.
+    /// @param piped Whether commands in a transaction should be sent in a pipeline to reduce RTT.
+    /// @return The created transaction.
+    /// @see https://github.com/sewenew/redis-plus-plus#transaction
+    /// @note Instead of picking a connection from the underlying connection pool,
+    ///       this method will create a new connection to Redis. So it's not a cheap operation,
+    ///       and you'd better reuse the returned object as much as possible.
     Transaction transaction(bool piped = false);
 
+    /// @brief Create a subscriber.
+    /// @return The created subscriber.
+    /// @see https://github.com/sewenew/redis-plus-plus#publishsubscribe
+    /// @note Instead of picking a connection from the underlying connection pool,
+    ///       this method will create a new connection to Redis. So it's not a cheap operation,
+    ///       and you'd better reuse the returned object as much as possible.
     Subscriber subscriber();
 
     template <typename Cmd, typename ...Args>
@@ -102,12 +121,24 @@ public:
 
     // CONNECTION commands.
 
+    /// @brief Send password to Redis.
+    /// @param password Password.
+    /// @note Normally, you should not call this method.
+    ///       Instead, you should set password with `ConnectionOptions` or URI.
     void auth(const StringView &password);
 
+    /// @brief Ask Redis to return the given message.
+    /// @param msg Message to be sent.
+    /// @return Return the given message.
     std::string echo(const StringView &msg);
 
+    /// @brief Test if the connection is alive.
+    /// @return Always return *PONG*.
     std::string ping();
 
+    /// @brief Test if the connection is alive.
+    /// @param msg Message sent to Redis.
+    /// @return Return the given message.
     std::string ping(const StringView &msg);
 
     // After sending QUIT, only the current connection will be close, while
@@ -134,6 +165,9 @@ public:
     //
     // void select(long long idx);
 
+    /// @brief Swap two Redis databases.
+    /// @param idx1 The index of the first database.
+    /// @param idx2 The index of the second database.
     void swapdb(long long idx1, long long idx2);
 
     // SERVER commands.
@@ -1152,6 +1186,9 @@ public:
     /// @retval true If at least one internal register has been altered.
     /// @retval false If none of internal registers has been altered.
     /// @see https://redis.io/commands/pfadd
+    /// @note When `pfadd` returns false, it does not mean that this method failed to add
+    ///       an element to the hyperloglog. Instead it means that the internal registers
+    ///       were not altered. If `pfadd` fails, it will throw an exception of `Exception` type.
     bool pfadd(const StringView &key, const StringView &element);
 
     /// @brief Add the given elements to a hyperloglog.
@@ -1162,6 +1199,9 @@ public:
     /// @retval true If at least one internal register has been altered.
     /// @retval false If none of internal registers has been altered.
     /// @see https://redis.io/commands/pfadd
+    /// @note When `pfadd` returns false, it does not mean that this method failed to add
+    ///       an element to the hyperloglog. Instead it means that the internal registers
+    ///       were not altered. If `pfadd` fails, it will throw an exception of `Exception` type.
     template <typename Input>
     bool pfadd(const StringView &key, Input first, Input last);
 
@@ -1172,6 +1212,9 @@ public:
     /// @retval true If at least one internal register has been altered.
     /// @retval false If none of internal registers has been altered.
     /// @see https://redis.io/commands/pfadd
+    /// @note When `pfadd` returns false, it does not mean that this method failed to add
+    ///       an element to the hyperloglog. Instead it means that the internal registers
+    ///       were not altered. If `pfadd` fails, it will throw an exception of `Exception` type.
     template <typename T>
     bool pfadd(const StringView &key, std::initializer_list<T> il) {
         return pfadd(key, il.begin(), il.end());
