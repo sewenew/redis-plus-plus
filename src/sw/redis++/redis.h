@@ -125,20 +125,24 @@ public:
     /// @param password Password.
     /// @note Normally, you should not call this method.
     ///       Instead, you should set password with `ConnectionOptions` or URI.
+    /// @see https://redis.io/commands/auth
     void auth(const StringView &password);
 
     /// @brief Ask Redis to return the given message.
     /// @param msg Message to be sent.
     /// @return Return the given message.
+    /// @see https://redis.io/commands/echo
     std::string echo(const StringView &msg);
 
     /// @brief Test if the connection is alive.
     /// @return Always return *PONG*.
+    /// @see https://redis.io/commands/ping
     std::string ping();
 
     /// @brief Test if the connection is alive.
     /// @param msg Message sent to Redis.
     /// @return Return the given message.
+    /// @see https://redis.io/commands/ping
     std::string ping(const StringView &msg);
 
     // After sending QUIT, only the current connection will be close, while
@@ -168,26 +172,52 @@ public:
     /// @brief Swap two Redis databases.
     /// @param idx1 The index of the first database.
     /// @param idx2 The index of the second database.
+    /// @see https://redis.io/commands/swapdb
     void swapdb(long long idx1, long long idx2);
 
     // SERVER commands.
 
+    /// @brief Rewrite AOF in the background.
+    /// @see https://redis.io/commands/bgrewriteaof
     void bgrewriteaof();
 
+    /// @brief Save database in the background.
+    /// @see https://redis.io/commands/bgsave
     void bgsave();
 
+    /// @brief Get the size of the currently selected database.
+    /// @return Number of keys in currently selected database.
+    /// @see https://redis.io/commands/dbsize
     long long dbsize();
 
+    /// @brief Remove keys of all databases.
+    /// @param async Whether flushing databases asynchronously, i.e. without blocking the server.
+    /// @see https://redis.io/commands/flushall
     void flushall(bool async = false);
 
+    /// @brief Remove keys of current databases.
+    /// @param async Whether flushing databases asynchronously, i.e. without blocking the server.
+    /// @see https://redis.io/commands/flushdb
     void flushdb(bool async = false);
 
+    /// @brief Get the info about the server.
+    /// @return Server info.
+    /// @see https://redis.io/commands/info
     std::string info();
 
+    /// @brief Get the info about the server on the given section.
+    /// @param section Section.
+    /// @return Server info.
+    /// @see https://redis.io/commands/info
     std::string info(const StringView &section);
 
+    /// @brief Get the UNIX timestamp in seconds, at which the database was saved successfully.
+    /// @return The last saving time.
+    /// @see https://redis.io/commands/lastsave
     long long lastsave();
 
+    /// @brief Save databases into RDB file **synchronously**, i.e. block the server during saving.
+    /// @see https://redis.io/commands/save
     void save();
 
     // KEY commands.
