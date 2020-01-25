@@ -222,23 +222,59 @@ public:
 
     // KEY commands.
 
+    /// @brief Delete the given key.
+    /// @param key Key.
+    /// @return Number of keys removed.
+    /// @retval 1 If the key exists, and has been removed.
+    /// @retval 0 If the key does not exist.
+    /// @see https://redis.io/commands/del
     long long del(const StringView &key);
 
+    /// @brief Delete the given list of keys.
+    /// @param first Iterator to the first key in the range.
+    /// @param last Off-the-end iterator to the given range.
+    /// @return Number of keys removed.
+    /// @see https://redis.io/commands/del
     template <typename Input>
     long long del(Input first, Input last);
 
+    /// @brief Delete the given list of keys.
+    /// @param il Initializer list of keys to be deleted.
+    /// @return Number of keys removed.
+    /// @see https://redis.io/commands/del
     template <typename T>
     long long del(std::initializer_list<T> il) {
         return del(il.begin(), il.end());
     }
 
+    /// @brief Get the serialized valued stored at key.
+    /// @param key Key.
+    /// @return The serialized value.
+    /// @retval The serialized value if key exists.
+    /// @retval `OptionalString{}` (`std::nullopt`) if key does not exist.
+    /// @see https://redis.io/commands/dump
     OptionalString dump(const StringView &key);
 
+    /// @brief Check if the given key exists.
+    /// @param key Key.
+    /// @return Whether the given key exists.
+    /// @retval 1 If key exists.
+    /// @retval 0 If key does not exist.
+    /// @see https://redis.io/commands/exists
     long long exists(const StringView &key);
 
+    /// @brief Check if the given keys exist.
+    /// @param first Iterator to the first key.
+    /// @param last Off-the-end iterator to the given range.
+    /// @return Number of keys existing.
+    /// @see https://redis.io/commands/exists
     template <typename Input>
     long long exists(Input first, Input last);
 
+    /// @brief Check if the given keys exist.
+    /// @param il Initializer list of keys to be checked.
+    /// @return Number of keys existing.
+    /// @see https://redis.io/commands/exists
     template <typename T>
     long long exists(std::initializer_list<T> il) {
         return exists(il.begin(), il.end());
@@ -282,6 +318,12 @@ public:
                     const std::chrono::time_point<std::chrono::system_clock,
                                                     std::chrono::seconds> &tp);
 
+    /// @brief Get keys matching the given pattern.
+    /// @param pattern Pattern.
+    /// @param output Output iterator to the destination where the returned keys are stored.
+    /// @see https://redis.io/commands/keys
+    /// @note It's always a bad idea to call `keys`, since it might block Redis for a long time,
+    ///       especially when the data set is very big.
     template <typename Output>
     void keys(const StringView &pattern, Output output);
 
@@ -340,13 +382,26 @@ public:
                     const std::chrono::time_point<std::chrono::system_clock,
                                                     std::chrono::milliseconds> &tp);
 
+    /// @brief Get the TTL of a key in milliseconds.
+    /// @param key Key.
+    /// @return TTL of the key in milliseconds.
+    /// @see https://redis.io/commands/pttl
     long long pttl(const StringView &key);
 
+    /// @brief Get a random key from current database.
+    /// @return A random key.
+    /// @retval A random key, if the database is not empty.
+    /// @retval `OptionalString{}`, if the database is empty.
+    /// @see https://redis.io/commands/randomkey
     OptionalString randomkey();
 
+    /// @brief Rename `key` to `newkey`.
+    /// @param key Key to be renamed.
+    /// @param newkey The new name of the key.
+    /// @see https://redis.io/commands/rename
     void rename(const StringView &key, const StringView &newkey);
 
-    /// @brief Rename key to newkey if newkey does not exist.
+    /// @brief Rename `key` to `newkey` if `newkey` does not exist.
     /// @param key Key to be renamed.
     /// @param newkey The new name of the key.
     /// @return Whether key has been renamed.
@@ -355,11 +410,25 @@ public:
     /// @see https://redis.io/commands/renamenx
     bool renamenx(const StringView &key, const StringView &newkey);
 
+    /// @brief Create a key with the value obtained by `Redis::dump`.
+    /// @param key Key.
+    /// @param val Value obtained by `Redis::dump`.
+    /// @param ttl Timeout of the created key in milliseconds. If `ttl` is 0, set no timeout.
+    /// @param replace Whether to overwrite an existing key.
+    ///                If `replace` is `true` and key already exists, throw an exception.
+    /// @see https://redis.io/commands/restore
     void restore(const StringView &key,
                     const StringView &val,
                     long long ttl,
                     bool replace = false);
 
+    /// @brief Create a key with the value obtained by `Redis::dump`.
+    /// @param key Key.
+    /// @param val Value obtained by `Redis::dump`.
+    /// @param ttl Timeout of the created key in milliseconds. If `ttl` is 0, set no timeout.
+    /// @param replace Whether to overwrite an existing key.
+    ///                If `replace` is `true` and key already exists, throw an exception.
+    /// @see https://redis.io/commands/restore
     void restore(const StringView &key,
                     const StringView &val,
                     const std::chrono::milliseconds &ttl = std::chrono::milliseconds{0},
@@ -367,52 +436,151 @@ public:
 
     // TODO: sort
 
+    /// @brief Scan keys of the database matching the given pattern.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// auto cursor = 0LL;
+    /// std::vector<std::string> keys;
+    /// while (true) {
+    ///     cursor = redis.scan(cursor, "pattern:*", 10, std::back_inserter(keys));
+    ///     if (cursor == 0) {
+    ///         break;
+    ///     }
+    /// }
+    /// @endcode
+    /// @param cursor Cursor.
+    /// @param pattern Pattern of the keys to be scanned.
+    /// @param count A hint for how many keys to be scanned.
+    /// @param output Output iterator to the destination where the returned keys are stored.
+    /// @return The cursor to be used for the next scan operation.
+    /// @see https://redis.io/commands/scan
+    /// TODO: support the TYPE option for Redis 6.0.
     template <typename Output>
     long long scan(long long cursor,
                     const StringView &pattern,
                     long long count,
                     Output output);
 
+    /// @brief Scan all keys of the database.
+    /// @param cursor Cursor.
+    /// @param output Output iterator to the destination where the returned keys are stored.
+    /// @return The cursor to be used for the next scan operation.
+    /// @see https://redis.io/commands/scan
     template <typename Output>
     long long scan(long long cursor,
                     Output output);
 
+    /// @brief Scan keys of the database matching the given pattern.
+    /// @param cursor Cursor.
+    /// @param pattern Pattern of the keys to be scanned.
+    /// @param output Output iterator to the destination where the returned keys are stored.
+    /// @return The cursor to be used for the next scan operation.
+    /// @see https://redis.io/commands/scan
     template <typename Output>
     long long scan(long long cursor,
                     const StringView &pattern,
                     Output output);
 
+    /// @brief Scan keys of the database matching the given pattern.
+    /// @param cursor Cursor.
+    /// @param count A hint for how many keys to be scanned.
+    /// @param output Output iterator to the destination where the returned keys are stored.
+    /// @return The cursor to be used for the next scan operation.
+    /// @see https://redis.io/commands/scan
     template <typename Output>
     long long scan(long long cursor,
                     long long count,
                     Output output);
 
+    /// @brief Update the last access time of the given key.
+    /// @param key Key.
+    /// @return Whether last access time of the key has been updated.
+    /// @retval 1 If key exists, and last access time has been updated.
+    /// @retval 0 If key does not exist.
+    /// @see https://redis.io/commands/touch
     long long touch(const StringView &key);
 
+    /// @brief Update the last access time of the given key.
+    /// @param first Iterator to the first key to be touched.
+    /// @param last Off-the-end iterator to the given range.
+    /// @return Whether last access time of the key has been updated.
+    /// @retval 1 If key exists, and last access time has been updated.
+    /// @retval 0 If key does not exist.
+    /// @see https://redis.io/commands/touch
     template <typename Input>
     long long touch(Input first, Input last);
 
+    /// @brief Update the last access time of the given key.
+    /// @param il Initializer list of keys to be touched.
+    /// @return Whether last access time of the key has been updated.
+    /// @retval 1 If key exists, and last access time has been updated.
+    /// @retval 0 If key does not exist.
+    /// @see https://redis.io/commands/touch
     template <typename T>
     long long touch(std::initializer_list<T> il) {
         return touch(il.begin(), il.end());
     }
 
+    /// @brief Get the remaining Time-To-Live of a key.
+    /// @param key Key.
+    /// @return TTL in seconds.
+    /// @retval TTL If the key has a timeout.
+    /// @retval -1 If the key exists but does not have a timeout.
+    /// @retval -2 If the key does not exist.
+    /// @see https://redis.io/commands/ttl
+    /// @note In Redis 2.6 or older, `ttl` returns -1 if the key does not exist,
+    ///       or if the key exists but does not have a timeout.
     long long ttl(const StringView &key);
 
+    /// @brief Get the type of the value stored at key.
+    /// @param key Key.
+    /// @return The type of the value.
+    /// @see https://redis.io/commands/type
     std::string type(const StringView &key);
 
+    /// @brief Remove the given key asynchronously, i.e. without blocking Redis.
+    /// @param key Key.
+    /// @return Whether the key has been removed.
+    /// @retval 1 If key exists, and has been removed.
+    /// @retval 0 If key does not exist.
+    /// @see https://redis.io/commands/unlink
     long long unlink(const StringView &key);
 
+    /// @brief Remove the given keys asynchronously, i.e. without blocking Redis.
+    /// @param first Iterater to the first key in the given range.
+    /// @param last Off-the-end iterator to the given range.
+    /// @return Number of keys that have been removed.
+    /// @see https://redis.io/commands/unlink
     template <typename Input>
     long long unlink(Input first, Input last);
 
+    /// @brief Remove the given keys asynchronously, i.e. without blocking Redis.
+    /// @param il Initializer list of keys to be unlinked.
+    /// @return Number of keys that have been removed.
+    /// @see https://redis.io/commands/unlink
     template <typename T>
     long long unlink(std::initializer_list<T> il) {
         return unlink(il.begin(), il.end());
     }
 
+    /// @brief Wait until previous write commands are successfully replicated to at
+    ///        least the specified number of replicas or the given timeout has been reached.
+    /// @param numslaves Number of replicas.
+    /// @param timeout Timeout in milliseconds. If timeout is 0ms, wait forever.
+    /// @return Number of replicas that have been successfully replicated these write commands.
+    /// @note The return value might be less than `numslaves`, because timeout has been reached.
+    /// @see https://redis.io/commands/wait
     long long wait(long long numslaves, long long timeout);
 
+    /// @brief Wait until previous write commands are successfully replicated to at
+    ///        least the specified number of replicas or the given timeout has been reached.
+    /// @param numslaves Number of replicas.
+    /// @param timeout Timeout in milliseconds. If timeout is 0ms, wait forever.
+    /// @return Number of replicas that have been successfully replicated these write commands.
+    /// @note The return value might be less than `numslaves`, because timeout has been reached.
+    /// @see https://redis.io/commands/wait
+    /// TODO: Support default parameter for `timeout` to wait forever.
     long long wait(long long numslaves, const std::chrono::milliseconds &timeout);
 
     // STRING commands.
