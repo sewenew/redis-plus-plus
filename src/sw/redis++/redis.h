@@ -68,27 +68,27 @@ public:
 
     /// @brief Create a pipeline.
     /// @return The created pipeline.
-    /// @see https://github.com/sewenew/redis-plus-plus#pipeline
     /// @note Instead of picking a connection from the underlying connection pool,
     ///       this method will create a new connection to Redis. So it's not a cheap operation,
     ///       and you'd better reuse the returned object as much as possible.
+    /// @see https://github.com/sewenew/redis-plus-plus#pipeline
     Pipeline pipeline();
 
     /// @brief Create a transaction.
     /// @param piped Whether commands in a transaction should be sent in a pipeline to reduce RTT.
     /// @return The created transaction.
-    /// @see https://github.com/sewenew/redis-plus-plus#transaction
     /// @note Instead of picking a connection from the underlying connection pool,
     ///       this method will create a new connection to Redis. So it's not a cheap operation,
     ///       and you'd better reuse the returned object as much as possible.
+    /// @see https://github.com/sewenew/redis-plus-plus#transaction
     Transaction transaction(bool piped = false);
 
     /// @brief Create a subscriber.
     /// @return The created subscriber.
-    /// @see https://github.com/sewenew/redis-plus-plus#publishsubscribe
     /// @note Instead of picking a connection from the underlying connection pool,
     ///       this method will create a new connection to Redis. So it's not a cheap operation,
     ///       and you'd better reuse the returned object as much as possible.
+    /// @see https://github.com/sewenew/redis-plus-plus#publishsubscribe
     Subscriber subscriber();
 
     template <typename Cmd, typename ...Args>
@@ -250,8 +250,7 @@ public:
     /// @brief Get the serialized valued stored at key.
     /// @param key Key.
     /// @return The serialized value.
-    /// @retval The serialized value if key exists.
-    /// @retval `OptionalString{}` (`std::nullopt`) if key does not exist.
+    /// @note If key does not exist, `dump` returns `OptionalString{}` (`std::nullopt`).
     /// @see https://redis.io/commands/dump
     OptionalString dump(const StringView &key);
 
@@ -321,9 +320,9 @@ public:
     /// @brief Get keys matching the given pattern.
     /// @param pattern Pattern.
     /// @param output Output iterator to the destination where the returned keys are stored.
-    /// @see https://redis.io/commands/keys
     /// @note It's always a bad idea to call `keys`, since it might block Redis for a long time,
     ///       especially when the data set is very big.
+    /// @see https://redis.io/commands/keys
     template <typename Output>
     void keys(const StringView &pattern, Output output);
 
@@ -390,8 +389,7 @@ public:
 
     /// @brief Get a random key from current database.
     /// @return A random key.
-    /// @retval A random key, if the database is not empty.
-    /// @retval `OptionalString{}`, if the database is empty.
+    /// @note If the database is empty, `randomkey` returns `OptionalString{}` (`std::nullopt`).
     /// @see https://redis.io/commands/randomkey
     OptionalString randomkey();
 
@@ -528,9 +526,9 @@ public:
     /// @retval TTL If the key has a timeout.
     /// @retval -1 If the key exists but does not have a timeout.
     /// @retval -2 If the key does not exist.
-    /// @see https://redis.io/commands/ttl
     /// @note In Redis 2.6 or older, `ttl` returns -1 if the key does not exist,
     ///       or if the key exists but does not have a timeout.
+    /// @see https://redis.io/commands/ttl
     long long ttl(const StringView &key);
 
     /// @brief Get the type of the value stored at key.
@@ -585,54 +583,212 @@ public:
 
     // STRING commands.
 
+    /// @brief Append the given string to the string stored at key.
+    /// @param key Key.
+    /// @param str String to be appended.
+    /// @return The length of the string after the append operation.
+    /// @see https://redis.io/commands/append
     long long append(const StringView &key, const StringView &str);
 
+    /// @brief Get the number of bits that have been set for the given range of the string.
+    /// @param key Key.
+    /// @param start Start index (inclusive) of the range. 0 means the beginning of the string.
+    /// @param end End index (inclusive) of the range. -1 means the end of the string.
+    /// @return Number of bits that have been set.
+    /// @note The index can be negative to index from the end of the string.
+    /// @see https://redis.io/commands/bitcount
     long long bitcount(const StringView &key, long long start = 0, long long end = -1);
 
+    /// @brief Do bit operation on the string stored at `key`, and save the result to `destination`.
+    /// @param op Bit operations.
+    /// @param destination The destination key where the result is saved.
+    /// @param key The key where the string to be operated is stored.
+    /// @return The length of the string saved at `destination`.
+    /// @see https://redis.io/commands/bitop
+    /// @see `BitOp`
     long long bitop(BitOp op, const StringView &destination, const StringView &key);
 
+    /// @brief Do bit operations on the strings stored at the given keys,
+    ///        and save the result to `destination`.
+    /// @param op Bit operations.
+    /// @param destination The destination key where the result is saved.
+    /// @param first Iterator to the first key where the string to be operated is stored.
+    /// @param last Off-the-end iterator to the given range of keys.
+    /// @return The length of the string saved at `destination`.
+    /// @see https://redis.io/commands/bitop
+    /// @see `BitOp`
     template <typename Input>
     long long bitop(BitOp op, const StringView &destination, Input first, Input last);
 
+    /// @brief Do bit operations on the strings stored at the given keys,
+    ///        and save the result to `destination`.
+    /// @param op Bit operations.
+    /// @param destination The destination key where the result is saved.
+    /// @param il Initializer list of keys where the strings are operated.
+    /// @return The length of the string saved at `destination`.
+    /// @see https://redis.io/commands/bitop
+    /// @see `BitOp`
     template <typename T>
     long long bitop(BitOp op, const StringView &destination, std::initializer_list<T> il) {
         return bitop(op, destination, il.begin(), il.end());
     }
 
+    /// @brief Get the position of the first bit set to 0 or 1 in the given range of the string.
+    /// @param key Key.
+    /// @param bit 0 or 1.
+    /// @param start Start index (inclusive) of the range. 0 means the beginning of the string.
+    /// @param end End index (inclusive) of the range. -1 means the end of the string.
+    /// @return The position of the first bit set to 0 or 1.
+    /// @see https://redis.io/commands/bitpos
     long long bitpos(const StringView &key,
                         long long bit,
                         long long start = 0,
                         long long end = -1);
 
+    /// @brief Decrement the integer stored at key by 1.
+    /// @param key Key.
+    /// @return The value after the decrement.
+    /// @see https://redis.io/commands/decr
     long long decr(const StringView &key);
 
+    /// @brief Decrement the integer stored at key by `decrement`.
+    /// @param key Key.
+    /// @param decrement Decrement.
+    /// @return The value after the decrement.
+    /// @see https://redis.io/commands/decrby
     long long decrby(const StringView &key, long long decrement);
 
+    /// @brief Get the string value stored at key.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// auto val = redis.get("key");
+    /// if (val)
+    ///     std::cout << *val << std::endl;
+    /// else
+    ///     std::cout << "key not exist" << std::endl;
+    /// @endcode
+    /// @param key Key.
+    /// @return The value stored at key.
+    /// @note If key does not exist, `get` returns `OptionalString{}` (`std::nullopt`).
+    /// @see https://redis.io/commands/get
     OptionalString get(const StringView &key);
 
+    /// @brief Get the bit value at offset in the string.
+    /// @param key Key.
+    /// @param offset Offset.
+    /// @return The bit value.
+    /// @see https://redis.io/commands/getbit
     long long getbit(const StringView &key, long long offset);
 
+    /// @brief Get the substring of the string stored at key.
+    /// @param key Key.
+    /// @param start Start index (inclusive) of the range. 0 means the beginning of the string.
+    /// @param end End index (inclusive) of the range. -1 means the end of the string.
+    /// @return The substring in range [start, end]. If key does not exist, return an empty string.
+    /// @see https://redis.io/commands/getrange
     std::string getrange(const StringView &key, long long start, long long end);
 
+    /// @brief Atomically set the string stored at `key` to `val`, and return the old value.
+    /// @param key Key.
+    /// @param val Value to be set.
+    /// @return The old value stored at key.
+    /// @note If key does not exist, `getset` returns `OptionalString{}` (`std::nullopt`).
+    /// @see https://redis.io/commands/getset
+    /// @see `OptionalString`
     OptionalString getset(const StringView &key, const StringView &val);
 
+    /// @brief Increment the integer stored at key by 1.
+    /// @param key Key.
+    /// @return The value after the increment.
+    /// @see https://redis.io/commands/incr
     long long incr(const StringView &key);
 
+    /// @brief Increment the integer stored at key by `increment`.
+    /// @param key Key.
+    /// @param increment Increment.
+    /// @return The value after the increment.
+    /// @see https://redis.io/commands/incrby
     long long incrby(const StringView &key, long long increment);
 
+    /// @brief Increment the floating point number stored at key by `increment`.
+    /// @param key Key.
+    /// @param increment Increment.
+    /// @return The value after the increment.
+    /// @see https://redis.io/commands/incrbyfloat
     double incrbyfloat(const StringView &key, double increment);
 
+    /// @brief Get the values of multiple keys atomically.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// std::vector<std::string> keys = {"k1", "k2", "k3"};
+    /// std::vector<OptionalString> vals;
+    /// redis.mget(keys.begin(), keys.end(), std::back_inserter(vals));
+    /// for (const auto &val : vals) {
+    ///     if (val)
+    ///         std::cout << *val << std::endl;
+    ///     else
+    ///         std::cout << "key does not exist" << std::endl;
+    /// }
+    /// @endcode
+    /// @param first Iterator to the first key of the given range.
+    /// @param last Off-the-end iterator to the given range.
+    /// @param output Output iterator to the destination where the values are stored.
+    /// @note The destination should be a container of `OptionalString` type,
+    ///       since the given key might not exist (in this case, the value of the corresponding
+    ///       key is `OptionalString{}`).
+    /// @see https://redis.io/commands/mget
     template <typename Input, typename Output>
     void mget(Input first, Input last, Output output);
 
+    /// @brief Get the values of multiple keys atomically.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// std::vector<OptionalString> vals;
+    /// redis.mget({"k1", "k2", "k3"}, std::back_inserter(vals));
+    /// for (const auto &val : vals) {
+    ///     if (val)
+    ///         std::cout << *val << std::endl;
+    ///     else
+    ///         std::cout << "key does not exist" << std::endl;
+    /// }
+    /// @endcode
+    /// @param il Initializer list of keys.
+    /// @param output Output iterator to the destination where the values are stored.
+    /// @note The destination should be a container of `OptionalString` type,
+    ///       since the given key might not exist (in this case, the value of the corresponding
+    ///       key is `OptionalString{}`).
+    /// @see https://redis.io/commands/mget
     template <typename T, typename Output>
     void mget(std::initializer_list<T> il, Output output) {
         mget(il.begin(), il.end(), output);
     }
 
+    /// @brief Set multiple key-value pairs.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// std::vector<std::pair<std::string, std::string>> kvs1 = {{"k1", "v1"}, {"k2", "v2"}};
+    /// redis.mset(kvs1.begin(), kvs1.end());
+    /// std::unordered_map<std::string, std::string> kvs2 = {{"k3", "v3"}, {"k4", "v4"}};
+    /// redis.mset(kvs2.begin(), kvs2.end());
+    /// @endcode
+    /// @param first Iterator to the first key-value pair.
+    /// @param last Off-the-end iterator to the given range.
+    /// @see https://redis.io/commands/mset
     template <typename Input>
     void mset(Input first, Input last);
 
+    /// @brief Set multiple key-value pairs.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// redis.mset({std::make_pair("k1", "v1"), std::make_pair("k2", "v2")});
+    /// @endcode
+    /// @param il Initializer list of key-value pairs.
+    /// @see https://redis.io/commands/mset
     template <typename T>
     void mset(std::initializer_list<T> il) {
         mset(il.begin(), il.end());
@@ -672,10 +828,20 @@ public:
         return msetnx(il.begin(), il.end());
     }
 
+    /// @brief Set key-value pair with the given timeout in milliseconds.
+    /// @param key Key.
+    /// @param ttl Time-To-Live in milliseconds.
+    /// @param val Value.
+    /// @see https://redis.io/commands/psetex
     void psetex(const StringView &key,
                 long long ttl,
                 const StringView &val);
 
+    /// @brief Set key-value pair with the given timeout in milliseconds.
+    /// @param key Key.
+    /// @param ttl Time-To-Live in milliseconds.
+    /// @param val Value.
+    /// @see https://redis.io/commands/psetex
     void psetex(const StringView &key,
                 const std::chrono::milliseconds &ttl,
                 const StringView &val);
@@ -698,10 +864,22 @@ public:
                 const std::chrono::milliseconds &ttl = std::chrono::milliseconds(0),
                 UpdateType type = UpdateType::ALWAYS);
 
+    // TODO: add SETBIT command.
+
+    /// @brief Set key-value pair with the given timeout in seconds.
+    /// @param key Key.
+    /// @param ttl Time-To-Live in seconds.
+    /// @param val Value.
+    /// @see https://redis.io/commands/setex
     void setex(const StringView &key,
                 long long ttl,
                 const StringView &val);
 
+    /// @brief Set key-value pair with the given timeout in seconds.
+    /// @param key Key.
+    /// @param ttl Time-To-Live in seconds.
+    /// @param val Value.
+    /// @see https://redis.io/commands/setex
     void setex(const StringView &key,
                 const std::chrono::seconds &ttl,
                 const StringView &val);
@@ -715,8 +893,19 @@ public:
     /// @see https://redis.io/commands/setnx
     bool setnx(const StringView &key, const StringView &val);
 
+    /// @brief Set the substring starting from `offset` to the given value.
+    /// @param key Key.
+    /// @param offset Offset.
+    /// @param val Value.
+    /// @return The length of the string after this operation.
+    /// @see https://redis.io/commands/setrange
     long long setrange(const StringView &key, long long offset, const StringView &val);
 
+    /// @brief Get the length of the string stored at key.
+    /// @param key Key.
+    /// @return The length of the string.
+    /// @note If key does not exist, `strlen` returns 0.
+    /// @see https://redis.io/commands/strlen
     long long strlen(const StringView &key);
 
     // LIST commands.
@@ -907,11 +1096,11 @@ public:
     /// @return Whether the given field is a new field.
     /// @retval true If the given field didn't exist, and a new field has been added.
     /// @retval false If the given field already exists, and its value has been overwritten.
-    /// @see https://redis.io/commands/hset
     /// @note When `hset` returns false, it does not mean that the method failed to set the field.
     ///       Instead, it means that the field already exists, and we've overwritten its value.
     ///       If `hset` fails, it will throw an exception of `Exception` type.
     /// @see https://github.com/sewenew/redis-plus-plus/issues/9
+    /// @see https://redis.io/commands/hset
     bool hset(const StringView &key, const StringView &field, const StringView &val);
 
     /// @brief Set hash field to value.
@@ -920,11 +1109,11 @@ public:
     /// @return Whether the given field is a new field.
     /// @retval true If the given field didn't exist, and a new field has been added.
     /// @retval false If the given field already exists, and its value has been overwritten.
-    /// @see https://redis.io/commands/hset
     /// @note When `hset` returns false, it does not mean that the method failed to set the field.
     ///       Instead, it means that the field already exists, and we've overwritten its value.
     ///       If `hset` fails, it will throw an exception of `Exception` type.
     /// @see https://github.com/sewenew/redis-plus-plus/issues/9
+    /// @see https://redis.io/commands/hset
     bool hset(const StringView &key, const std::pair<StringView, StringView> &item);
 
     template <typename Input>
@@ -1383,10 +1572,10 @@ public:
     /// @return Whether any of hyperloglog's internal register has been altered.
     /// @retval true If at least one internal register has been altered.
     /// @retval false If none of internal registers has been altered.
-    /// @see https://redis.io/commands/pfadd
     /// @note When `pfadd` returns false, it does not mean that this method failed to add
     ///       an element to the hyperloglog. Instead it means that the internal registers
     ///       were not altered. If `pfadd` fails, it will throw an exception of `Exception` type.
+    /// @see https://redis.io/commands/pfadd
     bool pfadd(const StringView &key, const StringView &element);
 
     /// @brief Add the given elements to a hyperloglog.
@@ -1396,10 +1585,10 @@ public:
     /// @return Whether any of hyperloglog's internal register has been altered.
     /// @retval true If at least one internal register has been altered.
     /// @retval false If none of internal registers has been altered.
-    /// @see https://redis.io/commands/pfadd
     /// @note When `pfadd` returns false, it does not mean that this method failed to add
     ///       an element to the hyperloglog. Instead it means that the internal registers
     ///       were not altered. If `pfadd` fails, it will throw an exception of `Exception` type.
+    /// @see https://redis.io/commands/pfadd
     template <typename Input>
     bool pfadd(const StringView &key, Input first, Input last);
 
@@ -1409,10 +1598,10 @@ public:
     /// @return Whether any of hyperloglog's internal register has been altered.
     /// @retval true If at least one internal register has been altered.
     /// @retval false If none of internal registers has been altered.
-    /// @see https://redis.io/commands/pfadd
     /// @note When `pfadd` returns false, it does not mean that this method failed to add
     ///       an element to the hyperloglog. Instead it means that the internal registers
     ///       were not altered. If `pfadd` fails, it will throw an exception of `Exception` type.
+    /// @see https://redis.io/commands/pfadd
     template <typename T>
     bool pfadd(const StringView &key, std::initializer_list<T> il) {
         return pfadd(key, il.begin(), il.end());
