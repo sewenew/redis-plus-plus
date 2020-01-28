@@ -847,6 +847,19 @@ public:
                 const StringView &val);
 
     /// @brief Set a key-value pair.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// // Set a key-value pair.
+    /// redis.set("key", "value");
+    /// // Set a key-value pair, and expire it after 10 seconds.
+    /// redis.set("key", "value", std::chrono::seconds(10));
+    /// // Set a key-value pair with a timeout, only if the key already exists.
+    /// if (redis.set("key", "value", std::chrono::seconds(10), UpdateType::EXIST))
+    ///     std::cout << "OK" << std::endl;
+    /// else
+    ///     std::cout << "key does not exist" << std::endl;
+    /// @endcode
     /// @param key Key.
     /// @param val Value.
     /// @param ttl Timeout on the key. If `ttl` is 0ms, do not set timeout.
@@ -910,108 +923,348 @@ public:
 
     // LIST commands.
 
+    /// @brief Pop the first element of the list in a blocking way.
+    /// @param key Key where the list is stored.
+    /// @param timeout Timeout. 0 means block forever.
+    /// @return Key-element pair.
+    /// @note If list is empty and timeout reaches, return `OptionalStringPair` (`std::nullopt`).
+    /// @see `Redis::lpop`
+    /// @see https://redis.io/commands/blpop
     OptionalStringPair blpop(const StringView &key, long long timeout);
 
+    /// @brief Pop the first element of the list in a blocking way.
+    /// @param key Key where the list is stored.
+    /// @param timeout Timeout. 0 means block forever.
+    /// @return Key-element pair.
+    /// @note If list is empty and timeout reaches, return `OptionalStringPair` (`std::nullopt`).
+    /// @see `Redis::lpop`
+    /// @see https://redis.io/commands/blpop
     OptionalStringPair blpop(const StringView &key,
                                 const std::chrono::seconds &timeout = std::chrono::seconds{0});
 
+    /// @brief Pop the first element of multiple lists in a blocking way.
+    /// @param first Iterator to the first key.
+    /// @param last Off-the-end iterator to the key range.
+    /// @param timeout If list is empty, block until it is not empty, or `timeout` reaches.
+    /// @return Key-element pair.
+    /// @note If list is empty and timeout reaches, return `OptionalStringPair` (`std::nullopt`).
+    /// @see `Redis::lpop`
+    /// @see https://redis.io/commands/blpop
     template <typename Input>
     OptionalStringPair blpop(Input first, Input last, long long timeout);
 
+    /// @brief Pop the first element of multiple lists in a blocking way.
+    /// @param il Initializer list of keys.
+    /// @param timeout If list is empty, block until it is not empty, or `timeout` reaches.
+    /// @return Key-element pair.
+    /// @note If list is empty and timeout reaches, return `OptionalStringPair` (`std::nullopt`).
+    /// @see `Redis::lpop`
+    /// @see https://redis.io/commands/blpop
     template <typename T>
     OptionalStringPair blpop(std::initializer_list<T> il, long long timeout) {
         return blpop(il.begin(), il.end(), timeout);
     }
 
+    /// @brief Pop the first element of multiple lists in a blocking way.
+    /// @param first Iterator to the first key.
+    /// @param last Off-the-end iterator to the key range.
+    /// @param timeout If list is empty, block until it is not empty, or `timeout` reaches.
+    /// @return Key-element pair.
+    /// @note If list is empty and timeout reaches, return `OptionalStringPair` (`std::nullopt`).
+    /// @see `Redis::lpop`
+    /// @see https://redis.io/commands/blpop
     template <typename Input>
     OptionalStringPair blpop(Input first,
                                 Input last,
                                 const std::chrono::seconds &timeout = std::chrono::seconds{0});
 
+    /// @brief Pop the first element of multiple lists in a blocking way.
+    /// @param il Initializer list of keys.
+    /// @param timeout If lists are empty, block until they are not empty, or `timeout` reaches.
+    /// @return Key-element pair.
+    /// @note If list is empty and timeout reaches, return `OptionalStringPair` (`std::nullopt`).
+    /// @see `Redis::lpop`
+    /// @see https://redis.io/commands/blpop
     template <typename T>
     OptionalStringPair blpop(std::initializer_list<T> il,
                                 const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
         return blpop(il.begin(), il.end(), timeout);
     }
 
+    /// @brief Pop the last element of the list in a blocking way.
+    /// @param key Key where the list is stored.
+    /// @param timeout Timeout. 0 means block forever.
+    /// @return Key-element pair.
+    /// @note If list is empty and timeout reaches, return `OptionalStringPair` (`std::nullopt`).
+    /// @see `Redis::rpop`
+    /// @see https://redis.io/commands/brpop
     OptionalStringPair brpop(const StringView &key, long long timeout);
 
+    /// @brief Pop the last element of the list in a blocking way.
+    /// @param key Key where the list is stored.
+    /// @param timeout Timeout. 0 means block forever.
+    /// @return Key-element pair.
+    /// @note If list is empty and timeout reaches, return `OptionalStringPair` (`std::nullopt`).
+    /// @see `Redis::rpop`
+    /// @see https://redis.io/commands/brpop
     OptionalStringPair brpop(const StringView &key,
                                 const std::chrono::seconds &timeout = std::chrono::seconds{0});
 
+    /// @brief Pop the last element of multiple lists in a blocking way.
+    /// @param first Iterator to the first key.
+    /// @param last Off-the-end iterator to the key range.
+    /// @param timeout Timeout. 0 means block forever.
+    /// @return Key-element pair.
+    /// @note If list is empty and timeout reaches, return `OptionalStringPair` (`std::nullopt`).
+    /// @see `Redis::rpop`
+    /// @see https://redis.io/commands/brpop
     template <typename Input>
     OptionalStringPair brpop(Input first, Input last, long long timeout);
 
+    /// @brief Pop the last element of multiple lists in a blocking way.
+    /// @param key Key where the list is stored.
+    /// @param timeout Timeout. 0 means block forever.
+    /// @return Key-element pair.
+    /// @note If list is empty and timeout reaches, return `OptionalStringPair` (`std::nullopt`).
+    /// @see `Redis::rpop`
+    /// @see https://redis.io/commands/brpop
     template <typename T>
     OptionalStringPair brpop(std::initializer_list<T> il, long long timeout) {
         return brpop(il.begin(), il.end(), timeout);
     }
 
+    /// @brief Pop the last element of multiple lists in a blocking way.
+    /// @param key Key where the list is stored.
+    /// @param timeout Timeout. 0 means block forever.
+    /// @return Key-element pair.
+    /// @note If list is empty and timeout reaches, return `OptionalStringPair` (`std::nullopt`).
+    /// @see `Redis::rpop`
+    /// @see https://redis.io/commands/brpop
     template <typename Input>
     OptionalStringPair brpop(Input first,
                                 Input last,
                                 const std::chrono::seconds &timeout = std::chrono::seconds{0});
 
+    /// @brief Pop the last element of multiple lists in a blocking way.
+    /// @param key Key where the list is stored.
+    /// @param timeout Timeout. 0 means block forever.
+    /// @return Key-element pair.
+    /// @note If list is empty and timeout reaches, return `OptionalStringPair` (`std::nullopt`).
+    /// @see `Redis::rpop`
+    /// @see https://redis.io/commands/brpop
     template <typename T>
     OptionalStringPair brpop(std::initializer_list<T> il,
                                 const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
         return brpop(il.begin(), il.end(), timeout);
     }
 
+    /// @brief Pop last element of one list and push it to the left of another list in blocking way.
+    /// @param source Key of the source list.
+    /// @param destination Key of the destination list.
+    /// @param timeout Timeout. 0 means block forever.
+    /// @return The popped element.
+    /// @note If the source list does not exist, `brpoplpush` returns `OptionalString{}` (`std::nullopt`).
+    /// @see `Redis::rpoplpush`
+    /// @see https://redis.io/commands/brpoplpush
     OptionalString brpoplpush(const StringView &source,
                                 const StringView &destination,
                                 long long timeout);
 
+    /// @brief Pop last element of one list and push it to the left of another list in blocking way.
+    /// @param source Key of the source list.
+    /// @param destination Key of the destination list.
+    /// @param timeout Timeout. 0 means block forever.
+    /// @return The popped element.
+    /// @note If the source list does not exist, `brpoplpush` returns `OptionalString{}` (`std::nullopt`).
+    /// @see `Redis::rpoplpush`
+    /// @see https://redis.io/commands/brpoplpush
     OptionalString brpoplpush(const StringView &source,
                                 const StringView &destination,
                                 const std::chrono::seconds &timeout = std::chrono::seconds{0});
 
+    /// @brief Get the element at the given index of the list.
+    /// @param key Key where the list is stored.
+    /// @param index Zero-base index, and -1 means the last element.
+    /// @return The element at the given index.
+    /// @see https://redis.io/commands/lindex
     OptionalString lindex(const StringView &key, long long index);
 
+    /// @brief Insert an element to a list before or after the pivot element.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// // Insert 'hello' before 'world'
+    /// auto len = redis.linsert("list", InsertPosition::BEFORE, "world", "hello");
+    /// if (len == -1)
+    ///     std::cout << "there's no 'world' in the list" << std::endl;
+    /// else
+    ///     std::cout << "after the operation, the length of the list is " << len << std::endl;
+    /// @endcode
+    /// @param key Key where the list is stored.
+    /// @param position Before or after the pivot element.
+    /// @param pivot The pivot value. The `pivot` is the value of the element, not the index.
+    /// @param val Element to be inserted.
+    /// @return The length of the list after the operation.
+    /// @note If the pivot value is not found, `linsert` returns -1.
+    /// @see `InsertPosition`
+    /// @see https://redis.io/commands/linsert
     long long linsert(const StringView &key,
                         InsertPosition position,
                         const StringView &pivot,
                         const StringView &val);
 
+    /// @brief Get the length of the list.
+    /// @param key Key where the list is stored.
+    /// @return The length of the list.
+    /// @see https://redis.io/commands/llen
     long long llen(const StringView &key);
 
+    /// @brief Pop the first element of the list.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// auto element = redis.lpop("list");
+    /// if (element)
+    ///     std::cout << *element << std::endl;
+    /// else
+    ///     std::cout << "list is empty, i.e. list does not exist" << std::endl;
+    /// @endcode
+    /// @param key Key where the list is stored.
+    /// @return The popped element.
+    /// @note If list is empty, i.e. key does not exist, return `OptionalString{}` (`std::nullopt`).
+    /// @see https://redis.io/commands/lpop
     OptionalString lpop(const StringView &key);
 
+    /// @brief Push an element to the beginning of the list.
+    /// @param key Key where the list is stored.
+    /// @param val Element to be pushed.
+    /// @return The length of the list after the operation.
+    /// @see https://redis.io/commands/lpush
     long long lpush(const StringView &key, const StringView &val);
 
+    /// @brief Push multiple elements to the beginning of the list.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// std::vector<std::string> elements = {"e1", "e2", "e3"};
+    /// redis.lpush("list", elements.begin(), elements.end());
+    /// @endcode
+    /// @param key Key where the list is stored.
+    /// @param first Iterator to the first element to be pushed.
+    /// @param last Off-the-end iterator to the given element range.
+    /// @return The length of the list after the operation.
+    /// @see https://redis.io/commands/lpush
     template <typename Input>
     long long lpush(const StringView &key, Input first, Input last);
 
+    /// @brief Push multiple elements to the beginning of the list.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// redis.lpush("list", {"e1", "e2", "e3"});
+    /// @endcode
+    /// @param key Key where the list is stored.
+    /// @param il Initializer list of elements.
+    /// @return The length of the list after the operation.
+    /// @see https://redis.io/commands/lpush
     template <typename T>
     long long lpush(const StringView &key, std::initializer_list<T> il) {
         return lpush(key, il.begin(), il.end());
     }
 
+    /// @brief Push an element to the beginning of the list, only if the list already exists.
+    /// @param key Key where the list is stored.
+    /// @param val Element to be pushed.
+    /// @return The length of the list after the operation.
+    /// @see https://redis.io/commands/lpushx
+    // TODO: add a multiple elements overload.
     long long lpushx(const StringView &key, const StringView &val);
 
+    /// @brief Get elements in the given range of the given list.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// std::vector<std::string> elements;
+    /// // Save all elements of a Redis list to a vector of string.
+    /// redis.lrange("list", 0, -1, std::back_inserter(elements));
+    /// @endcode
+    /// @param key Key where the list is stored.
+    /// @param start Start index of the range. Index can be negative, which mean index from the end.
+    /// @param stop End index of the range.
+    /// @param output Output iterator to the destination where the results are saved.
+    /// @see https://redis.io/commands/lrange
     template <typename Output>
     void lrange(const StringView &key, long long start, long long stop, Output output);
 
+    /// @brief Remove the first `count` occurrences of elements equal to `val`.
+    /// @param key Key where the list is stored.
+    /// @param count Number of occurrences to be removed.
+    /// @param val Value.
+    /// @return Number of elements removed.
+    /// @note `count` can be positive, negative and 0. Check the reference for detail.
+    /// @see https://redis.io/commands/lrem
     long long lrem(const StringView &key, long long count, const StringView &val);
 
+    /// @brief Set the element at the given index to the specified value.
+    /// @param key Key where the list is stored.
+    /// @param index Index of the element to be set.
+    /// @param val Value.
+    /// @see https://redis.io/commands/lset
     void lset(const StringView &key, long long index, const StringView &val);
 
+    /// @brief Trim a list to keep only element in the given range.
+    /// @param key Key where the key is stored.
+    /// @param start Start of the index.
+    /// @param stop End of the index.
+    /// @see https://redis.io/commands/ltrim
     void ltrim(const StringView &key, long long start, long long stop);
 
+    /// @brief Pop the last element of a list.
+    /// @param key Key where the list is stored.
+    /// @return The popped element.
+    /// @note If the list is empty, i.e. key does not exist, `rpop` returns `OptionalString{}` (`std::nullopt`).
+    /// @see https://redis.io/commands/rpop
     OptionalString rpop(const StringView &key);
 
+    /// @brief Pop last element of one list and push it to the left of another list.
+    /// @param source Key of the source list.
+    /// @param destination Key of the destination list.
+    /// @return The popped element.
+    /// @note If the source list does not exist, `rpoplpush` returns `OptionalString{}` (`std::nullopt`).
+    /// @see https://redis.io/commands/brpoplpush
     OptionalString rpoplpush(const StringView &source, const StringView &destination);
 
+    /// @brief Push an element to the end of the list.
+    /// @param key Key where the list is stored.
+    /// @param val Element to be pushed.
+    /// @return The length of the list after the operation.
+    /// @see https://redis.io/commands/rpush
     long long rpush(const StringView &key, const StringView &val);
 
+    /// @brief Push multiple elements to the end of the list.
+    /// @param key Key where the list is stored.
+    /// @param first Iterator to the first element to be pushed.
+    /// @param last Off-the-end iterator to the given element range.
+    /// @return The length of the list after the operation.
+    /// @see https://redis.io/commands/rpush
     template <typename Input>
     long long rpush(const StringView &key, Input first, Input last);
 
+    /// @brief Push multiple elements to the end of the list.
+    /// @param key Key where the list is stored.
+    /// @param il Initializer list of elements to be pushed.
+    /// @return The length of the list after the operation.
+    /// @see https://redis.io/commands/rpush
     template <typename T>
     long long rpush(const StringView &key, std::initializer_list<T> il) {
         return rpush(key, il.begin(), il.end());
     }
 
+    /// @brief Push an element to the end of the list, only if the list already exists.
+    /// @param key Key where the list is stored.
+    /// @param val Element to be pushed.
+    /// @return The length of the list after the operation.
+    /// @see https://redis.io/commands/rpushx
     long long rpushx(const StringView &key, const StringView &val);
 
     // HASH commands.

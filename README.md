@@ -471,6 +471,8 @@ try {
 
 ## API Reference
 
+You can also see [redis.h](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/redis.h) for doxygen style documentation.
+
 ### Connection
 
 `Redis` class maintains a connection pool to Redis server. If the connection is broken, `Redis` reconnects to Redis server automatically.
