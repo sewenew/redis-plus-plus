@@ -44,15 +44,34 @@ using Pipeline = QueuedRedis<PipelineImpl>;
 
 class Redis {
 public:
+    /// @brief Construct `Redis` instance with connection options and connection pool options.
+    /// @param connection_opts Connection options.
+    /// @param pool_opts Connection pool options.
+    /// @see `ConnectionOptions`
+    /// @see `ConnectionPoolOptions`
+    /// @see https://github.com/sewenew/redis-plus-plus#connection
     Redis(const ConnectionOptions &connection_opts,
             const ConnectionPoolOptions &pool_opts = {}) : _pool(pool_opts, connection_opts) {}
 
-    // Construct Redis instance with URI:
-    // "tcp://127.0.0.1", "tcp://127.0.0.1:6379", or "unix://path/to/socket"
-    // Full scheme: "tcp://user:pass@127.0.0.1:6379/0"
-    // Check this issue for detail: https://github.com/sewenew/redis-plus-plus/issues/37
+    /// @brief Construct `Redis` instance with URI.
+    /// @param uri URI, e.g. 'tcp://127.0.0.1', 'tcp://127.0.0.1:6379', or 'unix://path/to/socket'.
+    ///            Full URI scheme: 'tcp://[[username:]password@]host[:port][/db]' or
+    ///            unix://[[username:]password@]path-to-unix-domain-socket[/db]
+    /// @see https://github.com/sewenew/redis-plus-plus/issues/37
+    /// @see https://github.com/sewenew/redis-plus-plus#connection
     explicit Redis(const std::string &uri);
 
+    /// @brief Construct `Redis` instance with Redis sentinel, i.e. get node info from sentinel.
+    /// @param sentinel `Sentinel` instance.
+    /// @param master_name Name of master node.
+    /// @param role Connect to master node or slave node.
+    ///             - Role::MASTER: Connect to master node.
+    ///             - Role::SLAVE: Connect to slave node.
+    /// @param connection_opts Connection options.
+    /// @param pool_opts Connection pool options.
+    /// @see `Sentinel`
+    /// @see `Role`
+    /// @see https://github.com/sewenew/redis-plus-plus#redis-sentinel
     Redis(const std::shared_ptr<Sentinel> &sentinel,
             const std::string &master_name,
             Role role,
@@ -60,10 +79,16 @@ public:
             const ConnectionPoolOptions &pool_opts = {}) :
                 _pool(SimpleSentinel(sentinel, master_name, role), pool_opts, connection_opts) {}
 
+    /// @brief `Redis` is not copyable.
     Redis(const Redis &) = delete;
+
+    /// @brief `Redis` is not copyable.
     Redis& operator=(const Redis &) = delete;
 
+    /// @brief `Redis` is movable.
     Redis(Redis &&) = default;
+
+    /// @brief `Redis` is movable.
     Redis& operator=(Redis &&) = default;
 
     /// @brief Create a pipeline.
