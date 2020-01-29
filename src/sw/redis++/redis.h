@@ -1624,54 +1624,128 @@ public:
 
     // SET commands.
 
+    /// @brief Add a member to the given set.
+    /// @param key Key where the set is stored.
+    /// @param member Member to be added.
+    /// @return Whether the given member is a new member.
+    /// @retval 1 The member did not exist before, and it has been added now.
+    /// @retval 0 The member already exists before this operation.
+    /// @see https://redis.io/commands/sadd
     long long sadd(const StringView &key, const StringView &member);
 
+    /// @brief Add multiple members to the given set.
+    /// @param key Key where the set is stored.
+    /// @param first Iterator to the first member to be added.
+    /// @param last Off-the-end iterator to the member range.
+    /// @return Number of new members that have been added, i.e. members did not exist before.
+    /// @see https://redis.io/commands/sadd
     template <typename Input>
     long long sadd(const StringView &key, Input first, Input last);
 
+    /// @brief Add multiple members to the given set.
+    /// @param key Key where the set is stored.
+    /// @param il Initializer list of members to be added.
+    /// @return Number of new members that have been added, i.e. members did not exist before.
+    /// @see https://redis.io/commands/sadd
     template <typename T>
     long long sadd(const StringView &key, std::initializer_list<T> il) {
         return sadd(key, il.begin(), il.end());
     }
 
+    /// @brief Get the number of members in the set.
+    /// @param key Key where the set is stored.
+    /// @return Number of members.
+    /// @see https://redis.io/commands/scard
     long long scard(const StringView &key);
 
+    /// @brief Get the difference between the first set and all successive sets.
+    /// @param first Iterator to the first set.
+    /// @param last Off-the-end iterator to the range.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @see https://redis.io/commands/sdiff
+    // TODO: `void sdiff(const StringView &key, Input first, Input last, Output output)` is better.
     template <typename Input, typename Output>
     void sdiff(Input first, Input last, Output output);
 
+    /// @brief Get the difference between the first set and all successive sets.
+    /// @param il Initializer list of sets.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @see https://redis.io/commands/sdiff
     template <typename T, typename Output>
     void sdiff(std::initializer_list<T> il, Output output) {
         sdiff(il.begin(), il.end(), output);
     }
 
+    /// @brief Copy set stored at `key` to `destination`.
+    /// @param destination Key of the destination set.
+    /// @param key Key of the source set.
+    /// @return Number of members of the set.
+    /// @see https://redis.io/commands/sdiffstore
     long long sdiffstore(const StringView &destination, const StringView &key);
 
+    /// @brief Same as `sdiff`, except that it stores the result to another set.
+    /// @param destination Key of the destination set.
+    /// @param first Iterator to the first set.
+    /// @param last Off-the-end iterator to set range.
+    /// @return Number of members in the resulting set.
+    /// @see https://redis.io/commands/sdiffstore
     template <typename Input>
     long long sdiffstore(const StringView &destination,
                             Input first,
                             Input last);
 
+    /// @brief Same as `sdiff`, except that it stores the result to another set.
+    /// @param destination Key of the destination set.
+    /// @param il Initializer list of sets.
+    /// @return Number of members in the resulting set.
+    /// @see https://redis.io/commands/sdiffstore
     template <typename T>
     long long sdiffstore(const StringView &destination,
                             std::initializer_list<T> il) {
         return sdiffstore(destination, il.begin(), il.end());
     }
 
+    /// @brief Get the intersection between the first set and all successive sets.
+    /// @param first Iterator to the first set.
+    /// @param last Off-the-end iterator to the range.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @see https://redis.io/commands/sinter
+    // TODO: `void sinter(const StringView &key, Input first, Input last, Output output)` is better.
     template <typename Input, typename Output>
     void sinter(Input first, Input last, Output output);
 
+    /// @brief Get the intersection between the first set and all successive sets.
+    /// @param il Initializer list of sets.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @see https://redis.io/commands/sinter
     template <typename T, typename Output>
     void sinter(std::initializer_list<T> il, Output output) {
         sinter(il.begin(), il.end(), output);
     }
 
+    /// @brief Copy set stored at `key` to `destination`.
+    /// @param destination Key of the destination set.
+    /// @param key Key of the source set.
+    /// @return Number of members of the set.
+    /// @see https://redis.io/commands/sinter
     long long sinterstore(const StringView &destination, const StringView &key);
 
+    /// @brief Same as `sinter`, except that it stores the result to another set.
+    /// @param destination Key of the destination set.
+    /// @param first Iterator to the first set.
+    /// @param last Off-the-end iterator to set range.
+    /// @return Number of members in the resulting set.
+    /// @see https://redis.io/commands/sinter
     template <typename Input>
     long long sinterstore(const StringView &destination,
                             Input first,
                             Input last);
 
+    /// @brief Same as `sinter`, except that it stores the result to another set.
+    /// @param destination Key of the destination set.
+    /// @param il Initializer list of sets.
+    /// @return Number of members in the resulting set.
+    /// @see https://redis.io/commands/sinter
     template <typename T>
     long long sinterstore(const StringView &destination,
                             std::initializer_list<T> il) {
@@ -1687,6 +1761,18 @@ public:
     /// @see https://redis.io/commands/sismember
     bool sismember(const StringView &key, const StringView &member);
 
+    /// @brief Get all members in the given set.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// std::unordered_set<std::string> members1;
+    /// redis.smembers("set", std::inserter(members1, members1.begin()));
+    /// std::vector<std::string> members2;
+    /// redis.smembers("set", std::back_inserter(members2));
+    /// @endcode
+    /// @param key Key where the set is stored.
+    /// @param output Iterator to the destination where the result is saved.
+    /// @see https://redis.io/commands/smembers
     template <typename Output>
     void smembers(const StringView &key, Output output);
 
@@ -1701,26 +1787,97 @@ public:
                 const StringView &destination,
                 const StringView &member);
 
+    /// @brief Remove a random member from the set.
+    /// @param key Key where the set is stored.
+    /// @return The popped member.
+    /// @note If the set is empty, `spop` returns `OptionalString{}` (`std::nullopt`).
+    /// @see `srandmember`
+    /// @see https://redis.io/commands/spop
     OptionalString spop(const StringView &key);
 
+    /// @brief Remove multiple random members from the set.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// std::vector<std::string> members;
+    /// redis.spop("set", 10, std::back_inserter(members));
+    /// @endcode
+    /// @param key Key where the set is stored.
+    /// @param count Number of members to be popped.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @note The number of popped members might be less than `count`.
+    /// @see `srandmember`
+    /// @see https://redis.io/commands/spop
     template <typename Output>
     void spop(const StringView &key, long long count, Output output);
 
+    /// @brief Get a random member of the given set.
+    /// @param key Key where the set is stored.
+    /// @return A random member.
+    /// @note If the set is empty, `srandmember` returns `OptionalString{}` (`std::nullopt`).
+    /// @note This method won't remove the member from the set.
+    /// @see `spop`
+    /// @see https://redis.io/commands/srandmember
     OptionalString srandmember(const StringView &key);
 
+    /// @brief Get multiple random members of the given set.
+    /// @param key Key where the set is stored.
+    /// @param count Number of members to be returned.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @note This method won't remove members from the set.
+    /// @see `spop`
+    /// @see https://redis.io/commands/srandmember
     template <typename Output>
     void srandmember(const StringView &key, long long count, Output output);
 
+    /// @brief Remove a member from set.
+    /// @param key Key where the set is stored.
+    /// @param member Member to be removed.
+    /// @return Whether the member has been removed.
+    /// @retval 1 If the given member exists, and has been removed.
+    /// @retval 0 If the given member does not exist.
+    /// @see https://redis.io/commands/srem
     long long srem(const StringView &key, const StringView &member);
 
+    /// @brief Remove multiple members from set.
+    /// @param key Key where the set is stored.
+    /// @param first Iterator to the first member to be removed.
+    /// @param last Off-the-end iterator to the range.
+    /// @return Number of members that have been removed.
+    /// @see https://redis.io/commands/srem
     template <typename Input>
     long long srem(const StringView &key, Input first, Input last);
 
+    /// @brief Remove multiple members from set.
+    /// @param key Key where the set is stored.
+    /// @param il Initializer list of members to be removed.
+    /// @return Number of members that have been removed.
+    /// @see https://redis.io/commands/srem
     template <typename T>
     long long srem(const StringView &key, std::initializer_list<T> il) {
         return srem(key, il.begin(), il.end());
     }
 
+    /// @brief Scan members of the set matching the given pattern.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// auto cursor = 0LL;
+    /// std::vector<std::string> members;
+    /// while (true) {
+    ///     cursor = redis.sscan(cursor, "pattern:*", 10, std::back_inserter(members));
+    ///     if (cursor == 0) {
+    ///         break;
+    ///     }
+    /// }
+    /// @endcode
+    /// @param key Key where the set is stored.
+    /// @param cursor Cursor.
+    /// @param pattern Pattern of fields to be scanned.
+    /// @param count A hint for how many fields to be scanned.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @return The cursor to be used for the next scan operation.
+    /// @see https://redis.io/commands/sscan
     template <typename Output>
     long long sscan(const StringView &key,
                     long long cursor,
@@ -1728,36 +1885,82 @@ public:
                     long long count,
                     Output output);
 
+    /// @brief Scan members of the set matching the given pattern.
+    /// @param key Key where the set is stored.
+    /// @param cursor Cursor.
+    /// @param pattern Pattern of fields to be scanned.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @return The cursor to be used for the next scan operation.
+    /// @see https://redis.io/commands/sscan
     template <typename Output>
     long long sscan(const StringView &key,
                     long long cursor,
                     const StringView &pattern,
                     Output output);
 
+    /// @brief Scan all members of the given set.
+    /// @param key Key where the set is stored.
+    /// @param cursor Cursor.
+    /// @param count A hint for how many fields to be scanned.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @return The cursor to be used for the next scan operation.
+    /// @see https://redis.io/commands/sscan
     template <typename Output>
     long long sscan(const StringView &key,
                     long long cursor,
                     long long count,
                     Output output);
 
+    /// @brief Scan all members of the given set.
+    /// @param key Key where the set is stored.
+    /// @param cursor Cursor.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @return The cursor to be used for the next scan operation.
+    /// @see https://redis.io/commands/sscan
     template <typename Output>
     long long sscan(const StringView &key,
                     long long cursor,
                     Output output);
 
+    /// @brief Get the union between the first set and all successive sets.
+    /// @param first Iterator to the first set.
+    /// @param last Off-the-end iterator to the range.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @see https://redis.io/commands/sunion
+    // TODO: `void sunion(const StringView &key, Input first, Input last, Output output)` is better.
     template <typename Input, typename Output>
     void sunion(Input first, Input last, Output output);
 
+    /// @brief Get the union between the first set and all successive sets.
+    /// @param il Initializer list of sets.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @see https://redis.io/commands/sunion
     template <typename T, typename Output>
     void sunion(std::initializer_list<T> il, Output output) {
         sunion(il.begin(), il.end(), output);
     }
 
+    /// @brief Copy set stored at `key` to `destination`.
+    /// @param destination Key of the destination set.
+    /// @param key Key of the source set.
+    /// @return Number of members of the set.
+    /// @see https://redis.io/commands/sunionstore
     long long sunionstore(const StringView &destination, const StringView &key);
 
+    /// @brief Same as `sunion`, except that it stores the result to another set.
+    /// @param destination Key of the destination set.
+    /// @param first Iterator to the first set.
+    /// @param last Off-the-end iterator to set range.
+    /// @return Number of members in the resulting set.
+    /// @see https://redis.io/commands/sunionstore
     template <typename Input>
     long long sunionstore(const StringView &destination, Input first, Input last);
 
+    /// @brief Same as `sunion`, except that it stores the result to another set.
+    /// @param destination Key of the destination set.
+    /// @param il Initializer list of sets.
+    /// @return Number of members in the resulting set.
+    /// @see https://redis.io/commands/sunionstore
     template <typename T>
     long long sunionstore(const StringView &destination, std::initializer_list<T> il) {
         return sunionstore(destination, il.begin(), il.end());
