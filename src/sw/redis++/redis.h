@@ -347,6 +347,7 @@ public:
     /// @param output Output iterator to the destination where the returned keys are stored.
     /// @note It's always a bad idea to call `keys`, since it might block Redis for a long time,
     ///       especially when the data set is very big.
+    /// @see `scan`
     /// @see https://redis.io/commands/keys
     template <typename Output>
     void keys(const StringView &pattern, Output output);
@@ -762,7 +763,7 @@ public:
     /// @param output Output iterator to the destination where the values are stored.
     /// @note The destination should be a container of `OptionalString` type,
     ///       since the given key might not exist (in this case, the value of the corresponding
-    ///       key is `OptionalString{}`).
+    ///       key is `OptionalString{}` (`std::nullopt`)).
     /// @see https://redis.io/commands/mget
     template <typename Input, typename Output>
     void mget(Input first, Input last, Output output);
@@ -784,7 +785,7 @@ public:
     /// @param output Output iterator to the destination where the values are stored.
     /// @note The destination should be a container of `OptionalString` type,
     ///       since the given key might not exist (in this case, the value of the corresponding
-    ///       key is `OptionalString{}`).
+    ///       key is `OptionalString{}` (`std::nullopt`)).
     /// @see https://redis.io/commands/mget
     template <typename T, typename Output>
     void mget(std::initializer_list<T> il, Output output) {
@@ -1294,11 +1295,29 @@ public:
 
     // HASH commands.
 
+    /// @brief Remove the given field from hash.
+    /// @param key Key where the hash is stored.
+    /// @param field Field to be removed.
+    /// @return Whether the field has been removed.
+    /// @retval 1 If the field exists, and has been removed.
+    /// @retval 0 If the field does not exist.
+    /// @see https://redis.io/commands/hdel
     long long hdel(const StringView &key, const StringView &field);
 
+    /// @brief Remove multiple fields from hash.
+    /// @param key Key where the hash is stored.
+    /// @param first Iterator to the first field to be removed.
+    /// @param last Off-the-end iterator to the given field range.
+    /// @return Number of fields that has been removed.
+    /// @see https://redis.io/commands/hdel
     template <typename Input>
     long long hdel(const StringView &key, Input first, Input last);
 
+    /// @brief Remove multiple fields from hash.
+    /// @param key Key where the hash is stored.
+    /// @param il Initializer list of fields.
+    /// @return Number of fields that has been removed.
+    /// @see https://redis.io/commands/hdel
     template <typename T>
     long long hdel(const StringView &key, std::initializer_list<T> il) {
         return hdel(key, il.begin(), il.end());
@@ -1313,36 +1332,159 @@ public:
     /// @see https://redis.io/commands/hexists
     bool hexists(const StringView &key, const StringView &field);
 
+    /// @brief Get the value of the given field.
+    /// @param key Key where the hash is stored.
+    /// @param field Field.
+    /// @return Value of the given field.
+    /// @note If field does not exist, `hget` returns `OptionalString{}` (`std::nullopt`).
+    /// @see https://redis.io/commands/hget
     OptionalString hget(const StringView &key, const StringView &field);
 
+    /// @brief Get all field-value pairs of the given hash.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// std::unordered_map<std::string, std::string> results;
+    /// // Save all field-value pairs of a Redis hash to an unordered_map<string, string>.
+    /// redis.hgetall("hash", std::inserter(results, results.begin()));
+    /// @endcode
+    /// @param key Key where the hash is stored.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @note It's always a bad idea to call `hgetall` on a large hash, since it will block Redis.
+    /// @see `hscan`
+    /// @see https://redis.io/commands/hgetall
     template <typename Output>
     void hgetall(const StringView &key, Output output);
 
+    /// @brief Increment the integer stored at the given field.
+    /// @param key Key where the hash is stored.
+    /// @param field Field.
+    /// @param increment Increment.
+    /// @return The value of the field after the increment.
+    /// @see https://redis.io/commands/hincrby
     long long hincrby(const StringView &key, const StringView &field, long long increment);
 
+    /// @brief Increment the floating point number stored at the given field.
+    /// @param key Key where the hash is stored.
+    /// @param field Field.
+    /// @param increment Increment.
+    /// @return The value of the field after the increment.
+    /// @see https://redis.io/commands/hincrbyfloat
     double hincrbyfloat(const StringView &key, const StringView &field, double increment);
 
+    /// @brief Get all fields of the given hash.
+    /// @param key Key where the hash is stored.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @note It's always a bad idea to call `hkeys` on a large hash, since it will block Redis.
+    /// @see `hscan`
+    /// @see https://redis.io/commands/hkeys
     template <typename Output>
     void hkeys(const StringView &key, Output output);
 
+    /// @brief Get the number of fields of the given hash.
+    /// @param key Key where the hash is stored.
+    /// @return Number of fields.
+    /// @see https://redis.io/commands/hlen
     long long hlen(const StringView &key);
 
+    /// @brief Get values of multiple fields.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// std::vector<std::string> fields = {"f1", "f2"};
+    /// std::vector<OptionalString> vals;
+    /// redis.hmget("hash", fields.begin(), fields.end(), std::back_inserter(vals));
+    /// for (const auto &val : vals) {
+    ///     if (val)
+    ///         std::cout << *val << std::endl;
+    ///     else
+    ///         std::cout << "field not exist" << std::endl;
+    /// }
+    /// @endcode
+    /// @param key Key where the hash is stored.
+    /// @param first Iterator to the first field.
+    /// @param last Off-the-end iterator to the given field range.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @note The destination should be a container of `OptionalString` type,
+    ///       since the given field might not exist (in this case, the value of the corresponding
+    ///       field is `OptionalString{}` (`std::nullopt`)).
+    /// @see https://redis.io/commands/hmget
     template <typename Input, typename Output>
     void hmget(const StringView &key, Input first, Input last, Output output);
 
+    /// @brief Get values of multiple fields.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// std::vector<OptionalString> vals;
+    /// redis.hmget("hash", {"f1", "f2"}, std::back_inserter(vals));
+    /// for (const auto &val : vals) {
+    ///     if (val)
+    ///         std::cout << *val << std::endl;
+    ///     else
+    ///         std::cout << "field not exist" << std::endl;
+    /// }
+    /// @endcode
+    /// @param key Key where the hash is stored.
+    /// @param il Initializer list of fields.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @note The destination should be a container of `OptionalString` type,
+    ///       since the given field might not exist (in this case, the value of the corresponding
+    ///       field is `OptionalString{}` (`std::nullopt`)).
+    /// @see https://redis.io/commands/hmget
     template <typename T, typename Output>
     void hmget(const StringView &key, std::initializer_list<T> il, Output output) {
         hmget(key, il.begin(), il.end(), output);
     }
 
+    /// @brief Set multiple field-value pairs of the given hash.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// std::unordered_map<std::string, std::string> m = {{"f1", "v1"}, {"f2", "v2"}};
+    /// redis.hmset("hash", m.begin(), m.end());
+    /// @endcode
+    /// @param key Key where the hash is stored.
+    /// @param first Iterator to the first field-value pair.
+    /// @param last Off-the-end iterator to the range.
+    /// @see https://redis.io/commands/hmset
     template <typename Input>
     void hmset(const StringView &key, Input first, Input last);
 
+    /// @brief Set multiple field-value pairs of the given hash.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// redis.hmset("hash", {std::make_pair("f1", "v1"), std::make_pair("f2", "v2")});
+    /// @endcode
+    /// @param key Key where the hash is stored.
+    /// @param il Initializer list of field-value pairs.
+    /// @see https://redis.io/commands/hmset
     template <typename T>
     void hmset(const StringView &key, std::initializer_list<T> il) {
         hmset(key, il.begin(), il.end());
     }
 
+    /// @brief Scan fields of the given hash matching the given pattern.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// auto cursor = 0LL;
+    /// std::vector<std::string> fields;
+    /// while (true) {
+    ///     cursor = redis.hscan(cursor, "pattern:*", 10, std::back_inserter(fields));
+    ///     if (cursor == 0) {
+    ///         break;
+    ///     }
+    /// }
+    /// @endcode
+    /// @param key Key where the hash is stored.
+    /// @param cursor Cursor.
+    /// @param pattern Pattern of fields to be scanned.
+    /// @param count A hint for how many fields to be scanned.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @return The cursor to be used for the next scan operation.
+    /// @see https://redis.io/commands/hscan
     template <typename Output>
     long long hscan(const StringView &key,
                     long long cursor,
@@ -1350,18 +1492,38 @@ public:
                     long long count,
                     Output output);
 
+    /// @brief Scan fields of the given hash matching the given pattern.
+    /// @param key Key where the hash is stored.
+    /// @param cursor Cursor.
+    /// @param pattern Pattern of fields to be scanned.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @return The cursor to be used for the next scan operation.
+    /// @see https://redis.io/commands/hscan
     template <typename Output>
     long long hscan(const StringView &key,
                     long long cursor,
                     const StringView &pattern,
                     Output output);
 
+    /// @brief Scan all fields of the given hash.
+    /// @param key Key where the hash is stored.
+    /// @param cursor Cursor.
+    /// @param count A hint for how many fields to be scanned.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @return The cursor to be used for the next scan operation.
+    /// @see https://redis.io/commands/hscan
     template <typename Output>
     long long hscan(const StringView &key,
                     long long cursor,
                     long long count,
                     Output output);
 
+    /// @brief Scan all fields of the given hash.
+    /// @param key Key where the hash is stored.
+    /// @param cursor Cursor.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @return The cursor to be used for the next scan operation.
+    /// @see https://redis.io/commands/hscan
     template <typename Output>
     long long hscan(const StringView &key,
                     long long cursor,
@@ -1394,10 +1556,32 @@ public:
     /// @see https://redis.io/commands/hset
     bool hset(const StringView &key, const std::pair<StringView, StringView> &item);
 
+    /// @brief Set multiple fields of the given hash.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// std::unordered_map<std::string, std::string> m = {{"f1", "v1"}, {"f2", "v2"}};
+    /// redis.hset("hash", m.begin(), m.end());
+    /// @endcode
+    /// @param key Key where the hash is stored.
+    /// @param first Iterator to the first field to be set.
+    /// @param last Off-the-end iterator to the given range.
+    /// @return Number of fields that have been added, i.e. fields that not existed before.
+    /// @see https://redis.io/commands/hset
     template <typename Input>
     auto hset(const StringView &key, Input first, Input last)
         -> typename std::enable_if<!std::is_convertible<Input, StringView>::value, long long>::type;
 
+    /// @brief Set multiple fields of the given hash.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// redis.hset("hash", {std::make_pair("f1", "v1"), std::make_pair("f2", "v2")});
+    /// @endcode
+    /// @param key Key where the hash is stored.
+    /// @param il Initializer list of field-value pairs.
+    /// @return Number of fields that have been added, i.e. fields that not existed before.
+    /// @see https://redis.io/commands/hset
     template <typename T>
     long long hset(const StringView &key, std::initializer_list<T> il) {
         return hset(key, il.begin(), il.end());
@@ -1422,8 +1606,19 @@ public:
     /// @see https://redis.io/commands/hsetnx
     bool hsetnx(const StringView &key, const std::pair<StringView, StringView> &item);
 
+    /// @brief Get the length of the string stored at the given field.
+    /// @param key Key where the hash is stored.
+    /// @param field Field.
+    /// @return Length of the string.
+    /// @see https://redis.io/commands/hstrlen
     long long hstrlen(const StringView &key, const StringView &field);
 
+    /// @brief Get values of all fields stored at the given hash.
+    /// @param key Key where the hash is stored.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @note It's always a bad idea to call `hvals` on a large hash, since it might block Redis.
+    /// @see `hscan`
+    /// @see https://redis.io/commands/hvals
     template <typename Output>
     void hvals(const StringView &key, Output output);
 
