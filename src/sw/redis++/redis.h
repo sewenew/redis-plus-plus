@@ -347,7 +347,7 @@ public:
     /// @param output Output iterator to the destination where the returned keys are stored.
     /// @note It's always a bad idea to call `keys`, since it might block Redis for a long time,
     ///       especially when the data set is very big.
-    /// @see `scan`
+    /// @see `Redis::scan`
     /// @see https://redis.io/commands/keys
     template <typename Output>
     void keys(const StringView &pattern, Output output);
@@ -572,7 +572,7 @@ public:
     long long unlink(const StringView &key);
 
     /// @brief Remove the given keys asynchronously, i.e. without blocking Redis.
-    /// @param first Iterater to the first key in the given range.
+    /// @param first Iterator to the first key in the given range.
     /// @param last Off-the-end iterator to the given range.
     /// @return Number of keys that have been removed.
     /// @see https://redis.io/commands/unlink
@@ -951,18 +951,18 @@ public:
 
     /// @brief Pop the first element of the list in a blocking way.
     /// @param key Key where the list is stored.
-    /// @param timeout Timeout. 0 means block forever.
+    /// @param timeout Timeout in seconds. 0 means block forever.
     /// @return Key-element pair.
-    /// @note If list is empty and timeout reaches, return `OptionalStringPair` (`std::nullopt`).
+    /// @note If list is empty and timeout reaches, return `OptionalStringPair{}` (`std::nullopt`).
     /// @see `Redis::lpop`
     /// @see https://redis.io/commands/blpop
     OptionalStringPair blpop(const StringView &key, long long timeout);
 
     /// @brief Pop the first element of the list in a blocking way.
     /// @param key Key where the list is stored.
-    /// @param timeout Timeout. 0 means block forever.
+    /// @param timeout Timeout in seconds. 0 means block forever.
     /// @return Key-element pair.
-    /// @note If list is empty and timeout reaches, return `OptionalStringPair` (`std::nullopt`).
+    /// @note If list is empty and timeout reaches, return `OptionalStringPair{}` (`std::nullopt`).
     /// @see `Redis::lpop`
     /// @see https://redis.io/commands/blpop
     OptionalStringPair blpop(const StringView &key,
@@ -971,9 +971,9 @@ public:
     /// @brief Pop the first element of multiple lists in a blocking way.
     /// @param first Iterator to the first key.
     /// @param last Off-the-end iterator to the key range.
-    /// @param timeout If list is empty, block until it is not empty, or `timeout` reaches.
+    /// @param timeout Timeout in seconds. 0 means block forever.
     /// @return Key-element pair.
-    /// @note If list is empty and timeout reaches, return `OptionalStringPair` (`std::nullopt`).
+    /// @note If all lists are empty and timeout reaches, return `OptionalStringPair{}` (`std::nullopt`).
     /// @see `Redis::lpop`
     /// @see https://redis.io/commands/blpop
     template <typename Input>
@@ -981,9 +981,9 @@ public:
 
     /// @brief Pop the first element of multiple lists in a blocking way.
     /// @param il Initializer list of keys.
-    /// @param timeout If list is empty, block until it is not empty, or `timeout` reaches.
+    /// @param timeout Timeout in seconds. 0 means block forever.
     /// @return Key-element pair.
-    /// @note If list is empty and timeout reaches, return `OptionalStringPair` (`std::nullopt`).
+    /// @note If all lists are empty and timeout reaches, return `OptionalStringPair{}` (`std::nullopt`).
     /// @see `Redis::lpop`
     /// @see https://redis.io/commands/blpop
     template <typename T>
@@ -994,9 +994,9 @@ public:
     /// @brief Pop the first element of multiple lists in a blocking way.
     /// @param first Iterator to the first key.
     /// @param last Off-the-end iterator to the key range.
-    /// @param timeout If list is empty, block until it is not empty, or `timeout` reaches.
+    /// @param timeout Timeout in seconds. 0 means block forever.
     /// @return Key-element pair.
-    /// @note If list is empty and timeout reaches, return `OptionalStringPair` (`std::nullopt`).
+    /// @note If all lists are empty and timeout reaches, return `OptionalStringPair{}` (`std::nullopt`).
     /// @see `Redis::lpop`
     /// @see https://redis.io/commands/blpop
     template <typename Input>
@@ -1006,9 +1006,9 @@ public:
 
     /// @brief Pop the first element of multiple lists in a blocking way.
     /// @param il Initializer list of keys.
-    /// @param timeout If lists are empty, block until they are not empty, or `timeout` reaches.
+    /// @param timeout Timeout in seconds. 0 means block forever.
     /// @return Key-element pair.
-    /// @note If list is empty and timeout reaches, return `OptionalStringPair` (`std::nullopt`).
+    /// @note If all lists are empty and timeout reaches, return `OptionalStringPair{}` (`std::nullopt`).
     /// @see `Redis::lpop`
     /// @see https://redis.io/commands/blpop
     template <typename T>
@@ -1019,18 +1019,18 @@ public:
 
     /// @brief Pop the last element of the list in a blocking way.
     /// @param key Key where the list is stored.
-    /// @param timeout Timeout. 0 means block forever.
+    /// @param timeout Timeout in seconds. 0 means block forever.
     /// @return Key-element pair.
-    /// @note If list is empty and timeout reaches, return `OptionalStringPair` (`std::nullopt`).
+    /// @note If list is empty and timeout reaches, return `OptionalStringPair{}` (`std::nullopt`).
     /// @see `Redis::rpop`
     /// @see https://redis.io/commands/brpop
     OptionalStringPair brpop(const StringView &key, long long timeout);
 
     /// @brief Pop the last element of the list in a blocking way.
     /// @param key Key where the list is stored.
-    /// @param timeout Timeout. 0 means block forever.
+    /// @param timeout Timeout in seconds. 0 means block forever.
     /// @return Key-element pair.
-    /// @note If list is empty and timeout reaches, return `OptionalStringPair` (`std::nullopt`).
+    /// @note If list is empty and timeout reaches, return `OptionalStringPair{}` (`std::nullopt`).
     /// @see `Redis::rpop`
     /// @see https://redis.io/commands/brpop
     OptionalStringPair brpop(const StringView &key,
@@ -1039,19 +1039,19 @@ public:
     /// @brief Pop the last element of multiple lists in a blocking way.
     /// @param first Iterator to the first key.
     /// @param last Off-the-end iterator to the key range.
-    /// @param timeout Timeout. 0 means block forever.
+    /// @param timeout Timeout in seconds. 0 means block forever.
     /// @return Key-element pair.
-    /// @note If list is empty and timeout reaches, return `OptionalStringPair` (`std::nullopt`).
+    /// @note If all lists are empty and timeout reaches, return `OptionalStringPair{}` (`std::nullopt`).
     /// @see `Redis::rpop`
     /// @see https://redis.io/commands/brpop
     template <typename Input>
     OptionalStringPair brpop(Input first, Input last, long long timeout);
 
     /// @brief Pop the last element of multiple lists in a blocking way.
-    /// @param key Key where the list is stored.
-    /// @param timeout Timeout. 0 means block forever.
+    /// @param il Initializer list of lists.
+    /// @param timeout Timeout in seconds. 0 means block forever.
     /// @return Key-element pair.
-    /// @note If list is empty and timeout reaches, return `OptionalStringPair` (`std::nullopt`).
+    /// @note If all lists are empty and timeout reaches, return `OptionalStringPair{}` (`std::nullopt`).
     /// @see `Redis::rpop`
     /// @see https://redis.io/commands/brpop
     template <typename T>
@@ -1060,10 +1060,11 @@ public:
     }
 
     /// @brief Pop the last element of multiple lists in a blocking way.
-    /// @param key Key where the list is stored.
-    /// @param timeout Timeout. 0 means block forever.
+    /// @param first Iterator to the first list.
+    /// @param last Off-the-end iterator to the list range.
+    /// @param timeout Timeout in seconds. 0 means block forever.
     /// @return Key-element pair.
-    /// @note If list is empty and timeout reaches, return `OptionalStringPair` (`std::nullopt`).
+    /// @note If all lists are empty and timeout reaches, return `OptionalStringPair{}` (`std::nullopt`).
     /// @see `Redis::rpop`
     /// @see https://redis.io/commands/brpop
     template <typename Input>
@@ -1072,10 +1073,10 @@ public:
                                 const std::chrono::seconds &timeout = std::chrono::seconds{0});
 
     /// @brief Pop the last element of multiple lists in a blocking way.
-    /// @param key Key where the list is stored.
-    /// @param timeout Timeout. 0 means block forever.
+    /// @param il Initializer list of list keys.
+    /// @param timeout Timeout in seconds. 0 means block forever.
     /// @return Key-element pair.
-    /// @note If list is empty and timeout reaches, return `OptionalStringPair` (`std::nullopt`).
+    /// @note If all lists are empty and timeout reaches, return `OptionalStringPair{}` (`std::nullopt`).
     /// @see `Redis::rpop`
     /// @see https://redis.io/commands/brpop
     template <typename T>
@@ -1351,7 +1352,7 @@ public:
     /// @param key Key where the hash is stored.
     /// @param output Output iterator to the destination where the result is saved.
     /// @note It's always a bad idea to call `hgetall` on a large hash, since it will block Redis.
-    /// @see `hscan`
+    /// @see `Redis::hscan`
     /// @see https://redis.io/commands/hgetall
     template <typename Output>
     void hgetall(const StringView &key, Output output);
@@ -1376,7 +1377,7 @@ public:
     /// @param key Key where the hash is stored.
     /// @param output Output iterator to the destination where the result is saved.
     /// @note It's always a bad idea to call `hkeys` on a large hash, since it will block Redis.
-    /// @see `hscan`
+    /// @see `Redis::hscan`
     /// @see https://redis.io/commands/hkeys
     template <typename Output>
     void hkeys(const StringView &key, Output output);
@@ -1617,7 +1618,7 @@ public:
     /// @param key Key where the hash is stored.
     /// @param output Output iterator to the destination where the result is saved.
     /// @note It's always a bad idea to call `hvals` on a large hash, since it might block Redis.
-    /// @see `hscan`
+    /// @see `Redis::hscan`
     /// @see https://redis.io/commands/hvals
     template <typename Output>
     void hvals(const StringView &key, Output output);
@@ -1791,7 +1792,7 @@ public:
     /// @param key Key where the set is stored.
     /// @return The popped member.
     /// @note If the set is empty, `spop` returns `OptionalString{}` (`std::nullopt`).
-    /// @see `srandmember`
+    /// @see `Redis::srandmember`
     /// @see https://redis.io/commands/spop
     OptionalString spop(const StringView &key);
 
@@ -1806,7 +1807,7 @@ public:
     /// @param count Number of members to be popped.
     /// @param output Output iterator to the destination where the result is saved.
     /// @note The number of popped members might be less than `count`.
-    /// @see `srandmember`
+    /// @see `Redis::srandmember`
     /// @see https://redis.io/commands/spop
     template <typename Output>
     void spop(const StringView &key, long long count, Output output);
@@ -1816,7 +1817,7 @@ public:
     /// @return A random member.
     /// @note If the set is empty, `srandmember` returns `OptionalString{}` (`std::nullopt`).
     /// @note This method won't remove the member from the set.
-    /// @see `spop`
+    /// @see `Redis::spop`
     /// @see https://redis.io/commands/srandmember
     OptionalString srandmember(const StringView &key);
 
@@ -1825,7 +1826,7 @@ public:
     /// @param count Number of members to be returned.
     /// @param output Output iterator to the destination where the result is saved.
     /// @note This method won't remove members from the set.
-    /// @see `spop`
+    /// @see `Redis::spop`
     /// @see https://redis.io/commands/srandmember
     template <typename Output>
     void srandmember(const StringView &key, long long count, Output output);
@@ -1968,29 +1969,79 @@ public:
 
     // SORTED SET commands.
 
+    /// @brief Pop the member with highest score from sorted set in a blocking way.
+    /// @param key Key where the sorted set is stored.
+    /// @param timeout Timeout in seconds. 0 means block forever.
+    /// @return Key-member-score tuple with the highest score.
+    /// @note If sorted set is empty and timeout reaches, `bzpopmax` returns
+    ///       `Optional<std::tuple<std::string, std::string, double>>{}` (`std::nullopt`).
+    /// @see `Redis::zpopmax`
+    /// @see https://redis.io/commands/bzpopmax
     auto bzpopmax(const StringView &key, long long timeout)
         -> Optional<std::tuple<std::string, std::string, double>>;
 
+    /// @brief Pop the member with highest score from sorted set in a blocking way.
+    /// @param key Key where the sorted set is stored.
+    /// @param timeout Timeout in seconds. 0 means block forever.
+    /// @return Key-member-score tuple with the highest score.
+    /// @note If sorted set is empty and timeout reaches, `bzpopmax` returns
+    ///       `Optional<std::tuple<std::string, std::string, double>>{}` (`std::nullopt`).
+    /// @see `Redis::zpopmax`
+    /// @see https://redis.io/commands/bzpopmax
     auto bzpopmax(const StringView &key,
                     const std::chrono::seconds &timeout = std::chrono::seconds{0})
         -> Optional<std::tuple<std::string, std::string, double>>;
 
+    /// @brief Pop the member with highest score from multiple sorted set in a blocking way.
+    /// @param first Iterator to the first key.
+    /// @param last Off-the-end iterator to the key range.
+    /// @param timeout Timeout in seconds. 0 means block forever.
+    /// @return Key-member-score tuple with the higest score.
+    /// @note If all lists are empty and timeout reaches, `bzpopmax` returns
+    ///       `Optional<std::tuple<std::string, std::string, double>>{}` (`std::nullopt`).
+    /// @see `Redis::zpopmax`
+    /// @see https://redis.io/commands/bzpopmax
     template <typename Input>
     auto bzpopmax(Input first, Input last, long long timeout)
         -> Optional<std::tuple<std::string, std::string, double>>;
 
+    /// @brief Pop the member with highest score from multiple sorted set in a blocking way.
+    /// @param first Iterator to the first key.
+    /// @param last Off-the-end iterator to the key range.
+    /// @param timeout Timeout in seconds. 0 means block forever.
+    /// @return Key-member-score tuple with the higest score.
+    /// @note If all lists are empty and timeout reaches, `bzpopmax` returns
+    ///       `Optional<std::tuple<std::string, std::string, double>>{}` (`std::nullopt`).
+    /// @see `Redis::zpopmax`
+    /// @see https://redis.io/commands/bzpopmax
     template <typename Input>
     auto bzpopmax(Input first,
                     Input last,
                     const std::chrono::seconds &timeout = std::chrono::seconds{0})
         -> Optional<std::tuple<std::string, std::string, double>>;
 
+    /// @brief Pop the member with highest score from multiple sorted set in a blocking way.
+    /// @param il Initializer list of sorted sets.
+    /// @param timeout Timeout in seconds. 0 means block forever.
+    /// @return Key-member-score tuple with the higest score.
+    /// @note If all lists are empty and timeout reaches, `bzpopmax` returns
+    ///       `Optional<std::tuple<std::string, std::string, double>>{}` (`std::nullopt`).
+    /// @see `Redis::zpopmax`
+    /// @see https://redis.io/commands/bzpopmax
     template <typename T>
     auto bzpopmax(std::initializer_list<T> il, long long timeout)
         -> Optional<std::tuple<std::string, std::string, double>> {
         return bzpopmax(il.begin(), il.end(), timeout);
     }
 
+    /// @brief Pop the member with highest score from multiple sorted set in a blocking way.
+    /// @param il Initializer list of sorted sets.
+    /// @param timeout Timeout in seconds. 0 means block forever.
+    /// @return Key-member-score tuple with the higest score.
+    /// @note If all lists are empty and timeout reaches, `bzpopmax` returns
+    ///       `Optional<std::tuple<std::string, std::string, double>>{}` (`std::nullopt`).
+    /// @see `Redis::zpopmax`
+    /// @see https://redis.io/commands/bzpopmax
     template <typename T>
     auto bzpopmax(std::initializer_list<T> il,
                     const std::chrono::seconds &timeout = std::chrono::seconds{0})
@@ -1998,29 +2049,79 @@ public:
         return bzpopmax(il.begin(), il.end(), timeout);
     }
 
+    /// @brief Pop the member with lowest score from sorted set in a blocking way.
+    /// @param key Key where the sorted set is stored.
+    /// @param timeout Timeout in seconds. 0 means block forever.
+    /// @return Key-member-score tuple with the lowest score.
+    /// @note If sorted set is empty and timeout reaches, `bzpopmin` returns
+    ///       `Optional<std::tuple<std::string, std::string, double>>{}` (`std::nullopt`).
+    /// @see `Redis::zpopmin`
+    /// @see https://redis.io/commands/bzpopmin
     auto bzpopmin(const StringView &key, long long timeout)
         -> Optional<std::tuple<std::string, std::string, double>>;
 
+    /// @brief Pop the member with lowest score from sorted set in a blocking way.
+    /// @param key Key where the sorted set is stored.
+    /// @param timeout Timeout in seconds. 0 means block forever.
+    /// @return Key-member-score tuple with the lowest score.
+    /// @note If sorted set is empty and timeout reaches, `bzpopmin` returns
+    ///       `Optional<std::tuple<std::string, std::string, double>>{}` (`std::nullopt`).
+    /// @see `Redis::zpopmin`
+    /// @see https://redis.io/commands/bzpopmin
     auto bzpopmin(const StringView &key,
                     const std::chrono::seconds &timeout = std::chrono::seconds{0})
         -> Optional<std::tuple<std::string, std::string, double>>;
 
+    /// @brief Pop the member with lowest score from multiple sorted set in a blocking way.
+    /// @param first Iterator to the first key.
+    /// @param last Off-the-end iterator to the key range.
+    /// @param timeout Timeout in seconds. 0 means block forever.
+    /// @return Key-member-score tuple with the lowest score.
+    /// @note If all lists are empty and timeout reaches, `bzpopmin` returns
+    ///       `Optional<std::tuple<std::string, std::string, double>>{}` (`std::nullopt`).
+    /// @see `Redis::zpopmin`
+    /// @see https://redis.io/commands/bzpopmin
     template <typename Input>
     auto bzpopmin(Input first, Input last, long long timeout)
         -> Optional<std::tuple<std::string, std::string, double>>;
 
+    /// @brief Pop the member with lowest score from multiple sorted set in a blocking way.
+    /// @param first Iterator to the first key.
+    /// @param last Off-the-end iterator to the key range.
+    /// @param timeout Timeout in seconds. 0 means block forever.
+    /// @return Key-member-score tuple with the lowest score.
+    /// @note If all lists are empty and timeout reaches, `bzpopmin` returns
+    ///       `Optional<std::tuple<std::string, std::string, double>>{}` (`std::nullopt`).
+    /// @see `Redis::zpopmin`
+    /// @see https://redis.io/commands/bzpopmin
     template <typename Input>
     auto bzpopmin(Input first,
                     Input last,
                     const std::chrono::seconds &timeout = std::chrono::seconds{0})
         -> Optional<std::tuple<std::string, std::string, double>>;
 
+    /// @brief Pop the member with lowest score from multiple sorted set in a blocking way.
+    /// @param il Initializer list of sorted sets.
+    /// @param timeout Timeout in seconds. 0 means block forever.
+    /// @return Key-member-score tuple with the lowest score.
+    /// @note If all lists are empty and timeout reaches, `bzpopmin` returns
+    ///       `Optional<std::tuple<std::string, std::string, double>>{}` (`std::nullopt`).
+    /// @see `Redis::zpopmin`
+    /// @see https://redis.io/commands/bzpopmin
     template <typename T>
     auto bzpopmin(std::initializer_list<T> il, long long timeout)
         -> Optional<std::tuple<std::string, std::string, double>> {
         return bzpopmin(il.begin(), il.end(), timeout);
     }
 
+    /// @brief Pop the member with lowest score from multiple sorted set in a blocking way.
+    /// @param il Initializer list of sorted sets.
+    /// @param timeout Timeout in seconds. 0 means block forever.
+    /// @return Key-member-score tuple with the lowest score.
+    /// @note If all lists are empty and timeout reaches, `bzpopmin` returns
+    ///       `Optional<std::tuple<std::string, std::string, double>>{}` (`std::nullopt`).
+    /// @see `Redis::zpopmin`
+    /// @see https://redis.io/commands/bzpopmin
     template <typename T>
     auto bzpopmin(std::initializer_list<T> il,
                     const std::chrono::seconds &timeout = std::chrono::seconds{0})
@@ -2028,13 +2129,46 @@ public:
         return bzpopmin(il.begin(), il.end(), timeout);
     }
 
-    // We don't support the INCR option, since you can always use ZINCRBY instead.
+    /// @brief Add or update a member with score to sorted set.
+    /// @param key Key where the sorted set is stored.
+    /// @param member Member to be added.
+    /// @param score Score of the member.
+    /// @param type Options for zadd command:
+    ///             - UpdateType::EXIST: Add the member only if it already exists.
+    ///             - UpdateType::NOT_EXIST: Add the member only if it does not exist.
+    ///             - UpdateType::ALWAYS: Always add the member no matter whether it exists.
+    /// @param changed Whether change the return value from number of newly added member to
+    ///                number of members changed (i.e. added and updated).
+    /// @return Number of added members or number of added and updated members depends on `changed`.
+    /// @note We don't support the INCR option, since you can always use ZINCRBY instead.
+    /// @see `UpdateType`
+    /// @see https://redis.io/commands/zadd
     long long zadd(const StringView &key,
                     const StringView &member,
                     double score,
                     UpdateType type = UpdateType::ALWAYS,
                     bool changed = false);
 
+    /// @brief Add or update multiple members with score to sorted set.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// std::unordered_map<std::string, double> m = {{"m1", 1.2}, {"m2", 2.3}};
+    /// redis.zadd("zset", m.begin(), m.end());
+    /// @endcode
+    /// @param key Key where the sorted set is stored.
+    /// @param first Iterator to the first member-score pair.
+    /// @param last Off-the-end iterator to the member-score pairs range.
+    /// @param type Options for zadd command:
+    ///             - UpdateType::EXIST: Add the member only if it already exists.
+    ///             - UpdateType::NOT_EXIST: Add the member only if it does not exist.
+    ///             - UpdateType::ALWAYS: Always add the member no matter whether it exists.
+    /// @param changed Whether change the return value from number of newly added member to
+    ///                number of members changed (i.e. added and updated).
+    /// @return Number of added members or number of added and updated members depends on `changed`.
+    /// @note We don't support the INCR option, since you can always use ZINCRBY instead.
+    /// @see `UpdateType`
+    /// @see https://redis.io/commands/zadd
     template <typename Input>
     long long zadd(const StringView &key,
                     Input first,
@@ -2042,6 +2176,25 @@ public:
                     UpdateType type = UpdateType::ALWAYS,
                     bool changed = false);
 
+    /// @brief Add or update multiple members with score to sorted set.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// redis.zadd("zset", {std::make_pair("m1", 1.4), std::make_pair("m2", 2.3)});
+    /// @endcode
+    /// @param key Key where the sorted set is stored.
+    /// @param first Iterator to the first member-score pair.
+    /// @param last Off-the-end iterator to the member-score pairs range.
+    /// @param type Options for zadd command:
+    ///             - UpdateType::EXIST: Add the member only if it already exists.
+    ///             - UpdateType::NOT_EXIST: Add the member only if it does not exist.
+    ///             - UpdateType::ALWAYS: Always add the member no matter whether it exists.
+    /// @param changed Whether change the return value from number of newly added member to
+    ///                number of members changed (i.e. added and updated).
+    /// @return Number of added members or number of added and updated members depends on `changed`.
+    /// @note We don't support the INCR option, since you can always use ZINCRBY instead.
+    /// @see `UpdateType`
+    /// @see https://redis.io/commands/zadd
     template <typename T>
     long long zadd(const StringView &key,
                     std::initializer_list<T> il,
@@ -2050,46 +2203,135 @@ public:
         return zadd(key, il.begin(), il.end(), type, changed);
     }
 
+    /// @brief Get the number of members in the sorted set.
+    /// @param key Key where the sorted set is stored.
+    /// @return Number of members in the sorted set.
+    /// @see https://redis.io/commands/zcard
     long long zcard(const StringView &key);
 
+    /// @brief Get the number of members with score between a min-max score range.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// // Count members with score between (2.3, 5]
+    /// redis.zcount("zset", BoundedInterval<double>(2.3, 5, BoundType::LEFT_OPEN));
+    /// // Count members with score between [2.3, 5)
+    /// redis.zcount("zset", BoundedInterval<double>(2.3, 5, BoundType::RIGHT_OPEN));
+    /// // Count members with score between (2.3, 5)
+    /// redis.zcount("zset", BoundedInterval<double>(2.3, 5, BoundType::OPEN));
+    /// // Count members with score between [2.3, 5]
+    /// redis.zcount("zset", BoundedInterval<double>(2.3, 5, BoundType::CLOSED));
+    /// // Count members with score between [2.3, +inf)
+    /// redis.zcount("zset", LeftBoundedInterval<double>(2.3, BoundType::RIGHT_OPEN));
+    /// // Count members with score between (2.3, +inf)
+    /// redis.zcount("zset", LeftBoundedInterval<double>(2.3, BoundType::OPEN));
+    /// // Count members with score between (-inf, 5]
+    /// redis.zcount("zset", RightBoundedInterval<double>(5, BoundType::LEFT_OPEN));
+    /// // Count members with score between (-inf, 5)
+    /// redis.zcount("zset", RightBoundedInterval<double>(5, BoundType::OPEN));
+    /// // Count members with score between (-inf, +inf)
+    /// redis.zcount("zset", UnboundedInterval<double>{});
+    /// @endcode
+    /// @param key Key where the sorted set is stored.
+    /// @param interval The min-max score range.
+    /// @return Number of members with score between a min-max score range.
+    /// @see `BoundedInterval`
+    /// @see `LeftBoundedInterval`
+    /// @see `RightBoundedInterval`
+    /// @see `UnboundedInterval`
+    /// @see `BoundType`
+    /// @see https://redis.io/commands/zcount
+    // TODO: add a string version of Interval: zcount("key", "(2.3", "5").
     template <typename Interval>
     long long zcount(const StringView &key, const Interval &interval);
 
+    /// @brief Increment the score of given member.
+    /// @param key Key where the sorted set is stored.
+    /// @param increment Increment.
+    /// @param member Member.
+    /// @return The score of the member after the operation.
+    /// @see https://redis.io/commands/zincrby
     double zincrby(const StringView &key, double increment, const StringView &member);
 
-    // There's no aggregation type parameter for single key overload, since these 3 types
-    // have the same effect.
+    /// @brief Copy a sorted set to another one with the scores being multiplied by a factor.
+    /// @param destination Key of the destination sorted set.
+    /// @param key Key of the source sorted set.
+    /// @param weight Weight to be multiplied to the score of each member.
+    /// @return The number of members in the sorted set.
+    /// @note  There's no aggregation type parameter for single key overload, since these 3 types
+    ///         have the same effect.
+    /// @see `Redis::zunionstore`
+    /// @see https://redis.io/commands/zinterstore
     long long zinterstore(const StringView &destination, const StringView &key, double weight);
 
-    // If *Input* is an iterator of a container of string,
-    // we use the default weight, i.e. 1, and send
-    // *ZINTERSTORE destination numkeys key [key ...] [AGGREGATE SUM|MIN|MAX]* command.
-    // If *Input* is an iterator of a container of pair<string, double>, i.e. key-weight pair,
-    // we send the command with the given weights:
-    // *ZINTERSTORE destination numkeys key [key ...]
-    // [WEIGHTS weight [weight ...]] [AGGREGATE SUM|MIN|MAX]*
-    //
-    // The following code use the default weight:
-    //
-    // vector<string> keys = {"k1", "k2", "k3"};
-    // redis.zinterstore(destination, keys.begin(), keys.end());
-    //
-    // On the other hand, the following code use the given weights:
-    //
-    // vector<pair<string, double>> keys_with_weights = {{"k1", 1}, {"k2", 2}, {"k3", 3}};
-    // redis.zinterstore(destination, keys_with_weights.begin(), keys_with_weights.end());
-    //
-    // NOTE: `keys_with_weights` can also be of type `unordered_map<string, double>`.
-    // However, it will be slower than vector<pair<string, double>>, since we use
-    // `distance(first, last)` to calculate the *numkeys* parameter.
-    //
-    // This also applies to *ZUNIONSTORE* command.
+    /// @brief Get intersection of multiple sorted sets, and store the result to another one.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// // Use the default weight, i.e. 1,
+    /// // and use the sum of the all scores as the score of the result:
+    /// std::vector<std::string> keys = {"k1", "k2", "k3"};
+    /// redis.zinterstore("destination", keys.begin(), keys.end());
+    /// // Each sorted set has a different weight,
+    /// // and the score of the result is the min of all scores.
+    /// std::vector<std::pair<std::string, double>> keys_with_weights = {{"k1", 1}, {"k2", 2}};
+    /// redis.zinterstore("destination", keys_with_weights.begin(),
+    ///     keys_with_weights.end(), Aggregation::MIN);
+    /// // NOTE: `keys_with_weights` can also be of type `std::unordered_map<std::string, double>`.
+    /// // However, it will be slower than std::vector<std::pair<std::string, double>>, since we use
+    /// // `std::distance(first, last)` to calculate the *numkeys* parameter.
+    /// @endcode
+    /// @param destination Key of the destination sorted set.
+    /// @param first Iterator to the first sorted set (might with weight).
+    /// @param last Off-the-end iterator to the sorted set range.
+    /// @param type How the scores are aggregated.
+    ///             - Aggregation::SUM: Score of a member is the sum of all scores.
+    ///             - Aggregation::MIN: Score of a member is the min of all scores.
+    ///             - Aggregation::MAX: Score of a member is the max of all scores.
+    /// @return The number of members in the resulting sorted set.
+    /// @note The score of each member can be multiplied by a factor, i.e. weight. If `Input` is an
+    ///       iterator to a container of `std::string`, we use the default weight, i.e. 1, and send
+    ///       *ZINTERSTORE dest numkeys key [key ...] [AGGREGATE SUM|MIN|MAX]* command.
+    ///        If `Input` is an iterator to a container of `std::pair<std::string, double>`,
+    ///        i.e. key-weight pair, we send the command with the given weights:
+    ///       *ZINTERSTORE dest numkeys key [key ...] [WEIGHTS weight [weight ...]] [AGGREGATE SUM|MIN|MAX]*.
+    ///       See the *Example* part for examples on how to use this command.
+    /// @see `Redis::zunionstore`
+    /// @see https://redis.io/commands/zinterstore
     template <typename Input>
     long long zinterstore(const StringView &destination,
                             Input first,
                             Input last,
                             Aggregation type = Aggregation::SUM);
 
+    /// @brief Get intersection of multiple sorted sets, and store the result to another one.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// // Use the default weight, i.e. 1,
+    /// // and use the sum of the all scores as the score of the result:
+    /// redis.zinterstore("destination", {"k1", "k2"});
+    /// // Each sorted set has a different weight,
+    /// // and the score of the result is the min of all scores.
+    /// redis.zinterstore("destination",
+    ///     {std::make_pair("k1", 1), std::make_pair("k2", 2)}, Aggregation::MIN);
+    /// @endcode
+    /// @param destination Key of the destination sorted set.
+    /// @param il Initializer list of sorted set.
+    /// @param type How the scores are aggregated.
+    ///             - Aggregation::SUM: Score of a member is the sum of all scores.
+    ///             - Aggregation::MIN: Score of a member is the min of all scores.
+    ///             - Aggregation::MAX: Score of a member is the max of all scores.
+    /// @return The number of members in the resulting sorted set.
+    /// @note The score of each member can be multiplied by a factor, i.e. weight. If `T` is
+    ///       of type `std::string`, we use the default weight, i.e. 1, and send
+    ///       *ZINTERSTORE dest numkeys key [key ...] [AGGREGATE SUM|MIN|MAX]* command.
+    ///       If `T` is of type `std::pair<std::string, double>`, i.e. key-weight pair,
+    ///       we send the command with the given weights:
+    ///       *ZINTERSTORE dest numkeys key [key ...] [WEIGHTS weight [weight ...]] [AGGREGATE SUM|MIN|MAX]*.
+    ///       See the *Example* part for examples on how to use this command.
+    /// @see `Redis::zunionstore`
+    /// @see https://redis.io/commands/zinterstore
     template <typename T>
     long long zinterstore(const StringView &destination,
                             std::initializer_list<T> il,
@@ -2097,105 +2339,472 @@ public:
         return zinterstore(destination, il.begin(), il.end(), type);
     }
 
+    /// @brief Get the number of members between a min-max range in lexicographical order.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// // Count members between (abc, abd]
+    /// redis.zlexcount("zset", BoundedInterval<std::string>("abc", "abd", BoundType::LEFT_OPEN));
+    /// // Count members between [abc, abd)
+    /// redis.zlexcount("zset", BoundedInterval<std::string>("abc", "abd", BoundType::RIGHT_OPEN));
+    /// // Count members between (abc, abd)
+    /// redis.zlexcount("zset", BoundedInterval<std::string>("abc", "abd", BoundType::OPEN));
+    /// // Count members between [abc, abd]
+    /// redis.zlexcount("zset", BoundedInterval<std::string>("abc", "abd", BoundType::CLOSED));
+    /// // Count members between [abc, +inf)
+    /// redis.zlexcount("zset", LeftBoundedInterval<std::string>("abc", BoundType::RIGHT_OPEN));
+    /// // Count members between (abc, +inf)
+    /// redis.zlexcount("zset", LeftBoundedInterval<std::string>("abc", BoundType::OPEN));
+    /// // Count members between (-inf, "abd"]
+    /// redis.zlexcount("zset", RightBoundedInterval<std::string>("abd", BoundType::LEFT_OPEN));
+    /// // Count members between (-inf, "abd")
+    /// redis.zlexcount("zset", RightBoundedInterval<std::string>("abd", BoundType::OPEN));
+    /// // Count members between (-inf, +inf)
+    /// redis.zlexcount("zset", UnboundedInterval<std::string>{});
+    /// @endcode
+    /// @param key Key where the sorted set is stored.
+    /// @param interval The min-max range in lexicographical order.
+    /// @return Number of members between a min-max range in lexicographical order.
+    /// @see `BoundedInterval`
+    /// @see `LeftBoundedInterval`
+    /// @see `RightBoundedInterval`
+    /// @see `UnboundedInterval`
+    /// @see `BoundType`
+    /// @see https://redis.io/commands/zlexcount
+    // TODO: add a string version of Interval: zlexcount("key", "(abc", "abd").
     template <typename Interval>
     long long zlexcount(const StringView &key, const Interval &interval);
 
+    /// @brief Pop the member with highest score from sorted set.
+    /// @param key Key where the sorted set is stored.
+    /// @return Member-score pair with the highest score.
+    /// @note If sorted set is empty `zpopmax` returns
+    ///       `Optional<std::pair<std::string, double>>` (`std::nullopt`).
+    /// @see `Redis::bzpopmax`
+    /// @see https://redis.io/commands/zpopmax
     Optional<std::pair<std::string, double>> zpopmax(const StringView &key);
 
+    /// @brief Pop multiple members with highest score from sorted set.
+    /// @param key Key where the sorted set is stored.
+    /// @param count Number of members to be popped.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @note The number of returned members might be less than `count`.
+    /// @see `Redis::bzpopmax`
+    /// @see https://redis.io/commands/zpopmax
     template <typename Output>
     void zpopmax(const StringView &key, long long count, Output output);
 
+    /// @brief Pop the member with lowest score from sorted set.
+    /// @param key Key where the sorted set is stored.
+    /// @return Member-score pair with the lowest score.
+    /// @note If sorted set is empty `zpopmin` returns
+    ///       `Optional<std::pair<std::string, double>>` (`std::nullopt`).
+    /// @see `Redis::bzpopmin`
+    /// @see https://redis.io/commands/zpopmin
     Optional<std::pair<std::string, double>> zpopmin(const StringView &key);
 
+    /// @brief Pop multiple members with lowest score from sorted set.
+    /// @param key Key where the sorted set is stored.
+    /// @param count Number of members to be popped.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @note The number of returned members might be less than `count`.
+    /// @see `Redis::bzpopmin`
+    /// @see https://redis.io/commands/zpopmin
     template <typename Output>
     void zpopmin(const StringView &key, long long count, Output output);
 
-    // If *output* is an iterator of a container of string,
-    // we send *ZRANGE key start stop* command.
-    // If it's an iterator of a container of pair<string, double>,
-    // we send *ZRANGE key start stop WITHSCORES* command.
-    //
-    // The following code sends *ZRANGE* without the *WITHSCORES* option:
-    //
-    // vector<string> result;
-    // redis.zrange("key", 0, -1, back_inserter(result));
-    //
-    // On the other hand, the following code sends command with *WITHSCORES* option:
-    //
-    // unordered_map<string, double> with_score;
-    // redis.zrange("key", 0, -1, inserter(with_score, with_score.end()));
-    //
-    // This also applies to other commands with the *WITHSCORES* option,
-    // e.g. *ZRANGEBYSCORE*, *ZREVRANGE*, *ZREVRANGEBYSCORE*.
+    /// @brief Get a range of members by rank (ordered from lowest to highest).
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// // send *ZRANGE* command without the *WITHSCORES* option:
+    /// std::vector<std::string> result;
+    /// redis.zrange("zset", 0, -1, std::back_inserter(result));
+    /// // send command with *WITHSCORES* option:
+    /// std::unordered_map<std::string, double> with_score;
+    /// redis.zrange("zset", 0, -1, std::inserter(with_score, with_score.end()));
+    /// @endcode
+    /// @param key Key where the sorted set is stored.
+    /// @param start Start rank. Inclusive and can be negative.
+    /// @param stop Stop rank. Inclusive and can be negative.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @note This method can also return the score of each member. If `output` is an iterator
+    ///       to a container of `std::string`, we send *ZRANGE key start stop* command.
+    ///       If it's an iterator to a container of `std::pair<std::string, double>`,
+    ///       we send *ZRANGE key start stop WITHSCORES* command. See the *Example* part on
+    ///       how to use this method.
+    /// @see `Redis::zrevrange`
+    /// @see https://redis.io/commands/zrange
     template <typename Output>
     void zrange(const StringView &key, long long start, long long stop, Output output);
 
+    /// @brief Get a range of members by lexicographical order (from lowest to highest).
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// std::vector<std::string> result;
+    /// // Get members between [abc, abd].
+    /// redis.zrangebylex("zset", BoundedInterval<std::string>("abc", "abd", BoundType::CLOSED),
+    ///     std::back_inserter(result));
+    /// @endcode
+    /// @param key Key where the sorted set is stored.
+    /// @param interval the min-max range by lexicographical order.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @note See `Redis::zlexcount`'s *Example* part for how to set `interval` parameter.
+    /// @see `Redis::zlexcount`
+    /// @see `BoundedInterval`
+    /// @see `LeftBoundedInterval`
+    /// @see `RightBoundedInterval`
+    /// @see `UnboundedInterval`
+    /// @see `BoundType`
+    /// @see `Redis::zrevrangebylex`
+    /// @see https://redis.io/commands/zrangebylex
     template <typename Interval, typename Output>
     void zrangebylex(const StringView &key, const Interval &interval, Output output);
 
+    /// @brief Get a range of members by lexicographical order (from lowest to highest).
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// std::vector<std::string> result;
+    /// // Limit the result to at most 5 members starting from 10.
+    /// LimitOptions opts;
+    /// opts.offset = 10;
+    /// opts.count = 5;
+    /// // Get members between [abc, abd].
+    /// redis.zrangebylex("zset", BoundedInterval<std::string>("abc", "abd", BoundType::CLOSED),
+    ///     opts, std::back_inserter(result));
+    /// @endcode
+    /// @param key Key where the sorted set is stored.
+    /// @param interval the min-max range by lexicographical order.
+    /// @param opts Options to do pagination, i.e. *LIMIT offset count*.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @note See `Redis::zlexcount`'s *Example* part for how to set `interval` parameter.
+    /// @see `Redis::zlexcount`
+    /// @see `BoundedInterval`
+    /// @see `LeftBoundedInterval`
+    /// @see `RightBoundedInterval`
+    /// @see `UnboundedInterval`
+    /// @see `BoundType`
+    /// @see `LimitOptions`
+    /// @see `Redis::zrevrangebylex`
+    /// @see https://redis.io/commands/zrangebylex
     template <typename Interval, typename Output>
     void zrangebylex(const StringView &key,
                         const Interval &interval,
                         const LimitOptions &opts,
                         Output output);
 
-    // See *zrange* comment on how to send command with *WITHSCORES* option.
+    /// @brief Get a range of members by score (ordered from lowest to highest).
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// // Send *ZRANGEBYSCORE* command without the *WITHSCORES* option:
+    /// std::vector<std::string> result;
+    /// // Get members whose score between (3, 6).
+    /// redis.zrangebyscore("zset", BoundedInterval<double>(3, 6, BoundType::OPEN),
+    ///     std::back_inserter(result));
+    /// // Send command with *WITHSCORES* option:
+    /// std::unordered_map<std::string, double> with_score;
+    /// // Get members whose score between [3, +inf).
+    /// redis.zrangebyscore("zset", LeftBoundedInterval<double>(3, BoundType::RIGHT_OPEN),
+    ///     std::inserter(with_score, with_score.end()));
+    /// @endcode
+    /// @param key Key where the sorted set is stored.
+    /// @param interval the min-max range by score.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @note This method can also return the score of each member. If `output` is an iterator
+    ///       to a container of `std::string`, we send *ZRANGEBYSCORE key min max* command.
+    ///       If it's an iterator to a container of `std::pair<std::string, double>`,
+    ///       we send *ZRANGEBYSCORE key min max WITHSCORES* command. See the *Example* part on
+    ///       how to use this method.
+    /// @note See `Redis::zcount`'s *Example* part for how to set the `interval` parameter.
+    /// @see `Redis::zrevrangebyscore`
+    /// @see https://redis.io/commands/zrangebyscore
     template <typename Interval, typename Output>
     void zrangebyscore(const StringView &key, const Interval &interval, Output output);
 
-    // See *zrange* comment on how to send command with *WITHSCORES* option.
+    /// @brief Get a range of members by score (ordered from lowest to highest).
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// // Send *ZRANGEBYSCORE* command without the *WITHSCORES* option:
+    /// std::vector<std::string> result;
+    /// // Only return at most 5 members starting from 10.
+    /// LimitOptions opts;
+    /// opts.offset = 10;
+    /// opts.count = 5;
+    /// // Get members whose score between (3, 6).
+    /// redis.zrangebyscore("zset", BoundedInterval<double>(3, 6, BoundType::OPEN),
+    ///     opts, std::back_inserter(result));
+    /// // Send command with *WITHSCORES* option:
+    /// std::unordered_map<std::string, double> with_score;
+    /// // Get members whose score between [3, +inf).
+    /// redis.zrangebyscore("zset", LeftBoundedInterval<double>(3, BoundType::RIGHT_OPEN),
+    ///     opts, std::inserter(with_score, with_score.end()));
+    /// @endcode
+    /// @param key Key where the sorted set is stored.
+    /// @param interval the min-max range by score.
+    /// @param opts Options to do pagination, i.e. *LIMIT offset count*.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @note This method can also return the score of each member. If `output` is an iterator
+    ///       to a container of `std::string`, we send *ZRANGEBYSCORE key min max* command.
+    ///       If it's an iterator to a container of `std::pair<std::string, double>`,
+    ///       we send *ZRANGEBYSCORE key min max WITHSCORES* command. See the *Example* part on
+    ///       how to use this method.
+    /// @note See `Redis::zcount`'s *Example* part for how to set the `interval` parameter.
+    /// @see `Redis::zrevrangebyscore`
+    /// @see https://redis.io/commands/zrangebyscore
     template <typename Interval, typename Output>
     void zrangebyscore(const StringView &key,
                         const Interval &interval,
                         const LimitOptions &opts,
                         Output output);
 
+    /// @brief Get the rank (from low to high) of the given member in the sorted set.
+    /// @param key Key where the sorted set is stored.
+    /// @param member Member.
+    /// @return The rank of the given member.
+    /// @note If the member does not exist, `zrank` returns `OptionalLongLong{}` (`std::nullopt`).
+    /// @see https://redis.io/commands/zrank
     OptionalLongLong zrank(const StringView &key, const StringView &member);
 
+    /// @brief Remove the given member from sorted set.
+    /// @param key Key where the sorted set is stored.
+    /// @param member Member to be removed.
+    /// @return Whether the member has been removed.
+    /// @retval 1 If the member exists, and has been removed.
+    /// @retval 0 If the member does not exist.
+    /// @see https://redis.io/commands/zrem
     long long zrem(const StringView &key, const StringView &member);
 
+    /// @brief Remove multiple members from sorted set.
+    /// @param key Key where the sorted set is stored.
+    /// @param first Iterator to the first member.
+    /// @param last Off-the-end iterator to the given range.
+    /// @return Number of members that have been removed.
+    /// @see https://redis.io/commands/zrem
     template <typename Input>
     long long zrem(const StringView &key, Input first, Input last);
 
+    /// @brief Remove multiple members from sorted set.
+    /// @param key Key where the sorted set is stored.
+    /// @param il Initializer list of members to be removed.
+    /// @return Number of members that have been removed.
+    /// @see https://redis.io/commands/zrem
     template <typename T>
     long long zrem(const StringView &key, std::initializer_list<T> il) {
         return zrem(key, il.begin(), il.end());
     }
 
+    /// @brief Remove members in the given range of lexicographical order.
+    /// @param key Key where the sorted set is stored.
+    /// @param interval the min-max range by lexicographical order.
+    /// @note See `Redis::zlexcount`'s *Example* part for how to set `interval` parameter.
+    /// @return Number of members removed.
+    /// @see `Redis::zlexcount`
+    /// @see `BoundedInterval`
+    /// @see `LeftBoundedInterval`
+    /// @see `RightBoundedInterval`
+    /// @see `UnboundedInterval`
+    /// @see `BoundType`
+    /// @see https://redis.io/commands/zremrangebylex
     template <typename Interval>
     long long zremrangebylex(const StringView &key, const Interval &interval);
 
+    /// @brief Remove members in the given range ordered by rank.
+    /// @param key Key where the sorted set is stored.
+    /// @param start Start rank.
+    /// @param stop Stop rank.
+    /// @return Number of members removed.
+    /// @see https://redis.io/commands/zremrangebyrank
     long long zremrangebyrank(const StringView &key, long long start, long long stop);
 
+    /// @brief Remove members in the given range ordered by score.
+    /// @param key Key where the sorted set is stored.
+    /// @param interval the min-max range by score.
+    /// @return Number of members removed.
+    /// @note See `Redis::zcount`'s *Example* part for how to set the `interval` parameter.
+    /// @see https://redis.io/commands/zremrangebyscore
     template <typename Interval>
     long long zremrangebyscore(const StringView &key, const Interval &interval);
 
-    // See *zrange* comment on how to send command with *WITHSCORES* option.
+    /// @brief Get a range of members by rank (ordered from highest to lowest).
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// // send *ZREVRANGE* command without the *WITHSCORES* option:
+    /// std::vector<std::string> result;
+    /// redis.zrevrange("key", 0, -1, std::back_inserter(result));
+    /// // send command with *WITHSCORES* option:
+    /// std::unordered_map<std::string, double> with_score;
+    /// redis.zrevrange("key", 0, -1, std::inserter(with_score, with_score.end()));
+    /// @endcode
+    /// @param key Key where the sorted set is stored.
+    /// @param start Start rank. Inclusive and can be negative.
+    /// @param stop Stop rank. Inclusive and can be negative.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @note This method can also return the score of each member. If `output` is an iterator
+    ///       to a container of `std::string`, we send *ZREVRANGE key start stop* command.
+    ///       If it's an iterator to a container of `std::pair<std::string, double>`,
+    ///       we send *ZREVRANGE key start stop WITHSCORES* command. See the *Example* part on
+    ///       how to use this method.
+    /// @see `Redis::zrange`
+    /// @see https://redis.io/commands/zrevrange
     template <typename Output>
     void zrevrange(const StringView &key, long long start, long long stop, Output output);
 
+    /// @brief Get a range of members by lexicographical order (from highest to lowest).
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// std::vector<std::string> result;
+    /// // Get members between [abc, abd] in reverse order.
+    /// redis.zrevrangebylex("zset", BoundedInterval<std::string>("abc", "abd", BoundType::CLOSED),
+    ///     std::back_inserter(result));
+    /// @endcode
+    /// @param key Key where the sorted set is stored.
+    /// @param interval the min-max range by lexicographical order.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @note See `Redis::zlexcount`'s *Example* part for how to set `interval` parameter.
+    /// @see `Redis::zlexcount`
+    /// @see `BoundedInterval`
+    /// @see `LeftBoundedInterval`
+    /// @see `RightBoundedInterval`
+    /// @see `UnboundedInterval`
+    /// @see `BoundType`
+    /// @see `Redis::zrangebylex`
+    /// @see https://redis.io/commands/zrevrangebylex
     template <typename Interval, typename Output>
     void zrevrangebylex(const StringView &key, const Interval &interval, Output output);
 
+    /// @brief Get a range of members by lexicographical order (from highest to lowest).
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// std::vector<std::string> result;
+    /// // Limit the result to at most 5 members starting from 10.
+    /// LimitOptions opts;
+    /// opts.offset = 10;
+    /// opts.count = 5;
+    /// // Get members between [abc, abd] in reverse order.
+    /// redis.zrevrangebylex("zset", BoundedInterval<std::string>("abc", "abd", BoundType::CLOSED),
+    ///     opts, std::back_inserter(result));
+    /// @endcode
+    /// @param key Key where the sorted set is stored.
+    /// @param interval the min-max range by lexicographical order.
+    /// @param opts Options to do pagination, i.e. *LIMIT offset count*.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @note See `Redis::zlexcount`'s *Example* part for how to set `interval` parameter.
+    /// @see `Redis::zlexcount`
+    /// @see `BoundedInterval`
+    /// @see `LeftBoundedInterval`
+    /// @see `RightBoundedInterval`
+    /// @see `UnboundedInterval`
+    /// @see `BoundType`
+    /// @see `LimitOptions`
+    /// @see `Redis::zrangebylex`
+    /// @see https://redis.io/commands/zrevrangebylex
     template <typename Interval, typename Output>
     void zrevrangebylex(const StringView &key,
                         const Interval &interval,
                         const LimitOptions &opts,
                         Output output);
 
-    // See *zrange* comment on how to send command with *WITHSCORES* option.
+    /// @brief Get a range of members by score (ordered from highest to lowest).
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// // Send *ZREVRANGEBYSCORE* command without the *WITHSCORES* option:
+    /// std::vector<std::string> result;
+    /// // Get members whose score between (3, 6) in reverse order.
+    /// redis.zrevrangebyscore("zset", BoundedInterval<double>(3, 6, BoundType::OPEN),
+    ///     std::back_inserter(result));
+    /// // Send command with *WITHSCORES* option:
+    /// std::unordered_map<std::string, double> with_score;
+    /// // Get members whose score between [3, +inf) in reverse order.
+    /// redis.zrevrangebyscore("zset", LeftBoundedInterval<double>(3, BoundType::RIGHT_OPEN),
+    ///     std::inserter(with_score, with_score.end()));
+    /// @endcode
+    /// @param key Key where the sorted set is stored.
+    /// @param interval the min-max range by score.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @note This method can also return the score of each member. If `output` is an iterator
+    ///       to a container of `std::string`, we send *ZREVRANGEBYSCORE key min max* command.
+    ///       If it's an iterator to a container of `std::pair<std::string, double>`,
+    ///       we send *ZREVRANGEBYSCORE key min max WITHSCORES* command. See the *Example* part on
+    ///       how to use this method.
+    /// @note See `Redis::zcount`'s *Example* part for how to set the `interval` parameter.
+    /// @see `Redis::zrangebyscore`
+    /// @see https://redis.io/commands/zrevrangebyscore
     template <typename Interval, typename Output>
     void zrevrangebyscore(const StringView &key, const Interval &interval, Output output);
 
-    // See *zrange* comment on how to send command with *WITHSCORES* option.
+    /// @brief Get a range of members by score (ordered from highest to lowest).
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// // Send *ZREVRANGEBYSCORE* command without the *WITHSCORES* option:
+    /// std::vector<std::string> result;
+    /// // Only return at most 5 members starting from 10.
+    /// LimitOptions opts;
+    /// opts.offset = 10;
+    /// opts.count = 5;
+    /// // Get members whose score between (3, 6) in reverse order.
+    /// redis.zrevrangebyscore("zset", BoundedInterval<double>(3, 6, BoundType::OPEN),
+    ///     opts, std::back_inserter(result));
+    /// // Send command with *WITHSCORES* option:
+    /// std::unordered_map<std::string, double> with_score;
+    /// // Get members whose score between [3, +inf) in reverse order.
+    /// redis.zrevrangebyscore("zset", LeftBoundedInterval<double>(3, BoundType::RIGHT_OPEN),
+    ///     opts, std::inserter(with_score, with_score.end()));
+    /// @endcode
+    /// @param key Key where the sorted set is stored.
+    /// @param interval the min-max range by score.
+    /// @param opts Options to do pagination, i.e. *LIMIT offset count*.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @note This method can also return the score of each member. If `output` is an iterator
+    ///       to a container of `std::string`, we send *ZREVRANGEBYSCORE key min max* command.
+    ///       If it's an iterator to a container of `std::pair<std::string, double>`,
+    ///       we send *ZREVRANGEBYSCORE key min max WITHSCORES* command. See the *Example* part on
+    ///       how to use this method.
+    /// @note See `Redis::zcount`'s *Example* part for how to set the `interval` parameter.
+    /// @see `Redis::zrangebyscore`
+    /// @see https://redis.io/commands/zrevrangebyscore
     template <typename Interval, typename Output>
     void zrevrangebyscore(const StringView &key,
                             const Interval &interval,
                             const LimitOptions &opts,
                             Output output);
 
+    /// @brief Get the rank (from high to low) of the given member in the sorted set.
+    /// @param key Key where the sorted set is stored.
+    /// @param member Member.
+    /// @return The rank of the given member.
+    /// @note If the member does not exist, `zrevrank` returns `OptionalLongLong{}` (`std::nullopt`).
+    /// @see https://redis.io/commands/zrevrank
     OptionalLongLong zrevrank(const StringView &key, const StringView &member);
 
+    /// @brief Scan members of the given sorted set matching the given pattern.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// auto cursor = 0LL;
+    /// std::vector<std::string> members;
+    /// while (true) {
+    ///     cursor = redis.zscan(cursor, "pattern:*", 10, std::back_inserter(members));
+    ///     if (cursor == 0) {
+    ///         break;
+    ///     }
+    /// }
+    /// @endcode
+    /// @param key Key where the sorted set is stored.
+    /// @param cursor Cursor.
+    /// @param pattern Pattern of members to be scanned.
+    /// @param count A hint for how many members to be scanned.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @return The cursor to be used for the next scan operation.
+    /// @see https://redis.io/commands/zscan
     template <typename Output>
     long long zscan(const StringView &key,
                     long long cursor,
@@ -2203,36 +2812,130 @@ public:
                     long long count,
                     Output output);
 
+    /// @brief Scan members of the given sorted set matching the given pattern.
+    /// @param key Key where the sorted set is stored.
+    /// @param cursor Cursor.
+    /// @param pattern Pattern of members to be scanned.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @return The cursor to be used for the next scan operation.
+    /// @see https://redis.io/commands/zscan
     template <typename Output>
     long long zscan(const StringView &key,
                     long long cursor,
                     const StringView &pattern,
                     Output output);
 
+    /// @brief Scan all members of the given sorted set.
+    /// @param key Key where the sorted set is stored.
+    /// @param cursor Cursor.
+    /// @param count A hint for how many members to be scanned.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @return The cursor to be used for the next scan operation.
+    /// @see https://redis.io/commands/zscan
     template <typename Output>
     long long zscan(const StringView &key,
                     long long cursor,
                     long long count,
                     Output output);
 
+    /// @brief Scan all members of the given sorted set.
+    /// @param key Key where the sorted set is stored.
+    /// @param cursor Cursor.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @return The cursor to be used for the next scan operation.
+    /// @see https://redis.io/commands/zscan
     template <typename Output>
     long long zscan(const StringView &key,
                     long long cursor,
                     Output output);
 
+    /// @brief Get the score of the given member.
+    /// @param key Key where the sorted set is stored.
+    /// @param member Member.
+    /// @return The score of the member.
+    /// @note If member does not exist, `zscore` returns `OptionalDouble{}` (`std::nullopt`).
+    /// @see https://redis.io/commands/zscore
     OptionalDouble zscore(const StringView &key, const StringView &member);
 
-    // There's no aggregation type parameter for single key overload, since these 3 types
-    // have the same effect.
+    /// @brief Copy a sorted set to another one with the scores being multiplied by a factor.
+    /// @param destination Key of the destination sorted set.
+    /// @param key Key of the source sorted set.
+    /// @param weight Weight to be multiplied to the score of each member.
+    /// @return The number of members in the sorted set.
+    /// @note  There's no aggregation type parameter for single key overload, since these 3 types
+    ///         have the same effect.
+    /// @see `Redis::zinterstore`
+    /// @see https://redis.io/commands/zinterstore
     long long zunionstore(const StringView &destination, const StringView &key, double weight);
 
-    // See *zinterstore* comment for how to use this method.
+    /// @brief Get union of multiple sorted sets, and store the result to another one.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// // Use the default weight, i.e. 1,
+    /// // and use the sum of the all scores as the score of the result:
+    /// std::vector<std::string> keys = {"k1", "k2", "k3"};
+    /// redis.zunionstore("destination", keys.begin(), keys.end());
+    /// // Each sorted set has a different weight,
+    /// // and the score of the result is the min of all scores.
+    /// std::vector<std::pair<std::string, double>> keys_with_weights = {{"k1", 1}, {"k2", 2}};
+    /// redis.zunionstore("destination", keys_with_weights.begin(),
+    ///     keys_with_weights.end(), Aggregation::MIN);
+    /// // NOTE: `keys_with_weights` can also be of type `std::unordered_map<std::string, double>`.
+    /// // However, it will be slower than std::vector<std::pair<std::string, double>>, since we use
+    /// // `std::distance(first, last)` to calculate the *numkeys* parameter.
+    /// @endcode
+    /// @param destination Key of the destination sorted set.
+    /// @param first Iterator to the first sorted set (might with weight).
+    /// @param last Off-the-end iterator to the sorted set range.
+    /// @param type How the scores are aggregated.
+    ///             - Aggregation::SUM: Score of a member is the sum of all scores.
+    ///             - Aggregation::MIN: Score of a member is the min of all scores.
+    ///             - Aggregation::MAX: Score of a member is the max of all scores.
+    /// @return The number of members in the resulting sorted set.
+    /// @note The score of each member can be multiplied by a factor, i.e. weight. If `Input` is an
+    ///       iterator to a container of `std::string`, we use the default weight, i.e. 1, and send
+    ///       *ZUNIONSTORE dest numkeys key [key ...] [AGGREGATE SUM|MIN|MAX]* command.
+    ///        If `Input` is an iterator to a container of `std::pair<std::string, double>`,
+    ///        i.e. key-weight pair, we send the command with the given weights:
+    ///       *ZUNIONSTORE dest numkeys key [key ...] [WEIGHTS weight [weight ...]] [AGGREGATE SUM|MIN|MAX]*.
+    ///       See the *Example* part for examples on how to use this command.
+    /// @see `Redis::zinterstore`
+    /// @see https://redis.io/commands/zunionstore
     template <typename Input>
     long long zunionstore(const StringView &destination,
                             Input first,
                             Input last,
                             Aggregation type = Aggregation::SUM);
 
+    /// @brief Get union of multiple sorted sets, and store the result to another one.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// // Use the default weight, i.e. 1,
+    /// // and use the sum of the all scores as the score of the result:
+    /// redis.zunionstore("destination", {"k1", "k2"});
+    /// // Each sorted set has a different weight,
+    /// // and the score of the result is the min of all scores.
+    /// redis.zunionstore("destination",
+    ///     {std::make_pair("k1", 1), std::make_pair("k2", 2)}, Aggregation::MIN);
+    /// @endcode
+    /// @param destination Key of the destination sorted set.
+    /// @param il Initializer list of sorted set.
+    /// @param type How the scores are aggregated.
+    ///             - Aggregation::SUM: Score of a member is the sum of all scores.
+    ///             - Aggregation::MIN: Score of a member is the min of all scores.
+    ///             - Aggregation::MAX: Score of a member is the max of all scores.
+    /// @return The number of members in the resulting sorted set.
+    /// @note The score of each member can be multiplied by a factor, i.e. weight. If `T` is
+    ///       of type `std::string`, we use the default weight, i.e. 1, and send
+    ///       *ZUNIONSTORE dest numkeys key [key ...] [AGGREGATE SUM|MIN|MAX]* command.
+    ///       If `T` is of type `std::pair<std::string, double>`, i.e. key-weight pair,
+    ///       we send the command with the given weights:
+    ///       *ZUNIONSTORE dest numkeys key [key ...] [WEIGHTS weight [weight ...]] [AGGREGATE SUM|MIN|MAX]*.
+    ///       See the *Example* part for examples on how to use this command.
+    /// @see `Redis::zinterstore`
+    /// @see https://redis.io/commands/zunionstore
     template <typename T>
     long long zunionstore(const StringView &destination,
                             std::initializer_list<T> il,
