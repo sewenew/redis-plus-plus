@@ -11,6 +11,7 @@
 - [API Reference](#api-reference)
     - [Connection](#connection)
     - [Send Command to Redis Server](#send-command-to-redis-server)
+    - [Exception](#exception)
     - [Generic Command Interface](#generic-command-interface)
     - [Publish/Subscribe](#publishsubscribe)
     - [Pipeline](#pipeline)
@@ -18,11 +19,13 @@
     - [Redis Cluster](#redis-cluster)
     - [Redis Sentinel](#redis-sentinel)
     - [Redis Stream](#redis-stream)
+- [Redis Recipes](#redis-recipes)
+    - [Redlock](#redlock)
 - [Author](#author)
 
 ## Overview
 
-This is a C++ client for Redis. It's based on [hiredis](https://github.com/redis/hiredis), and written in C++ 11.
+This is a C++ client for Redis. It's based on [hiredis](https://github.com/redis/hiredis), and written in C++ 11 / C++ 17.
 
 **NOTE**: I'm not a native speaker. So if the documentation is unclear, please feel free to open an issue or pull request. I'll response ASAP.
 
@@ -91,6 +94,18 @@ If *hiredis* is installed at non-default location, you should use `CMAKE_PREFIX_
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/path/to/hiredis -DCMAKE_INSTALL_PREFIX=/path/to/install/redis-plus-plus ..
 ```
 
+By default, *redis-plus-plus* is built with `-std=c++11` standard. If you want to use the [std::string_view](#stringview) and [std::optional](#optional) features, you can also build *redis-plus-plus* with `-std=c++17` standard by specifying the following cmake flag: `-DREDIS_PLUS_PLUS_CXX_STANDARD=17`.
+
+```
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/path/to/hiredis -DCMAKE_INSTALL_PREFIX=/path/to/install/redis-plus-plus -DREDIS_PLUS_PLUS_CXX_STANDARD=17 ..
+```
+
+When compiling *redis-plus-plus*, it also compiles a test program, which might take a while. However, you can disable building test with the following cmake option: `-DREDIS_PLUS_PLUS_BUILD_TEST=OFF`.
+
+```
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/path/to/hiredis -DCMAKE_INSTALL_PREFIX=/path/to/install/redis-plus-plus -DREDIS_PLUS_PLUS_BUILD_TEST=OFF ..
+```
+
 ### Run Tests (Optional)
 
 *redis-plus-plus* has been fully tested with the following compilers:
@@ -101,15 +116,17 @@ gcc version 5.5.0 20171010 (Ubuntu 5.5.0-12ubuntu1)
 gcc version 6.5.0 20181026 (Ubuntu 6.5.0-2ubuntu1~18.04)
 gcc version 7.4.0 (Ubuntu 7.4.0-1ubuntu1~18.04.1)
 gcc version 8.3.0 (Ubuntu 8.3.0-6ubuntu1~18.04.1)
+gcc version 9.2.1 20191008 (Ubuntu 9.2.1-9ubuntu2)
 clang version 3.9.1-19ubuntu1 (tags/RELEASE_391/rc2)
 clang version 4.0.1-10 (tags/RELEASE_401/final)
 clang version 5.0.1-4 (tags/RELEASE_501/final)
 clang version 6.0.0-1ubuntu2 (tags/RELEASE_600/final)
 clang version 7.0.0-3~ubuntu0.18.04.1 (tags/RELEASE_700/final)
-Apple clang version 11.0.0 (clang-1100.0.33.8)
+clang version 8.0.1-3build1 (tags/RELEASE_801/final)
+Apple clang version 11.0.0 (clang-1100.0.33.12)
 ```
 
-After compiling with cmake, you'll get a test program in *compile/test* directory: *compile/test/test_redis++*.
+If you build *redis-plus-plus* with `-DREDIS_PLUS_PLUS_BUILD_TEST=ON` (the default behavior), you'll get a test program in *compile/test* directory: *compile/test/test_redis++*.
 
 In order to run the tests, you need to set up a Redis instance, and a Redis Cluster. Since the test program will send most of Redis commands to the server and cluster, you need to set up Redis of the latest version (by now, it's 5.0). Otherwise, the tests might fail. For example, if you set up Redis 4.0 for testing, the test program will fail when it tries to send the `ZPOPMAX` command (a Redis 5.0 command) to the server. If you want to run the tests with other Redis versions, you have to comment out commands that haven't been supported by your Redis, from test source files in *redis-plus-plus/test/src/sw/redis++/* directory. Sorry for the inconvenience, and I'll fix this problem to make the test program work with any version of Redis in the future.
 
@@ -454,6 +471,8 @@ try {
 
 ## API Reference
 
+You can also see [redis.h](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/redis.h) for doxygen style documentation.
+
 ### Connection
 
 `Redis` class maintains a connection pool to Redis server. If the connection is broken, `Redis` reconnects to Redis server automatically.
@@ -502,7 +521,24 @@ options.path = "/path/to/socket";
 Redis redis(options);
 ```
 
-You can also connect to Redis server with a URI. However, in this case, you can only specify *host* and *port*, or *Unix Domain Socket path*. In order to specify other options, you need to use `ConnectionOptions` and `ConnectionPoolOptions`.
+You can also connect to Redis server with a URI:
+
+```
+tcp://[[username:]password@]host[:port][/db]
+
+unix://[[username:]password@]path-to-unix-domain-socket[/db]
+```
+
+The *scheme* and *host* parts are required, and others are optional. If you're connecting to Redis with Unix Domain Socket, you should use the *unix* scheme, otherwise, you should use *tcp* scheme. The following is a list of default values for those optional parts:
+
+- username: *default*
+- password: empty string, i.e. no password
+- port: 6379
+- db: 0
+
+**NOTE**: [Redis 6.0 supports ACL](https://redis.io/topics/acl), and you can specify a username for the connection. However, before Redis 6.0, you cannot do that.
+
+In order to specify other options, e.g. `socket_timeout`, you need to use `ConnectionOptions` and `ConnectionPoolOptions`.
 
 ```C++
 // Single connection to the given host and port.
@@ -511,8 +547,14 @@ Redis redis1("tcp://127.0.0.1:6666");
 // Use default port, i.e. 6379.
 Redis redis2("tcp://127.0.0.1");
 
+// Connect to Redis with password, and default port.
+Redis redis3("tcp://pass@127.0.0.1");
+
+// Connect to Redis and select the 2nd (db number starts from 0) database.
+Redis redis4("tcp://127.0.0.1:6379/2");
+
 // Connect to Unix Domain Socket.
-Redis redis3("unix://path/to/socket");
+Redis redis5("unix://path/to/socket");
 ```
 
 #### Lazily Create Connection
@@ -585,7 +627,9 @@ Most of these methods have the same parameters as the corresponding commands. Th
 
 ##### StringView
 
-[std::string_view](http://en.cppreference.com/w/cpp/string/basic_string_view) is a good option for the type of string parameters. However, by now, not all compilers support `std::string_view`. So we wrote a [simple version](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/utils.h#L48), i.e. `StringView`. Since there are conversions from `std::string` and c-style string to `StringView`, you can just pass `std::string` or c-style string to methods that need a `StringView` parameter.
+[std::string_view](http://en.cppreference.com/w/cpp/string/basic_string_view) is a good option for the type of string parameters. However, by now, not all compilers support `std::string_view`. So if you build *redis-plus-plus* with `-std=c++11` standard (i.e. the default behavior), we wrote a [simple version](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/utils.h#L56), i.e. `StringView`. Instead, if you build *redis-plus-plus* with `-std=c++17` standard (i.e. by specifying `-DREDIS_PLUS_PLUS_CXX_STANDARD=17` with cmake command), you can use `std::string_view`, and we have a typedef for it: `using StringView = std::string_view`.
+
+Since there are conversions from `std::string` and c-style string to `StringView`, you can just pass `std::string` or c-style string to methods that need a `StringView` parameter.
 
 ```C++
 // bool Redis::hset(const StringView &key, const StringView &field, const StringView &val)
@@ -639,7 +683,7 @@ So, never use the return value to check if the command has been successfully sen
 
 ##### Optional
 
-[std::optional](http://en.cppreference.com/w/cpp/utility/optional) is a good option for return type, if Redis might return *NULL REPLY*. Again, since not all compilers support `std::optional` so far, we implement our own [simple version](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/utils.h#L85), i.e. `Optional<T>`.
+[std::optional](http://en.cppreference.com/w/cpp/utility/optional) is a good option for return type, if Redis might return *NULL REPLY*. Again, since not all compilers support `std::optional` so far, if you build *redis-plus-plus* with `-std=c++11` standard (i.e. the default behavior), we implement our own [simple version](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/utils.h#L93), i.e. `template Optional<T>`. Instead, if you build *redis-plus-plus* with `-std=c++17` standard (i.e. by specifying `-DREDIS_PLUS_PLUS_CXX_STANDARD=17` with cmake command), you can use `std::optional`, and we have a typedef for it: `template <typename T> using Optional = std::optional<T>`.
 
 Take the [GET](https://redis.io/commands/get) and [MGET](https://redis.io/commands/mget) commands for example:
 
@@ -679,21 +723,6 @@ using OptionalDouble = Optional<double>;
 
 using OptionalStringPair = Optional<std::pair<std::string, std::string>>;
 ```
-
-#### Exception
-
-`Redis` throws exceptions if it receives an *Error Reply* or something bad happens, e.g. failed to create a connection to server, or connection to server is broken. All exceptions derived from `Error` class. See [errors.h](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/errors.h) for details.
-
-- `Error`: Generic error. It's also the base class of other exceptions.
-- `IoError`: There's some IO error with the connection.
-- `TimeoutError`: Read or write operation was timed out. It's a derived class of `IoError`.
-- `ClosedError`: Redis server closed the connection.
-- `ProtoError`: The command or reply is invalid, and we cannot process it with Redis protocol.
-- `OomError`: *hiredis* library got an out-of-memory error.
-- `ReplyError`: Redis server returned an error reply, e.g. we try to call `redis::lrange` on a Redis hash.
-- `WatchError`: Watched key has been modified. See [Watch section](#watch) for details.
-
-**NOTE**: *NULL REPLY*` is not taken as an exception. For example, if we try to `GET` a non-existent key, we'll get a *NULL Bulk String Reply*. Instead of throwing an exception, we return the *NULL REPLY* as a null `Optional<T>` object. Also see [Optional section](#optional).
 
 #### Examples
 
@@ -1018,7 +1047,48 @@ redis.georadius("geo",
             std::back_inserter(mem_with_hash_coord_dist));
 ```
 
-Please see [redis.h](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/redis.h) for more API references, and see the [tests](https://github.com/sewenew/redis-plus-plus/tree/master/test/src/sw/redis%2B%2B) for more examples.
+Please see [redis.h](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/redis.h) for doxygen style API references and examples, and see the [tests](https://github.com/sewenew/redis-plus-plus/tree/master/test/src/sw/redis%2B%2B) for other examples.
+
+### Exception
+
+`Redis` throws exceptions if it receives an *Error Reply* or something bad happens, e.g. failed to create a connection to server, or connection to server is broken. All exceptions derived from `Error` class. See [errors.h](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/errors.h) for details.
+
+- `Error`: Generic error. It's derived from `std::exception`, and it's also the base class of other exceptions.
+- `IoError`: There's some IO error with the connection.
+- `TimeoutError`: Read or write operation was timed out. It's a derived class of `IoError`.
+- `ClosedError`: Redis server closed the connection.
+- `ProtoError`: The command or reply is invalid, and we cannot process it with Redis protocol.
+- `OomError`: *hiredis* library got an out-of-memory error.
+- `ReplyError`: Redis server returned an error reply, e.g. we try to call `redis::lrange` on a Redis hash.
+- `WatchError`: Watched key has been modified. See [Watch section](#watch) for details.
+
+**NOTE**: *NULL REPLY* is not taken as an exception. For example, if we try to `GET` a non-existent key, we'll get a *NULL Bulk String Reply*. Instead of throwing an exception, we return the *NULL REPLY* as a null `Optional<T>` object. Also see [Optional section](#optional).
+
+Normally, when exception happens, you don't need to create a `Redis` object. It's exception safe, and you can reuse the `Redis` object. Even if the connection to Redis server is broken, and it throws some exception, say, `IoError`. The next time when you send command with the `Redis` object, it will try to reconnect to Redis server automatically. This rule also applies to `RedisCluster`. However, if `Pipeline`, `Transcation` and `Subscriber` throws exception, you need to destroy the object, and create a new one. See the corresponding documentation for details.
+
+#### Examples
+
+The following is an example on how to catch these exceptions:
+
+```
+try {
+    redis.set("key", "value");
+
+    // Wrong type error
+    redis.lpush("key", {"a", "b", "c"});
+} catch (const ReplyError &err) {
+    // WRONGTYPE Operation against a key holding the wrong kind of value
+    cout << err.what() << endl;
+} catch (const TimeoutError &err) {
+    // reading or writing timeout
+} catch (const ClosedError &err) {
+    // the connection has been closed.
+} catch (const IoError &err) {
+    // there's an IO error on the connection.
+} catch (const Error &err) {
+   // other errors
+}
+```
 
 ### Generic Command Interface
 
@@ -1162,6 +1232,10 @@ With `Subscriber`, you can call `Subscriber::subscribe`, `Subscriber::unsubscrib
 #### Thread Safety
 
 `Subscriber` is NOT thread-safe. If you want to call its member functions in multi-thread environment, you need to synchronize between threads manually.
+
+#### Exception
+
+If any of the `Subscriber`'s method throws an exception other than `ReplyError` or `TimeoutError`, you CANNOT use it any more. Instead, you have to destroy the `Subscriber` object, and create a new one.
 
 #### Subscriber Callbacks
 
@@ -1318,7 +1392,7 @@ replies.get(2, std::back_inserter(list_cmd_result));
 
 #### Exception
 
-If any of `Pipeline`'s method throws an exception, the `Pipeline` object enters an invalid state. You CANNOT use it any more, but only destroy the object, and create a new one.
+If any of `Pipeline`'s method throws an exception other than `ReplyError`, the `Pipeline` object enters an invalid state. You CANNOT use it any more, but only destroy the object, and create a new one.
 
 #### Thread Safety
 
@@ -1385,7 +1459,7 @@ With this piped transaction, all commands are sent to Redis in a pipeline.
 
 #### Exception
 
-If any of `Transaction`'s method throws an exception other than `WatchError`, the `Transaction` object enters an invalid state. You CANNOT use it any more, but only destroy the object and create a new one.
+If any of `Transaction`'s method throws an exception other than `WatchError` or `ReplyError`, the `Transaction` object enters an invalid state. You CANNOT use it any more, but only destroy the object and create a new one.
 
 #### Thread Safety
 
@@ -1509,7 +1583,7 @@ As we mentioned above, `RedisCluster`'s interfaces are similar to `Redis`. It su
 Since there's no key parameter, `RedisCluster` has no idea on to which node these commands should be sent. However there're 2 workarounds for this problem:
 
 - If you want to send these commands to a specific node, you can create a `Redis` object with that node's host and port, and use the `Redis` object to do the work.
-- Instead of host and port, you can also call `Redis RedisCluster::redis(const StringView &hash_tag)` to create a `Redis` object with a hash-tag specifying the node. In this case, the returned `Redis` object creates a new connection to Redis server.
+- Instead of host and port, you can also call `Redis RedisCluster::redis(const StringView &hash_tag)` to create a `Redis` object with a hash-tag specifying the node. In this case, the returned `Redis` object creates a new connection to Redis server. **NOTE**: the returned `Redis` object, **IS NOT THREAD SAFE!**. Also, when using the returned `Redis` object, if it throws exception, you need to destroy it, and create a new one with the `RedisCluster::redis` method.
 
 Also you can use the [hash tags](https://redis.io/topics/cluster-spec#keys-hash-tags) to send multiple-key commands.
 
@@ -1560,7 +1634,7 @@ redis_cluster.lpush("list", {"1", "2", "3"});
 std::vector<std::string> list;
 redis_cluster.lrange("list", 0, -1, std::back_inserter(list));
 
-// Pipline.
+// Pipeline.
 auto pipe = redis_cluster.pipeline("counter");
 auto replies = pipe.incr("{counter}:1").incr("{counter}:2").exec();
 
@@ -1770,6 +1844,58 @@ redis.xgroup_destroy("key", "group");
 ```
 
 If you have any problem on sending stream commands to Redis, please feel free to let me know.
+
+## Redis Recipes
+
+We can create many interesting data structures and algorithms based on Redis, such as [Redlock](https://redis.io/topics/distlock). We call these data structures and algorithms as **Redis Recipes**. *redis-plus-plus* will support some of these recipes.
+
+**NOTE**: These recipes will be first implemented on the [recipes branch](https://github.com/sewenew/redis-plus-plus/tree/recipes). I'd like to hear your feedback on the API of these recipes, and when these APIs become stable, I'll merge the code into the master branch. So APIs on the *recipes* branch are NOT stable, and might be changed in the future.
+
+### Redlock
+
+[Redlock](https://redis.io/topics/distlock) is a distributed lock based on Redis. Thanks to @wingunder's [suggestion](https://github.com/sewenew/redis-plus-plus/issues/24), *redis-plus-plus* supports Redlock now. @wingunder and I made two different implementation of Redlock: one based on Lua script, and the other based on transaction. The Lua script version should be faster, and also it has many other parameters to control the behavior. However, if you are not allowed to, or don't want to run Lua scripts inside Redis, you could try using the transaction version.
+
+#### Examples
+
+```
+auto redis1 = Redis("tcp://127.0.0.1:7000");
+auto redis2 = Redis("tcp://127.0.0.1:7001");
+auto redis3 = Redis("tcp://127.0.0.1:7002");
+
+// Lua script version:
+{
+    RedLockMutex mtx({redis1, redis2, redis3}, "resource");
+
+    // Not locked.
+    RedLock<RedLockMutex> lock(mtx, std::defer_lock);
+
+    // Try to get the lock, and keep 30 seconds.
+    // It returns the validity time of the lock, i.e. the lock is only
+    // valid in *validity_time*, after that the lock might be acquired by others.
+    // If failed to acquire the lock, throw an exception of Error type.
+    auto validity_time = lock.try_lock(std::chrono::seconds(30));
+
+    // Extend the lock before the lock expired.
+    validity_time = lock.extend_lock(std::chrono::seconds(10));
+
+    // You can unlock explicitly.
+    lock.unlock();
+} // If unlock() is not called, the lock will be unlocked automatically when it's destroied.
+
+// Transaction version:
+{
+    RedMutex mtx({redis1, redis2, redis3}, "resource");
+
+    RedLock<RedMutex> lock(mtx, std::defer_lock);
+    auto validity_time = lock.try_lock(std::chrono::seconds(30));
+    validity_time = lock.extend_lock(std::chrono::seconds(30));
+
+    // You can unlock explicitly.
+    lock.unlock();
+}
+```
+
+Please refer to the [code](https://github.com/sewenew/redis-plus-plus/blob/recipes/src/sw/redis%2B%2B/recipes/redlock.h) for detail. I'll enhance the doc in the future.
 
 ## Author
 

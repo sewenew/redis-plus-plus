@@ -34,7 +34,11 @@ public:
     void run();
 
 private:
+    void _test_uri();
+
     void _test_uri_ctor();
+
+    std::string _build_uri(const ConnectionOptions &opts) const;
 
     void _ping(Redis &instance);
 

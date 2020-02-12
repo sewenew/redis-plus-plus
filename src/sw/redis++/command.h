@@ -1406,6 +1406,12 @@ void geodist(Connection &connection,
                 const StringView &member2,
                 GeoUnit unit);
 
+inline void geohash(Connection &connection, const StringView &key, const StringView &member) {
+    connection.send("GEOHASH %b %b",
+                    key.data(), key.size(),
+                    member.data(), member.size());
+}
+
 template <typename Input>
 inline void geohash_range(Connection &connection,
                             const StringView &key,
@@ -1417,6 +1423,12 @@ inline void geohash_range(Connection &connection,
     args << "GEOHASH" << key << std::make_pair(first, last);
 
     connection.send(args);
+}
+
+inline void geopos(Connection &connection, const StringView &key, const StringView &member) {
+    connection.send("GEOPOS %b %b",
+                    key.data(), key.size(),
+                    member.data(), member.size());
 }
 
 template <typename Input>

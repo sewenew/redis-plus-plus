@@ -744,6 +744,18 @@ OptionalDouble Redis::geodist(const StringView &key,
     return reply::parse<OptionalDouble>(*reply);
 }
 
+OptionalString Redis::geohash(const StringView &key, const StringView &member) {
+    auto reply = command(cmd::geohash, key, member);
+
+    return reply::parse_leniently<OptionalString>(*reply);
+}
+
+Optional<std::pair<double, double>> Redis::geopos(const StringView &key, const StringView &member) {
+    auto reply = command(cmd::geopos, key, member);
+
+    return reply::parse_leniently<Optional<std::pair<double, double>>>(*reply);
+}
+
 OptionalLongLong Redis::georadius(const StringView &key,
                                     const std::pair<double, double> &loc,
                                     double radius,
@@ -787,6 +799,12 @@ OptionalLongLong Redis::georadiusbymember(const StringView &key,
 }
 
 // SCRIPTING commands.
+
+bool Redis::script_exists(const StringView &sha1) {
+    auto reply = command(cmd::script_exists, sha1);
+
+    return reply::parse_leniently<bool>(*reply);
+}
 
 void Redis::script_flush() {
     auto reply = command(cmd::script_flush);

@@ -47,6 +47,11 @@ void GeoCmdTest<RedisInstance>::run() {
     auto dist = _redis.geodist(key, "m1", "m4", GeoUnit::KM);
     REDIS_ASSERT(!dist, "failed to test geodist with nonexistent member");
 
+    auto hash = _redis.geohash(key, "m1");
+    REDIS_ASSERT(bool(hash) && *hash == "s1zned3z8u0", "failed to test geohash");
+    hash = _redis.geohash(key, "m9");
+    REDIS_ASSERT(!hash, "failed to test geohash");
+
     std::vector<OptionalString> hashes;
     _redis.geohash(key, {"m1", "m4"}, std::back_inserter(hashes));
     REDIS_ASSERT(hashes.size() == 2, "failed to test geohash");
@@ -59,6 +64,11 @@ void GeoCmdTest<RedisInstance>::run() {
     std::vector<Optional<std::pair<double, double>>> pos;
     _redis.geopos(key, {"m4"}, std::back_inserter(pos));
     REDIS_ASSERT(pos.size() == 1 && !(pos[0]), "failed to test geopos");
+
+    auto position = _redis.geopos(key, "m3");
+    REDIS_ASSERT(bool(position), "failed to test geopos");
+    position = _redis.geopos(key, "m4");
+    REDIS_ASSERT(!position, "failed to test geopos");
 
     auto num = _redis.georadius(key,
                                 std::make_pair(10.1, 11.1),
