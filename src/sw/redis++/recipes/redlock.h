@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 #include <functional>
-#include "../redis++.h"
+#include <sw/redis++/redis++.h>
 
 namespace sw {
 
@@ -171,6 +171,7 @@ private:
     std::chrono::time_point<std::chrono::steady_clock> _release_tp{};
 };
 
+template <typename RedisInstance>
 class RedLockMutexVessel
 {
 public:
@@ -180,8 +181,9 @@ public:
     // More than one resource can thus be locked and tracked with a single
     // instantiation of this class.
 
-    explicit RedLockMutexVessel(Redis& instance);
-    explicit RedLockMutexVessel(std::initializer_list<std::reference_wrapper<Redis>> instances);
+    explicit RedLockMutexVessel(RedisInstance& instance);
+    explicit RedLockMutexVessel(std::initializer_list<std::reference_wrapper<RedisInstance>> instances);
+    explicit RedLockMutexVessel(std::vector<std::reference_wrapper<RedisInstance>> instances);
 
     RedLockMutexVessel(const RedLockMutexVessel &) = delete;
     RedLockMutexVessel& operator=(const RedLockMutexVessel &) = delete;
@@ -227,17 +229,17 @@ public:
 
 private:
 
-    bool _lock_instance(Redis& instance,
+    bool _lock_instance(RedisInstance& instance,
                         const std::string& resource,
                         const std::string& random_string,
                         const std::chrono::milliseconds& ttl);
 
-    bool _extend_lock_instance(Redis& instance,
+    bool _extend_lock_instance(RedisInstance& instance,
                                const std::string& resource,
                                const std::string& random_string,
                                const std::chrono::milliseconds& ttl);
 
-    void _unlock_instance(Redis& instance,
+    void _unlock_instance(RedisInstance& instance,
                           const std::string& resource,
                           const std::string& random_string);
 
@@ -245,16 +247,17 @@ private:
         return _instances.size() / 2 + 1;
     }
 
-    std::vector<std::reference_wrapper<Redis>> _instances;
+    std::vector<std::reference_wrapper<RedisInstance>> _instances;
 };
 
+template <typename RedisInstance>
 class RedLockMutex
 {
 public:
-    explicit RedLockMutex(Redis& instance, const std::string& resource) :
+    explicit RedLockMutex(RedisInstance& instance, const std::string& resource) :
         _redlock_mutex(instance), _resource(resource) {}
 
-    explicit RedLockMutex(std::initializer_list<std::reference_wrapper<Redis>> instances,
+    explicit RedLockMutex(std::initializer_list<std::reference_wrapper<RedisInstance>> instances,
                     const std::string &resource) :
         _redlock_mutex(instances), _resource(resource) {}
 
@@ -283,7 +286,7 @@ public:
     std::chrono::milliseconds extend_lock(const std::string &random_string,
                      const std::chrono::milliseconds &ttl)
     {
-        const RedLockMutexVessel::LockInfo lock_info =
+        const typename RedLockMutexVessel<RedisInstance>::LockInfo lock_info =
             {true, std::chrono::steady_clock::now(), ttl, _resource, random_string};
         const auto result = _redlock_mutex.extend_lock(lock_info, ttl);
         if (!result.locked) {
@@ -306,12 +309,14 @@ public:
     }
 
 private:
-    RedLockMutexVessel _redlock_mutex;
+    RedLockMutexVessel<RedisInstance> _redlock_mutex;
     const std::string _resource;
 };
 
 }
 
 }
+
+#include "redlock.tpp"
 
 #endif // end SEWENEW_REDISPLUSPLUS_RECIPES_REDLOCK_H
