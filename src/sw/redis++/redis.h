@@ -465,9 +465,9 @@ public:
     /// Example:
     /// @code{.cpp}
     /// auto cursor = 0LL;
-    /// std::vector<std::string> keys;
+    /// std::unordered_set<std::string> keys;
     /// while (true) {
-    ///     cursor = redis.scan(cursor, "pattern:*", 10, std::back_inserter(keys));
+    ///     cursor = redis.scan(cursor, "pattern:*", 10, std::inserter(keys, keys.begin()));
     ///     if (cursor == 0) {
     ///         break;
     ///     }
@@ -1471,9 +1471,9 @@ public:
     /// Example:
     /// @code{.cpp}
     /// auto cursor = 0LL;
-    /// std::vector<std::string> fields;
+    /// std::unordered_map<std::string, std::string> kvs;
     /// while (true) {
-    ///     cursor = redis.hscan(cursor, "pattern:*", 10, std::back_inserter(fields));
+    ///     cursor = redis.hscan("hash", cursor, "pattern:*", 10, std::inserter(kvs, kvs.begin()));
     ///     if (cursor == 0) {
     ///         break;
     ///     }
@@ -1864,9 +1864,10 @@ public:
     /// Example:
     /// @code{.cpp}
     /// auto cursor = 0LL;
-    /// std::vector<std::string> members;
+    /// std::unordered_set<std::string> members;
     /// while (true) {
-    ///     cursor = redis.sscan(cursor, "pattern:*", 10, std::back_inserter(members));
+    ///     cursor = redis.sscan("set", cursor, "pattern:*",
+    ///         10, std::inserter(members, members.begin()));
     ///     if (cursor == 0) {
     ///         break;
     ///     }
@@ -2790,9 +2791,10 @@ public:
     /// Example:
     /// @code{.cpp}
     /// auto cursor = 0LL;
-    /// std::vector<std::string> members;
+    /// std::unordered_map<std::string, double> members;
     /// while (true) {
-    ///     cursor = redis.zscan(cursor, "pattern:*", 10, std::back_inserter(members));
+    ///     cursor = redis.zscan("zset", cursor, "pattern:*",
+    ///         10, std::inserter(members, members.begin()));
     ///     if (cursor == 0) {
     ///         break;
     ///     }

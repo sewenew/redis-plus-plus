@@ -970,11 +970,11 @@ redis.smembers("s1", std::back_inserter(s_vec));
 auto cursor = 0LL;
 auto pattern = "*pattern*";
 auto count = 5;
-std::vector<std::string> scan_vec;
+std::unordered_set<std::string> keys;
 while (true) {
-    cursor = redis.scan(cursor, pattern, count, std::back_inserter(scan_vec));
+    cursor = redis.scan(cursor, pattern, count, std::inserter(keys, keys.begin()));
     // Default pattern is "*", and default count is 10
-    // cursor = redis.scan(cursor, std::back_inserter(scan_vec));
+    // cursor = redis.scan(cursor, std::inserter(keys, keys.begin()));
 
     if (cursor == 0) {
         break;

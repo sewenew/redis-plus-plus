@@ -18,6 +18,7 @@
 #define SEWENEW_REDISPLUSPLUS_TEST_HASH_CMDS_TEST_HPP
 
 #include <unordered_map>
+#include <map>
 #include "utils.h"
 
 namespace sw {
@@ -158,10 +159,10 @@ void HashCmdTest<RedisInstance>::_test_hscan() {
 
     REDIS_ASSERT(item_map == items, "failed to test hscan with pattern and count");
 
-    std::vector<std::pair<std::string, std::string>> item_vec;
+    std::map<std::string, std::string> item_vec;
     cursor = 0;
     while (true) {
-        cursor = _redis.hscan(key, cursor, std::back_inserter(item_vec));
+        cursor = _redis.hscan(key, cursor, std::inserter(item_vec, item_vec.begin()));
         if (cursor == 0) {
             break;
         }
