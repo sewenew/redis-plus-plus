@@ -237,10 +237,10 @@ timeval Connection::Connector::_to_timeval(const std::chrono::milliseconds &dur)
     auto sec = std::chrono::duration_cast<std::chrono::seconds>(dur);
     auto msec = std::chrono::duration_cast<std::chrono::microseconds>(dur - sec);
 
-    return {
-            static_cast<std::time_t>(sec.count()),
-            static_cast<suseconds_t>(msec.count())
-    };
+    timeval t;
+    t.tv_sec = sec.count();
+    t.tv_usec = msec.count();
+    return t;
 }
 
 void swap(Connection &lhs, Connection &rhs) noexcept {

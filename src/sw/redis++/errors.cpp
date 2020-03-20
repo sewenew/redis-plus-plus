@@ -72,8 +72,12 @@ void throw_error(redisContext &context, const std::string &err_info) {
         throw Error(err_msg);
         break;
 
+    case REDIS_ERR_TIMEOUT:
+        throw TimeoutError(err_msg);
+        break;
+
     default:
-        throw Error(err_info + ": Unknown error code");
+        throw Error("unknown error code: " + err_msg);
     }
 }
 
