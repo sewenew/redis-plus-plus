@@ -49,7 +49,7 @@ void throw_error(redisContext &context, const std::string &err_info) {
 
     switch (err_code) {
     case REDIS_ERR_IO:
-        if (errno == EAGAIN || errno == EINTR) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK || errno == ETIMEDOUT) {
             throw TimeoutError(err_msg);
         } else {
             throw IoError(err_msg);
@@ -72,9 +72,11 @@ void throw_error(redisContext &context, const std::string &err_info) {
         throw Error(err_msg);
         break;
 
+#ifdef REDIS_ERR_TIMEOUT
     case REDIS_ERR_TIMEOUT:
         throw TimeoutError(err_msg);
         break;
+#endif
 
     default:
         throw Error("unknown error code: " + err_msg);
