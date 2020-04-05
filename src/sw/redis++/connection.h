@@ -80,6 +80,14 @@ private:
     auto _split_path(const std::string &path) const
         -> std::tuple<std::string, int>;
 
+    template <typename T>
+    void _set_optional_key(const std::string &options_uri, const std::string &key, T &field) const;
+
+    std::optional<std::string> _extract_string_option(const std::string &options_uri, const std::string &key) const;
+
+    auto _split_additional_opts(const std::string &uri) const
+        -> std::tuple<bool, std::chrono::milliseconds, std::chrono::milliseconds>;
+
     void _set_auth_opts(const std::string &auth, ConnectionOptions &opts) const;
 
     void _set_tcp_opts(const std::string &path, ConnectionOptions &opts) const;

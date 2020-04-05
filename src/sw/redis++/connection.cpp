@@ -32,6 +32,9 @@ ConnectionOptions ConnectionOptions::_parse_uri(const std::string &uri) const {
     std::string type;
     std::string auth;
     std::string path;
+    bool keep_alive;
+    std::chrono::milliseconds connect_timeout;
+    std::chrono::milliseconds socket_timeout;
     std::tie(type, auth, path) = _split_uri(uri);
 
     ConnectionOptions opts;
@@ -40,8 +43,12 @@ ConnectionOptions ConnectionOptions::_parse_uri(const std::string &uri) const {
 
     auto db = 0;
     std::tie(path, db) = _split_path(path);
-
     opts.db = db;
+
+    std::tie(keep_alive, connect_timeout, socket_timeout) = _split_additional_opts(uri);
+    opts.keep_alive = keep_alive;
+    opts.connect_timeout = connect_timeout;
+    opts.socket_timeout = socket_timeout;
 
     if (type == "tcp") {
         _set_tcp_opts(path, opts);
@@ -50,7 +57,6 @@ ConnectionOptions ConnectionOptions::_parse_uri(const std::string &uri) const {
     } else {
         throw Error("invalid URI: invalid type");
     }
-
     return opts;
 }
 
@@ -92,6 +98,54 @@ auto ConnectionOptions::_split_path(const std::string &path) const
     // No db number specified, and use default one, i.e. 0.
     return std::make_tuple(path, 0);
 }
+
+template <>
+void ConnectionOptions::_set_optional_key<bool>(const std::string &options_uri, const std::string &key, bool &field) const {
+    if (auto option = _extract_string_option(options_uri, key)) {
+        if (option != "true" && option != "false") {
+            throw Error("Bad formatted URI: unable to parse option '" + *option + "' for " + key);
+        }
+        field = option == "true" ? true : false;
+    }
+    // that option was not given.
+}
+
+template <>
+void ConnectionOptions::_set_optional_key<std::chrono::milliseconds>(const std::string &options_uri, const std::string &key, std::chrono::milliseconds &field) const {
+    if (auto option = _extract_string_option(options_uri, key)) {
+        try {
+            field = std::chrono::milliseconds(std::stoi(*option));
+        } catch (const std::exception &) {
+            throw Error("Bad formatted URI: unable to parse option '" + *option + "' for " + key);
+        }
+    }
+    // that option was not given.
+}
+
+std::optional<std::string> ConnectionOptions::_extract_string_option(const std::string &options_uri, const std::string &key) const {
+    if (auto pos = options_uri.find(key); pos != std::string::npos) {
+        // take string after key and equal sign. Equal sign must follow the key, if not we will have a bad formatting exception
+        auto option = options_uri.substr(pos + key.length() + 1); 
+        auto option_end = option.find("&");
+        return option.substr(0, option_end != std::string::npos ? option_end : option.length()); // the last option has no '&'
+    }
+    return {};
+}
+
+auto ConnectionOptions::_split_additional_opts(const std::string &uri) const
+    -> std::tuple<bool, std::chrono::milliseconds, std::chrono::milliseconds> {
+        ConnectionOptions opts;
+        auto pos = uri.find("?");
+        if (pos == std::string::npos) {
+            // No additional options given. Return default one
+            return std::make_tuple(opts.keep_alive, opts.connect_timeout, opts.socket_timeout);
+        }
+        auto options_uri = uri.substr(pos + 1);
+        _set_optional_key(uri, "keep_alive", opts.keep_alive);
+        _set_optional_key(uri, "connect_timeout", opts.connect_timeout);
+        _set_optional_key(uri, "socket_timeout", opts.socket_timeout);
+        return std::make_tuple(opts.keep_alive, opts.connect_timeout, opts.socket_timeout);
+    }
 
 void ConnectionOptions::_set_auth_opts(const std::string &auth, ConnectionOptions &opts) const {
     if (auth.empty()) {
@@ -236,11 +290,10 @@ void Connection::Connector::_enable_keep_alive(redisContext &ctx) const {
 timeval Connection::Connector::_to_timeval(const std::chrono::milliseconds &dur) const {
     auto sec = std::chrono::duration_cast<std::chrono::seconds>(dur);
     auto msec = std::chrono::duration_cast<std::chrono::microseconds>(dur - sec);
-
-    timeval t;
-    t.tv_sec = sec.count();
-    t.tv_usec = msec.count();
-    return t;
+	timeval t;
+	t.tv_sec = sec.count();
+	t.tv_usec = msec.count();
+	return t;
 }
 
 void swap(Connection &lhs, Connection &rhs) noexcept {
