@@ -39,7 +39,10 @@ ConnectionOptions ConnectionOptions::_parse_uri(const std::string &uri) const {
     _set_auth_opts(auth, opts);
 
     auto db = 0;
-    std::tie(path, db) = _split_path(path);
+    std::string parameter_string;
+    std::tie(path, db, parameter_string) = _split_path(path);
+
+    _parse_parameters(parameter_string, opts);
 
     opts.db = db;
 
@@ -52,6 +55,102 @@ ConnectionOptions ConnectionOptions::_parse_uri(const std::string &uri) const {
     }
 
     return opts;
+}
+
+void ConnectionOptions::_parse_parameters(const std::string &parameter_string,
+                                            ConnectionOptions &opts) const {
+    auto parameters = _split(parameter_string, "&");
+    if (parameters.empty()) {
+        // No parameters
+        return;
+    }
+
+    for (const auto &parameter : parameters) {
+        auto kv_pair = _split(parameter, "=");
+        if (kv_pair.size() != 2) {
+            throw Error("invalid option: not a key-value pair: " + parameter);
+        }
+
+        const auto &key = kv_pair[0];
+        const auto &val = kv_pair[1];
+        _set_option(key, val, opts);
+    }
+}
+
+void ConnectionOptions::_set_option(const std::string &key,
+                                    const std::string &val,
+                                    ConnectionOptions &opts) const {
+    if (key == "keep_alive") {
+        opts.keep_alive = _parse_bool_option(val);
+    } else if (key == "connect_timeout") {
+        opts.connect_timeout = _parse_timeout_option(val);
+    } else if (key == "socket_timeout") {
+        opts.socket_timeout = _parse_timeout_option(val);
+    } else {
+        throw Error("unknown uri parameter");
+    }
+}
+
+bool ConnectionOptions::_parse_bool_option(const std::string &str) const {
+    if (str == "true") {
+        return true;
+    } else if (str == "false") {
+        return false;
+    } else {
+        throw Error("invalid uri parameter of bool type: " + str);
+    }
+}
+
+std::chrono::milliseconds ConnectionOptions::_parse_timeout_option(const std::string &str) const {
+    std::size_t timeout = 0;
+    std::string unit;
+    try {
+        std::size_t pos = 0;
+        timeout = std::stoul(str, &pos);
+        unit = str.substr(pos);
+    } catch (const std::exception &e) {
+        throw Error("invalid uri parameter of timeout type: " + str);
+    }
+
+    if (unit == "ms") {
+        return std::chrono::milliseconds(timeout);
+    } else if (unit == "s") {
+        return std::chrono::seconds(timeout);
+    } else if (unit == "m") {
+        return std::chrono::minutes(timeout);
+    } else {
+        throw Error("unknown timeout unit: " + unit);
+    }
+}
+
+std::vector<std::string> ConnectionOptions::_split(const std::string &str,
+                                                    const std::string &delimiter) const {
+    if (str.empty()) {
+        return {};
+    }
+
+    std::vector<std::string> fields;
+
+    if (delimiter.empty()) {
+        std::transform(str.begin(), str.end(), std::back_inserter(fields),
+                [](char c) { return std::string(1, c); });
+        return fields;
+    }
+
+    std::string::size_type pos = 0;
+    std::string::size_type idx = 0;
+    while (true) {
+        pos = str.find(delimiter, idx);
+        if (pos == std::string::npos) {
+            fields.push_back(str.substr(idx));
+            break;
+        }
+
+        fields.push_back(str.substr(idx, pos - idx));
+        idx = pos + delimiter.size();
+    }
+
+    return fields;
 }
 
 auto ConnectionOptions::_split_uri(const std::string &uri) const
@@ -76,21 +175,27 @@ auto ConnectionOptions::_split_uri(const std::string &uri) const
 }
 
 auto ConnectionOptions::_split_path(const std::string &path) const
-    -> std::tuple<std::string, int> {
+    -> std::tuple<std::string, int, std::string> {
+    auto parameter_pos = path.rfind("?");
+    std::string parameter_string;
+    if (parameter_pos != std::string::npos) {
+        parameter_string = path.substr(parameter_pos + 1);
+    }
+
     auto pos = path.rfind("/");
     if (pos != std::string::npos) {
         // Might specified a db number.
         try {
             auto db = std::stoi(path.substr(pos + 1));
 
-            return std::make_tuple(path.substr(0, pos), db);
+            return std::make_tuple(path.substr(0, pos), db, parameter_string);
         } catch (const std::exception &) {
             // Not a db number, and it might be a path to unix domain socket.
         }
     }
 
     // No db number specified, and use default one, i.e. 0.
-    return std::make_tuple(path, 0);
+    return std::make_tuple(path.substr(0, parameter_pos), 0, parameter_string);
 }
 
 void ConnectionOptions::_set_auth_opts(const std::string &auth, ConnectionOptions &opts) const {

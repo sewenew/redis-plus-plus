@@ -78,7 +78,18 @@ private:
         -> std::tuple<std::string, std::string, std::string>;
 
     auto _split_path(const std::string &path) const
-        -> std::tuple<std::string, int>;
+        -> std::tuple<std::string, int, std::string>;
+
+    void _parse_parameters(const std::string &parameter_string,
+                            ConnectionOptions &opts) const;
+
+    void _set_option(const std::string &key, const std::string &val, ConnectionOptions &opts) const;
+
+    bool _parse_bool_option(const std::string &str) const;
+
+    std::chrono::milliseconds _parse_timeout_option(const std::string &str) const;
+
+    std::vector<std::string> _split(const std::string &str, const std::string &delimiter) const;
 
     void _set_auth_opts(const std::string &auth, ConnectionOptions &opts) const;
 
