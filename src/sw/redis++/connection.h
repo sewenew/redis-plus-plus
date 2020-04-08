@@ -20,6 +20,7 @@
 #include <cerrno>
 #include <cstring>
 #include <memory>
+#include <vector>
 #include <string>
 #include <sstream>
 #include <chrono>
