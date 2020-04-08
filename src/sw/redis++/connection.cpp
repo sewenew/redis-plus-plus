@@ -17,6 +17,7 @@
 #include "connection.h"
 #include <cassert>
 #include <tuple>
+#include <algorithm>
 #include "reply.h"
 #include "command.h"
 #include "command_args.h"
