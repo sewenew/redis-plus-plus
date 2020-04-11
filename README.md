@@ -538,7 +538,15 @@ The *scheme* and *host* parts are required, and others are optional. If you're c
 
 **NOTE**: [Redis 6.0 supports ACL](https://redis.io/topics/acl), and you can specify a username for the connection. However, before Redis 6.0, you cannot do that.
 
-In order to specify other options, e.g. `socket_timeout`, you need to use `ConnectionOptions` and `ConnectionPoolOptions`.
+Also, the following connection options can be specified with the query string of URI, e.g. *tcp://127.0.0.1?keep_alive=true&socket_timeout=100ms&connect_timeout=100ms*:
+
+- `ConnectionOptions::keep_alive`: *false* by default.
+- `ConnectionOptions::socket_timeout`: *0ms* by default.
+- `ConnectionOptions::connect_timeout`: *0ms* by default.
+
+**NOTE**: Options specified in query string are case-sensitive, i.e. all key-value pairs must be in lowercase.
+
+So far, you cannot specify connection pool options with URI, e.g. `ConnectionPoolOptions::size`.
 
 ```C++
 // Single connection to the given host and port.
@@ -553,8 +561,14 @@ Redis redis3("tcp://pass@127.0.0.1");
 // Connect to Redis and select the 2nd (db number starts from 0) database.
 Redis redis4("tcp://127.0.0.1:6379/2");
 
+// Set keep_alive option to true with query string.
+Redis redis5("tcp://127.0.0.1:6379/2?keep_alive=true");
+
+// Set socket_timeout to 50 milliseconds, and connect_timeout to 1 second with query string.
+Redis redis6("tcp://127.0.0.1?socket_timeout=50ms&connect_timeout=1s");
+
 // Connect to Unix Domain Socket.
-Redis redis5("unix://path/to/socket");
+Redis redis7("unix://path/to/socket");
 ```
 
 #### Lazily Create Connection
