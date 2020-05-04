@@ -153,6 +153,15 @@ public:
     /// @see https://redis.io/commands/auth
     void auth(const StringView &password);
 
+    /// @brief Send user and password to Redis.
+    /// @param user User name.
+    /// @param password Password.
+    /// @note Normally, you should not call this method.
+    ///       Instead, you should set password with `ConnectionOptions` or URI.
+    ///       Also this overload only works with Redis 6.0 or later.
+    /// @see https://redis.io/commands/auth
+    void auth(const StringView &user, const StringView &password);
+
     /// @brief Ask Redis to return the given message.
     /// @param msg Message to be sent.
     /// @return Return the given message.

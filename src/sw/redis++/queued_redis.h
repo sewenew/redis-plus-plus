@@ -67,7 +67,12 @@ public:
     // CONNECTION commands.
 
     QueuedRedis& auth(const StringView &password) {
-        return command(cmd::auth, password);
+        return command<void (*)(Connection &, const StringView &)>(cmd::auth, password);
+    }
+
+    QueuedRedis& auth(const StringView &user, const StringView &password) {
+        return command<void (*)(Connection &, const StringView &, const StringView &)>(
+                        cmd::auth, user, password);
     }
 
     QueuedRedis& echo(const StringView &msg) {

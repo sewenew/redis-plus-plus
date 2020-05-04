@@ -37,6 +37,12 @@ inline void auth(Connection &connection, const StringView &password) {
     connection.send("AUTH %b", password.data(), password.size());
 }
 
+inline void auth(Connection &connection, const StringView &user, const StringView &password) {
+    connection.send("AUTH %b %b",
+                    user.data(), user.size(),
+                    password.data(), password.size());
+}
+
 inline void echo(Connection &connection, const StringView &msg) {
     connection.send("ECHO %b", msg.data(), msg.size());
 }

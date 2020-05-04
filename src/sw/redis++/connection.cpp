@@ -428,11 +428,18 @@ void Connection::_set_options() {
 }
 
 void Connection::_auth() {
-    if (_opts.password.empty()) {
+    const std::string DEFAULT_USER = "default";
+
+    if (_opts.user == DEFAULT_USER && _opts.password.empty()) {
         return;
     }
 
-    cmd::auth(*this, _opts.password);
+    if (_opts.user == DEFAULT_USER) {
+        cmd::auth(*this, _opts.password);
+    } else {
+        // Redis 6.0 or latter
+        cmd::auth(*this, _opts.user, _opts.password);
+    }
 
     auto reply = recv();
 

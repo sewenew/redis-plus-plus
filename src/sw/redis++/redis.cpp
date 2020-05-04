@@ -45,7 +45,14 @@ Subscriber Redis::subscriber() {
 // CONNECTION commands.
 
 void Redis::auth(const StringView &password) {
-    auto reply = command(cmd::auth, password);
+    auto reply = command<void (*)(Connection &, const StringView &)>(cmd::auth, password);
+
+    reply::parse<void>(*reply);
+}
+
+void Redis::auth(const StringView &user, const StringView &password) {
+    auto reply = command<void (*)(Connection &, const StringView &, const StringView &)>(
+                        cmd::auth, user, password);
 
     reply::parse<void>(*reply);
 }
