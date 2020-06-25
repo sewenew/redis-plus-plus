@@ -12,7 +12,7 @@ endif()
 
 message(STATUS "The CXX standard is c++${REDIS_PLUS_PLUS_CXX_STANDARD}")
 
-set(CMAKE_CXX_FLAGS "-std=c++${REDIS_PLUS_PLUS_CXX_STANDARD} -Wall -W -Werror -fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++${REDIS_PLUS_PLUS_CXX_STANDARD} -Wall -W -Werror -fPIC")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
