@@ -63,10 +63,22 @@ GuardedConnection ShardsPool::fetch(const StringView &key) {
     return _fetch(slot);
 }
 
+GuardedConnection ShardsPool::clone(const StringView &key) {
+    auto slot = _slot(key);
+
+    return _clone(slot);
+}
+
 GuardedConnection ShardsPool::fetch() {
     auto slot = _slot();
 
     return _fetch(slot);
+}
+
+GuardedConnection ShardsPool::clone() {
+    auto slot = _slot();
+
+    return _clone(slot);
 }
 
 GuardedConnection ShardsPool::fetch(const Node &node) {
@@ -294,6 +306,19 @@ GuardedConnection ShardsPool::_fetch(Slot slot) {
     assert(pool);
 
     return GuardedConnection(pool);
+}
+
+GuardedConnection ShardsPool::_clone(Slot slot) {
+    ConnectionPoolSPtr pool;
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+
+        pool = _get_pool(slot);
+    }
+
+    assert(pool);
+
+    return GuardedConnection(std::make_shared<ConnectionPool>(pool->clone()));
 }
 
 ConnectionOptions ShardsPool::_connection_options(Slot slot) {

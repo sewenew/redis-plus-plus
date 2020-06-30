@@ -27,23 +27,38 @@ namespace redis {
 RedisCluster::RedisCluster(const std::string &uri) : RedisCluster(ConnectionOptions(uri)) {}
 
 Redis RedisCluster::redis(const StringView &hash_tag) {
-    auto opts = _pool.connection_options(hash_tag);
-    return Redis(std::make_shared<Connection>(opts));
+    auto connection = _pool.fetch(hash_tag);
+    return Redis(std::make_shared<GuardedConnection>(std::move(connection)));
 }
 
-Pipeline RedisCluster::pipeline(const StringView &hash_tag) {
-    auto opts = _pool.connection_options(hash_tag);
-    return Pipeline(std::make_shared<Connection>(opts));
+Pipeline RedisCluster::pipeline(const StringView &hash_tag, bool new_connection) {
+    if (new_connection) {
+        auto connection = _pool.clone(hash_tag);
+        return Pipeline(std::make_shared<GuardedConnection>(std::move(connection)));
+    } else {
+        auto connection = _pool.fetch(hash_tag);
+        return Pipeline(std::make_shared<GuardedConnection>(std::move(connection)));
+    }
 }
 
-Transaction RedisCluster::transaction(const StringView &hash_tag, bool piped) {
-    auto opts = _pool.connection_options(hash_tag);
-    return Transaction(std::make_shared<Connection>(opts), piped);
+Transaction RedisCluster::transaction(const StringView &hash_tag, bool piped, bool new_connection) {
+    if (new_connection) {
+        auto connection = _pool.clone(hash_tag);
+        return Transaction(std::make_shared<GuardedConnection>(std::move(connection)), piped);
+    } else {
+        auto connection = _pool.fetch(hash_tag);
+        return Transaction(std::make_shared<GuardedConnection>(std::move(connection)), piped);
+    }
 }
 
-Subscriber RedisCluster::subscriber() {
-    auto opts = _pool.connection_options();
-    return Subscriber(Connection(opts));
+Subscriber RedisCluster::subscriber(bool new_connection) {
+    if (new_connection) {
+        auto connection = _pool.clone();
+        return Subscriber(std::make_shared<GuardedConnection>(std::move(connection)));
+    } else {
+        auto connection = _pool.fetch();
+        return Subscriber(std::make_shared<GuardedConnection>(std::move(connection)));
+    }
 }
 
 // KEY commands.

@@ -50,8 +50,9 @@ public:
     /// @see `ConnectionOptions`
     /// @see `ConnectionPoolOptions`
     /// @see https://github.com/sewenew/redis-plus-plus#connection
-    Redis(const ConnectionOptions &connection_opts,
-            const ConnectionPoolOptions &pool_opts = {}) : _pool(pool_opts, connection_opts) {}
+    explicit Redis(const ConnectionOptions &connection_opts,
+            const ConnectionPoolOptions &pool_opts = {}) :
+                _pool(std::make_shared<ConnectionPool>(pool_opts, connection_opts)) {}
 
     /// @brief Construct `Redis` instance with URI.
     /// @param uri URI, e.g. 'tcp://127.0.0.1', 'tcp://127.0.0.1:6379', or 'unix://path/to/socket'.
@@ -77,7 +78,9 @@ public:
             Role role,
             const ConnectionOptions &connection_opts,
             const ConnectionPoolOptions &pool_opts = {}) :
-                _pool(SimpleSentinel(sentinel, master_name, role), pool_opts, connection_opts) {}
+                _pool(std::make_shared<ConnectionPool>(SimpleSentinel(sentinel, master_name, role),
+                                                        pool_opts,
+                                                        connection_opts)) {}
 
     /// @brief `Redis` is not copyable.
     Redis(const Redis &) = delete;
@@ -92,29 +95,32 @@ public:
     Redis& operator=(Redis &&) = default;
 
     /// @brief Create a pipeline.
+    /// @param new_connection Whether creating a `Pipeline` object in a new connection.
     /// @return The created pipeline.
     /// @note Instead of picking a connection from the underlying connection pool,
     ///       this method will create a new connection to Redis. So it's not a cheap operation,
     ///       and you'd better reuse the returned object as much as possible.
     /// @see https://github.com/sewenew/redis-plus-plus#pipeline
-    Pipeline pipeline();
+    Pipeline pipeline(bool new_connection = true);
 
     /// @brief Create a transaction.
     /// @param piped Whether commands in a transaction should be sent in a pipeline to reduce RTT.
+    /// @param new_connection Whether creating a `Pipeline` object in a new connection.
     /// @return The created transaction.
     /// @note Instead of picking a connection from the underlying connection pool,
     ///       this method will create a new connection to Redis. So it's not a cheap operation,
     ///       and you'd better reuse the returned object as much as possible.
     /// @see https://github.com/sewenew/redis-plus-plus#transaction
-    Transaction transaction(bool piped = false);
+    Transaction transaction(bool piped = false, bool new_connection = true);
 
     /// @brief Create a subscriber.
+    /// @param new_connection Whether creating a `Subscriber` object in a new connection.
     /// @return The created subscriber.
     /// @note Instead of picking a connection from the underlying connection pool,
     ///       this method will create a new connection to Redis. So it's not a cheap operation,
     ///       and you'd better reuse the returned object as much as possible.
     /// @see https://github.com/sewenew/redis-plus-plus#publishsubscribe
-    Subscriber subscriber();
+    Subscriber subscriber(bool new_connection = true);
 
     template <typename Cmd, typename ...Args>
     auto command(Cmd cmd, Args &&...args)
@@ -3509,27 +3515,13 @@ public:
     long long xtrim(const StringView &key, long long count, bool approx = true);
 
 private:
-    class ConnectionPoolGuard {
-    public:
-        ConnectionPoolGuard(ConnectionPool &pool,
-                            Connection &connection) : _pool(pool), _connection(connection) {}
-
-        ~ConnectionPoolGuard() {
-            _pool.release(std::move(_connection));
-        }
-
-    private:
-        ConnectionPool &_pool;
-        Connection &_connection;
-    };
-
     template <typename Impl>
     friend class QueuedRedis;
 
     friend class RedisCluster;
 
     // For internal use.
-    explicit Redis(const ConnectionSPtr &connection);
+    explicit Redis(const GuardedConnectionSPtr &connection);
 
     template <std::size_t ...Is, typename ...Args>
     ReplyUPtr _command(const StringView &cmd_name, const IndexSequence<Is...> &, Args &&...args) {
@@ -3551,13 +3543,13 @@ private:
     // Pool Mode.
     // Public constructors create a *Redis* instance with a pool.
     // In this case, *_connection* is a null pointer, and is never used.
-    ConnectionPool _pool;
+    ConnectionPoolSPtr _pool;
 
     // Single Connection Mode.
-    // Private constructor creats a *Redis* instance with a single connection.
+    // Private constructor creates a *Redis* instance with a single connection.
     // This is used when we create Transaction, Pipeline and Subscriber.
     // In this case, *_pool* is empty, and is never used.
-    ConnectionSPtr _connection;
+    GuardedConnectionSPtr _connection;
 };
 
 }

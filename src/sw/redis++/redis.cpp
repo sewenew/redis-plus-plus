@@ -26,20 +26,35 @@ namespace redis {
 
 Redis::Redis(const std::string &uri) : Redis(ConnectionOptions(uri)) {}
 
-Redis::Redis(const ConnectionSPtr &connection) : _connection(connection) {
+Redis::Redis(const GuardedConnectionSPtr &connection) : _connection(connection) {
     assert(_connection);
 }
 
-Pipeline Redis::pipeline() {
-    return Pipeline(std::make_shared<Connection>(_pool.create()));
+Pipeline Redis::pipeline(bool new_connection) {
+    if (new_connection) {
+        auto pool = std::make_shared<ConnectionPool>(_pool->clone());
+        return Pipeline(std::make_shared<GuardedConnection>(pool));
+    } else {
+        return Pipeline(std::make_shared<GuardedConnection>(_pool));
+    }
 }
 
-Transaction Redis::transaction(bool piped) {
-    return Transaction(std::make_shared<Connection>(_pool.create()), piped);
+Transaction Redis::transaction(bool piped, bool new_connection) {
+    if (new_connection) {
+        auto pool = std::make_shared<ConnectionPool>(_pool->clone());
+        return Transaction(std::make_shared<GuardedConnection>(pool), piped);
+    } else {
+        return Transaction(std::make_shared<GuardedConnection>(_pool), piped);
+    }
 }
 
-Subscriber Redis::subscriber() {
-    return Subscriber(_pool.create());
+Subscriber Redis::subscriber(bool new_connection) {
+    if (new_connection) {
+        auto pool = std::make_shared<ConnectionPool>(_pool->clone());
+        return Subscriber(std::make_shared<GuardedConnection>(pool));
+    } else {
+        return Subscriber(std::make_shared<GuardedConnection>(_pool));
+    }
 }
 
 // CONNECTION commands.

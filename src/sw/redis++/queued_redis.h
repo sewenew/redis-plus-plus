@@ -19,9 +19,11 @@
 
 #include <cassert>
 #include <chrono>
+#include <memory>
 #include <initializer_list>
 #include <vector>
 #include "connection.h"
+#include "connection_pool.h"
 #include "utils.h"
 #include "reply.h"
 #include "command.h"
@@ -1909,7 +1911,19 @@ private:
     friend class RedisCluster;
 
     template <typename ...Args>
-    QueuedRedis(const ConnectionSPtr &connection, Args &&...args);
+    QueuedRedis(const GuardedConnectionSPtr &connection, Args &&...args);
+
+    Connection& _connection() {
+        assert(_guarded_connection);
+
+        return _guarded_connection->connection();
+    }
+
+    const Connection& _connection() const {
+        assert(_guarded_connection);
+
+        return _guarded_connection->connection();
+    }
 
     void _sanity_check() const;
 
@@ -1924,7 +1938,7 @@ private:
                             Func rewriter,
                             std::vector<ReplyUPtr> &replies) const;
 
-    ConnectionSPtr _connection;
+    GuardedConnectionSPtr _guarded_connection;
 
     Impl _impl;
 

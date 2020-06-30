@@ -30,34 +30,6 @@ namespace sw {
 
 namespace redis {
 
-using ConnectionPoolSPtr = std::shared_ptr<ConnectionPool>;
-
-class GuardedConnection {
-public:
-    GuardedConnection(const ConnectionPoolSPtr &pool) : _pool(pool),
-                                                        _connection(_pool->fetch()) {
-        assert(!_connection.broken());
-    }
-
-    GuardedConnection(const GuardedConnection &) = delete;
-    GuardedConnection& operator=(const GuardedConnection &) = delete;
-
-    GuardedConnection(GuardedConnection &&) = default;
-    GuardedConnection& operator=(GuardedConnection &&) = default;
-
-    ~GuardedConnection() {
-        _pool->release(std::move(_connection));
-    }
-
-    Connection& connection() {
-        return _connection;
-    }
-
-private:
-    ConnectionPoolSPtr _pool;
-    Connection _connection;
-};
-
 class ShardsPool {
 public:
     ShardsPool() = default;
@@ -76,8 +48,12 @@ public:
     // Fetch a connection by key.
     GuardedConnection fetch(const StringView &key);
 
+    GuardedConnection clone(const StringView &key);
+
     // Randomly pick a connection.
     GuardedConnection fetch();
+
+    GuardedConnection clone();
 
     // Fetch a connection by node.
     GuardedConnection fetch(const Node &node);
@@ -110,6 +86,8 @@ private:
     ConnectionPoolSPtr& _get_pool(Slot slot);
 
     GuardedConnection _fetch(Slot slot);
+
+    GuardedConnection _clone(Slot slot);
 
     ConnectionOptions _connection_options(Slot slot);
 

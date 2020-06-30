@@ -23,15 +23,15 @@ namespace redis {
 
 template <typename Impl>
 template <typename ...Args>
-QueuedRedis<Impl>::QueuedRedis(const ConnectionSPtr &connection, Args &&...args) :
-            _connection(connection),
+QueuedRedis<Impl>::QueuedRedis(const GuardedConnectionSPtr &connection, Args &&...args) :
+            _guarded_connection(connection),
             _impl(std::forward<Args>(args)...) {
-    assert(_connection);
+    assert(_guarded_connection);
 }
 
 template <typename Impl>
 Redis QueuedRedis<Impl>::redis() {
-    return Redis(_connection);
+    return Redis(_guarded_connection);
 }
 
 template <typename Impl>
@@ -42,7 +42,7 @@ auto QueuedRedis<Impl>::command(Cmd cmd, Args &&...args)
     try {
         _sanity_check();
 
-        _impl.command(*_connection, cmd, std::forward<Args>(args)...);
+        _impl.command(_connection(), cmd, std::forward<Args>(args)...);
 
         ++_cmd_num;
     } catch (const Error &e) {
@@ -90,7 +90,7 @@ QueuedReplies QueuedRedis<Impl>::exec() {
     try {
         _sanity_check();
 
-        auto replies = _impl.exec(*_connection, _cmd_num);
+        auto replies = _impl.exec(_connection(), _cmd_num);
 
         _rewrite_replies(replies);
 
@@ -108,7 +108,7 @@ void QueuedRedis<Impl>::discard() {
     try {
         _sanity_check();
 
-        _impl.discard(*_connection, _cmd_num);
+        _impl.discard(_connection(), _cmd_num);
 
         _reset();
     } catch (const Error &e) {
@@ -123,7 +123,7 @@ void QueuedRedis<Impl>::_sanity_check() const {
         throw Error("Not in valid state");
     }
 
-    if (_connection->broken()) {
+    if (_connection().broken()) {
         throw Error("Connection is broken");
     }
 }
