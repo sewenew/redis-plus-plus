@@ -154,7 +154,9 @@ public:
     GuardedConnection& operator=(GuardedConnection &&) = default;
 
     ~GuardedConnection() {
-        _pool->release(std::move(_connection));
+        if (_pool) {
+            _pool->release(std::move(_connection));
+        }
     }
 
     Connection& connection() {
