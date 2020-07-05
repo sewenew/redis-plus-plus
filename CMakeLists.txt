@@ -34,6 +34,15 @@ target_include_directories(${SHARED_LIB} PUBLIC ${HIREDIS_HEADER})
 find_library(HIREDIS_LIB hiredis)
 target_link_libraries(${SHARED_LIB} ${HIREDIS_LIB})
 
+option(REDIS_PLUS_PLUS_USE_TLS "Build with TLS support" OFF)
+
+if (REDIS_PLUS_PLUS_USE_TLS)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DREDIS_PLUS_PLUS_USE_TLS")
+
+    find_library(HIREDIS_TLS_LIB hiredis_ssl)
+    target_link_libraries(${SHARED_LIB} ${HIREDIS_TLS_LIB})
+endif()
+
 set_target_properties(${STATIC_LIB} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
 set_target_properties(${SHARED_LIB} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
 
