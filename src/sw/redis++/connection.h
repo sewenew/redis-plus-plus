@@ -75,9 +75,7 @@ public:
 
 #ifdef REDIS_PLUS_PLUS_USE_TLS
 
-    bool tls_enabled = false;
-
-    tls::TlsOptions tls_options;
+    tls::TlsOptions tls;
 
 #endif
 

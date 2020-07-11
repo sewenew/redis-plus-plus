@@ -32,6 +32,7 @@ namespace tls {
 
 // Disable auto initializing OpenSSL.
 // You should call it only once and call it before any sw::redis::Redis operation.
+// Otherwise, the behavior is undefined.
 void disable_auto_init();
 
 class TlsInit {
@@ -40,6 +41,8 @@ public:
 };
 
 struct TlsOptions {
+    bool enabled = false;
+
     std::string cacert;
 
     std::string cacertdir;
@@ -50,6 +53,10 @@ struct TlsOptions {
 
     std::string sni;
 };
+
+inline bool enabled(const TlsOptions &opts) {
+    return opts.enabled;
+}
 
 struct TlsContextDeleter {
     void operator()(redisSSLContext *ssl) const {
