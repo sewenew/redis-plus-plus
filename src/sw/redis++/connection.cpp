@@ -361,14 +361,11 @@ Connection::Connection(const ConnectionOptions &opts) :
             _opts(opts) {
     assert(_ctx && !broken());
 
-#ifdef REDIS_PLUS_PLUS_USE_TLS
-
     const auto &tls_opts = opts.tls;
+    // If not complied with TLS, TLS is always disabled.
     if (tls::enabled(tls_opts)) {
         _tls_ctx = tls::secure_connection(*_ctx, tls_opts);
     }
-
-#endif
 
     _set_options();
 }

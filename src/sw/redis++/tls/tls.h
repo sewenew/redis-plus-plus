@@ -17,8 +17,6 @@
 #ifndef SEWENEW_REDISPLUSPLUS_TLS_H
 #define SEWENEW_REDISPLUSPLUS_TLS_H
 
-#ifdef REDIS_PLUS_PLUS_USE_TLS
-
 #include <string>
 #include <memory>
 #include <hiredis/hiredis.h>
@@ -75,7 +73,5 @@ TlsContextUPtr secure_connection(redisContext &ctx, const TlsOptions &opts);
 }
 
 }
-
-#endif
 
 #endif // end SEWENEW_REDISPLUSPLUS_TLS_H

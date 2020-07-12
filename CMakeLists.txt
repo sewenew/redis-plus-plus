@@ -20,11 +20,27 @@ set(PROJECT_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src/sw/redis++)
 
 file(GLOB PROJECT_SOURCE_FILES "${PROJECT_SOURCE_DIR}/*.cpp")
 
-set(STATIC_LIB static)
-set(SHARED_LIB shared)
+# TLS support
+option(REDIS_PLUS_PLUS_USE_TLS "Build with TLS support" OFF)
 
-add_library(${STATIC_LIB} STATIC ${PROJECT_SOURCE_FILES})
-add_library(${SHARED_LIB} SHARED ${PROJECT_SOURCE_FILES})
+if (REDIS_PLUS_PLUS_USE_TLS)
+    message(STATUS "Build with TLS support")
+
+    set(TLS_SUB_DIR "${PROJECT_SOURCE_DIR}/tls")
+else()
+    set(TLS_SUB_DIR "${PROJECT_SOURCE_DIR}/no_tls")
+endif()
+
+file(GLOB TLS_SOURCE_FILES "${TLS_SUB_DIR}/*.cpp")
+
+set(STATIC_LIB redis-plus-plus-static)
+set(SHARED_LIB redis-plus-plus-shared)
+
+add_library(${STATIC_LIB} STATIC ${PROJECT_SOURCE_FILES} ${TLS_SOURCE_FILES})
+add_library(${SHARED_LIB} SHARED ${PROJECT_SOURCE_FILES} ${TLS_SOURCE_FILES})
+
+target_include_directories(${STATIC_LIB} PUBLIC ${PROJECT_SOURCE_DIR} ${TLS_SUB_DIR})
+target_include_directories(${SHARED_LIB} PUBLIC ${PROJECT_SOURCE_DIR} ${TLS_SUB_DIR})
 
 # hiredis dependency
 find_path(HIREDIS_HEADER hiredis)
@@ -34,11 +50,7 @@ target_include_directories(${SHARED_LIB} PUBLIC ${HIREDIS_HEADER})
 find_library(HIREDIS_LIB hiredis)
 target_link_libraries(${SHARED_LIB} ${HIREDIS_LIB})
 
-option(REDIS_PLUS_PLUS_USE_TLS "Build with TLS support" OFF)
-
 if (REDIS_PLUS_PLUS_USE_TLS)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DREDIS_PLUS_PLUS_USE_TLS")
-
     find_library(HIREDIS_TLS_LIB hiredis_ssl)
     target_link_libraries(${SHARED_LIB} ${HIREDIS_TLS_LIB})
 endif()
@@ -65,5 +77,5 @@ install(TARGETS ${SHARED_LIB}
 
 #Install headers.
 set(HEADER_PATH "sw/redis++")
-file(GLOB HEADERS "${PROJECT_SOURCE_DIR}/*.h*")
+file(GLOB HEADERS "${PROJECT_SOURCE_DIR}/*.h*" "${TLS_SUB_DIR}/*.h")
 install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${HEADER_PATH})

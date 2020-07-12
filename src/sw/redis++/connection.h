@@ -73,11 +73,7 @@ public:
 
     std::chrono::milliseconds socket_timeout{0};
 
-#ifdef REDIS_PLUS_PLUS_USE_TLS
-
     tls::TlsOptions tls;
-
-#endif
 
 private:
     ConnectionOptions _parse_uri(const std::string &uri) const;
@@ -182,11 +178,7 @@ private:
 
     ConnectionOptions _opts;
 
-#ifdef REDIS_PLUS_PLUS_USE_TLS
-
     tls::TlsContextUPtr _tls_ctx;
-
-#endif
 };
 
 using ConnectionSPtr = std::shared_ptr<Connection>;
