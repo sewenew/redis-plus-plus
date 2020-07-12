@@ -28,7 +28,6 @@ namespace tls {
 struct TlsOptions {};
 
 struct TlsContextUPtr {};
-//using TlsContextUPtr = std::nullptr_t;
 
 inline TlsContextUPtr secure_connection(redisContext &/*ctx*/, const TlsOptions &/*opts*/) {
     // Do nothing
