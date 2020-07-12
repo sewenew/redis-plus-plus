@@ -644,7 +644,9 @@ Although `tls.cert` and `tls.key` are optional, if you specify one of them, you 
 
 These options are the same as `redis-cli`'s TLS related command line arguments, so you can also run `redis-cli --help` to get the detailed explanation of these options.
 
-That's all! Then you can use this `ConnectionOptions` to create a `Redis` object to connect to Redis server with TLS support.
+Then you can use this `ConnectionOptions` to create a `Redis` object to connect to Redis server with TLS support.
+
+**NOTE**: When building your application code, you also need to link it with `libhiredis.a`, `libhiredis_ssl.a`, `libredis++.a` (or the corresponding shared libraries), `-lssl` and `-lcrypto`.
 
 ### Send Command to Redis Server
 
