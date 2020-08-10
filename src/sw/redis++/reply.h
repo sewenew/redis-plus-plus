@@ -22,6 +22,7 @@
 #include <memory>
 #include <functional>
 #include <tuple>
+#include <iterator>
 #include <hiredis/hiredis.h>
 #include "errors.h"
 #include "utils.h"

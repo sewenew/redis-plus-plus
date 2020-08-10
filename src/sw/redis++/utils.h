@@ -27,6 +27,11 @@
 #      define REDIS_PLUS_PLUS_HAS_OPTIONAL
 #    endif
 #  endif
+#elif defined(_MSC_VER)
+#  if _MSC_VER >= 1910
+#    define REDIS_PLUS_PLUS_HAS_STRING_VIEW
+#    define REDIS_PLUS_PLUS_HAS_OPTIONAL
+#  endif
 #endif
 
 #include <cstring>
@@ -92,7 +97,7 @@ using Optional = std::optional<T>;
 template <typename T>
 class Optional {
 public:
-    Optional() = default;
+    Optional(): _value() {};
 
     Optional(const Optional &) = default;
     Optional& operator=(const Optional &) = default;

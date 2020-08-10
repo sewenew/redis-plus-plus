@@ -22,6 +22,13 @@
 #include "command.h"
 #include "command_args.h"
 
+#if defined _WIN32
+struct timeval {
+        long    tv_sec;         /* seconds */
+        long    tv_usec;        /* and microseconds */
+};
+#endif
+
 namespace sw {
 
 namespace redis {
