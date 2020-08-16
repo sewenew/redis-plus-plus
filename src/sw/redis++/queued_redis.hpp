@@ -23,14 +23,24 @@ namespace redis {
 
 template <typename Impl>
 template <typename ...Args>
-QueuedRedis<Impl>::QueuedRedis(const GuardedConnectionSPtr &connection, Args &&...args) :
-            _guarded_connection(connection),
+QueuedRedis<Impl>::QueuedRedis(const ConnectionPoolSPtr &pool,
+                                bool new_connection,
+                                Args &&...args) :
             _impl(std::forward<Args>(args)...) {
-    assert(_guarded_connection);
+    assert(pool);
+
+    if (new_connection) {
+        _connection_pool = std::make_shared<ConnectionPool>(pool->clone());
+    } else {
+        // Create a connection from the origin pool.
+        _connection_pool = pool;
+    }
 }
 
 template <typename Impl>
 Redis QueuedRedis<Impl>::redis() {
+    _sanity_check();
+
     return Redis(_guarded_connection);
 }
 
@@ -118,7 +128,18 @@ void QueuedRedis<Impl>::discard() {
 }
 
 template <typename Impl>
-void QueuedRedis<Impl>::_sanity_check() const {
+Connection& QueuedRedis<Impl>::_connection() {
+    assert(_valid);
+
+    if (!_guarded_connection) {
+        _guarded_connection = std::make_shared<GuardedConnection>(_connection_pool);
+    }
+
+    return _guarded_connection->connection();
+}
+
+template <typename Impl>
+void QueuedRedis<Impl>::_sanity_check() {
     if (!_valid) {
         throw Error("Not in valid state");
     }
@@ -130,6 +151,9 @@ void QueuedRedis<Impl>::_sanity_check() const {
 
 template <typename Impl>
 inline void QueuedRedis<Impl>::_reset() {
+    // Return connection to pool.
+    _guarded_connection.reset();
+
     _cmd_num = 0;
 
     _set_cmd_indexes.clear();

@@ -32,33 +32,32 @@ Redis RedisCluster::redis(const StringView &hash_tag) {
 }
 
 Pipeline RedisCluster::pipeline(const StringView &hash_tag, bool new_connection) {
+    auto pool = _pool.fetch(hash_tag);
     if (new_connection) {
-        auto connection = _pool.clone(hash_tag);
-        return Pipeline(std::make_shared<GuardedConnection>(std::move(connection)));
-    } else {
-        auto connection = _pool.fetch(hash_tag);
-        return Pipeline(std::make_shared<GuardedConnection>(std::move(connection)));
+        // Create a new pool
+        pool = std::make_shared<ConnectionPool>(pool->clone());
     }
+
+    return Pipeline(pool, new_connection);
 }
 
 Transaction RedisCluster::transaction(const StringView &hash_tag, bool piped, bool new_connection) {
+    auto pool = _pool.fetch(hash_tag);
     if (new_connection) {
-        auto connection = _pool.clone(hash_tag);
-        return Transaction(std::make_shared<GuardedConnection>(std::move(connection)), piped);
-    } else {
-        auto connection = _pool.fetch(hash_tag);
-        return Transaction(std::make_shared<GuardedConnection>(std::move(connection)), piped);
+        // Create a new pool
+        pool = std::make_shared<ConnectionPool>(pool->clone());
     }
+
+    return Transaction(pool, new_connection, piped);
 }
 
 Subscriber RedisCluster::subscriber(bool new_connection) {
+    auto pool = _pool.fetch();
     if (new_connection) {
-        auto connection = _pool.clone();
-        return Subscriber(std::make_shared<GuardedConnection>(std::move(connection)));
-    } else {
-        auto connection = _pool.fetch();
-        return Subscriber(std::make_shared<GuardedConnection>(std::move(connection)));
+        pool = std::make_shared<ConnectionPool>(pool->clone());
     }
+
+    return Subscriber(std::make_shared<GuardedConnection>(pool));
 }
 
 // KEY commands.

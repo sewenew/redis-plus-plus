@@ -31,21 +31,11 @@ Redis::Redis(const GuardedConnectionSPtr &connection) : _connection(connection) 
 }
 
 Pipeline Redis::pipeline(bool new_connection) {
-    if (new_connection) {
-        auto pool = std::make_shared<ConnectionPool>(_pool->clone());
-        return Pipeline(std::make_shared<GuardedConnection>(pool));
-    } else {
-        return Pipeline(std::make_shared<GuardedConnection>(_pool));
-    }
+    return Pipeline(_pool, new_connection);
 }
 
 Transaction Redis::transaction(bool piped, bool new_connection) {
-    if (new_connection) {
-        auto pool = std::make_shared<ConnectionPool>(_pool->clone());
-        return Transaction(std::make_shared<GuardedConnection>(pool), piped);
-    } else {
-        return Transaction(std::make_shared<GuardedConnection>(_pool), piped);
-    }
+    return Transaction(_pool, new_connection, piped);
 }
 
 Subscriber Redis::subscriber(bool new_connection) {

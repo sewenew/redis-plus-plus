@@ -154,6 +154,7 @@ public:
     GuardedConnection& operator=(GuardedConnection &&) = default;
 
     ~GuardedConnection() {
+        // If `GuardedConnection` has been moved, `_pool` will be nullptr.
         if (_pool) {
             _pool->release(std::move(_connection));
         }

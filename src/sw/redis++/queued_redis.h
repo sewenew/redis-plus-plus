@@ -1911,21 +1911,11 @@ private:
     friend class RedisCluster;
 
     template <typename ...Args>
-    QueuedRedis(const GuardedConnectionSPtr &connection, Args &&...args);
+    QueuedRedis(const ConnectionPoolSPtr &pool, bool new_connection, Args &&...args);
 
-    Connection& _connection() {
-        assert(_guarded_connection);
+    Connection& _connection();
 
-        return _guarded_connection->connection();
-    }
-
-    const Connection& _connection() const {
-        assert(_guarded_connection);
-
-        return _guarded_connection->connection();
-    }
-
-    void _sanity_check() const;
+    void _sanity_check();
 
     void _reset();
 
@@ -1937,6 +1927,8 @@ private:
     void _rewrite_replies(const std::vector<std::size_t> &indexes,
                             Func rewriter,
                             std::vector<ReplyUPtr> &replies) const;
+
+    ConnectionPoolSPtr _connection_pool;
 
     GuardedConnectionSPtr _guarded_connection;
 

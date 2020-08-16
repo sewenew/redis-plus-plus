@@ -46,17 +46,13 @@ public:
                 const ConnectionOptions &connection_opts);
 
     // Fetch a connection by key.
-    GuardedConnection fetch(const StringView &key);
-
-    GuardedConnection clone(const StringView &key);
+    ConnectionPoolSPtr fetch(const StringView &key);
 
     // Randomly pick a connection.
-    GuardedConnection fetch();
-
-    GuardedConnection clone();
+    ConnectionPoolSPtr fetch();
 
     // Fetch a connection by node.
-    GuardedConnection fetch(const Node &node);
+    ConnectionPoolSPtr fetch(const Node &node);
 
     void update();
 
@@ -85,9 +81,7 @@ private:
 
     ConnectionPoolSPtr& _get_pool(Slot slot);
 
-    GuardedConnection _fetch(Slot slot);
-
-    GuardedConnection _clone(Slot slot);
+    ConnectionPoolSPtr _fetch(Slot slot);
 
     ConnectionOptions _connection_options(Slot slot);
 
