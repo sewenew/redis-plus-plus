@@ -51,13 +51,9 @@ Transaction RedisCluster::transaction(const StringView &hash_tag, bool piped, bo
     return Transaction(pool, new_connection, piped);
 }
 
-Subscriber RedisCluster::subscriber(bool new_connection) {
-    auto pool = _pool.fetch();
-    if (new_connection) {
-        pool = std::make_shared<ConnectionPool>(pool->clone());
-    }
-
-    return Subscriber(std::make_shared<GuardedConnection>(pool));
+Subscriber RedisCluster::subscriber() {
+    auto opts = _pool.connection_options();
+    return Subscriber(Connection(opts));
 }
 
 // KEY commands.

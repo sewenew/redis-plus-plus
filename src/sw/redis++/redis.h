@@ -114,13 +114,12 @@ public:
     Transaction transaction(bool piped = false, bool new_connection = true);
 
     /// @brief Create a subscriber.
-    /// @param new_connection Whether creating a `Subscriber` object in a new connection.
     /// @return The created subscriber.
     /// @note Instead of picking a connection from the underlying connection pool,
     ///       this method will create a new connection to Redis. So it's not a cheap operation,
     ///       and you'd better reuse the returned object as much as possible.
     /// @see https://github.com/sewenew/redis-plus-plus#publishsubscribe
-    Subscriber subscriber(bool new_connection = true);
+    Subscriber subscriber();
 
     template <typename Cmd, typename ...Args>
     auto command(Cmd cmd, Args &&...args)

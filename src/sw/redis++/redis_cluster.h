@@ -64,7 +64,7 @@ public:
 
     Transaction transaction(const StringView &hash_tag, bool piped = false, bool new_connection = true);
 
-    Subscriber subscriber(bool new_connection = true);
+    Subscriber subscriber();
 
     template <typename Cmd, typename Key, typename ...Args>
     auto command(Cmd cmd, Key &&key, Args &&...args)

@@ -17,12 +17,10 @@
 #ifndef SEWENEW_REDISPLUSPLUS_SUBSCRIBER_H
 #define SEWENEW_REDISPLUSPLUS_SUBSCRIBER_H
 
-#include <cassert>
 #include <unordered_map>
 #include <string>
 #include <functional>
 #include "connection.h"
-#include "connection_pool.h"
 #include "reply.h"
 #include "command.h"
 #include "utils.h"
@@ -141,13 +139,7 @@ private:
 
     friend class RedisCluster;
 
-    explicit Subscriber(const GuardedConnectionSPtr &connection);
-
-    Connection& _connection() {
-        assert(_guarded_connection);
-
-        return _guarded_connection->connection();
-    }
+    explicit Subscriber(Connection connection);
 
     MsgType _msg_type(redisReply *reply) const;
 
@@ -172,7 +164,7 @@ private:
     using TypeIndex = std::unordered_map<std::string, MsgType>;
     static const TypeIndex _msg_type_index;
 
-    GuardedConnectionSPtr _guarded_connection;
+    Connection _connection;
 
     MsgCallback _msg_callback = nullptr;
 
@@ -204,14 +196,14 @@ void Subscriber::subscribe(Input first, Input last) {
 
     _check_connection();
 
-    cmd::subscribe_range(_connection(), first, last);
+    cmd::subscribe_range(_connection, first, last);
 }
 
 template <typename Input>
 void Subscriber::unsubscribe(Input first, Input last) {
     _check_connection();
 
-    cmd::unsubscribe_range(_connection(), first, last);
+    cmd::unsubscribe_range(_connection, first, last);
 }
 
 template <typename Input>
@@ -222,14 +214,14 @@ void Subscriber::psubscribe(Input first, Input last) {
 
     _check_connection();
 
-    cmd::psubscribe_range(_connection(), first, last);
+    cmd::psubscribe_range(_connection, first, last);
 }
 
 template <typename Input>
 void Subscriber::punsubscribe(Input first, Input last) {
     _check_connection();
 
-    cmd::punsubscribe_range(_connection(), first, last);
+    cmd::punsubscribe_range(_connection, first, last);
 }
 
 }

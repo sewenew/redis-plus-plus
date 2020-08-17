@@ -30,7 +30,7 @@ const Subscriber::TypeIndex Subscriber::_msg_type_index = {
     {"punsubscribe", MsgType::PUNSUBSCRIBE}
 };
 
-Subscriber::Subscriber(const GuardedConnectionSPtr &connection) : _guarded_connection(connection) {}
+Subscriber::Subscriber(Connection connection) : _connection(std::move(connection)) {}
 
 void Subscriber::subscribe(const StringView &channel) {
     _check_connection();
@@ -40,37 +40,37 @@ void Subscriber::subscribe(const StringView &channel) {
     // So we need a queue to record these sub or unsub commands, and
     // ensure that before stopping the subscriber, all these commands
     // have really been sent to Redis.
-    cmd::subscribe(_connection(), channel);
+    cmd::subscribe(_connection, channel);
 }
 
 void Subscriber::unsubscribe() {
     _check_connection();
 
-    cmd::unsubscribe(_connection());
+    cmd::unsubscribe(_connection);
 }
 
 void Subscriber::unsubscribe(const StringView &channel) {
     _check_connection();
 
-    cmd::unsubscribe(_connection(), channel);
+    cmd::unsubscribe(_connection, channel);
 }
 
 void Subscriber::psubscribe(const StringView &pattern) {
     _check_connection();
 
-    cmd::psubscribe(_connection(), pattern);
+    cmd::psubscribe(_connection, pattern);
 }
 
 void Subscriber::punsubscribe() {
     _check_connection();
 
-    cmd::punsubscribe(_connection());
+    cmd::punsubscribe(_connection);
 }
 
 void Subscriber::punsubscribe(const StringView &pattern) {
     _check_connection();
 
-    cmd::punsubscribe(_connection(), pattern);
+    cmd::punsubscribe(_connection, pattern);
 }
 
 void Subscriber::consume() {
@@ -78,9 +78,9 @@ void Subscriber::consume() {
 
     ReplyUPtr reply;
     try {
-        reply = _connection().recv();
+        reply = _connection.recv();
     } catch (const TimeoutError &) {
-        _connection().reset();
+        _connection.reset();
         throw;
     }
 
@@ -128,7 +128,7 @@ Subscriber::MsgType Subscriber::_msg_type(redisReply *reply) const {
 }
 
 void Subscriber::_check_connection() {
-    if (_connection().broken()) {
+    if (_connection.broken()) {
         throw Error("Connection is broken");
     }
 }

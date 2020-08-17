@@ -31,20 +31,27 @@ Redis::Redis(const GuardedConnectionSPtr &connection) : _connection(connection) 
 }
 
 Pipeline Redis::pipeline(bool new_connection) {
+    if (!_pool) {
+        throw Error("cannot create pipeline in single connection mode");
+    }
+
     return Pipeline(_pool, new_connection);
 }
 
 Transaction Redis::transaction(bool piped, bool new_connection) {
+    if (!_pool) {
+        throw Error("cannot create transaction in single connection mode");
+    }
+
     return Transaction(_pool, new_connection, piped);
 }
 
-Subscriber Redis::subscriber(bool new_connection) {
-    if (new_connection) {
-        auto pool = std::make_shared<ConnectionPool>(_pool->clone());
-        return Subscriber(std::make_shared<GuardedConnection>(pool));
-    } else {
-        return Subscriber(std::make_shared<GuardedConnection>(_pool));
+Subscriber Redis::subscriber() {
+    if (!_pool) {
+        throw Error("cannot create subscriber in single connection mode");
     }
+
+    return Subscriber(_pool->create());
 }
 
 // CONNECTION commands.
