@@ -26,10 +26,11 @@ template <typename ...Args>
 QueuedRedis<Impl>::QueuedRedis(const ConnectionPoolSPtr &pool,
                                 bool new_connection,
                                 Args &&...args) :
+            _new_connection(new_connection),
             _impl(std::forward<Args>(args)...) {
     assert(pool);
 
-    if (new_connection) {
+    if (_new_connection) {
         _connection_pool = std::make_shared<ConnectionPool>(pool->clone());
     } else {
         // Create a connection from the origin pool.
@@ -38,8 +39,15 @@ QueuedRedis<Impl>::QueuedRedis(const ConnectionPoolSPtr &pool,
 }
 
 template <typename Impl>
+QueuedRedis<Impl>::~QueuedRedis() {
+    _clean_up();
+}
+
+template <typename Impl>
 Redis QueuedRedis<Impl>::redis() {
     _sanity_check();
+
+    assert(_guarded_connection);
 
     return Redis(_guarded_connection);
 }
@@ -165,7 +173,19 @@ template <typename Impl>
 void QueuedRedis<Impl>::_invalidate() {
     _valid = false;
 
+    _clean_up();
+
     _reset();
+}
+
+template <typename Impl>
+void QueuedRedis<Impl>::_clean_up() {
+    if (_guarded_connection && !_new_connection) {
+        // Something bad happened, we need to close the current connection
+        // before returning it back to pool.
+        // TODO: close the connection instead of reconnect it.
+        _guarded_connection->connection().reconnect();
+    }
 }
 
 template <typename Impl>

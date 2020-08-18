@@ -44,9 +44,9 @@ public:
     QueuedRedis(QueuedRedis &&) = default;
     QueuedRedis& operator=(QueuedRedis &&) = default;
 
-    // When it destructs, the underlying *Connection* will be closed,
+    // When it destructs, the underlying *Connection* will be closed or return to pool,
     // and any command that has NOT been executed will be ignored.
-    ~QueuedRedis() = default;
+    ~QueuedRedis();
 
     Redis redis();
 
@@ -1921,6 +1921,8 @@ private:
 
     void _invalidate();
 
+    void _clean_up();
+
     void _rewrite_replies(std::vector<ReplyUPtr> &replies) const;
 
     template <typename Func>
@@ -1928,9 +1930,11 @@ private:
                             Func rewriter,
                             std::vector<ReplyUPtr> &replies) const;
 
+    GuardedConnectionSPtr _guarded_connection;
+
     ConnectionPoolSPtr _connection_pool;
 
-    GuardedConnectionSPtr _guarded_connection;
+    bool _new_connection = true;
 
     Impl _impl;
 
