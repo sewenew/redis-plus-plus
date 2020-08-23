@@ -1917,7 +1917,9 @@ private:
 
     void _sanity_check();
 
-    void _reset();
+    void _reset(bool reset_connection = true);
+
+    void _return_connection();
 
     void _invalidate();
 

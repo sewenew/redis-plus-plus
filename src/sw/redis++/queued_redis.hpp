@@ -115,6 +115,11 @@ QueuedReplies QueuedRedis<Impl>::exec() {
         _reset();
 
         return QueuedReplies(std::move(replies));
+    } catch (const WatchError &e) {
+        // In this case, we only clear some states and keep the connection,
+        // so that user can retry the transaction.
+        _reset(false);
+        throw;
     } catch (const Error &e) {
         _invalidate();
         throw;
@@ -158,15 +163,26 @@ void QueuedRedis<Impl>::_sanity_check() {
 }
 
 template <typename Impl>
-inline void QueuedRedis<Impl>::_reset() {
-    // Return connection to pool.
-    _guarded_connection.reset();
+inline void QueuedRedis<Impl>::_reset(bool reset_connection) {
+    if (reset_connection && !_new_connection) {
+        _return_connection();
+    }
 
     _cmd_num = 0;
 
     _set_cmd_indexes.clear();
 
     _georadius_cmd_indexes.clear();
+}
+
+template <typename Impl>
+inline void QueuedRedis<Impl>::_return_connection() {
+    if (_guarded_connection.use_count() == 1) {
+        // If no one else holding the connection, return it back to pool.
+        // Instead, if some other `Redis` object holds the connection,
+        // e.g. `auto redis = transaction.redis();`, we cannot return the connection.
+        _guarded_connection.reset();
+    }
 }
 
 template <typename Impl>
