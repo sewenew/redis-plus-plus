@@ -19,9 +19,11 @@
 
 #include <cassert>
 #include <chrono>
+#include <memory>
 #include <initializer_list>
 #include <vector>
 #include "connection.h"
+#include "connection_pool.h"
 #include "utils.h"
 #include "reply.h"
 #include "command.h"
@@ -42,9 +44,9 @@ public:
     QueuedRedis(QueuedRedis &&) = default;
     QueuedRedis& operator=(QueuedRedis &&) = default;
 
-    // When it destructs, the underlying *Connection* will be closed,
+    // When it destructs, the underlying *Connection* will be closed or return to pool,
     // and any command that has NOT been executed will be ignored.
-    ~QueuedRedis() = default;
+    ~QueuedRedis();
 
     Redis redis();
 
@@ -1909,13 +1911,19 @@ private:
     friend class RedisCluster;
 
     template <typename ...Args>
-    QueuedRedis(const ConnectionSPtr &connection, Args &&...args);
+    QueuedRedis(const ConnectionPoolSPtr &pool, bool new_connection, Args &&...args);
 
-    void _sanity_check() const;
+    Connection& _connection();
 
-    void _reset();
+    void _sanity_check();
+
+    void _reset(bool reset_connection = true);
+
+    void _return_connection();
 
     void _invalidate();
+
+    void _clean_up();
 
     void _rewrite_replies(std::vector<ReplyUPtr> &replies) const;
 
@@ -1924,7 +1932,11 @@ private:
                             Func rewriter,
                             std::vector<ReplyUPtr> &replies) const;
 
-    ConnectionSPtr _connection;
+    GuardedConnectionSPtr _guarded_connection;
+
+    ConnectionPoolSPtr _connection_pool;
+
+    bool _new_connection = true;
 
     Impl _impl;
 

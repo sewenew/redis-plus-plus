@@ -17,6 +17,7 @@
 #ifndef SEWENEW_REDISPLUSPLUS_CONNECTION_POOL_H
 #define SEWENEW_REDISPLUSPLUS_CONNECTION_POOL_H
 
+#include <cassert>
 #include <chrono>
 #include <mutex>
 #include <memory>
@@ -69,6 +70,8 @@ public:
     // Create a new connection.
     Connection create();
 
+    ConnectionPool clone();
+
 private:
     void _move(ConnectionPool &&that);
 
@@ -107,6 +110,66 @@ private:
 
     SimpleSentinel _sentinel;
 };
+
+using ConnectionPoolSPtr = std::shared_ptr<ConnectionPool>;
+
+class SafeConnection {
+public:
+    explicit SafeConnection(ConnectionPool &pool) : _pool(pool), _connection(_pool.fetch()) {
+        assert(!_connection.broken());
+    }
+
+    SafeConnection(const SafeConnection &) = delete;
+    SafeConnection& operator=(const SafeConnection &) = delete;
+
+    SafeConnection(SafeConnection &&) = delete;
+    SafeConnection& operator=(SafeConnection &&) = delete;
+
+    ~SafeConnection() {
+        _pool.release(std::move(_connection));
+    }
+
+    Connection& connection() {
+        return _connection;
+    }
+
+private:
+    ConnectionPool &_pool;
+    Connection _connection;
+};
+
+// NOTE: This class is similar to `SafeConnection`.
+// The difference is that `SafeConnection` tries to avoid copying a std::shared_ptr.
+class GuardedConnection {
+public:
+    explicit GuardedConnection(const ConnectionPoolSPtr &pool) : _pool(pool),
+                                                        _connection(_pool->fetch()) {
+        assert(!_connection.broken());
+    }
+
+    GuardedConnection(const GuardedConnection &) = delete;
+    GuardedConnection& operator=(const GuardedConnection &) = delete;
+
+    GuardedConnection(GuardedConnection &&) = default;
+    GuardedConnection& operator=(GuardedConnection &&) = default;
+
+    ~GuardedConnection() {
+        // If `GuardedConnection` has been moved, `_pool` will be nullptr.
+        if (_pool) {
+            _pool->release(std::move(_connection));
+        }
+    }
+
+    Connection& connection() {
+        return _connection;
+    }
+
+private:
+    ConnectionPoolSPtr _pool;
+    Connection _connection;
+};
+
+using GuardedConnectionSPtr = std::shared_ptr<GuardedConnection>;
 
 }
 

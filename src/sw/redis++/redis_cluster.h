@@ -60,9 +60,9 @@ public:
 
     Redis redis(const StringView &hash_tag);
 
-    Pipeline pipeline(const StringView &hash_tag);
+    Pipeline pipeline(const StringView &hash_tag, bool new_connection = true);
 
-    Transaction transaction(const StringView &hash_tag, bool piped = false);
+    Transaction transaction(const StringView &hash_tag, bool piped = false, bool new_connection = true);
 
     Subscriber subscriber();
 

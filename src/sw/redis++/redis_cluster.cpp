@@ -27,18 +27,28 @@ namespace redis {
 RedisCluster::RedisCluster(const std::string &uri) : RedisCluster(ConnectionOptions(uri)) {}
 
 Redis RedisCluster::redis(const StringView &hash_tag) {
-    auto opts = _pool.connection_options(hash_tag);
-    return Redis(std::make_shared<Connection>(opts));
+    auto connection = _pool.fetch(hash_tag);
+    return Redis(std::make_shared<GuardedConnection>(std::move(connection)));
 }
 
-Pipeline RedisCluster::pipeline(const StringView &hash_tag) {
-    auto opts = _pool.connection_options(hash_tag);
-    return Pipeline(std::make_shared<Connection>(opts));
+Pipeline RedisCluster::pipeline(const StringView &hash_tag, bool new_connection) {
+    auto pool = _pool.fetch(hash_tag);
+    if (new_connection) {
+        // Create a new pool
+        pool = std::make_shared<ConnectionPool>(pool->clone());
+    }
+
+    return Pipeline(pool, new_connection);
 }
 
-Transaction RedisCluster::transaction(const StringView &hash_tag, bool piped) {
-    auto opts = _pool.connection_options(hash_tag);
-    return Transaction(std::make_shared<Connection>(opts), piped);
+Transaction RedisCluster::transaction(const StringView &hash_tag, bool piped, bool new_connection) {
+    auto pool = _pool.fetch(hash_tag);
+    if (new_connection) {
+        // Create a new pool
+        pool = std::make_shared<ConnectionPool>(pool->clone());
+    }
+
+    return Transaction(pool, new_connection, piped);
 }
 
 Subscriber RedisCluster::subscriber() {

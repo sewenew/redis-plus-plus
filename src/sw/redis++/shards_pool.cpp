@@ -57,19 +57,19 @@ ShardsPool& ShardsPool::operator=(ShardsPool &&that) {
     return *this;
 }
 
-GuardedConnection ShardsPool::fetch(const StringView &key) {
+ConnectionPoolSPtr ShardsPool::fetch(const StringView &key) {
     auto slot = _slot(key);
 
     return _fetch(slot);
 }
 
-GuardedConnection ShardsPool::fetch() {
+ConnectionPoolSPtr ShardsPool::fetch() {
     auto slot = _slot();
 
     return _fetch(slot);
 }
 
-GuardedConnection ShardsPool::fetch(const Node &node) {
+ConnectionPoolSPtr ShardsPool::fetch(const Node &node) {
     std::lock_guard<std::mutex> lock(_mutex);
 
     auto iter = _pools.find(node);
@@ -81,7 +81,7 @@ GuardedConnection ShardsPool::fetch(const Node &node) {
 
     assert(iter != _pools.end());
 
-    return GuardedConnection(iter->second);
+    return iter->second;
 }
 
 void ShardsPool::update() {
@@ -90,8 +90,10 @@ void ShardsPool::update() {
     for (auto idx = 0; idx < 3; ++idx) {
         try {
             // Randomly pick a connection.
-            auto guarded_connection = fetch();
-            auto shards = _cluster_slots(guarded_connection.connection());
+            auto pool = fetch();
+            assert(pool);
+            SafeConnection safe_connection(*pool);
+            auto shards = _cluster_slots(safe_connection.connection());
 
             std::unordered_set<Node, NodeHash> nodes;
             for (const auto &shard : shards) {
@@ -286,14 +288,10 @@ ConnectionPoolSPtr& ShardsPool::_get_pool(Slot slot) {
     return node_iter->second;
 }
 
-GuardedConnection ShardsPool::_fetch(Slot slot) {
+ConnectionPoolSPtr ShardsPool::_fetch(Slot slot) {
     std::lock_guard<std::mutex> lock(_mutex);
 
-    auto &pool = _get_pool(slot);
-
-    assert(pool);
-
-    return GuardedConnection(pool);
+    return _get_pool(slot);
 }
 
 ConnectionOptions ShardsPool::_connection_options(Slot slot) {

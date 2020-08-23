@@ -1285,9 +1285,11 @@ template <typename Cmd, typename ...Args>
 ReplyUPtr RedisCluster::_command(Cmd cmd, const StringView &key, Args &&...args) {
     for (auto idx = 0; idx < 2; ++idx) {
         try {
-            auto guarded_connection = _pool.fetch(key);
+            auto pool = _pool.fetch(key);
+            assert(pool);
+            SafeConnection safe_connection(*pool);
 
-            return _command(cmd, guarded_connection.connection(), std::forward<Args>(args)...);
+            return _command(cmd, safe_connection.connection(), std::forward<Args>(args)...);
         } catch (const IoError &err) {
             // When master is down, one of its replicas will be promoted to be the new master.
             // If we try to send command to the old master, we'll get an *IoError*.
@@ -1305,8 +1307,10 @@ ReplyUPtr RedisCluster::_command(Cmd cmd, const StringView &key, Args &&...args)
             // Slot mapping has been changed, update it and try again.
             _pool.update();
         } catch (const AskError &err) {
-            auto guarded_connection = _pool.fetch(err.node());
-            auto &connection = guarded_connection.connection();
+            auto pool = _pool.fetch(err.node());
+            assert(pool);
+            SafeConnection safe_connection(*pool);
+            auto &connection = safe_connection.connection();
 
             // 1. send ASKING command.
             _asking(connection);

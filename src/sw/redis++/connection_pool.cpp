@@ -163,6 +163,25 @@ Connection ConnectionPool::create() {
     }
 }
 
+ConnectionPool ConnectionPool::clone() {
+    std::unique_lock<std::mutex> lock(_mutex);
+
+    auto opts = _opts;
+    auto pool_opts = _pool_opts;
+
+    if (_sentinel) {
+        auto sentinel = _sentinel;
+
+        lock.unlock();
+
+        return ConnectionPool(sentinel, pool_opts, opts);
+    } else {
+        lock.unlock();
+
+        return ConnectionPool(pool_opts, opts);
+    }
+}
+
 void ConnectionPool::_move(ConnectionPool &&that) {
     _opts = std::move(that._opts);
     _pool_opts = std::move(that._pool_opts);

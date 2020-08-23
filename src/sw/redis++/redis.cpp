@@ -26,20 +26,32 @@ namespace redis {
 
 Redis::Redis(const std::string &uri) : Redis(ConnectionOptions(uri)) {}
 
-Redis::Redis(const ConnectionSPtr &connection) : _connection(connection) {
+Redis::Redis(const GuardedConnectionSPtr &connection) : _connection(connection) {
     assert(_connection);
 }
 
-Pipeline Redis::pipeline() {
-    return Pipeline(std::make_shared<Connection>(_pool.create()));
+Pipeline Redis::pipeline(bool new_connection) {
+    if (!_pool) {
+        throw Error("cannot create pipeline in single connection mode");
+    }
+
+    return Pipeline(_pool, new_connection);
 }
 
-Transaction Redis::transaction(bool piped) {
-    return Transaction(std::make_shared<Connection>(_pool.create()), piped);
+Transaction Redis::transaction(bool piped, bool new_connection) {
+    if (!_pool) {
+        throw Error("cannot create transaction in single connection mode");
+    }
+
+    return Transaction(_pool, new_connection, piped);
 }
 
 Subscriber Redis::subscriber() {
-    return Subscriber(_pool.create());
+    if (!_pool) {
+        throw Error("cannot create subscriber in single connection mode");
+    }
+
+    return Subscriber(_pool->create());
 }
 
 // CONNECTION commands.

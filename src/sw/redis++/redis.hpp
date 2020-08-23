@@ -32,20 +32,19 @@ auto Redis::command(Cmd cmd, Args &&...args)
     if (_connection) {
         // Single Connection Mode.
         // TODO: In this case, should we reconnect?
-        if (_connection->broken()) {
+        auto &connection = _connection->connection();
+        if (connection.broken()) {
             throw Error("Connection is broken");
         }
 
-        return _command(*_connection, cmd, std::forward<Args>(args)...);
-    } else {
-        // Pool Mode, i.e. get connection from pool.
-        auto connection = _pool.fetch();
-
-        assert(!connection.broken());
-
-        ConnectionPoolGuard guard(_pool, connection);
-
         return _command(connection, cmd, std::forward<Args>(args)...);
+    } else {
+        assert(_pool);
+
+        // Pool Mode, i.e. get connection from pool.
+        SafeConnection connection(*_pool);
+
+        return _command(connection.connection(), cmd, std::forward<Args>(args)...);
     }
 }
 
