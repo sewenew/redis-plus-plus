@@ -497,13 +497,22 @@ Redis redis1(connection_options);
 ConnectionPoolOptions pool_options;
 pool_options.size = 3;  // Pool size, i.e. max number of connections.
 
+// Optional. Max time to wait for a connection. 0ms by default, which means wait forever.
+// Say, the pool size is 3, while 4 threds try to fetch the connection, one of them will be blocked.
+pool_options.wait_timeout = std::chrono::milliseconds(100);
+
+// Optional. Max lifetime of a connection. 0ms by default, which means never expire the connection.
+// If the connection has been created for a long time, i.e. more than `connection_lifetime`,
+// it will be expired and reconnected.
+pool_options.connection_lifetime = std::chrono::minutes(10);
+
 // Connect to Redis server with a connection pool.
 Redis redis2(connection_options, pool_options);
 ```
 
 **NOTE**: if you set `ConnectionOptions::socket_timeout`, and try to call blocking commands, e.g. `Redis::brpop`, `Redis::blpop`, `Redis::bzpopmax`, `Redis::bzpopmin`, you must ensure that `ConnectionOptions::socket_timeout` is larger than the timeout specified with these blocking commands. Otherwise, you might get `TimeoutError`, and lose message.
 
-See [ConnectionOptions](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/connection.h#L40) and [ConnectionPoolOptions](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/connection_pool.h#L30) for more options.
+See [ConnectionOptions](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/connection.h#L40) and [ConnectionPoolOptions](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/connection_pool.h#L30) for more options. Also see [issue 80](https://github.com/sewenew/redis-plus-plus/issues/80) for discussion on connection pool.
 
 **NOTE**: `Redis` class is movable but NOT copyable.
 
