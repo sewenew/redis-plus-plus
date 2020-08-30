@@ -38,15 +38,20 @@
 
 namespace {
 
+struct TestOptions {
+    bool run_thread_test = false;
+};
+
 void print_help();
 
 auto parse_options(int argc, char **argv)
     -> std::tuple<sw::redis::Optional<sw::redis::ConnectionOptions>,
                     sw::redis::Optional<sw::redis::ConnectionOptions>,
-                    sw::redis::Optional<sw::redis::test::BenchmarkOptions>>;
+                    sw::redis::Optional<sw::redis::test::BenchmarkOptions>,
+                    TestOptions>;
 
 template <typename RedisInstance>
-void run_test(const sw::redis::ConnectionOptions &opts);
+void run_test(const sw::redis::ConnectionOptions &opts, const TestOptions &test_options);
 
 template <typename RedisInstance>
 void run_benchmark(const sw::redis::ConnectionOptions &opts,
@@ -59,7 +64,8 @@ int main(int argc, char **argv) {
         sw::redis::Optional<sw::redis::ConnectionOptions> opts;
         sw::redis::Optional<sw::redis::ConnectionOptions> cluster_node_opts;
         sw::redis::Optional<sw::redis::test::BenchmarkOptions> benchmark_opts;
-        std::tie(opts, cluster_node_opts, benchmark_opts) = parse_options(argc, argv);
+        TestOptions test_options;
+        std::tie(opts, cluster_node_opts, benchmark_opts, test_options) = parse_options(argc, argv);
 
         if (opts) {
             std::cout << "Testing Redis..." << std::endl;
@@ -67,7 +73,7 @@ int main(int argc, char **argv) {
             if (benchmark_opts) {
                 run_benchmark<sw::redis::Redis>(*opts, *benchmark_opts);
             } else {
-                run_test<sw::redis::Redis>(*opts);
+                run_test<sw::redis::Redis>(*opts, test_options);
             }
         }
 
@@ -77,7 +83,7 @@ int main(int argc, char **argv) {
             if (benchmark_opts) {
                 run_benchmark<sw::redis::RedisCluster>(*cluster_node_opts, *benchmark_opts);
             } else {
-                run_test<sw::redis::RedisCluster>(*cluster_node_opts);
+                run_test<sw::redis::RedisCluster>(*cluster_node_opts, test_options);
             }
         }
 
@@ -102,7 +108,8 @@ void print_help() {
 auto parse_options(int argc, char **argv)
     -> std::tuple<sw::redis::Optional<sw::redis::ConnectionOptions>,
                     sw::redis::Optional<sw::redis::ConnectionOptions>,
-                    sw::redis::Optional<sw::redis::test::BenchmarkOptions>> {
+                    sw::redis::Optional<sw::redis::test::BenchmarkOptions>,
+                    TestOptions> {
     std::string host;
     int port = 0;
     std::string auth;
@@ -110,9 +117,10 @@ auto parse_options(int argc, char **argv)
     int cluster_port = 0;
     bool benchmark = false;
     sw::redis::test::BenchmarkOptions tmp_benchmark_opts;
+    TestOptions test_options;
 
     int opt = 0;
-    while ((opt = getopt(argc, argv, "h:p:a:n:c:k:v:r:t:bs:")) != -1) {
+    while ((opt = getopt(argc, argv, "h:p:a:n:c:k:v:r:t:bs:m")) != -1) {
         try {
             switch (opt) {
             case 'h':
@@ -159,6 +167,10 @@ auto parse_options(int argc, char **argv)
                 tmp_benchmark_opts.pool_size = std::stoi(optarg);
                 break;
 
+            case 'm':
+                test_options.run_thread_test = true;
+                break;
+
             default:
                 throw sw::redis::Error("Unknow command line option");
                 break;
@@ -202,11 +214,11 @@ auto parse_options(int argc, char **argv)
         benchmark_opts = sw::redis::Optional<sw::redis::test::BenchmarkOptions>(tmp_benchmark_opts);
     }
 
-    return std::make_tuple(std::move(opts), std::move(cluster_opts), std::move(benchmark_opts));
+    return std::make_tuple(std::move(opts), std::move(cluster_opts), std::move(benchmark_opts), test_options);
 }
 
 template <typename RedisInstance>
-void run_test(const sw::redis::ConnectionOptions &opts) {
+void run_test(const sw::redis::ConnectionOptions &opts, const TestOptions &test_options) {
     auto instance = RedisInstance(opts);
 
     sw::redis::test::SanityTest<RedisInstance> sanity_test(opts, instance);
@@ -274,10 +286,12 @@ void run_test(const sw::redis::ConnectionOptions &opts) {
 
     std::cout << "Pass pipeline and transaction tests" << std::endl;
 
-    sw::redis::test::ThreadsTest<RedisInstance> threads_test(opts);
-    threads_test.run();
+    if (test_options.run_thread_test) {
+        sw::redis::test::ThreadsTest<RedisInstance> threads_test(opts);
+        threads_test.run();
 
-    std::cout << "Pass threads tests" << std::endl;
+        std::cout << "Pass threads tests" << std::endl;
+    }
 
     sw::redis::test::StreamCmdsTest<RedisInstance> stream_test(instance);
     stream_test.run();
