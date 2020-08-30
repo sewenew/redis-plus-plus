@@ -28,6 +28,7 @@
 #include "errors.h"
 #include "reply.h"
 #include "utils.h"
+#include "tls.h"
 
 namespace sw {
 
@@ -71,6 +72,8 @@ public:
     std::chrono::milliseconds connect_timeout{0};
 
     std::chrono::milliseconds socket_timeout{0};
+
+    tls::TlsOptions tls;
 
 private:
     ConnectionOptions _parse_uri(const std::string &uri) const;
@@ -174,6 +177,8 @@ private:
     std::chrono::time_point<std::chrono::steady_clock> _last_active{};
 
     ConnectionOptions _opts;
+
+    tls::TlsContextUPtr _tls_ctx;
 };
 
 using ConnectionSPtr = std::shared_ptr<Connection>;

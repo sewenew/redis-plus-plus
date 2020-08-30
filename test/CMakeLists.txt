@@ -19,9 +19,15 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${HIREDIS_HEADER})
 find_library(HIREDIS_STATIC_LIB libhiredis.a)
 target_link_libraries(${PROJECT_NAME} ${HIREDIS_STATIC_LIB})
 
+if (REDIS_PLUS_PLUS_USE_TLS)
+    find_library(HIREDIS_TLS_STATIC_LIB libhiredis_ssl.a)
+    target_link_libraries(${PROJECT_NAME} ${HIREDIS_TLS_STATIC_LIB})
+
+    target_link_libraries(${PROJECT_NAME} -lssl -lcrypto)
+endif()
+
 # redis++ dependency
 target_include_directories(${PROJECT_NAME} PUBLIC ../src)
-set(REDIS_PLUS_PLUS_LIB ${CMAKE_CURRENT_BINARY_DIR}/../lib/libredis++.a)
 
 ## solaris socket dependency
 IF (CMAKE_SYSTEM_NAME MATCHES "(Solaris|SunOS)" )
@@ -30,4 +36,4 @@ ENDIF(CMAKE_SYSTEM_NAME MATCHES "(Solaris|SunOS)" )
 
 find_package(Threads REQUIRED)
 
-target_link_libraries(${PROJECT_NAME} ${REDIS_PLUS_PLUS_LIB} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(${PROJECT_NAME} redis-plus-plus-static ${CMAKE_THREAD_LIBS_INIT})

@@ -361,6 +361,12 @@ Connection::Connection(const ConnectionOptions &opts) :
             _opts(opts) {
     assert(_ctx && !broken());
 
+    const auto &tls_opts = opts.tls;
+    // If not complied with TLS, TLS is always disabled.
+    if (tls::enabled(tls_opts)) {
+        _tls_ctx = tls::secure_connection(*_ctx, tls_opts);
+    }
+
     _set_options();
 }
 

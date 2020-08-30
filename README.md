@@ -613,6 +613,50 @@ for (auto idx = 0; idx < 100; ++idx) {
 }
 ```
 
+#### TLS/SSL Support
+
+*redis-plus-plus* also has TLS support. However, in order to use this feature, you need to enable it when building *hiredis* and *redis-plus-plus*.
+
+##### Enable TLS/SSL support
+
+When building *hiredis*, you need to download the latest *hiredis* code, and specify `USE_SSL=1` flag:
+
+```
+make PREFIX=/non/default/path USE_SSL=1
+
+make PREFIX=/non/default/path USE_SSL=1 install
+```
+
+Then you can build *redis-plus-plus* to enable TLS support by specifying the `-DREDIS_PLUS_PLUS_USE_TLS=ON` option:
+
+```
+cmake -DREDIS_PLUS_PLUS_USE_TLS=ON -DCMAKE_BUILD_TYPE=Release ..
+```
+
+##### Connection Options
+
+In order to connect to Redis with TLS support, you need to specify the following connection options:
+
+```
+ConnectionOptions opts;
+opts.host = "127.0.0.1";
+opts.port = 6379;
+
+opts.tls.enabled = true;    // Required. `false` by default.
+opts.tls.cert = "/path/to/client/certificate";  // Optional
+opts.tls.key = "/path/to/private/key/file"; // Optional
+opts.tls.cacert = "/path/to/CA/certificate/file";   // Optional
+opts.tls.sni = "server-name-indication";    // Optional
+```
+
+Although `tls.cert` and `tls.key` are optional, if you specify one of them, you must also specify the other. Instead of specifying `tls.cacert`, you can also specify `tls.cacertdir` to the directory where certificates are stored.
+
+These options are the same as `redis-cli`'s TLS related command line arguments, so you can also run `redis-cli --help` to get the detailed explanation of these options.
+
+Then you can use this `ConnectionOptions` to create a `Redis` object to connect to Redis server with TLS support.
+
+**NOTE**: When building your application code, you also need to link it with `libhiredis.a`, `libhiredis_ssl.a`, `libredis++.a` (or the corresponding shared libraries), `-lssl` and `-lcrypto`.
+
 ### Send Command to Redis Server
 
 You can send [Redis commands](https://redis.io/commands) through `Redis` object. `Redis` has one or more (overloaded) methods for each Redis command. The method has the same (lowercased) name as the corresponding command. For example, we have 3 overload methods for the `DEL key [key ...]` command:
