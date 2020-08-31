@@ -2,6 +2,7 @@
 
 - [Overview](#overview)
     - [Features](#features)
+    - [Branches](#branches)
 - [Installation](#installation)
     - [Install hiredis](#install-hiredis)
     - [Install redis-plus-plus](#install-redis-plus-plus)
@@ -41,6 +42,14 @@ This is a C++ client for Redis. It's based on [hiredis](https://github.com/redis
 - Redis Sentinel.
 - STL-like interfaces.
 - Generic command interface.
+- Redis Stream.
+- Redlock.
+- Redis ACL.
+- TLS/SSL support.
+
+### Branches
+
+The master branch is the stable branch, which passes all tests. The dev branch is unstable. If you want to contribute, please create pull request on dev branch.
 
 ## Installation
 
@@ -126,7 +135,7 @@ clang version 8.0.1-3build1 (tags/RELEASE_801/final)
 Apple clang version 11.0.0 (clang-1100.0.33.12)
 ```
 
-If you build *redis-plus-plus* with `-DREDIS_PLUS_PLUS_BUILD_TEST=ON` (the default behavior), you'll get a test program in *compile/test* directory: *compile/test/test_redis++*.
+If you build *redis-plus-plus* with `-DREDIS_PLUS_PLUS_BUILD_TEST=ON` (the default behavior, and you can disable building test with `-DREDIS_PLUS_PLUS_BUILD_TEST=OFF`), you'll get a test program in *compile/test* directory: *compile/test/test_redis++*.
 
 In order to run the tests, you need to set up a Redis instance, and a Redis Cluster. Since the test program will send most of Redis commands to the server and cluster, you need to set up Redis of the latest version (by now, it's 5.0). Otherwise, the tests might fail. For example, if you set up Redis 4.0 for testing, the test program will fail when it tries to send the `ZPOPMAX` command (a Redis 5.0 command) to the server. If you want to run the tests with other Redis versions, you have to comment out commands that haven't been supported by your Redis, from test source files in *redis-plus-plus/test/src/sw/redis++/* directory. Sorry for the inconvenience, and I'll fix this problem to make the test program work with any version of Redis in the future.
 
@@ -156,11 +165,10 @@ Similarly, if you only want to run tests with Redis Cluster, just specify *clust
 ./compile/test/test_redis++ -a auth -n cluster_node -c cluster_port
 ```
 
-The test program will test running *redis-plus-plus* in multi-threads environment, and this test will cost a long time. If you want to skip it (not recommended), just comment out the following lines in *test/src/sw/redis++/test_main.cpp* file.
+By default, the test program will not test running *redis-plus-plus* in multi-threads environment. If you want to do multi-threads test, which might cost a long time, you can specify the *-m* option:
 
-```C++
-sw::redis::test::ThreadsTest threads_test(opts, cluster_node_opts);
-threads_test.run();
+```
+./compile/test/test_redis++ -h host -p port -a auth -n cluster_node -c cluster_port -m
 ```
 
 If all tests have been passed, the test program will print the following message:
@@ -619,7 +627,7 @@ for (auto idx = 0; idx < 100; ++idx) {
 
 ##### Enable TLS/SSL support
 
-When building *hiredis*, you need to download the latest *hiredis* code, and specify `USE_SSL=1` flag:
+When building *hiredis* with TLS support, you need to download *hiredis* of version *v1.0.0* or latter, and specify `USE_SSL=1` flag:
 
 ```
 make PREFIX=/non/default/path USE_SSL=1
@@ -1469,7 +1477,7 @@ If any of `Pipeline`'s method throws an exception other than `ReplyError`, the `
 
 #### Create Pipeline Without Creating New Connection
 
-**NOTE**: YOU MUST CAREFULLY READ ALL WORDS IN THIS SECTION AND THE VERY IMPORTANT NOTES BEFORE USING THIS FEATURE!!!
+**YOU MUST CAREFULLY READ ALL WORDS IN THIS SECTION AND THE VERY IMPORTANT NOTES BEFORE USING THIS FEATURE!!!**
 
 In fact, you can also create a `Pipeline` object with a connection from the underlying connection pool, so that calling `Redis::pipeline` method can be much cheaper (since it doesn't need to create a new connection).
 
