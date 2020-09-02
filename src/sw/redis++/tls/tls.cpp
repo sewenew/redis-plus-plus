@@ -54,12 +54,12 @@ TlsContextUPtr secure_connection(redisContext &ctx, const TlsOptions &opts) {
                                                         c_str(opts.sni),
                                                         &err));
     if (!tls_ctx) {
-        throw Error(std::string("failed to create TSL context, err: ")
+        throw Error(std::string("failed to create TLS context: ")
                     + redisSSLContextGetError(err));
     }
 
     if (redisInitiateSSLWithContext(&ctx, tls_ctx.get()) != REDIS_OK) {
-        throw Error("failed to initialize connection with TSL");
+        throw_error(ctx, "Failed to initialize TLS connection");
     }
 
     return tls_ctx;
