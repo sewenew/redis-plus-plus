@@ -289,7 +289,7 @@ Connection::ContextUPtr Connection::Connector::_connect() const {
 
     default:
         // Never goes here.
-        throw Error("Unkonw connection type");
+        throw Error("Unknown connection type");
     }
 
     if (context == nullptr) {
@@ -362,7 +362,7 @@ Connection::Connection(const ConnectionOptions &opts) :
     assert(_ctx && !broken());
 
     const auto &tls_opts = opts.tls;
-    // If not complied with TLS, TLS is always disabled.
+    // If not compiled with TLS, TLS is always disabled.
     if (tls::enabled(tls_opts)) {
         _tls_ctx = tls::secure_connection(*_ctx, tls_opts);
     }
