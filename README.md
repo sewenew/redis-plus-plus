@@ -115,6 +115,8 @@ When compiling *redis-plus-plus*, it also compiles a test program, which might t
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/path/to/hiredis -DCMAKE_INSTALL_PREFIX=/path/to/install/redis-plus-plus -DREDIS_PLUS_PLUS_BUILD_TEST=OFF ..
 ```
 
+By default, *redis-plus-plus* builds both a static library and a shared library. If you only want to build one of them, you can disable the other with `-DREDIS_PLUS_PLUS_BUILD_STATIC=OFF` or `-DREDIS_PLUS_PLUS_BUILD_SHARED=OFF`.
+
 ### Run Tests (Optional)
 
 *redis-plus-plus* has been fully tested with the following compilers:

@@ -29,10 +29,16 @@ endif()
 target_include_directories(${PROJECT_NAME} PUBLIC ../src)
 
 ## solaris socket dependency
-IF (CMAKE_SYSTEM_NAME MATCHES "(Solaris|SunOS)" )
+if (CMAKE_SYSTEM_NAME MATCHES "(Solaris|SunOS)")
     target_link_libraries(${PROJECT_NAME} -lsocket)
-ENDIF(CMAKE_SYSTEM_NAME MATCHES "(Solaris|SunOS)" )
+endif(CMAKE_SYSTEM_NAME MATCHES "(Solaris|SunOS)")
 
 find_package(Threads REQUIRED)
 
-target_link_libraries(${PROJECT_NAME} redis-plus-plus-static ${CMAKE_THREAD_LIBS_INIT})
+if (REDIS_PLUS_PLUS_BUILD_STATIC)
+    set(REDIS_PLUS_PLUS_LIB redis-plus-plus-static)
+else()
+    set(REDIS_PLUS_PLUS_LIB redis-plus-plus-shared)
+endif()
+
+target_link_libraries(${PROJECT_NAME} ${REDIS_PLUS_PLUS_LIB} ${CMAKE_THREAD_LIBS_INIT})

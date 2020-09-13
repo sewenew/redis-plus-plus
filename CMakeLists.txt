@@ -12,7 +12,7 @@ endif()
 
 message(STATUS "The CXX standard is c++${REDIS_PLUS_PLUS_CXX_STANDARD}")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++${REDIS_PLUS_PLUS_CXX_STANDARD} -Wall -W -Werror -fPIC")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++${REDIS_PLUS_PLUS_CXX_STANDARD} -Wall -W -Werror")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
@@ -33,49 +33,68 @@ endif()
 
 file(GLOB TLS_SOURCE_FILES "${TLS_SUB_DIR}/*.cpp")
 
-set(STATIC_LIB redis-plus-plus-static)
-set(SHARED_LIB redis-plus-plus-shared)
-
-add_library(${STATIC_LIB} STATIC ${PROJECT_SOURCE_FILES} ${TLS_SOURCE_FILES})
-add_library(${SHARED_LIB} SHARED ${PROJECT_SOURCE_FILES} ${TLS_SOURCE_FILES})
-
-target_include_directories(${STATIC_LIB} PUBLIC ${PROJECT_SOURCE_DIR} ${TLS_SUB_DIR})
-target_include_directories(${SHARED_LIB} PUBLIC ${PROJECT_SOURCE_DIR} ${TLS_SUB_DIR})
-
 # hiredis dependency
 find_path(HIREDIS_HEADER hiredis)
-target_include_directories(${STATIC_LIB} PUBLIC ${HIREDIS_HEADER})
-target_include_directories(${SHARED_LIB} PUBLIC ${HIREDIS_HEADER})
-
 find_library(HIREDIS_LIB hiredis)
-target_link_libraries(${SHARED_LIB} ${HIREDIS_LIB})
 
-if (REDIS_PLUS_PLUS_USE_TLS)
-    find_library(HIREDIS_TLS_LIB hiredis_ssl)
-    target_link_libraries(${SHARED_LIB} ${HIREDIS_TLS_LIB})
+# Build static library
+option(REDIS_PLUS_PLUS_BUILD_STATIC "Build static library" ON)
+
+if (REDIS_PLUS_PLUS_BUILD_STATIC)
+    set(STATIC_LIB redis-plus-plus-static)
+
+    add_library(${STATIC_LIB} STATIC ${PROJECT_SOURCE_FILES} ${TLS_SOURCE_FILES})
+
+    target_include_directories(${STATIC_LIB} PUBLIC ${PROJECT_SOURCE_DIR} ${TLS_SUB_DIR})
+    target_include_directories(${STATIC_LIB} PUBLIC ${HIREDIS_HEADER})
+
+    set_target_properties(${STATIC_LIB} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
+    set_target_properties(${STATIC_LIB} PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+    set_target_properties(${STATIC_LIB} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif()
 
-set_target_properties(${STATIC_LIB} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
-set_target_properties(${SHARED_LIB} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
+# Build shared library
+option(REDIS_PLUS_PLUS_BUILD_SHARED "Build shared library" ON)
 
-set_target_properties(${STATIC_LIB} PROPERTIES CLEAN_DIRECT_OUTPUT 1)
-set_target_properties(${SHARED_LIB} PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+if (REDIS_PLUS_PLUS_BUILD_SHARED)
+    set(SHARED_LIB redis-plus-plus-shared)
+
+    add_library(${SHARED_LIB} SHARED ${PROJECT_SOURCE_FILES} ${TLS_SOURCE_FILES})
+
+    target_include_directories(${SHARED_LIB} PUBLIC ${PROJECT_SOURCE_DIR} ${TLS_SUB_DIR})
+    target_include_directories(${SHARED_LIB} PUBLIC ${HIREDIS_HEADER})
+
+    target_link_libraries(${SHARED_LIB} ${HIREDIS_LIB})
+
+    if (REDIS_PLUS_PLUS_USE_TLS)
+        find_library(HIREDIS_TLS_LIB hiredis_ssl)
+        target_link_libraries(${SHARED_LIB} ${HIREDIS_TLS_LIB})
+    endif()
+
+    set_target_properties(${SHARED_LIB} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
+    set_target_properties(${SHARED_LIB} PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+    set_target_properties(${SHARED_LIB} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+endif()
 
 option(REDIS_PLUS_PLUS_BUILD_TEST "Build tests for redis++" ON)
 
-if(REDIS_PLUS_PLUS_BUILD_TEST)
+if (REDIS_PLUS_PLUS_BUILD_TEST)
     add_subdirectory(test)
 endif()
 
 # Install static lib.
-install(TARGETS ${STATIC_LIB}
-        ARCHIVE DESTINATION lib)
+if (REDIS_PLUS_PLUS_BUILD_STATIC)
+    install(TARGETS ${STATIC_LIB}
+            ARCHIVE DESTINATION lib)
+endif()
 
 # Install shared lib.
-install(TARGETS ${SHARED_LIB}
-        LIBRARY DESTINATION lib)
+if (REDIS_PLUS_PLUS_BUILD_SHARED)
+    install(TARGETS ${SHARED_LIB}
+            LIBRARY DESTINATION lib)
+endif()
 
-#Install headers.
+# Install headers.
 set(HEADER_PATH "sw/redis++")
 file(GLOB HEADERS "${PROJECT_SOURCE_DIR}/*.h*" "${TLS_SUB_DIR}/*.h")
 install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${HEADER_PATH})
