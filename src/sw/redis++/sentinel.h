@@ -128,7 +128,7 @@ public:
     StopIterError(StopIterError &&) = default;
     StopIterError& operator=(StopIterError &&) = default;
 
-    virtual ~StopIterError() = default;
+    ~StopIterError() override = default;
 };
 
 }

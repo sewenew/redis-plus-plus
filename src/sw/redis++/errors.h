@@ -41,9 +41,9 @@ public:
     Error(Error &&) = default;
     Error& operator=(Error &&) = default;
 
-    virtual ~Error() = default;
+    ~Error() override = default;
 
-    virtual const char* what() const noexcept {
+    const char* what() const noexcept override {
         return _msg.data();
     }
 
@@ -61,7 +61,7 @@ public:
     IoError(IoError &&) = default;
     IoError& operator=(IoError &&) = default;
 
-    virtual ~IoError() = default;
+    ~IoError() override = default;
 };
 
 class TimeoutError : public IoError {
@@ -74,7 +74,7 @@ public:
     TimeoutError(TimeoutError &&) = default;
     TimeoutError& operator=(TimeoutError &&) = default;
 
-    virtual ~TimeoutError() = default;
+    ~TimeoutError() override = default;
 };
 
 class ClosedError : public Error {
@@ -87,7 +87,7 @@ public:
     ClosedError(ClosedError &&) = default;
     ClosedError& operator=(ClosedError &&) = default;
 
-    virtual ~ClosedError() = default;
+    ~ClosedError() override = default;
 };
 
 class ProtoError : public Error {
@@ -100,7 +100,7 @@ public:
     ProtoError(ProtoError &&) = default;
     ProtoError& operator=(ProtoError &&) = default;
 
-    virtual ~ProtoError() = default;
+    ~ProtoError() override = default;
 };
 
 class OomError : public Error {
@@ -113,7 +113,7 @@ public:
     OomError(OomError &&) = default;
     OomError& operator=(OomError &&) = default;
 
-    virtual ~OomError() = default;
+    ~OomError() override = default;
 };
 
 class ReplyError : public Error {
@@ -126,7 +126,7 @@ public:
     ReplyError(ReplyError &&) = default;
     ReplyError& operator=(ReplyError &&) = default;
 
-    virtual ~ReplyError() = default;
+    ~ReplyError() override = default;
 };
 
 class WatchError : public Error {
@@ -139,7 +139,7 @@ public:
     WatchError(WatchError &&) = default;
     WatchError& operator=(WatchError &&) = default;
 
-    virtual ~WatchError() = default;
+    ~WatchError() override = default;
 };
 
 
