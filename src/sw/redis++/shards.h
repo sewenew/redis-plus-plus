@@ -65,7 +65,7 @@ public:
     RedirectionError(RedirectionError &&) = default;
     RedirectionError& operator=(RedirectionError &&) = default;
 
-    virtual ~RedirectionError() = default;
+    ~RedirectionError() override = default;
 
     Slot slot() const {
         return _slot;
@@ -92,7 +92,7 @@ public:
     MovedError(MovedError &&) = default;
     MovedError& operator=(MovedError &&) = default;
 
-    virtual ~MovedError() = default;
+    ~MovedError() override = default;
 };
 
 class AskError : public RedirectionError {
@@ -105,7 +105,7 @@ public:
     AskError(AskError &&) = default;
     AskError& operator=(AskError &&) = default;
 
-    virtual ~AskError() = default;
+    ~AskError() override = default;
 };
 
 }
