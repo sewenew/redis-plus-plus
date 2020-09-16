@@ -333,7 +333,7 @@ long long parse_scan_reply(redisReply &reply, Output output) {
     }
 
     auto cursor_str = reply::parse<std::string>(*cursor_reply);
-    auto new_cursor = 0;
+    long long new_cursor = 0;
     try {
         new_cursor = std::stoll(cursor_str);
     } catch (const std::exception &e) {
