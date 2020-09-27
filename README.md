@@ -667,6 +667,10 @@ Then you can use this `ConnectionOptions` to create a `Redis` object to connect 
 
 **NOTE**: When building your application code, you also need to link it with `libhiredis.a`, `libhiredis_ssl.a`, `libredis++.a` (or the corresponding shared libraries), `-lssl` and `-lcrypto`.
 
+##### Automatically Initialize OpenSSL Library
+
+By default, *redis-plus-plus* automatically initializes OpenSSL library, i.e. calls `SSL_library_init` and initializes locks if needed. However, your application code might already initialize OpenSSL library. In this case, you can call `tls::disable_auto_init()` to disable the initialization. You should call this function only once and call it before any other *redis-plus-plus* operation. Otherwise, the behavior is undefined.
+
 ### Send Command to Redis Server
 
 You can send [Redis commands](https://redis.io/commands) through `Redis` object. `Redis` has one or more (overloaded) methods for each Redis command. The method has the same (lowercased) name as the corresponding command. For example, we have 3 overload methods for the `DEL key [key ...]` command:
@@ -2008,7 +2012,7 @@ Besides `std::shared_ptr<Sentinel>` and master name, you also need to specify a 
 
 With `Role::MASTER`, *redis-plus-plus* will always connect to current master instance, even if a failover occurs. Each time when *redis-plus-plus* needs to create a new connection to master, or a connection is broken, and it needs to reconnect to master, *redis-plus-plus* will ask master address from Redis Sentinel, and connects to current master. If a failover occurs, *redis-plus-plus* can automatically get the address of the new master, and refresh all connections in the underlying connection pool.
 
-Similarly, with `Role::SLAVE`, *redis-plus-plus* will always connect to a slave instance. A master might have several slaves, *redis-plus-plus* will randomly pick one, and connect to it, i.e. all connections in the underlying connection pool, connect to the same slave instance. If the connection is broken, while this slave instance is still an alive slave, *redis-plus-plus* will reconnect to this slave. However, if this slave instance is down, or it has been promoted to be the master, *redis-plus-plus* will randomly connect to another slave. If there's no slave alive, it throws an exception.
+Similarly, with `Role::SLAVE`, *redis-plus-plus* will always connect to a slave instance. A master might have several slaves, *redis-plus-plus* will randomly pick one, and connect to it, i.e. all connections in the underlying connection pool, connect to the same slave instance (check [this discussion](https://github.com/sewenew/redis-plus-plus/issues/99) on why *redis-plus-plus* not connect to all slaves). If the connection is broken, while this slave instance is still an alive slave, *redis-plus-plus* will reconnect to this slave. However, if this slave instance is down, or it has been promoted to be the master, *redis-plus-plus* will randomly connect to another slave. If there's no slave alive, it throws an exception.
 
 #### Create Redis With Sentinel
 
