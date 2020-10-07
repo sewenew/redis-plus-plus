@@ -22,6 +22,12 @@
 #include "command.h"
 #include "command_args.h"
 
+#ifdef _MSC_VER
+
+#include <winsock2.h>   // for `timeval` with MSVC compiler
+
+#endif
+
 namespace sw {
 
 namespace redis {

@@ -12,7 +12,9 @@ endif()
 
 message(STATUS "The CXX standard is c++${REDIS_PLUS_PLUS_CXX_STANDARD}")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++${REDIS_PLUS_PLUS_CXX_STANDARD} -Wall -W -Werror")
+if (NOT WIN32)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++${REDIS_PLUS_PLUS_CXX_STANDARD} -Wall -W -Werror")
+endif()
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
@@ -48,7 +50,14 @@ if (REDIS_PLUS_PLUS_BUILD_STATIC)
     target_include_directories(${STATIC_LIB} PUBLIC ${PROJECT_SOURCE_DIR} ${TLS_SUB_DIR})
     target_include_directories(${STATIC_LIB} PUBLIC ${HIREDIS_HEADER})
 
-    set_target_properties(${STATIC_LIB} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
+    if (WIN32)
+        target_compile_definitions(${STATIC_LIB} PRIVATE NOMINMAX)
+        set_target_properties(${STATIC_LIB} PROPERTIES CXX_STANDARD ${REDIS_PLUS_PLUS_CXX_STANDARD} CXX_EXTENSIONS OFF)
+        set_target_properties(${STATIC_LIB} PROPERTIES OUTPUT_NAME ${PROJECT_NAME}_static)
+    else()
+        set_target_properties(${STATIC_LIB} PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
+    endif()
+
     set_target_properties(${STATIC_LIB} PROPERTIES CLEAN_DIRECT_OUTPUT 1)
     set_target_properties(${STATIC_LIB} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif()
@@ -63,6 +72,12 @@ if (REDIS_PLUS_PLUS_BUILD_SHARED)
 
     target_include_directories(${SHARED_LIB} PUBLIC ${PROJECT_SOURCE_DIR} ${TLS_SUB_DIR})
     target_include_directories(${SHARED_LIB} PUBLIC ${HIREDIS_HEADER})
+
+    if (WIN32)
+        target_compile_definitions(${SHARED_LIB} PRIVATE NOMINMAX)
+        set_target_properties(${SHARED_LIB} PROPERTIES CXX_STANDARD ${REDIS_PLUS_PLUS_CXX_STANDARD} CXX_EXTENSIONS OFF)
+        set_target_properties(${SHARED_LIB} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+    endif()
 
     target_link_libraries(${SHARED_LIB} ${HIREDIS_LIB})
 
@@ -90,8 +105,14 @@ endif()
 
 # Install shared lib.
 if (REDIS_PLUS_PLUS_BUILD_SHARED)
-    install(TARGETS ${SHARED_LIB}
-            LIBRARY DESTINATION lib)
+    if (WIN32)
+        install(TARGETS ${SHARED_LIB}
+                RUNTIME DESTINATION bin
+                ARCHIVE DESTINATION lib)
+    else()
+        install(TARGETS ${SHARED_LIB}
+                LIBRARY DESTINATION lib)
+    endif()
 endif()
 
 # Install headers.
