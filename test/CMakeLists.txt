@@ -28,10 +28,15 @@ endif()
 # redis++ dependency
 target_include_directories(${PROJECT_NAME} PUBLIC ../src)
 
-## solaris socket dependency
+# solaris socket dependency
 if (CMAKE_SYSTEM_NAME MATCHES "(Solaris|SunOS)")
     target_link_libraries(${PROJECT_NAME} -lsocket)
 endif(CMAKE_SYSTEM_NAME MATCHES "(Solaris|SunOS)")
+
+# Windows socket dependency
+if (WIN32)
+    target_link_libraries(${PROJECT_NAME} ws2_32)
+endif()
 
 find_package(Threads REQUIRED)
 

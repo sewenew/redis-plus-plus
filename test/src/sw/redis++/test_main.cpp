@@ -14,7 +14,18 @@
    limitations under the License.
  *************************************************************************/
 
-#include <unistd.h>
+#ifdef _MSC_VER
+
+#include <unordered_map>
+#include <vector>
+
+#else
+
+#include <unistd.h> // for getopt on non-Windows platform
+
+#endif
+
+#include <string>
 #include <chrono>
 #include <tuple>
 #include <iostream>
@@ -37,6 +48,17 @@
 #include "benchmark_test.h"
 
 namespace {
+
+#ifdef _MSC_VER
+
+// A simple implementation of `getopt` on Windows platform.
+
+char *optarg = nullptr;
+int optind = 1;
+
+int getopt(int argc, char **argv, const char *optstring);
+
+#endif
 
 struct TestOptions {
     bool run_thread_test = false;
@@ -97,6 +119,96 @@ int main(int argc, char **argv) {
 }
 
 namespace {
+
+#ifdef _MSC_VER
+
+std::vector<std::string> split(const std::string &str) {
+    if (str.empty()) {
+        return {};
+    }
+
+    std::vector<std::string> result;
+
+    std::string::size_type pos = 0;
+    std::string::size_type idx = 0;
+    while (true) {
+        pos = str.find(':', idx);
+        if (pos == std::string::npos) {
+            result.push_back(str.substr(idx));
+            break;
+        }
+
+        result.push_back(str.substr(idx, pos - idx));
+        idx = pos + 1;
+    }
+
+    return result;
+}
+
+std::unordered_map<char, bool> parse_opt_map(const std::string &opts) {
+    auto fields = split(opts);
+    if (fields.empty()) {
+        return {};
+    }
+
+    std::unordered_map<char, bool> opt_map;
+    for (auto iter = fields.begin(); iter != fields.end() - 1; ++iter) {
+        const auto &field = *iter;
+        if (field.empty()) {
+            continue;
+        }
+
+        for (auto it = field.begin(); it != field.end() - 1; ++it) {
+            opt_map.emplace(*it, false);
+        }
+
+        opt_map.emplace(field.back(), true);
+    }
+
+    const auto &last_opts = fields.back();
+    if (!last_opts.empty()) {
+        for (auto c : last_opts) {
+            opt_map.emplace(c, false);
+        }
+    }
+
+    return opt_map;
+}
+
+int getopt(int argc, char **argv, const char *optstring) {
+    if (argc < 1 || argv == nullptr || optstring == nullptr || optind >= argc) {
+        return -1;
+    }
+
+    auto opt_map = parse_opt_map(optstring);
+
+    std::string opt = *(argv + optind);
+    if (opt.size() != 2 || opt.front() != '-') {
+        return -1;
+    }
+
+    auto result = opt.back();
+    auto iter = opt_map.find(result);
+    if (iter == opt_map.end()) {
+        return -1;
+    }
+
+    ++optind;
+
+    if (iter->second) {
+        if (optind == argc) {
+            return -1;
+        }
+
+        optarg = *(argv + optind);
+
+        ++optind;
+    }
+
+    return result;
+}
+
+#endif
 
 void print_help() {
     std::cerr << "Usage: test_redis++ -h host -p port"
