@@ -19,6 +19,7 @@
 
 #include <cassert>
 #include <string>
+#include <iterator>
 #include <memory>
 #include <functional>
 #include <tuple>
