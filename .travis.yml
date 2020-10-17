@@ -18,7 +18,7 @@ install:
   - cd hiredis-master && make PREFIX=$TRAVIS_BUILD_DIR/install -j2 install && cd ..
 
 script:
-  - mkdir compile && cd compile && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$TRAVIS_BUILD_DIR/install .. && cd ..
+  - mkdir compile && cd compile && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$TRAVIS_BUILD_DIR/install .. && make -j2 && cd ..
   - ./compile/test/test_redis++ -h 127.0.0.1 -p 6379
 
 branches:
