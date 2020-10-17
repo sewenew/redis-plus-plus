@@ -18,7 +18,8 @@ before_install:
   - mkdir -p $TRAVIS_BUILD_DIR/install
 
 install:
-  - cd redis-6.0.8 && make -j2 && ./src/redis-server & && cd ..
+  - cd redis-6.0.8 && make -j2 && cd ..
+  - ./redis-6.0.8/src/redis-server &
   - cd hiredis-master && make PREFIX=$TRAVIS_BUILD_DIR/install -j2 install && cd ..
 
 script:
