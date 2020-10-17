@@ -1,0 +1,26 @@
+language: cpp
+
+dist: bionic
+
+compiler:
+  - gcc
+  - clang
+
+services:
+  - redis
+
+before_install:
+  - wget -L https://github.com/redis/hiredis/archive/master.zip -O hiredis-master.zip
+  - unzip hiredis-master.zip
+
+install:
+  - cd hiredis-master && make PREFIX=/usr -j2 install && cd ..
+
+script:
+  - mkdir compile && cd compile && cmake -DCMAKE_BUILD_TYPE=Release .. && cd ..
+  - ./compile/test/test_redis++ -h 127.0.0.1 -p 6379
+
+branches:
+  only:
+    - master
+    - dev
