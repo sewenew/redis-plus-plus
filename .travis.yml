@@ -3,7 +3,6 @@ language: cpp
 os:
   - linux
   - osx
-  - windows
 
 dist: bionic
 
@@ -11,15 +10,15 @@ compiler:
   - gcc
   - clang
 
-services:
-  - redis
-
 before_install:
+  - wget -L https://github.com/redis/redis/archive/6.0.8.tar.gz -O redis-6.0.8.tar.gz
+  - tar xfz redis-6.0.8.tar.gz
   - wget -L https://github.com/redis/hiredis/archive/master.zip -O hiredis-master.zip
   - unzip hiredis-master.zip
   - mkdir -p $TRAVIS_BUILD_DIR/install
 
 install:
+  - cd redis-6.0.8 && make -j2 && ./src/redis-server & && cd ..
   - cd hiredis-master && make PREFIX=$TRAVIS_BUILD_DIR/install -j2 install && cd ..
 
 script:
