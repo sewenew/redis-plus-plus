@@ -1,5 +1,7 @@
 # redis-plus-plus
 
+[![Build Status](https://travis-ci.org/sewenew/redis-plus-plus.svg?branch=master)](https://travis-ci.org/sewenew/redis-plus-plus)
+
 - [Overview](#overview)
     - [Features](#features)
     - [Branches](#branches)
@@ -180,9 +182,9 @@ Since *redis-plus-plus* depends on *hiredis*, we need to specify the installatio
 }
 ```
 
-Then you can build it the instructions (links) mentioned above.
+Then you can build it the instructions (links) mentioned above. If you're building with Visual Studio 2017 in debug mode, you might get [/bigobj error](https://docs.microsoft.com/en-us/cpp/build/reference/bigobj-increase-number-of-sections-in-dot-obj-file?view=vs-2017) when building the test. In this case, you can disable building test by setting `-DREDIS_PLUS_PLUS_BUILD_TEST=OFF` or build it in Release mode.
 
-**NOTE**: `REDIS_PLUS_PLUS_CXX_STANDARD` is not supported on Windows so far, and TLS/SSL support is not test Windows yet.
+**NOTE**: `REDIS_PLUS_PLUS_CXX_STANDARD` is not supported on Windows so far, and TLS/SSL support has not been tested on Windows yet.
 
 ### Run Tests (Optional)
 
