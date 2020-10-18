@@ -92,7 +92,11 @@ using Optional = std::optional<T>;
 template <typename T>
 class Optional {
 public:
+#if defined(_MSC_VER) && (_MSC_VER < 1910)
+    Optional() : _value() {}    // MSVC 2015 bug
+#else
     Optional() = default;
+#endif
 
     Optional(const Optional &) = default;
     Optional& operator=(const Optional &) = default;
