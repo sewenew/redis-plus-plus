@@ -3196,6 +3196,8 @@ public:
         watch(il.begin(), il.end());
     }
 
+    void unwatch();
+
     // Stream commands.
 
     long long xack(const StringView &key, const StringView &group, const StringView &id);

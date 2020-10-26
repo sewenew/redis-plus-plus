@@ -859,6 +859,12 @@ void Redis::watch(const StringView &key) {
     reply::parse<void>(*reply);
 }
 
+void Redis::unwatch() {
+    auto reply = command(cmd::unwatch);
+
+    reply::parse<void>(*reply);
+}
+
 // Stream commands.
 
 long long Redis::xack(const StringView &key, const StringView &group, const StringView &id) {
