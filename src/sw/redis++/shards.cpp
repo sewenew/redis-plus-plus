@@ -35,7 +35,9 @@ std::pair<Slot, Node> RedirectionError::_parse_error(const std::string &msg) con
     }
 
     try {
-        auto slot = std::stoull(msg.substr(0, space_pos));
+        // We need to do a cast for x86 build (32 bit) on Windows.
+        // See https://github.com/sewenew/redis-plus-plus/issues/115 for detail.
+        auto slot = static_cast<Slot>(std::stoull(msg.substr(0, space_pos)));
         auto host = msg.substr(space_pos + 1, colon_pos - space_pos - 1);
         auto port = std::stoi(msg.substr(colon_pos + 1));
 
