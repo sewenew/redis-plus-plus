@@ -1640,8 +1640,8 @@ inline void multi(Connection &connection) {
     connection.send("MULTI");
 }
 
-inline void unwatch(Connection &connection, const StringView &key) {
-    connection.send("UNWATCH %b", key.data(), key.size());
+inline void unwatch(Connection &connection) {
+    connection.send("UNWATCH");
 }
 
 template <typename Input>
