@@ -1313,6 +1313,7 @@ ReplyUPtr RedisCluster::_command(Cmd cmd, const StringView &key, Args &&...args)
             auto &connection = safe_connection.connection();
 
             // 1. send ASKING command.
+            // TODO: currently, if role is Role::SLAVE, we'll send request to master node.
             _asking(connection);
 
             // 2. resend last command.

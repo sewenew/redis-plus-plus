@@ -25,9 +25,11 @@ namespace redis {
 const std::size_t ShardsPool::SHARDS;
 
 ShardsPool::ShardsPool(const ConnectionPoolOptions &pool_opts,
-                        const ConnectionOptions &connection_opts) :
+                        const ConnectionOptions &connection_opts,
+                        Role role) :
                             _pool_opts(pool_opts),
-                            _connection_opts(connection_opts) {
+                            _connection_opts(connection_opts),
+                            _role(role) {
     if (_connection_opts.type != ConnectionType::TCP) {
         throw Error("Only support TCP connection for Redis Cluster");
     }
@@ -194,44 +196,69 @@ Shards ShardsPool::_parse_reply(redisReply &reply) const {
     return shards;
 }
 
+Slot ShardsPool::_parse_slot(redisReply *reply) const {
+    if (reply == nullptr) {
+        throw ProtoError("null slot id");
+    }
+
+    auto slot = reply::parse<long long>(*reply);
+    if (slot < 0) {
+        throw ProtoError("negative slot id");
+    }
+
+    return static_cast<Slot>(slot);
+}
+
+Node ShardsPool::_parse_node(redisReply *reply) const {
+    if (reply == nullptr
+            || !reply::is_array(*reply)
+            || reply->element == nullptr
+            || reply->elements < 2) {
+        throw ProtoError("invalid node info");
+    }
+
+    auto host = reply::parse<std::string>(*(reply->element[0]));
+    int port = reply::parse<long long>(*(reply->element[1]));
+
+    return {host, port};
+}
+
 std::pair<SlotRange, Node> ShardsPool::_parse_slot_info(redisReply &reply) const {
+    // Slot info is an array reply: min slot, max slot, master node, [slave nodes]
     if (reply.elements < 3 || reply.element == nullptr) {
         throw ProtoError("Invalid slot info");
     }
 
-    // Min slot id
-    auto *min_slot_reply = reply.element[0];
-    if (min_slot_reply == nullptr) {
-        throw ProtoError("Invalid min slot");
-    }
-    std::size_t min_slot = reply::parse<long long>(*min_slot_reply);
+    auto min_slot = _parse_slot(reply.element[0]);
 
-    // Max slot id
-    auto *max_slot_reply = reply.element[1];
-    if (max_slot_reply == nullptr) {
-        throw ProtoError("Invalid max slot");
-    }
-    std::size_t max_slot = reply::parse<long long>(*max_slot_reply);
+    auto max_slot = _parse_slot(reply.element[1]);
 
     if (min_slot > max_slot) {
         throw ProtoError("Invalid slot range");
     }
 
-    // Master node info
-    auto *node_reply = reply.element[2];
-    if (node_reply == nullptr
-            || !reply::is_array(*node_reply)
-            || node_reply->element == nullptr
-            || node_reply->elements < 2) {
-        throw ProtoError("Invalid node info");
+    auto slot_range = SlotRange{min_slot, max_slot};
+
+    switch (_role) {
+    case Role::MASTER:
+        // Return master node, i.e. `reply.element[2]`.
+        return std::make_pair(slot_range, _parse_node(reply.element[2]));
+
+    case Role::SLAVE: {
+        auto size = reply.elements;
+        if (size <= 3) {
+            throw Error("no slave node available");
+        }
+
+        // Randomly pick a slave node.
+        auto *slave_node_reply = reply.element[_random(3, size - 1)];
+
+        return std::make_pair(slot_range, _parse_node(slave_node_reply));
     }
 
-    auto master_host = reply::parse<std::string>(*(node_reply->element[0]));
-    int master_port = reply::parse<long long>(*(node_reply->element[1]));
-
-    // By now, we ignore node id and other replicas' info.
-
-    return {SlotRange{min_slot, max_slot}, Node{master_host, master_port}};
+    default:
+        throw Error("unknown role");
+    }
 }
 
 Slot ShardsPool::_slot(const StringView &key) const {
@@ -265,9 +292,13 @@ Slot ShardsPool::_slot(const StringView &key) const {
 }
 
 Slot ShardsPool::_slot() const {
+    return _random(0, SHARDS);
+}
+
+std::size_t ShardsPool::_random(std::size_t min, std::size_t max) const {
     static thread_local std::default_random_engine engine;
 
-    std::uniform_int_distribution<std::size_t> uniform_dist(0, SHARDS);
+    std::uniform_int_distribution<std::size_t> uniform_dist(min, max);
 
     return uniform_dist(engine);
 }
@@ -308,6 +339,11 @@ auto ShardsPool::_add_node(const Node &node) -> NodeMap::iterator {
     auto opts = _connection_opts;
     opts.host = node.host;
     opts.port = node.port;
+
+    // TODO: Better set readonly an attribute of `Node`.
+    if (_role == Role::SLAVE) {
+        opts.readonly = true;
+    }
 
     return _pools.emplace(node, std::make_shared<ConnectionPool>(_pool_opts, opts)).first;
 }

@@ -43,7 +43,8 @@ public:
     ~ShardsPool() = default;
 
     ShardsPool(const ConnectionPoolOptions &pool_opts,
-                const ConnectionOptions &connection_opts);
+                const ConnectionOptions &connection_opts,
+                Role role);
 
     // Fetch a connection by key.
     ConnectionPoolSPtr fetch(const StringView &key);
@@ -71,6 +72,10 @@ private:
 
     Shards _parse_reply(redisReply &reply) const;
 
+    Slot _parse_slot(redisReply *reply) const;
+
+    Node _parse_node(redisReply *reply) const;
+
     std::pair<SlotRange, Node> _parse_slot_info(redisReply &reply) const;
 
     // Get slot by key.
@@ -78,6 +83,9 @@ private:
 
     // Randomly pick a slot.
     std::size_t _slot() const;
+
+    // Get a random number between [min, max]
+    std::size_t _random(std::size_t min, std::size_t max) const;
 
     ConnectionPoolSPtr& _get_pool(Slot slot);
 
@@ -98,6 +106,8 @@ private:
     NodeMap _pools;
 
     std::mutex _mutex;
+
+    Role _role = Role::MASTER;
 
     static const std::size_t SHARDS = 16383;
 };

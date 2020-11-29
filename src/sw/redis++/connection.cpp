@@ -437,6 +437,20 @@ void Connection::_set_options() {
     _auth();
 
     _select_db();
+
+    if (_opts.readonly) {
+        _enable_readonly();
+    }
+}
+
+void Connection::_enable_readonly() {
+    send("READONLY");
+
+    auto reply = recv();
+
+    assert(reply);
+
+    reply::parse<void>(*reply);
 }
 
 void Connection::_auth() {
@@ -455,6 +469,8 @@ void Connection::_auth() {
 
     auto reply = recv();
 
+    assert(reply);
+
     reply::parse<void>(*reply);
 }
 
@@ -466,6 +482,8 @@ void Connection::_select_db() {
     cmd::select(*this, _opts.db);
 
     auto reply = recv();
+
+    assert(reply);
 
     reply::parse<void>(*reply);
 }
