@@ -29,6 +29,7 @@
 #include "pipeline.h"
 #include "transaction.h"
 #include "redis.h"
+#include "connection.h"
 
 namespace sw {
 
@@ -44,8 +45,8 @@ using Pipeline = QueuedRedis<PipelineImpl>;
 class RedisCluster {
 public:
     RedisCluster(const ConnectionOptions &connection_opts,
-                    const ConnectionPoolOptions &pool_opts = {}) :
-                        _pool(pool_opts, connection_opts) {}
+                    const ConnectionPoolOptions &pool_opts = {},
+                    Role role = Role::MASTER) : _pool(pool_opts, connection_opts, role) {}
 
     // Construct RedisCluster with URI:
     // "tcp://127.0.0.1" or "tcp://127.0.0.1:6379"

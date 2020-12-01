@@ -100,6 +100,12 @@ private:
     void _set_tcp_opts(const std::string &path, ConnectionOptions &opts) const;
 
     void _set_unix_opts(const std::string &path, ConnectionOptions &opts) const;
+
+    // `readonly` is only used for reading from a slave node in Redis Cluster mode.
+    friend class ShardsPool;
+    friend class Connection;
+
+    bool readonly = false;
 };
 
 class CmdArgs;
@@ -167,6 +173,8 @@ private:
     void _auth();
 
     void _select_db();
+
+    void _enable_readonly();
 
     redisContext* _context();
 
