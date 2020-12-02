@@ -1418,7 +1418,7 @@ You can call `Subscriber::consume` to consume messages published to channels/pat
 
 `Subscriber::consume` waits for message from the underlying connection. If the `ConnectionOptions::socket_timeout` is reached, and there's no message sent to this connection, `Subscriber::consume` throws a `TimeoutError` exception. If `ConnectionOptions::socket_timeout` is `0ms`, `Subscriber::consume` blocks until it receives a message.
 
-After receiving the message, `Subscriber::consume` calls the callback function to process the message based on message type. However, if you don't set callback for a specific kind of message, `Subscriber::consume` will ignore the received message, i.e. no callback will be called.
+After receiving the message, `Subscriber::consume` calls the callback function to process the message based on message type. However, if you don't set callback for a specific kind of message, `Subscriber::consume` will consume the received message and discard it, i.e. `Subscriber::consume` returns without running the callback.
 
 #### Examples
 
@@ -1892,7 +1892,7 @@ while (true) {
 
 #### Connection
 
-`RedisCluster` connects to all master nodes in the cluster. For each master node, it maintains a connection pool. By now, it doesn't connect to slave nodes.
+By default, `RedisCluster` connects to all master nodes in the cluster. For each master node, it maintains a connection pool. If you want to read from slave nodes, you need to explicitly set an option (see [below](#read-from-replica) for reference).
 
 You can initialize a `RedisCluster` instance with `ConnectionOptions` and `ConnectionPoolOptions`. You only need to set one master node's host & port in `ConnectionOptions`, and `RedisCluster` will get other nodes' info automatically (with the *CLUSTER SLOTS* command). For each master node, it creates a connection pool with the specified `ConnectionPoolOptions`. If `ConnectionPoolOptions` is not specified, `RedisCluster` maintains a single connection to every master node.
 
@@ -1923,6 +1923,20 @@ RedisCluster cluster3("tcp://127.0.0.1:7000");
 // Use default port, i.e. 6379.
 RedisCluster cluster4("tcp://127.0.0.1");
 ```
+
+##### Read From Replica
+
+If you want to scale read by reading (possible stale) data from slave nodes, you can specifiy `Role::SLAVE` as the third parameter of `RedisCluster`'s constructor. In this case, *redis-plus-plus* will randomly pick a replica node for each master node of the cluster, and create a connection pool for the replica node.
+
+```C++
+RedisCluster cluster(connection_options, pool_options, Role::SLAVE);
+
+auto val = cluster.get("key");
+```
+
+In this case, you can only send readonly commands to Redis Cluster. If you try to send a write command, e.g. `set`, `hset`, *redis-plus-plus* will throw an exception. Currently, *redis-plus-plus* doesn't handle this case, i.e. sending write command in `Role::SLAVE` mode, elegantly, and you might get some performance problem. So, NEVER send write command in `Role::SLAVE` mode. I'll fix this issue in the future.
+
+**NOTE**: In `Role::SLAVE` mode, you don't need to manually send [READONLY](https://redis.io/commands/readonly) command to slave nodes. Instead, *redis-plus-plus* will send *READONLY* command to slave nodes automatically.
 
 ##### Note
 
