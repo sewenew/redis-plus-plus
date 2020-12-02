@@ -2155,7 +2155,10 @@ public:
     /// @param changed Whether change the return value from number of newly added member to
     ///                number of members changed (i.e. added and updated).
     /// @return Number of added members or number of added and updated members depends on `changed`.
-    /// @note We don't support the INCR option, since you can always use ZINCRBY instead.
+    /// @note We don't support the INCR option, because in this case, the return value of zadd
+    ///       command is NOT of type long long. However, you can always use the generic interface
+    ///       to send zadd command with INCR option:
+    ///       `auto score = redis.command<OptionalDouble>("ZADD", "key", "XX", "INCR", 10, "mem");`
     /// @see `UpdateType`
     /// @see https://redis.io/commands/zadd
     long long zadd(const StringView &key,
@@ -2181,7 +2184,10 @@ public:
     /// @param changed Whether change the return value from number of newly added member to
     ///                number of members changed (i.e. added and updated).
     /// @return Number of added members or number of added and updated members depends on `changed`.
-    /// @note We don't support the INCR option, since you can always use ZINCRBY instead.
+    /// @note We don't support the INCR option, because in this case, the return value of zadd
+    ///       command is NOT of type long long. However, you can always use the generic interface
+    ///       to send zadd command with INCR option:
+    ///       `auto score = redis.command<OptionalDouble>("ZADD", "key", "XX", "INCR", 10, "mem");`
     /// @see `UpdateType`
     /// @see https://redis.io/commands/zadd
     template <typename Input>
@@ -2207,7 +2213,10 @@ public:
     /// @param changed Whether change the return value from number of newly added member to
     ///                number of members changed (i.e. added and updated).
     /// @return Number of added members or number of added and updated members depends on `changed`.
-    /// @note We don't support the INCR option, since you can always use ZINCRBY instead.
+    /// @note We don't support the INCR option, because in this case, the return value of zadd
+    ///       command is NOT of type long long. However, you can always use the generic interface
+    ///       to send zadd command with INCR option:
+    ///       `auto score = redis.command<OptionalDouble>("ZADD", "key", "XX", "INCR", 10, "mem");`
     /// @see `UpdateType`
     /// @see https://redis.io/commands/zadd
     template <typename T>
