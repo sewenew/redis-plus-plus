@@ -30,6 +30,7 @@ namespace test {
 template <typename RedisInstance>
 void GeoCmdTest<RedisInstance>::run() {
     auto key = test_key("geo");
+    auto not_exist_key = test_key("geo_not_exist");
     auto dest = test_key("dest");
 
     KeyDeleter<RedisInstance> deleter(_redis, {key, dest});
@@ -79,6 +80,24 @@ void GeoCmdTest<RedisInstance>::run() {
                                 10);
     REDIS_ASSERT(bool(num) && *num == 3, "failed to test georadius with store option");
 
+    num = _redis.georadius(key,
+                            std::make_pair(50, 50),
+                            1,
+                            GeoUnit::M,
+                            dest,
+                            false,
+                            10);
+    REDIS_ASSERT(bool(num) && *num == 0, "failed to test georadius with store option");
+
+    num = _redis.georadius(not_exist_key,
+                            std::make_pair(10.1, 11.1),
+                            100,
+                            GeoUnit::KM,
+                            dest,
+                            false,
+                            10);
+    REDIS_ASSERT(!num, "failed to test georadius with store option");
+
     std::vector<std::string> mems;
     _redis.georadius(key,
                     std::make_pair(10.1, 11.1),
@@ -117,6 +136,15 @@ void GeoCmdTest<RedisInstance>::run() {
                                     false,
                                     10);
     REDIS_ASSERT(bool(num) && *num == 3, "failed to test georadiusbymember with store option");
+
+    num = _redis.georadiusbymember(not_exist_key,
+                                    "m1",
+                                    100,
+                                    GeoUnit::KM,
+                                    dest,
+                                    false,
+                                    10);
+    REDIS_ASSERT(!num, "failed to test georadiusbymember with store option");
 
     mems.clear();
     _redis.georadiusbymember(key,

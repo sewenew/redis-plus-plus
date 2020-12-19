@@ -115,8 +115,8 @@ void rewrite_set_reply(redisReply &reply) {
     reply.integer = 1;
 }
 
-void rewrite_georadius_reply(redisReply &reply) {
-    if (is_array(reply) && reply.element == nullptr) {
+void rewrite_empty_array_reply(redisReply &reply) {
+    if (is_array(reply) && reply.elements == 0) {
         // Make it a nil reply.
         reply.type = REDIS_REPLY_NIL;
     }

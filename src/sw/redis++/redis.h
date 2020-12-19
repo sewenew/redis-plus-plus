@@ -2403,7 +2403,7 @@ public:
     /// @param key Key where the sorted set is stored.
     /// @return Member-score pair with the highest score.
     /// @note If sorted set is empty `zpopmax` returns
-    ///       `Optional<std::pair<std::string, double>>` (`std::nullopt`).
+    ///       `Optional<std::pair<std::string, double>>{}` (`std::nullopt`).
     /// @see `Redis::bzpopmax`
     /// @see https://redis.io/commands/zpopmax
     Optional<std::pair<std::string, double>> zpopmax(const StringView &key);
@@ -2422,7 +2422,7 @@ public:
     /// @param key Key where the sorted set is stored.
     /// @return Member-score pair with the lowest score.
     /// @note If sorted set is empty `zpopmin` returns
-    ///       `Optional<std::pair<std::string, double>>` (`std::nullopt`).
+    ///       `Optional<std::pair<std::string, double>>{}` (`std::nullopt`).
     /// @see `Redis::bzpopmin`
     /// @see https://redis.io/commands/zpopmin
     Optional<std::pair<std::string, double>> zpopmin(const StringView &key);
@@ -3076,6 +3076,20 @@ public:
     // 1. since we have different overloads for georadius and georadius-store,
     //    we might use the GEORADIUS_RO command in the future.
     // 2. there're too many parameters for this method, we might refactor it.
+
+    /// @brief Get members in geo range, i.e. a circle, and store them in a sorted set.
+    /// @param key Key of the GEO set.
+    /// @param loc Location encoded with <longitude, latitude> pair.
+    /// @param radius Radius of the range.
+    /// @param unit Radius unit.
+    /// @param destination Key of the destination sorted set.
+    /// @param store_dist Whether store distance info instead of geo info to destination.
+    /// @param count Limit the first N members.
+    /// @return Number of members stored in destination.
+    /// @note If key does not exist, returns `OptionalLongLong{}` (`std::nullopt`).
+    /// @see `GeoUnit`
+    /// @see `Redis::georadiusbymember`
+    /// @see https://redis.io/commands/georadius
     OptionalLongLong georadius(const StringView &key,
                                 const std::pair<double, double> &loc,
                                 double radius,
@@ -3126,6 +3140,20 @@ public:
                     bool asc,
                     Output output);
 
+    /// @brief Get members in geo range, i.e. a circle, and store them in a sorted set.
+    /// @param key Key of the GEO set.
+    /// @param member Member which is the center of the circle.
+    /// @param radius Radius of the range.
+    /// @param unit Radius unit.
+    /// @param destination Key of the destination sorted set.
+    /// @param store_dist Whether store distance info instead of geo info to destination.
+    /// @param count Limit the first N members.
+    /// @return Number of members stored in destination.
+    /// @note If key does not exist, returns `OptionalLongLong{}` (`std::nullopt`). If
+    ///       member does not exist, throw an `ReplyError`.
+    /// @see `GeoUnit`
+    /// @see `Redis::georadius`
+    /// @see https://redis.io/commands/georadiusbymember
     OptionalLongLong georadiusbymember(const StringView &key,
                                         const StringView &member,
                                         double radius,

@@ -576,11 +576,15 @@ long long RedisCluster::zinterstore(const StringView &destination,
 Optional<std::pair<std::string, double>> RedisCluster::zpopmax(const StringView &key) {
     auto reply = command(cmd::zpopmax, key, 1);
 
+    reply::rewrite_empty_array_reply(*reply);
+
     return reply::parse<Optional<std::pair<std::string, double>>>(*reply);
 }
 
 Optional<std::pair<std::string, double>> RedisCluster::zpopmin(const StringView &key) {
     auto reply = command(cmd::zpopmin, key, 1);
+
+    reply::rewrite_empty_array_reply(*reply);
 
     return reply::parse<Optional<std::pair<std::string, double>>>(*reply);
 }
@@ -691,7 +695,7 @@ OptionalLongLong RedisCluster::georadius(const StringView &key,
                             store_dist,
                             count);
 
-    reply::rewrite_georadius_reply(*reply);
+    reply::rewrite_empty_array_reply(*reply);
 
     return reply::parse<OptionalLongLong>(*reply);
 }
@@ -712,7 +716,7 @@ OptionalLongLong RedisCluster::georadiusbymember(const StringView &key,
                             store_dist,
                             count);
 
-    reply::rewrite_georadius_reply(*reply);
+    reply::rewrite_empty_array_reply(*reply);
 
     return reply::parse<OptionalLongLong>(*reply);
 }

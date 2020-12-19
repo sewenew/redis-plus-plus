@@ -276,6 +276,7 @@ void ZSetCmdTest<RedisInstance>::_test_multi_zset() {
 template <typename RedisInstance>
 void ZSetCmdTest<RedisInstance>::_test_zpop() {
     auto key = test_key("zpop");
+    auto not_exist_key = test_key("zpop_not_exist");
 
     KeyDeleter<RedisInstance> deleter(_redis, key);
 
@@ -289,8 +290,14 @@ void ZSetCmdTest<RedisInstance>::_test_zpop() {
     auto item = _redis.zpopmax(key);
     REDIS_ASSERT(item && item->first == "m6", "failed to test zpopmax");
 
+    item = _redis.zpopmax(not_exist_key);
+    REDIS_ASSERT(!item, "failed to test zpopmax");
+
     item = _redis.zpopmin(key);
     REDIS_ASSERT(item && item->first == "m1", "failed to test zpopmin");
+
+    item = _redis.zpopmin(not_exist_key);
+    REDIS_ASSERT(!item, "failed to test zpopmin");
 
     std::vector<std::pair<std::string, double>> vec;
     _redis.zpopmax(key, 2, std::back_inserter(vec));

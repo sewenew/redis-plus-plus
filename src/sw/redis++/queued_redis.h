@@ -1103,6 +1103,8 @@ public:
     }
 
     QueuedRedis& zpopmax(const StringView &key) {
+        _empty_array_cmd_indexes.push_back(_cmd_num);
+
         return command(cmd::zpopmax, key, 1);
     }
 
@@ -1111,6 +1113,8 @@ public:
     }
 
     QueuedRedis& zpopmin(const StringView &key) {
+        _empty_array_cmd_indexes.push_back(_cmd_num);
+
         return command(cmd::zpopmin, key, 1);
     }
 
@@ -1409,7 +1413,7 @@ public:
                             const StringView &destination,
                             bool store_dist,
                             long long count) {
-        _georadius_cmd_indexes.push_back(_cmd_num);
+        _empty_array_cmd_indexes.push_back(_cmd_num);
 
         return command(cmd::georadius_store,
                         key,
@@ -1453,7 +1457,7 @@ public:
                                     const StringView &destination,
                                     bool store_dist,
                                     long long count) {
-        _georadius_cmd_indexes.push_back(_cmd_num);
+        _empty_array_cmd_indexes.push_back(_cmd_num);
 
         return command(cmd::georadiusbymember,
                         key,
@@ -1944,7 +1948,7 @@ private:
 
     std::vector<std::size_t> _set_cmd_indexes;
 
-    std::vector<std::size_t> _georadius_cmd_indexes;
+    std::vector<std::size_t> _empty_array_cmd_indexes;
 
     bool _valid = true;
 };

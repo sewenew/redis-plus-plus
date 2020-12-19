@@ -172,7 +172,7 @@ inline void QueuedRedis<Impl>::_reset(bool reset_connection) {
 
     _set_cmd_indexes.clear();
 
-    _georadius_cmd_indexes.clear();
+    _empty_array_cmd_indexes.clear();
 }
 
 template <typename Impl>
@@ -208,7 +208,7 @@ template <typename Impl>
 void QueuedRedis<Impl>::_rewrite_replies(std::vector<ReplyUPtr> &replies) const {
     _rewrite_replies(_set_cmd_indexes, reply::rewrite_set_reply, replies);
 
-    _rewrite_replies(_georadius_cmd_indexes, reply::rewrite_georadius_reply, replies);
+    _rewrite_replies(_empty_array_cmd_indexes, reply::rewrite_empty_array_reply, replies);
 }
 
 template <typename Impl>
