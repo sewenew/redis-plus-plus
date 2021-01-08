@@ -169,16 +169,21 @@ auto ConnectionOptions::_split_uri(const std::string &uri) const
 
     auto type = uri.substr(0, pos);
 
+    // avoid passwd contains '@', find @ from back to front
+    std::string reverse_uri = uri;
+    reverse(begin(reverse_uri), end(reverse_uri));
     auto start = pos + 3;
-    pos = uri.find("@", start);
+
+    pos = uri.find("@", 0);
     if (pos == std::string::npos) {
-        // No auth info.
+        // no auth info
         return std::make_tuple(type, std::string{}, uri.substr(start));
     }
 
-    auto auth = uri.substr(start, pos - start);
+    auto origin_pos = uri.size() - pos - 1;
+    auto auth = uri.substr(start, origin_pos - start);
 
-    return std::make_tuple(type, auth, uri.substr(pos + 1));
+    return std::make_tuple(type, auth, uri.substr(origin_pos + 1));
 }
 
 auto ConnectionOptions::_split_path(const std::string &path) const
