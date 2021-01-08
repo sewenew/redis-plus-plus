@@ -170,7 +170,7 @@ auto ConnectionOptions::_split_uri(const std::string &uri) const
     auto type = uri.substr(0, pos);
 
     auto start = pos + 3;
-    pos = uri.find("@", start);
+    pos = uri.rfind("@", uri.size() - 1);
     if (pos == std::string::npos) {
         // No auth info.
         return std::make_tuple(type, std::string{}, uri.substr(start));
