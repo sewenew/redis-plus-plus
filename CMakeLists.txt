@@ -1,9 +1,18 @@
-project(redis++)
-
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if (APPLE)
     cmake_minimum_required(VERSION 3.0.0)
 else()
     cmake_minimum_required(VERSION 2.8.0)
+endif()
+
+set(REDIS_PLUS_PLUS_VERSION "1.2.1")
+
+message(STATUS "redis-plus-plus version: ${REDIS_PLUS_PLUS_VERSION}")
+
+if (${CMAKE_VERSION} VERSION_LESS "3.0.0")
+    project(redis++)
+else()
+    cmake_policy(SET CMP0048 NEW)
+    project(redis++ VERSION ${REDIS_PLUS_PLUS_VERSION})
 endif()
 
 if (NOT DEFINED REDIS_PLUS_PLUS_CXX_STANDARD)
