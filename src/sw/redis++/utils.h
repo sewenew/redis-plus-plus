@@ -163,6 +163,8 @@ using OptionalStringPair = Optional<std::pair<std::string, std::string>>;
 template <typename ...Args>
 using Variant = std::variant<Args...>;
 
+using Monostate = std::monostate;
+
 #endif
 
 template <typename ...>

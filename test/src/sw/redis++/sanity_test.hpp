@@ -18,6 +18,7 @@
 #define SEWENEW_REDISPLUSPLUS_TEST_SANITY_TEST_HPP
 
 #include "utils.h"
+#include <unordered_map>
 
 namespace sw {
 
@@ -148,8 +149,9 @@ void SanityTest<RedisInstance>::_test_generic_command() {
     auto not_exist_key = test_key("not_exist_key");
     auto k1 = test_key("k1");
     auto k2 = test_key("k2");
+    auto key_var = test_key("key_var");
 
-    KeyDeleter<RedisInstance> deleter(_redis, {key, not_exist_key, k1, k2});
+    KeyDeleter<RedisInstance> deleter(_redis, {key, not_exist_key, k1, k2, key_var});
 
     std::string cmd("set");
     _redis.command(cmd, key, 123);
@@ -200,6 +202,18 @@ void SanityTest<RedisInstance>::_test_generic_command() {
     _redis.command(mget_cmd_str.begin(), mget_cmd_str.end(), std::back_inserter(res));
     REDIS_ASSERT(res.size() == 2 && res[0] && *res[0] == "new_value" && !res[1],
             "failed to test generic command");
+
+#ifdef REDIS_PLUS_PLUS_HAS_VARIANT
+
+    _redis.hmset(key_var, {std::make_pair("a", "abc"), std::make_pair("b", "1.2")});
+    std::unordered_map<std::string, Variant<double, std::string>> var_result;
+    _redis.hgetall(key_var, std::inserter(var_result, var_result.begin()));
+    REDIS_ASSERT(var_result.size() == 2
+            && std::get<std::string>(var_result["a"]) == "abc"
+            && (std::get<double>(var_result["b"]) - 1.2) < 0.01,
+            "failed to test generic command with variant reply");
+
+#endif
 }
 
 template <typename RedisInstance>
