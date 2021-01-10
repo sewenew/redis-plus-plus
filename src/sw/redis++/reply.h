@@ -73,6 +73,15 @@ std::pair<T, U> parse(ParseTag<std::pair<T, U>>, redisReply &reply);
 template <typename ...Args>
 std::tuple<Args...> parse(ParseTag<std::tuple<Args...>>, redisReply &reply);
 
+#ifdef REDIS_PLUS_PLUS_HAS_VARIANT
+
+Monostate parse(ParseTag<Monostate>, redisReply &reply);
+
+template <typename ...Args>
+Variant<Args...> parse(ParseTag<Variant<Args...>>, redisReply &reply);
+
+#endif
+
 template <typename T, typename std::enable_if<IsSequenceContainer<T>::value, int>::type = 0>
 T parse(ParseTag<T>, redisReply &reply);
 
@@ -219,6 +228,29 @@ auto parse_tuple(redisReply **reply, std::size_t idx) ->
                             parse_tuple<Args...>(reply, idx + 1));
 }
 
+#ifdef REDIS_PLUS_PLUS_HAS_VARIANT
+
+template <typename T>
+Variant<T> parse_variant(redisReply &reply) {
+    return parse<T>(reply);
+}
+
+template <typename T, typename ...Args>
+auto parse_variant(redisReply &reply) ->
+    typename std::enable_if<sizeof...(Args) != 0, Variant<T, Args...>>::type {
+    auto return_var = [](auto &&arg) {
+        return Variant<T, Args...>(std::move(arg));
+    };
+
+    try {
+        return std::visit(return_var, parse_variant<T>(reply));
+    } catch (const ProtoError &) {
+        return std::visit(return_var, parse_variant<Args...>(reply));
+    }
+}
+
+#endif
+
 }
 
 template <typename T>
@@ -296,6 +328,15 @@ std::tuple<Args...> parse(ParseTag<std::tuple<Args...>>, redisReply &reply) {
 
     return detail::parse_tuple<Args...>(reply.element, 0);
 }
+
+#ifdef REDIS_PLUS_PLUS_HAS_VARIANT
+
+template <typename ...Args>
+Variant<Args...> parse(ParseTag<Variant<Args...>>, redisReply &reply) {
+    return detail::parse_variant<Args...>(reply);
+}
+
+#endif
 
 template <typename T, typename std::enable_if<IsSequenceContainer<T>::value, int>::type>
 T parse(ParseTag<T>, redisReply &reply) {

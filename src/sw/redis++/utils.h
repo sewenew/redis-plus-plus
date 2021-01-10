@@ -26,6 +26,9 @@
 #    if __has_include(<optional>)
 #      define REDIS_PLUS_PLUS_HAS_OPTIONAL
 #    endif
+#    if __has_include(<variant>)
+#      define REDIS_PLUS_PLUS_HAS_VARIANT
+#    endif
 #  endif
 #endif
 
@@ -39,6 +42,10 @@
 
 #if defined REDIS_PLUS_PLUS_HAS_OPTIONAL
 #include <optional>
+#endif
+
+#if defined REDIS_PLUS_PLUS_HAS_VARIANT
+#include <variant>
 #endif
 
 namespace sw {
@@ -150,6 +157,15 @@ using OptionalLongLong = Optional<long long>;
 using OptionalDouble = Optional<double>;
 
 using OptionalStringPair = Optional<std::pair<std::string, std::string>>;
+
+#if defined REDIS_PLUS_PLUS_HAS_VARIANT
+
+template <typename ...Args>
+using Variant = std::variant<Args...>;
+
+using Monostate = std::monostate;
+
+#endif
 
 template <typename ...>
 struct IsKvPair : std::false_type {};

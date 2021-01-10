@@ -628,6 +628,8 @@ The *scheme* and *host* parts are required, and others are optional. If you're c
 - port: 6379
 - db: 0
 
+**NOTE**: If your password or username contains '@', or your username contains ':', you cannot construct `Redis` object with URI. Because *redis-plus-plus* will incorrectly parse the URI. In this case, you need to use `ConnectionOptions` to construct `Redis` object.
+
 **NOTE**: [Redis 6.0 supports ACL](https://redis.io/topics/acl), and you can specify a username for the connection. However, before Redis 6.0, you cannot do that.
 
 Also, the following connection options can be specified with the query string of URI, e.g. *tcp://127.0.0.1?keep_alive=true&socket_timeout=100ms&connect_timeout=100ms*:
@@ -827,6 +829,8 @@ As we mentioned above, replies are parsed into return values of these methods. T
 | **std::tuple** | *Array Reply* with fixed length and has more than 2 elements. Since length of the returned array is fixed, we return the array as a `std::tuple` | *BZPOPMAX* | |
 | **output iterator** | General *Array Reply* with non-fixed/dynamic length. We use STL-like interface to return this kind of array replies, so that you can insert the return value into a STL container easily | *MGET*, *LRANGE* | Also, sometimes the type of output iterator decides which options to send with the command. See the [Examples section](#command-overloads) for details |
 | **Optional< T >** | For any reply of type `T` that might be *NULL* | *GET*, *LPOP*, *BLPOP*, *BZPOPMAX* | See the [Optional section](#optional) for details on `Optional<T>` |
+| **Variant< Args... >** | For reply that might be of serval different types | *MEMORY STATS* | NOTE: so far, this type is only supported when compiling redis-plus-plus with C++ 17 standard. This is normally used with [generic command interface](https://github.com/sewenew/redis-plus-plus#generic-command-interface). See the [Variant section](#variant) for details on `Variant<Args...>` |
+| **STL container** | General *Array Reply* | *CONFIG GET* | Both *output iterator* and *STL container* are used for array reply. The difference is that *STL container* is normally used with [generic command interface](https://github.com/sewenew/redis-plus-plus#generic-command-interface). See the [STL container section](#stl-container) for example |
 
 ##### Boolean Return Value
 
@@ -879,6 +883,54 @@ using OptionalDouble = Optional<double>;
 
 using OptionalStringPair = Optional<std::pair<std::string, std::string>>;
 ```
+
+##### Variant
+
+[std::variant](https://en.cppreference.com/w/cpp/utility/variant) is a good option for return type, if the reply might be of different types. For example, the `MEMORY STATS` command returns an array reply, which is, in fact, a map of key-value pairs of configurations:
+
+```
+127.0.0.1:6379> memory stats
+ 1) "peak.allocated"
+ 2) (integer) 4471104
+ ...
+17) "db.0"
+18) 1) "overhead.hashtable.main"
+    2) (integer) 104
+    3) "overhead.hashtable.expires"
+    4) (integer) 32
+...
+27) "dataset.percentage"
+28) "9.70208740234375"
+...
+```
+
+However, as you can see, the value part of the result might be of type long long (key: *peak.allocated*), double (key: *dataset.percentage*) or even a map (key: *db.0*). So you cannot simply parse the result into a `std::unordered_map<std::string, long long>` or `std::unordered_map<std::string, double>`. A workaround is to parse the result into a `tuple`, however, this tuple solution is ugly and error-prone. Check [this issue](https://github.com/sewenew/redis-plus-plus/issues/138) for detail.
+
+In this case, `Variant`, which is a typedef of `std::variant` if you build redis-plus-plus with C++17 standard, is very helpful. You can parse the result into a `std::unordered_map<std::string, Variant<double, long long, std::unordered_map<std::string, long long>>>`.
+
+```
+using Var = Variant<double, long long, std::unordered_map<std::string, long long>>;
+auto r = Redis("tcp://127.0.0.1");
+auto v = r.command<std::unordered_map<std::string, Var>>("memory", "stats");
+```
+
+There're some limitations on `Variant` support:
+
+- The type arguments of `Variant`, cannot have duplicate items, e.g. `Variant<double, long long, double>` won't work.
+- `double` must be placed before `std::string`. Because `double` reply is, in fact, string reply, and when parsing variant, we try to parse the reply into the first matched type, specified with the type arguments from left to right. So if `double` is placed after `std::string`, i.e. on the right side of `std::string`, the reply will always be parsed into `std::string`.
+
+Also check the [generic command section](https://github.com/sewenew/redis-plus-plus#generic-command-interface) for more examples on generic command interface.
+
+##### STL container
+
+When using generic command interface, instead of parsing the reply to output iterator, you can also parse it into a STL container.
+
+```
+auto r = Redis("tcp://127.0.0.1");
+auto v = r.command<std::unordered_map<std::string, std::string>>("config", "get", "*");
+```
+
+Also check the [generic command section](https://github.com/sewenew/redis-plus-plus#generic-command-interface) for more examples on generic command interface.
 
 #### Examples
 

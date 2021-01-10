@@ -16,6 +16,7 @@
 
 #include "reply.h"
 #include <cstdlib>
+#include <stdexcept>
 
 namespace sw {
 
@@ -60,7 +61,13 @@ long long parse(ParseTag<long long>, redisReply &reply) {
 }
 
 double parse(ParseTag<double>, redisReply &reply) {
-    return std::stod(parse<std::string>(reply));
+    try {
+        return std::stod(parse<std::string>(reply));
+    } catch (const std::invalid_argument &) {
+        throw ProtoError("not a double reply");
+    } catch (const std::out_of_range &) {
+        throw ProtoError("double reply out of range");
+    }
 }
 
 bool parse(ParseTag<bool>, redisReply &reply) {
@@ -93,6 +100,15 @@ void parse(ParseTag<void>, redisReply &reply) {
         throw ProtoError("NOT ok status reply: " + reply::to_status(reply));
     }
 }
+
+#ifdef REDIS_PLUS_PLUS_HAS_VARIANT
+
+Monostate parse(ParseTag<Monostate>, redisReply &) {
+    // Just ignore the reply
+    return {};
+}
+
+#endif
 
 void rewrite_set_reply(redisReply &reply) {
     if (is_nil(reply)) {
