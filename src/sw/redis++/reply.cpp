@@ -101,15 +101,6 @@ void parse(ParseTag<void>, redisReply &reply) {
     }
 }
 
-#ifdef REDIS_PLUS_PLUS_HAS_VARIANT
-
-Monostate parse(ParseTag<Monostate>, redisReply &) {
-    // Just ignore the reply
-    return {};
-}
-
-#endif
-
 void rewrite_set_reply(redisReply &reply) {
     if (is_nil(reply)) {
         // Failed to set, and make it a FALSE reply.

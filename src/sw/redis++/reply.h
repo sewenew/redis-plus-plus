@@ -75,7 +75,10 @@ std::tuple<Args...> parse(ParseTag<std::tuple<Args...>>, redisReply &reply);
 
 #ifdef REDIS_PLUS_PLUS_HAS_VARIANT
 
-Monostate parse(ParseTag<Monostate>, redisReply &reply);
+inline Monostate parse(ParseTag<Monostate>, redisReply &) {
+    // Just ignore the reply
+    return {};
+}
 
 template <typename ...Args>
 Variant<Args...> parse(ParseTag<Variant<Args...>>, redisReply &reply);

@@ -213,6 +213,13 @@ void SanityTest<RedisInstance>::_test_generic_command() {
             && (std::get<double>(var_result["b"]) - 1.2) < 0.01,
             "failed to test generic command with variant reply");
 
+    std::unordered_map<std::string, Variant<long long, Monostate>> var_with_monostate;
+    _redis.hgetall(key_var, std::inserter(var_with_monostate, var_with_monostate.begin()));
+    REDIS_ASSERT(var_with_monostate.size() == 2
+            && std::holds_alternative<Monostate>(var_with_monostate["a"])
+            && std::holds_alternative<Monostate>(var_with_monostate["b"]),
+            "failed to test generic command with variant reply");
+
 #endif
 }
 
