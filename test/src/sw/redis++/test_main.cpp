@@ -212,7 +212,7 @@ int getopt(int argc, char **argv, const char *optstring) {
 
 void print_help() {
     std::cerr << "Usage: test_redis++ -h host -p port"
-        << " -n cluster_node -c cluster_port [-a auth] [-b]\n\n";
+        << " -n cluster_node -c cluster_port [-a auth] [-b] [-m]\n\n";
     std::cerr << "See https://github.com/sewenew/redis-plus-plus#run-tests-optional"
         << " for details on how to run test" << std::endl;
 }

@@ -33,6 +33,8 @@ public:
     void run();
 
 private:
+    void _test_multithreads_stream_read_and_write(RedisInstance redis, int threads_num, int times);
+
     void _test_multithreads(RedisInstance redis, int threads_num, int times);
 
     void _test_timeout();

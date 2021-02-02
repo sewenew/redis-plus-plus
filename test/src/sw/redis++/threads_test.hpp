@@ -31,6 +31,16 @@ namespace test {
 
 template <typename RedisInstance>
 void ThreadsTest<RedisInstance>::run() {
+    {
+        auto thread_num = 2;
+        auto times = 10000;
+    
+        // Pool with 2 connections, stream read and write
+        ConnectionPoolOptions pool_opts;
+        pool_opts.size = 2;
+        _test_multithreads_stream_read_and_write(RedisInstance(_opts, pool_opts), thread_num, times);
+    }
+
     // 100 * 10000 = 1 million writes
     auto thread_num = 100;
     auto times = 10000;
@@ -45,6 +55,80 @@ void ThreadsTest<RedisInstance>::run() {
 
     _test_timeout();
 }
+
+template <typename RedisInstance>
+void ThreadsTest<RedisInstance>::_test_multithreads_stream_read_and_write(RedisInstance redis,
+        int thread_num,
+        int times) {
+
+    std::cout << "Started _test_multithreads_stream_read_and_write" << std::endl;
+            
+    auto key = test_key("key-name");
+    
+    using Attrs = std::vector<std::pair<std::string, std::string>>;
+    Attrs attrs = { {"f1", "v1"} };
+    using Item = std::pair<std::string, Attrs>;
+    using ItemStream = std::vector<Item>;
+    std::unordered_map<std::string, ItemStream> result;
+
+    std::vector<std::thread> workers;
+    redis.del(key);
+    // Even threads are writers, odd threads are readers
+    workers.reserve(thread_num);
+    for( int t = 0; t < thread_num; ++t ) {
+        if( t%2 == 0 ) {
+            workers.emplace_back([&redis, attrs, key, times]() {
+                try {
+                    std::cout << "Starting xadd..." << std::endl;
+                    for (auto i = 0; i != times; ++i) {
+                        auto id = redis.xadd(key, "*", attrs.begin(), attrs.end());
+                    }
+                    std::cout << "Finished xadd..." << std::endl;
+                } catch (...) {
+                    // Something bad happens.
+                    return;
+                }
+            });
+        } else {
+            workers.emplace_back([&redis, &result, attrs, key, times]() {
+                try {
+                    std::string id = "0";
+                    int n_read = 0;
+                    int last_result_size = 0;
+                    //const int n_shown = 10;
+                    std::cout << "Starting xread..." << std::endl;
+                    while( n_read < times ) {
+                        redis.xread(key, id, std::chrono::seconds(1), times, std::inserter(result, result.end()));
+                        if( !result.empty() ) {
+                            const auto end_count = result.begin()->second.size();
+                            const int new_count = end_count - last_result_size;
+                            if( new_count > 0 ) {
+                                for( int i = 0; i < new_count; ++i ) {
+                                    id = result.begin()->second[last_result_size+i].first;
+                                    //if( n_read%(times/n_shown) == 0 ) std::cout << "n_read: " << n_read << std::endl;
+                                    std::cout << "n_read: " << n_read << std::endl;
+                                    n_read++;
+                                }
+                                last_result_size = result.begin()->second.size();
+                            }
+                        }
+                    }
+                    std::cout << "Finished xread..." << std::endl;
+                } catch (...) {
+                    // Something bad happens.
+                    return;
+                }
+           });
+        }
+    }
+
+    for (auto &worker : workers) {
+        worker.join();
+    }
+
+    // Code never reaches this point due to bug in to_array() code.
+}
+
 
 template <typename RedisInstance>
 void ThreadsTest<RedisInstance>::_test_multithreads(RedisInstance redis,
