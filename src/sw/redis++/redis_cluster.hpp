@@ -887,6 +887,21 @@ void RedisCluster::georadiusbymember(const StringView &key,
 
 // SCRIPTING commands.
 
+template <typename Result, typename Keys, typename Args>
+Result RedisCluster::eval(const StringView &script,
+                          Keys keys_first,
+                          Keys keys_last,
+                          Args args_first,
+                          Args args_last) {
+    if (keys_first == keys_last) {
+        throw Error("DO NOT support Lua script without key");
+    }
+
+    auto reply = _command(cmd::eval_range<Keys, Args>, *keys_first, script, keys_first, keys_last, args_first, args_last);
+
+    return reply::parse<Result>(*reply);
+}
+
 template <typename Result>
 Result RedisCluster::eval(const StringView &script,
                             std::initializer_list<StringView> keys,

@@ -930,6 +930,17 @@ void Redis::georadiusbymember(const StringView &key,
 
 // SCRIPTING commands.
 
+template <typename Result, typename Keys, typename Args>
+Result Redis::eval(const StringView &script,
+                   Keys keys_first,
+                   Keys keys_last,
+                   Args args_first,
+                   Args args_last) {
+    auto reply = command(cmd::eval_range<Keys, Args>, script, keys_first, keys_last, args_first, args_last);
+
+    return reply::parse<Result>(*reply);
+}
+
 template <typename Result>
 Result Redis::eval(const StringView &script,
                     std::initializer_list<StringView> keys,
