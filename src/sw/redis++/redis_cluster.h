@@ -994,6 +994,13 @@ public:
 
     // SCRIPTING commands.
 
+    template <typename Result, typename Keys, typename Args>
+    Result eval(const StringView &script,
+                Keys keys_first,
+                Keys keys_last,
+                Args args_first,
+                Args args_last);
+
     template <typename Result>
     Result eval(const StringView &script,
                 std::initializer_list<StringView> keys,
