@@ -205,7 +205,7 @@ Connection Sentinel::slave(const std::string &master_name, const ConnectionOptio
 Optional<Node> Sentinel::_get_master_addr_by_name(Connection &connection, const StringView &name) {
     connection.send("SENTINEL GET-MASTER-ADDR-BY-NAME %b", name.data(), name.size());
 
-    auto reply = connection.recv();
+    auto reply = connection.recv(true);
 
     assert(reply);
 
@@ -229,7 +229,7 @@ std::vector<Node> Sentinel::_get_slave_addr_by_name(Connection &connection,
     try {
         connection.send("SENTINEL SLAVES %b", name.data(), name.size());
 
-        auto reply = connection.recv();
+        auto reply = connection.recv(true);
 
         assert(reply);
 
@@ -287,7 +287,7 @@ Connection Sentinel::_connect_redis(const Node &node, ConnectionOptions opts) {
 
 Role Sentinel::_get_role(Connection &connection) {
     connection.send("INFO REPLICATION");
-    auto reply = connection.recv();
+    auto reply = connection.recv(true);
 
     assert(reply);
     auto info = reply::parse<std::string>(*reply);

@@ -129,10 +129,6 @@ public:
         return _ctx->err != REDIS_OK;
     }
 
-    void reset() noexcept {
-        _ctx->err = 0;
-    }
-
     void reconnect();
 
     auto last_active() const
@@ -147,7 +143,7 @@ public:
 
     void send(CmdArgs &args);
 
-    ReplyUPtr recv();
+    ReplyUPtr recv(bool handle_timeout);
 
     const ConnectionOptions& options() const {
         return _opts;
@@ -168,6 +164,10 @@ private:
 
     using ContextUPtr = std::unique_ptr<redisContext, ContextDeleter>;
 
+    ReplyUPtr _recv(bool handle_timeout);
+
+    void _recv_stale();
+
     void _set_options();
 
     void _auth();
@@ -187,6 +187,8 @@ private:
     ConnectionOptions _opts;
 
     tls::TlsContextUPtr _tls_ctx;
+
+    int _nbr_of_stale_msgs = 0;
 };
 
 using ConnectionSPtr = std::shared_ptr<Connection>;
@@ -207,7 +209,7 @@ inline void Connection::send(const char *format, Args &&...args) {
     if (redisAppendCommand(ctx,
                 format,
                 std::forward<Args>(args)...) != REDIS_OK) {
-        throw_error(*ctx, "Failed to send command");
+        throw_error(*ctx, "Failed to send command", false);
     }
 
     assert(!broken());

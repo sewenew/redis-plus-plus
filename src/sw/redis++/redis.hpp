@@ -1268,7 +1268,7 @@ ReplyUPtr Redis::_command(Connection &connection, Cmd cmd, Args &&...args) {
 
     cmd(connection, std::forward<Args>(args)...);
 
-    auto reply = connection.recv();
+    auto reply = connection.recv(true);
 
     return reply;
 }

@@ -148,7 +148,7 @@ class MovedError;
 
 class AskError;
 
-void throw_error(redisContext &context, const std::string &err_info);
+void throw_error(redisContext &context, const std::string &err_info, bool clear_on_timeout);
 
 void throw_error(const redisReply &reply);
 

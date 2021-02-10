@@ -38,7 +38,7 @@ namespace sw {
 
 namespace redis {
 
-void throw_error(redisContext &context, const std::string &err_info) {
+void throw_error(redisContext &context, const std::string &err_info, bool clear_on_timeout) {
     auto err_code = context.err;
     const auto *err_str = context.errstr;
     if (err_str == nullptr) {
@@ -50,6 +50,9 @@ void throw_error(redisContext &context, const std::string &err_info) {
     switch (err_code) {
     case REDIS_ERR_IO:
         if (errno == EAGAIN || errno == EWOULDBLOCK || errno == ETIMEDOUT) {
+            if (clear_on_timeout) {
+                context.err = 0;
+            }
             throw TimeoutError(err_msg);
         } else {
             throw IoError(err_msg);

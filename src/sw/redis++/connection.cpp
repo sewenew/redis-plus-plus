@@ -272,7 +272,7 @@ Connection::ContextUPtr Connection::Connector::connect() const {
     assert(ctx);
 
     if (ctx->err != REDIS_OK) {
-        throw_error(*ctx, "Failed to connect to Redis");
+        throw_error(*ctx, "Failed to connect to Redis", false);
     }
 
     _set_socket_timeout(*ctx);
@@ -331,7 +331,7 @@ void Connection::Connector::_set_socket_timeout(redisContext &ctx) const {
     }
 
     if (redisSetTimeout(&ctx, _to_timeval(_opts.socket_timeout)) != REDIS_OK) {
-        throw_error(ctx, "Failed to set socket timeout");
+        throw_error(ctx, "Failed to set socket timeout", false);
     }
 }
 
@@ -341,7 +341,7 @@ void Connection::Connector::_enable_keep_alive(redisContext &ctx) const {
     }
 
     if (redisEnableKeepAlive(&ctx) != REDIS_OK) {
-        throw_error(ctx, "Failed to enable keep alive option");
+        throw_error(ctx, "Failed to enable keep alive option", false);
     }
 }
 
@@ -359,6 +359,7 @@ void swap(Connection &lhs, Connection &rhs) noexcept {
     std::swap(lhs._ctx, rhs._ctx);
     std::swap(lhs._last_active, rhs._last_active);
     std::swap(lhs._opts, rhs._opts);
+    std::swap(lhs._nbr_of_stale_msgs, rhs._nbr_of_stale_msgs);
 }
 
 Connection::Connection(const ConnectionOptions &opts) :
@@ -391,7 +392,7 @@ void Connection::send(int argc, const char **argv, const std::size_t *argv_len) 
                                 argc,
                                 argv,
                                 argv_len) != REDIS_OK) {
-        throw_error(*ctx, "Failed to send command");
+        throw_error(*ctx, "Failed to send command", false);
     }
 
     assert(!broken());
@@ -406,29 +407,42 @@ void Connection::send(CmdArgs &args) {
                                 args.size(),
                                 args.argv(),
                                 args.argv_len()) != REDIS_OK) {
-        throw_error(*ctx, "Failed to send command");
+        throw_error(*ctx, "Failed to send command", false);
     }
 
     assert(!broken());
 }
-
-ReplyUPtr Connection::recv() {
+ReplyUPtr Connection::_recv(bool handle_timeout) {
     auto *ctx = _context();
 
     assert(ctx != nullptr);
-
-    void *r = nullptr;
-    if (redisGetReply(ctx, &r) != REDIS_OK) {
-        throw_error(*ctx, "Failed to get reply");
+    void* reply = nullptr;
+    if (redisGetReply(ctx, &reply) != REDIS_OK) {
+        _nbr_of_stale_msgs++;
+        throw_error(*ctx, "Failed to get reply", handle_timeout);
     }
+    assert(reply != nullptr);
 
-    assert(!broken() && r != nullptr);
+    return ReplyUPtr(static_cast<redisReply*>(reply));
+}
 
-    auto reply = ReplyUPtr(static_cast<redisReply*>(r));
+void Connection::_recv_stale() {
+    while (_nbr_of_stale_msgs > 0) {
+        (void)_recv(true);
+        _nbr_of_stale_msgs--;
+    }
+}
 
+ReplyUPtr Connection::recv(bool handle_timeout) {
+    if (handle_timeout) {
+        _recv_stale();
+    }
+    auto reply = _recv(handle_timeout);
     if (reply::is_error(*reply)) {
         throw_error(*reply);
     }
+
+    assert(!broken());
 
     return reply;
 }
@@ -446,7 +460,7 @@ void Connection::_set_options() {
 void Connection::_enable_readonly() {
     send("READONLY");
 
-    auto reply = recv();
+    auto reply = recv(true);
 
     assert(reply);
 
@@ -467,7 +481,7 @@ void Connection::_auth() {
         cmd::auth(*this, _opts.user, _opts.password);
     }
 
-    auto reply = recv();
+    auto reply = recv(true);
 
     assert(reply);
 
@@ -481,7 +495,7 @@ void Connection::_select_db() {
 
     cmd::select(*this, _opts.db);
 
-    auto reply = recv();
+    auto reply = recv(true);
 
     assert(reply);
 

@@ -171,7 +171,7 @@ Shards ShardsPool::_cluster_slots(Connection &connection) const {
 ReplyUPtr ShardsPool::_cluster_slots_command(Connection &connection) const {
     connection.send("CLUSTER SLOTS");
 
-    return connection.recv();
+    return connection.recv(true);
 }
 
 Shards ShardsPool::_parse_reply(redisReply &reply) const {

@@ -790,7 +790,7 @@ void RedisCluster::_asking(Connection &connection) {
     // Send ASKING command.
     connection.send("ASKING");
 
-    auto reply = connection.recv();
+    auto reply = connection.recv(true);
 
     assert(reply);
 

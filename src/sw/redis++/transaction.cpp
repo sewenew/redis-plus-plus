@@ -41,7 +41,7 @@ void TransactionImpl::_open_transaction(Connection &connection) {
     assert(!_in_transaction);
 
     cmd::multi(connection);
-    auto reply = connection.recv();
+    auto reply = connection.recv(false);
     auto status = reply::to_status(*reply);
     if (status != "OK") {
         throw Error("Failed to open transaction: " + status);
@@ -59,7 +59,7 @@ void TransactionImpl::_close_transaction() {
 }
 
 void TransactionImpl::_get_queued_reply(Connection &connection) {
-    auto reply = connection.recv();
+    auto reply = connection.recv(false);
     auto status = reply::to_status(*reply);
     if (status != "QUEUED") {
         throw Error("Invalid QUEUED reply: " + status);
@@ -80,7 +80,7 @@ void TransactionImpl::_get_queued_replies(Connection &connection, std::size_t cm
 std::vector<ReplyUPtr> TransactionImpl::_exec(Connection &connection) {
     cmd::exec(connection);
 
-    auto reply = connection.recv();
+    auto reply = connection.recv(false);
 
     if (reply::is_nil(*reply)) {
         // Execution has been aborted, i.e. watched key has been modified.
@@ -114,7 +114,7 @@ std::vector<ReplyUPtr> TransactionImpl::_exec(Connection &connection) {
 
 void TransactionImpl::_discard(Connection &connection) {
     cmd::discard(connection);
-    auto reply = connection.recv();
+    auto reply = connection.recv(false);
     reply::parse<void>(*reply);
 }
 
