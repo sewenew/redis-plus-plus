@@ -1,5 +1,6 @@
 /**************************************************************************
    Copyright (c) 2017 sewenew
+   Copyright (c) 2021 Qlik
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -46,6 +47,7 @@
 #include "threads_test.h"
 #include "stream_cmds_test.h"
 #include "benchmark_test.h"
+#include "timeout_test.h"
 
 namespace {
 
@@ -70,7 +72,16 @@ auto parse_options(int argc, char **argv)
     -> std::tuple<sw::redis::Optional<sw::redis::ConnectionOptions>,
                     sw::redis::Optional<sw::redis::ConnectionOptions>,
                     sw::redis::Optional<sw::redis::test::BenchmarkOptions>,
-                    TestOptions>;
+                    TestOptions,
+                    sw::redis::Optional<sw::redis::SentinelOptions>,
+                    sw::redis::Optional<std::string>,
+                    sw::redis::Optional<std::chrono::milliseconds>>;
+
+template <typename RedisInstance>
+void run_timeout(const sw::redis::ConnectionOptions &opts);
+
+template <typename RedisInstance>
+void run_timeout_sentinel(const sw::redis::ConnectionOptions &opts, const sw::redis::SentinelOptions &sentinel_opts, const std::string &master_set);
 
 template <typename RedisInstance>
 void run_test(const sw::redis::ConnectionOptions &opts, const TestOptions &test_options);
@@ -87,12 +98,21 @@ int main(int argc, char **argv) {
         sw::redis::Optional<sw::redis::ConnectionOptions> cluster_node_opts;
         sw::redis::Optional<sw::redis::test::BenchmarkOptions> benchmark_opts;
         TestOptions test_options;
-        std::tie(opts, cluster_node_opts, benchmark_opts, test_options) = parse_options(argc, argv);
+        sw::redis::Optional<sw::redis::SentinelOptions> sentinel_options;
+        sw::redis::Optional<std::string> master_set;
+        sw::redis::Optional<std::chrono::milliseconds> socket_timeout;
+        std::tie(opts, cluster_node_opts, benchmark_opts, test_options, sentinel_options, master_set, socket_timeout) = parse_options(argc, argv);
 
         if (opts) {
             std::cout << "Testing Redis..." << std::endl;
 
-            if (benchmark_opts) {
+            if (socket_timeout) {
+                if (sentinel_options) {
+                    run_timeout_sentinel<sw::redis::Redis>(*opts, *sentinel_options, *master_set);
+                } else {
+                    run_timeout<sw::redis::Redis>(*opts);
+                }
+            } else if (benchmark_opts) {
                 run_benchmark<sw::redis::Redis>(*opts, *benchmark_opts);
             } else {
                 run_test<sw::redis::Redis>(*opts, test_options);
@@ -102,7 +122,9 @@ int main(int argc, char **argv) {
         if (cluster_node_opts) {
             std::cout << "Testing RedisCluster..." << std::endl;
 
-            if (benchmark_opts) {
+            if (socket_timeout) {
+                run_timeout<sw::redis::RedisCluster>(*cluster_node_opts);
+            } else if (benchmark_opts) {
                 run_benchmark<sw::redis::RedisCluster>(*cluster_node_opts, *benchmark_opts);
             } else {
                 run_test<sw::redis::RedisCluster>(*cluster_node_opts, test_options);
@@ -221,18 +243,25 @@ auto parse_options(int argc, char **argv)
     -> std::tuple<sw::redis::Optional<sw::redis::ConnectionOptions>,
                     sw::redis::Optional<sw::redis::ConnectionOptions>,
                     sw::redis::Optional<sw::redis::test::BenchmarkOptions>,
-                    TestOptions> {
+                    TestOptions,
+                    sw::redis::Optional<sw::redis::SentinelOptions>,
+                    sw::redis::Optional<std::string>,
+                    sw::redis::Optional<std::chrono::milliseconds>> {
     std::string host;
     int port = 0;
     std::string auth;
+    std::string sentinel_host;
+    int sentinel_port = 0;
+    std::string tmp_master_set;
     std::string cluster_node;
     int cluster_port = 0;
     bool benchmark = false;
     sw::redis::test::BenchmarkOptions tmp_benchmark_opts;
     TestOptions test_options;
+    sw::redis::Optional<std::chrono::milliseconds> tmp_socket_timeout;
 
     int opt = 0;
-    while ((opt = getopt(argc, argv, "h:p:a:n:c:k:v:r:t:bs:m")) != -1) {
+    while ((opt = getopt(argc, argv, "h:p:a:n:c:k:v:r:t:bs:m:o:e:l:q:")) != -1) {
         try {
             switch (opt) {
             case 'h':
@@ -267,6 +296,22 @@ auto parse_options(int argc, char **argv)
                 tmp_benchmark_opts.val_len = std::stoi(optarg);
                 break;
 
+            case 'o':
+                tmp_socket_timeout = sw::redis::Optional<std::chrono::milliseconds>(std::stoi(optarg));
+                break;
+
+            case 'e':
+                sentinel_host = optarg;
+                break;
+
+            case 'l':
+                sentinel_port = std::stoi(optarg);
+                break;
+
+            case 'q':
+                tmp_master_set = optarg;
+                break;
+
             case 'r':
                 tmp_benchmark_opts.total_request_num = std::stoi(optarg);
                 break;
@@ -297,11 +342,27 @@ auto parse_options(int argc, char **argv)
     }
 
     sw::redis::Optional<sw::redis::ConnectionOptions> opts;
+    sw::redis::Optional<sw::redis::SentinelOptions> sentinel_opts;
+    sw::redis::Optional<std::string> master_set;
     if (!host.empty() && port > 0) {
         sw::redis::ConnectionOptions tmp;
         tmp.host = host;
         tmp.port = port;
         tmp.password = auth;
+        if (tmp_socket_timeout) {
+            tmp.connect_timeout = *tmp_socket_timeout;
+            tmp.socket_timeout = *tmp_socket_timeout;
+        }
+        if (!sentinel_host.empty() && sentinel_port > 0 && !tmp_master_set.empty()) {
+            sw::redis::SentinelOptions sentinel_tmp;
+            sentinel_tmp.nodes = {{sentinel_host, sentinel_port}};
+            sentinel_tmp.password = auth;
+            if (tmp_socket_timeout) {
+                sentinel_tmp.socket_timeout = *tmp_socket_timeout;
+            }
+            sentinel_opts = sw::redis::Optional<sw::redis::SentinelOptions>(sentinel_tmp);
+            master_set = sw::redis::Optional<std::string>(tmp_master_set);
+        }
 
         opts = sw::redis::Optional<sw::redis::ConnectionOptions>(tmp);
     }
@@ -312,6 +373,10 @@ auto parse_options(int argc, char **argv)
         tmp.host = cluster_node;
         tmp.port = cluster_port;
         tmp.password = auth;
+        if (tmp_socket_timeout) {
+            tmp.socket_timeout = *tmp_socket_timeout;
+        }
+
 
         cluster_opts = sw::redis::Optional<sw::redis::ConnectionOptions>(tmp);
     }
@@ -326,7 +391,28 @@ auto parse_options(int argc, char **argv)
         benchmark_opts = sw::redis::Optional<sw::redis::test::BenchmarkOptions>(tmp_benchmark_opts);
     }
 
-    return std::make_tuple(std::move(opts), std::move(cluster_opts), std::move(benchmark_opts), test_options);
+    return std::make_tuple(std::move(opts), std::move(cluster_opts), std::move(benchmark_opts), test_options, std::move(sentinel_opts), std::move(master_set), std::move(tmp_socket_timeout));
+}
+
+template <typename RedisInstance>
+void run_timeout_sentinel(const sw::redis::ConnectionOptions &opts, const sw::redis::SentinelOptions &sentinel_opts, const std::string &master_set) {
+    auto sentinel = std::make_shared<sw::redis::Sentinel>(sentinel_opts);
+    auto instance = RedisInstance(sentinel, master_set, sw::redis::Role::MASTER, opts);
+
+    sw::redis::test::TimeoutTest<RedisInstance> timeout_test(instance);
+    timeout_test.run();
+
+    std::cout << "Pass timeout tests" << std::endl;;
+}
+
+template <typename RedisInstance>
+void run_timeout(const sw::redis::ConnectionOptions &opts) {
+    auto instance = RedisInstance(opts);
+
+    sw::redis::test::TimeoutTest<RedisInstance> timeout_test(instance);
+    timeout_test.run();
+
+    std::cout << "Pass timeout tests" << std::endl;
 }
 
 template <typename RedisInstance>
