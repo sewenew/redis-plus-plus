@@ -47,18 +47,38 @@ void ScriptCmdTest<RedisInstance>::_run(Redis &instance) {
                     "local second = redis.call('get', KEYS[2]);"
                     "return first + second";
 
-    auto num = instance.eval<long long>(script, {key1, key2}, {});
+    std::initializer_list<StringView> keys = {key1, key2};
+    std::initializer_list<StringView> empty_list = {};
+
+    auto num = instance.eval<long long>(script, keys, empty_list);
+    REDIS_ASSERT(num == 3, "failed to test scripting for cluster");
+
+    num = instance.eval<long long>(script, keys.begin(), keys.end(),
+            empty_list.begin(), empty_list.end());
     REDIS_ASSERT(num == 3, "failed to test scripting for cluster");
 
     script = "return 1";
-    num = instance.eval<long long>(script, {}, {});
+    num = instance.eval<long long>(script, empty_list, empty_list);
+    REDIS_ASSERT(num == 1, "failed to test eval");
+
+    num = instance.eval<long long>(script, empty_list.begin(), empty_list.end(),
+            empty_list.begin(), empty_list.end());
     REDIS_ASSERT(num == 1, "failed to test eval");
 
     auto script_with_args = "return {ARGV[1] + 1, ARGV[2] + 2, ARGV[3] + 3}";
+    std::initializer_list<StringView> args = {"1", "2", "3"};
     std::vector<long long> res;
     instance.eval(script_with_args,
-                {"k"},
-                {"1", "2", "3"},
+                empty_list,
+                args,
+                std::back_inserter(res));
+    REDIS_ASSERT(res == std::vector<long long>({2, 4, 6}),
+            "failed to test eval with array reply");
+
+    res.clear();
+    instance.eval(script_with_args,
+                empty_list.begin(), empty_list.end(),
+                args.begin(), args.end(),
                 std::back_inserter(res));
     REDIS_ASSERT(res == std::vector<long long>({2, 4, 6}),
             "failed to test eval with array reply");
@@ -67,11 +87,23 @@ void ScriptCmdTest<RedisInstance>::_run(Redis &instance) {
     num = instance.evalsha<long long>(sha1, {}, {});
     REDIS_ASSERT(num == 1, "failed to test evalsha");
 
+    num = instance.evalsha<long long>(sha1, empty_list.begin(), empty_list.end(),
+            empty_list.begin(), empty_list.end());
+    REDIS_ASSERT(num == 1, "failed to test evalsha");
+
     auto sha2 = instance.script_load(script_with_args);
     res.clear();
     instance.evalsha(sha2,
-                    {"k"},
-                    {"1", "2", "3"},
+                    empty_list,
+                    args,
+                    std::back_inserter(res));
+    REDIS_ASSERT(res == std::vector<long long>({2, 4, 6}),
+            "failed to test evalsha with array reply");
+
+    res.clear();
+    instance.evalsha(sha2,
+                    empty_list.begin(), empty_list.end(),
+                    args.begin(), args.end(),
                     std::back_inserter(res));
     REDIS_ASSERT(res == std::vector<long long>({2, 4, 6}),
             "failed to test evalsha with array reply");

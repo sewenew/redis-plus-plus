@@ -936,7 +936,7 @@ Result Redis::eval(const StringView &script,
                    Keys keys_last,
                    Args args_first,
                    Args args_last) {
-    auto reply = command(cmd::eval_range<Keys, Args>, script, keys_first, keys_last, args_first, args_last);
+    auto reply = command(cmd::eval<Keys, Args>, script, keys_first, keys_last, args_first, args_last);
 
     return reply::parse<Result>(*reply);
 }
@@ -945,9 +945,22 @@ template <typename Result>
 Result Redis::eval(const StringView &script,
                     std::initializer_list<StringView> keys,
                     std::initializer_list<StringView> args) {
-    auto reply = command(cmd::eval, script, keys, args);
+    return eval<Result>(script, keys.begin(), keys.end(), args.begin(), args.end());
+}
 
-    return reply::parse<Result>(*reply);
+template <typename Keys, typename Args, typename Output>
+void Redis::eval(const StringView &script,
+                   Keys keys_first,
+                   Keys keys_last,
+                   Args args_first,
+                   Args args_last,
+                   Output output) {
+    auto reply = command(cmd::eval<Keys, Args>,
+                            script,
+                            keys_first, keys_last,
+                            args_first, args_last);
+
+    reply::to_array(*reply, output);
 }
 
 template <typename Output>
@@ -955,18 +968,41 @@ void Redis::eval(const StringView &script,
                     std::initializer_list<StringView> keys,
                     std::initializer_list<StringView> args,
                     Output output) {
-    auto reply = command(cmd::eval, script, keys, args);
+    eval(script, keys.begin(), keys.end(), args.begin(), args.end(), output);
+}
 
-    reply::to_array(*reply, output);
+template <typename Result, typename Keys, typename Args>
+Result Redis::evalsha(const StringView &script,
+                       Keys keys_first,
+                       Keys keys_last,
+                       Args args_first,
+                       Args args_last) {
+    auto reply = command(cmd::evalsha<Keys, Args>, script,
+            keys_first, keys_last, args_first, args_last);
+
+    return reply::parse<Result>(*reply);
 }
 
 template <typename Result>
 Result Redis::evalsha(const StringView &script,
                         std::initializer_list<StringView> keys,
                         std::initializer_list<StringView> args) {
-    auto reply = command(cmd::evalsha, script, keys, args);
+    return evalsha<Result>(script, keys.begin(), keys.end(), args.begin(), args.end());
+}
 
-    return reply::parse<Result>(*reply);
+template <typename Keys, typename Args, typename Output>
+void Redis::evalsha(const StringView &script,
+                       Keys keys_first,
+                       Keys keys_last,
+                       Args args_first,
+                       Args args_last,
+                       Output output) {
+    auto reply = command(cmd::evalsha<Keys, Args>,
+                            script,
+                            keys_first, keys_last,
+                            args_first, args_last);
+
+    reply::to_array(*reply, output);
 }
 
 template <typename Output>
@@ -974,9 +1010,7 @@ void Redis::evalsha(const StringView &script,
                         std::initializer_list<StringView> keys,
                         std::initializer_list<StringView> args,
                         Output output) {
-    auto reply = command(cmd::evalsha, script, keys, args);
-
-    reply::to_array(*reply, output);
+    evalsha(script, keys.begin(), keys.end(), args.begin(), args.end(), output);
 }
 
 template <typename Input, typename Output>

@@ -3186,16 +3186,39 @@ public:
                 std::initializer_list<StringView> keys,
                 std::initializer_list<StringView> args);
 
+    template <typename Keys, typename Args, typename Output>
+    void eval(const StringView &script,
+                Keys keys_first,
+                Keys keys_last,
+                Args args_first,
+                Args args_last,
+                Output output);
+
     template <typename Output>
     void eval(const StringView &script,
                 std::initializer_list<StringView> keys,
                 std::initializer_list<StringView> args,
                 Output output);
 
+    template <typename Result, typename Keys, typename Args>
+    Result evalsha(const StringView &script,
+                    Keys keys_first,
+                    Keys keys_last,
+                    Args args_first,
+                    Args args_last);
+
     template <typename Result>
     Result evalsha(const StringView &script,
                     std::initializer_list<StringView> keys,
                     std::initializer_list<StringView> args);
+
+    template <typename Keys, typename Args, typename Output>
+    void evalsha(const StringView &script,
+                    Keys keys_first,
+                    Keys keys_last,
+                    Args args_first,
+                    Args args_last,
+                    Output output);
 
     template <typename Output>
     void evalsha(const StringView &script,

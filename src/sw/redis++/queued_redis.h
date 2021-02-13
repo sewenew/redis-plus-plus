@@ -1493,16 +1493,34 @@ public:
 
     // SCRIPTING commands.
 
+    template <typename Keys, typename Args>
+    QueuedRedis& eval(const StringView &script,
+                        Keys keys_first,
+                        Keys keys_last,
+                        Args args_first,
+                        Args args_last) {
+        return command(cmd::eval<Keys, Args>, script, keys_first, keys_last, args_first, args_last);
+    }
+
     QueuedRedis& eval(const StringView &script,
                         std::initializer_list<StringView> keys,
                         std::initializer_list<StringView> args) {
-        return command(cmd::eval, script, keys, args);
+        return eval(script, keys.begin(), keys.end(), args.begin(), args.end());
+    }
+
+    template <typename Keys, typename Args>
+    QueuedRedis& evalsha(const StringView &script,
+                            Keys keys_first,
+                            Keys keys_last,
+                            Args args_first,
+                            Args args_last) {
+        return command(cmd::evalsha<Keys, Args>, script, keys_first, keys_last, args_first, args_last);
     }
 
     QueuedRedis& evalsha(const StringView &script,
                             std::initializer_list<StringView> keys,
                             std::initializer_list<StringView> args) {
-        return command(cmd::evalsha, script, keys, args);
+        return evalsha(script, keys.begin(), keys.end(), args.begin(), args.end());
     }
 
     // Call reply::parse_leniently to parse the reply.

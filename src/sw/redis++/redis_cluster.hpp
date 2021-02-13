@@ -897,7 +897,7 @@ Result RedisCluster::eval(const StringView &script,
         throw Error("DO NOT support Lua script without key");
     }
 
-    auto reply = _command(cmd::eval_range<Keys, Args>, *keys_first, script, keys_first, keys_last, args_first, args_last);
+    auto reply = _command(cmd::eval<Keys, Args>, *keys_first, script, keys_first, keys_last, args_first, args_last);
 
     return reply::parse<Result>(*reply);
 }
@@ -906,13 +906,27 @@ template <typename Result>
 Result RedisCluster::eval(const StringView &script,
                             std::initializer_list<StringView> keys,
                             std::initializer_list<StringView> args) {
-    if (keys.size() == 0) {
+    return eval<Result>(script, keys.begin(), keys.end(), args.begin(), args.end());
+}
+
+template <typename Keys, typename Args, typename Output>
+void RedisCluster::eval(const StringView &script,
+                          Keys keys_first,
+                          Keys keys_last,
+                          Args args_first,
+                          Args args_last,
+                          Output output) {
+    if (keys_first == keys_last) {
         throw Error("DO NOT support Lua script without key");
     }
 
-    auto reply = _command(cmd::eval, *keys.begin(), script, keys, args);
+    auto reply = _command(cmd::eval<Keys, Args>,
+                            *keys_first,
+                            script,
+                            keys_first, keys_last,
+                            args_first, args_last);
 
-    return reply::parse<Result>(*reply);
+    reply::to_array(*reply, output);
 }
 
 template <typename Output>
@@ -920,26 +934,50 @@ void RedisCluster::eval(const StringView &script,
                         std::initializer_list<StringView> keys,
                         std::initializer_list<StringView> args,
                         Output output) {
-    if (keys.size() == 0) {
+    eval(script, keys.begin(), keys.end(), args.begin(), args.end(), output);
+}
+
+template <typename Result, typename Keys, typename Args>
+Result RedisCluster::evalsha(const StringView &script,
+                              Keys keys_first,
+                              Keys keys_last,
+                              Args args_first,
+                              Args args_last) {
+    if (keys_first == keys_last) {
         throw Error("DO NOT support Lua script without key");
     }
 
-    auto reply = _command(cmd::eval, *keys.begin(), script, keys, args);
+    auto reply = _command(cmd::evalsha<Keys, Args>, *keys_first, script,
+            keys_first, keys_last, args_first, args_last);
 
-    reply::to_array(*reply, output);
+    return reply::parse<Result>(*reply);
 }
 
 template <typename Result>
 Result RedisCluster::evalsha(const StringView &script,
                                 std::initializer_list<StringView> keys,
                                 std::initializer_list<StringView> args) {
-    if (keys.size() == 0) {
+    return evalsha<Result>(script, keys.begin(), keys.end(), args.begin(), args.end());
+}
+
+template <typename Keys, typename Args, typename Output>
+void RedisCluster::evalsha(const StringView &script,
+                              Keys keys_first,
+                              Keys keys_last,
+                              Args args_first,
+                              Args args_last,
+                              Output output) {
+    if (keys_first == keys_last) {
         throw Error("DO NOT support Lua script without key");
     }
 
-    auto reply = _command(cmd::evalsha, *keys.begin(), script, keys, args);
+    auto reply = _command(cmd::evalsha<Keys, Args>,
+                            *keys_first,
+                            script,
+                            keys_first, keys_last,
+                            args_first, args_last);
 
-    return reply::parse<Result>(*reply);
+    reply::to_array(*reply, output);
 }
 
 template <typename Output>
@@ -947,13 +985,7 @@ void RedisCluster::evalsha(const StringView &script,
                             std::initializer_list<StringView> keys,
                             std::initializer_list<StringView> args,
                             Output output) {
-    if (keys.size() == 0) {
-        throw Error("DO NOT support Lua script without key");
-    }
-
-    auto reply = command(cmd::evalsha, *keys.begin(), script, keys, args);
-
-    reply::to_array(*reply, output);
+    evalsha(script, keys.begin(), keys.end(), args.begin(), args.end(), output);
 }
 
 // Stream commands.
