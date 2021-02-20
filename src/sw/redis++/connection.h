@@ -133,6 +133,10 @@ public:
         _ctx->err = 0;
     }
 
+    void invalidate() noexcept {
+        _ctx->err = REDIS_ERR;
+    }
+
     void reconnect();
 
     auto last_active() const
