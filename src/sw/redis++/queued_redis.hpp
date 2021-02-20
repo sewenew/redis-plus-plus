@@ -40,7 +40,11 @@ QueuedRedis<Impl>::QueuedRedis(const ConnectionPoolSPtr &pool,
 
 template <typename Impl>
 QueuedRedis<Impl>::~QueuedRedis() {
-    _clean_up();
+    try {
+        _clean_up();
+    } catch (const Error &e) {
+        // Ensure the destructor does not throw
+    }
 }
 
 template <typename Impl>
@@ -199,8 +203,7 @@ void QueuedRedis<Impl>::_clean_up() {
     if (_guarded_connection && !_new_connection) {
         // Something bad happened, we need to close the current connection
         // before returning it back to pool.
-        // TODO: close the connection instead of reconnect it.
-        _guarded_connection->connection().reconnect();
+        _guarded_connection->connection().invalidate();
     }
 }
 
