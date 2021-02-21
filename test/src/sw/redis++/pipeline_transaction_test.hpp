@@ -31,46 +31,73 @@ void PipelineTransactionTest<RedisInstance>::run() {
     {
         auto key = test_key("pipeline");
         KeyDeleter<RedisInstance> deleter(_redis, key);
-        auto pipe = _pipeline(key);
+        auto pipe = _pipeline(key, true);
+        _test_pipeline(key, pipe);
+    }
+
+    {
+        auto key = test_key("pipeline");
+        KeyDeleter<RedisInstance> deleter(_redis, key);
+        auto pipe = _pipeline(key, false);
         _test_pipeline(key, pipe);
     }
 
     {
         auto key = test_key("transaction");
         KeyDeleter<RedisInstance> deleter(_redis, key);
-        auto tx = _transaction(key, true);
+        auto tx = _transaction(key, true, true);
         _test_transaction(key, tx);
     }
 
     {
         auto key = test_key("transaction");
         KeyDeleter<RedisInstance> deleter(_redis, key);
-        auto tx = _transaction(key, false);
+        auto tx = _transaction(key, false, true);
+        _test_transaction(key, tx);
+    }
+
+    {
+        auto key = test_key("transaction");
+        KeyDeleter<RedisInstance> deleter(_redis, key);
+        auto tx = _transaction(key, true, false);
+        _test_transaction(key, tx);
+    }
+
+    {
+        auto key = test_key("transaction");
+        KeyDeleter<RedisInstance> deleter(_redis, key);
+        auto tx = _transaction(key, false, false);
         _test_transaction(key, tx);
     }
 
     _test_watch();
+
+    _test_error_handle(true);
+    _test_error_handle(false);
 }
 
 template <typename RedisInstance>
-Pipeline PipelineTransactionTest<RedisInstance>::_pipeline(const StringView &) {
-    return _redis.pipeline();
+Pipeline PipelineTransactionTest<RedisInstance>::_pipeline(const StringView &,
+        bool new_connection) {
+    return _redis.pipeline(new_connection);
 }
 
 template <>
-inline Pipeline PipelineTransactionTest<RedisCluster>::_pipeline(const StringView &key) {
-    return _redis.pipeline(key);
+inline Pipeline PipelineTransactionTest<RedisCluster>::_pipeline(const StringView &key,
+        bool new_connection) {
+    return _redis.pipeline(key, new_connection);
 }
 
 template <typename RedisInstance>
-Transaction PipelineTransactionTest<RedisInstance>::_transaction(const StringView &, bool piped) {
-    return _redis.transaction(piped);
+Transaction PipelineTransactionTest<RedisInstance>::_transaction(const StringView &,
+        bool piped, bool new_connection) {
+    return _redis.transaction(piped, new_connection);
 }
 
 template <>
 inline Transaction PipelineTransactionTest<RedisCluster>::_transaction(const StringView &key,
-        bool piped) {
-    return _redis.transaction(key, piped);
+        bool piped, bool new_connection) {
+    return _redis.transaction(key, piped, new_connection);
 }
 
 template <typename RedisInstance>
@@ -140,7 +167,7 @@ void PipelineTransactionTest<RedisInstance>::_test_watch() {
     KeyDeleter<RedisInstance> deleter(_redis, key);
 
     {
-        auto tx = _transaction(key, false);
+        auto tx = _transaction(key, false, true);
 
         auto redis = tx.redis();
 
@@ -157,7 +184,7 @@ void PipelineTransactionTest<RedisInstance>::_test_watch() {
     }
 
     try {
-        auto tx = _transaction(key, false);
+        auto tx = _transaction(key, false, true);
 
         auto redis = tx.redis();
 
@@ -173,6 +200,43 @@ void PipelineTransactionTest<RedisInstance>::_test_watch() {
     } catch (const sw::redis::WatchError &err) {
         // Catch the error.
     }
+}
+
+template <typename RedisInstance>
+void PipelineTransactionTest<RedisInstance>::_test_error_handle(bool new_connection) {
+    auto key = test_key("error_handle");
+
+    KeyDeleter<RedisInstance> deleter(_redis, key);
+
+    try {
+        auto pipe = _pipeline(key, new_connection);
+
+        // This will fail
+        pipe.set(key, "val").hget(key, "field").exec();
+    } catch (const sw::redis::Error &err) {
+        // Ignore the error.
+    }
+
+    auto pipe = _pipeline(key, new_connection);
+    std::string val("val");
+    auto replies = pipe.set(key, val).get(key).exec();
+    REDIS_ASSERT(replies.size() == 2, "failed to test pipeline's error handling");
+    auto value = replies.template get<sw::redis::OptionalString>(1);
+    REDIS_ASSERT(value && *value == val, "failed to test pipeline's error handling");
+
+    {
+        auto pipe = _pipeline(key, new_connection);
+        pipe.set(key, "val");
+
+        // Forget to call exec() or discard()
+    }
+
+    pipe = _pipeline(key, new_connection);
+    val = "new value";
+    replies = pipe.set(key, val).get(key).exec();
+    REDIS_ASSERT(replies.size() == 2, "failed to test pipeline's error handling");
+    value = replies.template get<sw::redis::OptionalString>(1);
+    REDIS_ASSERT(value && *value == val, "failed to test pipeline's error handling");
 }
 
 }

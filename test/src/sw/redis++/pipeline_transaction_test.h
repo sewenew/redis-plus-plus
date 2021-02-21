@@ -33,15 +33,17 @@ public:
     void run();
 
 private:
-    Pipeline _pipeline(const StringView &key);
+    Pipeline _pipeline(const StringView &key, bool new_connection);
 
-    Transaction _transaction(const StringView &key, bool piped);
+    Transaction _transaction(const StringView &key, bool piped, bool new_connection);
 
     void _test_pipeline(const StringView &key, Pipeline &pipe);
 
     void _test_transaction(const StringView &key, Transaction &tx);
 
     void _test_watch();
+
+    void _test_error_handle(bool new_connection);
 
     RedisInstance &_redis;
 };
