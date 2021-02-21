@@ -77,6 +77,8 @@ make PREFIX=/non/default/path
 make PREFIX=/non/default/path install
 ```
 
+**NOTE**: You must ensure that there's only 1 version of hiredis is installed. Otherwise, you might get some wired problems. Check the following issues for example: [issue 135](https://github.com/sewenew/redis-plus-plus/issues/135), [issue 140](https://github.com/sewenew/redis-plus-plus/issues/140) and [issue 158](https://github.com/sewenew/redis-plus-plus/issues/158).
+
 ### Install redis-plus-plus
 
 *redis-plus-plus* is built with [CMAKE](https://cmake.org).
@@ -456,6 +458,21 @@ try {
     // Script returns an array of elements.
     std::vector<long long> nums;
     redis.eval("return {ARGV[1], ARGV[2]}", {}, {"1", "2"}, std::back_inserter(nums));
+
+    // mset with TTL
+    auto mset_with_ttl_script = R"(
+        local len = #KEYS
+        if (len == 0 or len + 1 ~= #ARGV) then return 0 end
+        local ttl = tonumber(ARGV[len + 1])
+        if (not ttl or ttl <= 0) then return 0 end
+        for i = 1, len do redis.call("SET", KEYS[i], ARGV[i], "EX", ttl) end
+        return 1
+    )";
+
+    // Set multiple key-value pairs with TTL of 60 seconds.
+    auto keys = {"key1", "key2", "key3"};
+    std::vector<std::string> args = {"val1", "val2", "val3", "60"};
+    redis.eval<long long>(mset_with_ttl_script, keys.begin(), keys.end(), vals.begin(), vals.end());
 
     // ***** Pipeline *****
 
