@@ -1,0 +1,9 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+find_dependency(hiredis REQUIRED)
+
+include("${CMAKE_CURRENT_LIST_DIR}/redis++-targets.cmake")
+
+check_required_components(redis++)
