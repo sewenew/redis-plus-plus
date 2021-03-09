@@ -68,7 +68,6 @@ if(REDIS_PLUS_PLUS_BUILD_STATIC)
     set(STATIC_LIB redis++_static)
 
     add_library(${STATIC_LIB} STATIC ${REDIS_PLUS_PLUS_SOURCES})
-#    add_library(redis++::redis++_static ALIAS ${STATIC_LIB})
 
     list(APPEND REDIS_PLUS_PLUS_TARGETS ${STATIC_LIB})
 
@@ -101,6 +100,8 @@ if(REDIS_PLUS_PLUS_BUILD_STATIC)
     if(REDIS_PLUS_PLUS_BUILD_STATIC_WITH_PIC)
         set_target_properties(${STATIC_LIB} PROPERTIES POSITION_INDEPENDENT_CODE ON)
     endif()
+
+    set_target_properties(${STATIC_LIB} PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
 endif()
 
 # Build shared library
@@ -111,7 +112,6 @@ if(REDIS_PLUS_PLUS_BUILD_SHARED)
     set(SHARED_LIB redis++)
 
     add_library(${SHARED_LIB} SHARED ${REDIS_PLUS_PLUS_SOURCES})
-#    add_library(redis++::redis++ ALIAS ${SHARED_LIB})
 
     list(APPEND REDIS_PLUS_PLUS_TARGETS ${SHARED_LIB})
 
@@ -146,6 +146,7 @@ if(REDIS_PLUS_PLUS_BUILD_SHARED)
     set_target_properties(${SHARED_LIB} PROPERTIES CLEAN_DIRECT_OUTPUT 1)
     set_target_properties(${SHARED_LIB} PROPERTIES CXX_EXTENSIONS OFF)
     set_target_properties(${SHARED_LIB} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    set_target_properties(${SHARED_LIB} PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
 endif()
 
 option(REDIS_PLUS_PLUS_BUILD_TEST "Build tests for redis++" ON)
@@ -176,11 +177,22 @@ install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${HEADER_PA
 
 include(CMakePackageConfigHelpers)
 
-configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/redis++-config.cmake.in"
+write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/cmake/redis++-config-version.cmake"
+        VERSION ${PROJECT_VERSION}
+        COMPATIBILITY AnyNewerVersion)
+
+if(REDIS_PLUS_PLUS_USE_TLS)
+    set(REDIS_PLUS_PLUS_CMAKE_CONFIG redis++-tls-config.cmake.in)
+else()
+    set(REDIS_PLUS_PLUS_CMAKE_CONFIG redis++-config.cmake.in)
+endif()
+
+configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/${REDIS_PLUS_PLUS_CMAKE_CONFIG}"
         "${CMAKE_CURRENT_BINARY_DIR}/cmake/redis++-config.cmake"
         INSTALL_DESTINATION ${REDIS_PLUS_PLUS_CMAKE_DESTINATION})
 
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/cmake/redis++-config.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/cmake/redis++-config-version.cmake"
         DESTINATION ${REDIS_PLUS_PLUS_CMAKE_DESTINATION})
 
 export(EXPORT redis++-targets
