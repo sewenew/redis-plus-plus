@@ -100,8 +100,6 @@ if(REDIS_PLUS_PLUS_BUILD_STATIC)
     if(REDIS_PLUS_PLUS_BUILD_STATIC_WITH_PIC)
         set_target_properties(${STATIC_LIB} PROPERTIES POSITION_INDEPENDENT_CODE ON)
     endif()
-
-    set_target_properties(${STATIC_LIB} PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
 endif()
 
 # Build shared library
@@ -182,12 +180,12 @@ write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/cmake/redis++-conf
         COMPATIBILITY AnyNewerVersion)
 
 if(REDIS_PLUS_PLUS_USE_TLS)
-    set(REDIS_PLUS_PLUS_CMAKE_CONFIG redis++-tls-config.cmake.in)
+    set(REDIS_PLUS_PLUS_DEPENDS "hiredis,hiredis_ssl")
 else()
-    set(REDIS_PLUS_PLUS_CMAKE_CONFIG redis++-config.cmake.in)
+    set(REDIS_PLUS_PLUS_DEPENDS "hiredis")
 endif()
 
-configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/${REDIS_PLUS_PLUS_CMAKE_CONFIG}"
+configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/redis++-config.cmake.in"
         "${CMAKE_CURRENT_BINARY_DIR}/cmake/redis++-config.cmake"
         INSTALL_DESTINATION ${REDIS_PLUS_PLUS_CMAKE_DESTINATION})
 
@@ -198,3 +196,9 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/cmake/redis++-config.cmake"
 export(EXPORT redis++-targets
         FILE "${CMAKE_CURRENT_BINARY_DIR}/cmake/redis++-targets.cmake"
         NAMESPACE redis++::)
+
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/redis++.pc.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/cmake/redis++.pc" @ONLY)
+
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/cmake/redis++.pc"
+        DESTINATION "lib/pkgconfig")
