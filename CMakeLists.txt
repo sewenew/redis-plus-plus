@@ -51,14 +51,33 @@ if(REDIS_PLUS_PLUS_USE_TLS)
     set(TLS_SUB_DIR "${REDIS_PLUS_PLUS_SOURCE_DIR}/tls")
 
     list(APPEND REDIS_PLUS_PLUS_SOURCES "${TLS_SUB_DIR}/tls.cpp")
+
+    set(REDIS_PLUS_PLUS_DEPENDS "hiredis,hiredis_ssl")
 else()
     set(TLS_SUB_DIR "${REDIS_PLUS_PLUS_SOURCE_DIR}/no_tls")
+
+    set(REDIS_PLUS_PLUS_DEPENDS "hiredis")
 endif()
 
 # hiredis dependency
 find_package(hiredis QUIET)
-find_path(HIREDIS_HEADER hiredis REQUIRED)
-find_library(HIREDIS_LIB hiredis REQUIRED)
+if(hiredis_FOUND)
+    list(APPEND REDIS_PLUS_PLUS_HIREDIS_LIBS hiredis::hiredis)
+
+    if(REDIS_PLUS_PLUS_USE_TLS)
+        find_package(hiredis_ssl REQUIRED)
+        list(APPEND REDIS_PLUS_PLUS_HIREDIS_LIBS hiredis::hiredis_ssl)
+    endif()
+else()
+    find_path(HIREDIS_HEADER hiredis REQUIRED)
+    find_library(HIREDIS_LIB hiredis REQUIRED)
+    list(APPEND REDIS_PLUS_PLUS_HIREDIS_LIBS ${HIREDIS_LIB})
+
+    if(REDIS_PLUS_PLUS_USE_TLS)
+        find_library(HIREDIS_TLS_LIB hiredis_ssl REQUIRED)
+        list(APPEND REDIS_PLUS_PLUS_HIREDIS_LIBS ${HIREDIS_TLS_LIB})
+    endif()
+endif()
 
 # Build static library
 option(REDIS_PLUS_PLUS_BUILD_STATIC "Build static library" ON)
@@ -77,7 +96,7 @@ if(REDIS_PLUS_PLUS_BUILD_STATIC)
             $<INSTALL_INTERFACE:include>)
 
     if(hiredis_FOUND)
-        target_link_libraries(${STATIC_LIB} PUBLIC hiredis::hiredis)
+        target_link_libraries(${STATIC_LIB} PUBLIC ${REDIS_PLUS_PLUS_HIREDIS_LIBS})
     else()
         target_include_directories(${STATIC_LIB} PUBLIC ${HIREDIS_HEADER})
     endif()
@@ -119,17 +138,10 @@ if(REDIS_PLUS_PLUS_BUILD_SHARED)
             $<INSTALL_INTERFACE:include>)
 
     if(hiredis_FOUND)
-        target_link_libraries(${SHARED_LIB} PUBLIC hiredis::hiredis)
-        if(REDIS_PLUS_PLUS_USE_TLS)
-            target_link_libraries(${SHARED_LIB} PUBLIC hiredis::hiredis_ssl)
-        endif()
+        target_link_libraries(${SHARED_LIB} PUBLIC ${REDIS_PLUS_PLUS_HIREDIS_LIBS})
     else()
         target_include_directories(${SHARED_LIB} PUBLIC ${HIREDIS_HEADER})
-        target_link_libraries(${SHARED_LIB} PUBLIC ${HIREDIS_LIB})
-        if(REDIS_PLUS_PLUS_USE_TLS)
-            find_library(HIREDIS_TLS_LIB hiredis_ssl REQUIRED)
-            target_link_libraries(${SHARED_LIB} PUBLIC ${HIREDIS_TLS_LIB})
-        endif()
+        target_link_libraries(${SHARED_LIB} PUBLIC ${REDIS_PLUS_PLUS_HIREDIS_LIBS})
     endif()
 
     if(WIN32)
@@ -178,12 +190,6 @@ include(CMakePackageConfigHelpers)
 write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/cmake/redis++-config-version.cmake"
         VERSION ${PROJECT_VERSION}
         COMPATIBILITY AnyNewerVersion)
-
-if(REDIS_PLUS_PLUS_USE_TLS)
-    set(REDIS_PLUS_PLUS_DEPENDS "hiredis,hiredis_ssl")
-else()
-    set(REDIS_PLUS_PLUS_DEPENDS "hiredis")
-endif()
 
 configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/redis++-config.cmake.in"
         "${CMAKE_CURRENT_BINARY_DIR}/cmake/redis++-config.cmake"
