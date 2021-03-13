@@ -59,6 +59,8 @@ The master branch is the stable branch, which passes all tests. The dev branch i
 
 Since *redis-plus-plus* is based on *hiredis*, you should install *hiredis* first. The minimum version requirement for *hiredis* is **v0.12.1**. However, [the latest stable release](https://github.com/redis/hiredis/releases) of *hiredis* is always recommended.
 
+**NOTE**: You must ensure that there's only 1 version of hiredis is installed. Otherwise, you might get some wired problems. Check the following issues for example: [issue 135](https://github.com/sewenew/redis-plus-plus/issues/135), [issue 140](https://github.com/sewenew/redis-plus-plus/issues/140) and [issue 158](https://github.com/sewenew/redis-plus-plus/issues/158).
+
 ```
 git clone https://github.com/redis/hiredis.git
 
@@ -77,8 +79,6 @@ make PREFIX=/non/default/path
 make PREFIX=/non/default/path install
 ```
 
-**NOTE**: You must ensure that there's only 1 version of hiredis is installed. Otherwise, you might get some wired problems. Check the following issues for example: [issue 135](https://github.com/sewenew/redis-plus-plus/issues/135), [issue 140](https://github.com/sewenew/redis-plus-plus/issues/140) and [issue 158](https://github.com/sewenew/redis-plus-plus/issues/158).
-
 ### Install redis-plus-plus
 
 *redis-plus-plus* is built with [CMAKE](https://cmake.org).
@@ -88,11 +88,11 @@ git clone https://github.com/sewenew/redis-plus-plus.git
 
 cd redis-plus-plus
 
-mkdir compile
+mkdir build
 
-cd compile
+cd build
 
-cmake -DCMAKE_BUILD_TYPE=Release ..
+cmake ..
 
 make
 
@@ -104,22 +104,24 @@ cd ..
 If *hiredis* is installed at non-default location, you should use `CMAKE_PREFIX_PATH` to specify the installation path of *hiredis*. By default, *redis-plus-plus* is installed at */usr/local*. However, you can use `CMAKE_INSTALL_PREFIX` to install *redis-plus-plus* at non-default location.
 
 ```
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/path/to/hiredis -DCMAKE_INSTALL_PREFIX=/path/to/install/redis-plus-plus ..
+cmake -DCMAKE_PREFIX_PATH=/path/to/hiredis -DCMAKE_INSTALL_PREFIX=/path/to/install/redis-plus-plus ..
 ```
 
 By default, *redis-plus-plus* is built with `-std=c++11` standard. If you want to use the [std::string_view](#stringview) and [std::optional](#optional) features, you can also build *redis-plus-plus* with `-std=c++17` standard by specifying the following cmake flag: `-DREDIS_PLUS_PLUS_CXX_STANDARD=17`.
 
 ```
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/path/to/hiredis -DCMAKE_INSTALL_PREFIX=/path/to/install/redis-plus-plus -DREDIS_PLUS_PLUS_CXX_STANDARD=17 ..
+cmake -DCMAKE_PREFIX_PATH=/path/to/hiredis -DCMAKE_INSTALL_PREFIX=/path/to/install/redis-plus-plus -DREDIS_PLUS_PLUS_CXX_STANDARD=17 ..
 ```
 
 When compiling *redis-plus-plus*, it also compiles a test program, which might take a while. However, you can disable building test with the following cmake option: `-DREDIS_PLUS_PLUS_BUILD_TEST=OFF`.
 
 ```
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/path/to/hiredis -DCMAKE_INSTALL_PREFIX=/path/to/install/redis-plus-plus -DREDIS_PLUS_PLUS_BUILD_TEST=OFF ..
+cmake -DCMAKE_PREFIX_PATH=/path/to/hiredis -DCMAKE_INSTALL_PREFIX=/path/to/install/redis-plus-plus -DREDIS_PLUS_PLUS_BUILD_TEST=OFF ..
 ```
 
 By default, *redis-plus-plus* builds both a static library and a shared library. If you only want to build one of them, you can disable the other with `-DREDIS_PLUS_PLUS_BUILD_STATIC=OFF` or `-DREDIS_PLUS_PLUS_BUILD_SHARED=OFF`.
+
+*redis-plus-plus* builds static library with `-fPIC` option, i.e. Position Independent Code, by default. However, you can disable it with `-DREDIS_PLUS_PLUS_BUILD_STATIC_WITH_PIC=OFF`.
 
 #### Windows Support
 
@@ -174,7 +176,7 @@ Since *redis-plus-plus* depends on *hiredis*, we need to specify the installatio
             "type": "FILEPATH"
           },
           {
-            "name": "HIREDIS_STATIC_LIB",
+            "name": "TEST_HIREDIS_LIB",
             "value": "installation path of static library of hiredis",
             "type": "FILEPATH"
           }
@@ -732,7 +734,7 @@ make PREFIX=/non/default/path USE_SSL=1 install
 Then you can build *redis-plus-plus* to enable TLS support by specifying the `-DREDIS_PLUS_PLUS_USE_TLS=ON` option:
 
 ```
-cmake -DREDIS_PLUS_PLUS_USE_TLS=ON -DCMAKE_BUILD_TYPE=Release ..
+cmake -DREDIS_PLUS_PLUS_USE_TLS=ON ..
 ```
 
 ##### Connection Options
@@ -747,7 +749,7 @@ opts.port = 6379;
 opts.tls.enabled = true;    // Required. `false` by default.
 opts.tls.cert = "/path/to/client/certificate";  // Optional
 opts.tls.key = "/path/to/private/key/file"; // Optional
-opts.tls.cacert = "/path/to/CA/certificate/file";   // Optional
+opts.tls.cacert = "/path/to/CA/certificate/file";   // You can also set `opts.tls.cacertdir` instead.
 opts.tls.sni = "server-name-indication";    // Optional
 ```
 
