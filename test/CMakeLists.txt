@@ -33,8 +33,8 @@ endif()
 
 # redis++ dependency
 target_include_directories(${PROJECT_NAME} PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/../src
-        ${CMAKE_CURRENT_SOURCE_DIR}/../${TLS_SUB_DIR})
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../src>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../${TLS_SUB_DIR}>)
 
 # solaris socket dependency
 if(CMAKE_SYSTEM_NAME MATCHES "(Solaris|SunOS)")
