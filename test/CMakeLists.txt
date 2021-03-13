@@ -8,7 +8,7 @@ add_executable(${PROJECT_NAME} ${REDIS_PLUS_PLUS_TEST_SOURCES})
 
 # hiredis dependency
 find_path(HIREDIS_HEADER hiredis REQUIRED)
-target_include_directories(${PROJECT_NAME} PRIVATE ${HIREDIS_HEADER})
+target_include_directories(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:${HIREDIS_HEADER}>)
 
 find_library(TEST_HIREDIS_LIB libhiredis.a)
 if(NOT TEST_HIREDIS_LIB)
