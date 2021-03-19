@@ -208,3 +208,32 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/redis++.pc.in"
 
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/cmake/redis++.pc"
         DESTINATION "lib/pkgconfig")
+
+option(REDIS_PLUS_PLUS_BUILD_DEBIAN "Build Debian package" OFF)
+
+if (REDIS_PLUS_PLUS_BUILD_DEBIAN)
+    SET(CPACK_GENERATOR "DEB")
+    SET(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS "ON")
+
+    if (NOT DEFINED CPACK_DEBIAN_PACKAGE_MAINTAINER)
+        SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "anonymous")
+    endif()
+    if (NOT DEFINED CPACK_PACKAGE_NAME)
+        SET(CPACK_PACKAGE_NAME "libredis++-dev")
+    endif()
+    if (NOT DEFINED CPACK_DEBIAN_PACKAGE_DEPENDS)
+        SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++6, libhiredis-dev")
+    endif()
+
+    EXECUTE_PROCESS(COMMAND bash -c "dpkg --print-architecture" OUTPUT_VARIABLE CPACK_DEBIAN_PACKAGE_ARCHITECTURE)
+    string(REGEX REPLACE "\n$" "" CPACK_DEBIAN_PACKAGE_ARCHITECTURE "${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}")
+    SET(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}_${PROJECT_VERSION}_${CPACK_DEBIAN_PACKAGE_ARCHITECTURE}")
+
+    SET(CPACK_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
+    SET(CPACK_DEBIAN_PACKAGE_SOURCE "https://github.com/sewenew/redis-plus-plus")
+    set(CPACK_PACKAGE_DESCRIPTION "A pure C++ client for Redis, based on hiredis.")
+
+    message(STATUS "Debian package name: ${CPACK_PACKAGE_FILE_NAME}.deb")
+
+    INCLUDE(CPack)
+endif()
