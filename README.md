@@ -193,12 +193,11 @@ Then you can build it the instructions (links) mentioned above. If you're buildi
 ##### Building a redis-plus-plus Debian Package (Optional)
 
 Basic support for building a GNU/Debian package is supplied with the use of cmake.
-In order to enable this feature, the `REDIS_PLUS_PLUS_BUILD_DEBIAN` should be set to `ON`.
-The following example shows how this can be done:
+The following example shows how to build the Debian package:
 
 ```
 mkdir build; cd build
-cmake -DCMAKE_BUILD_TYPE=Release -DREDIS_PLUS_PLUS_BUILD_DEBIAN=ON -DREDIS_PLUS_PLUS_CXX_STANDARD=14 ..
+cmake -DCMAKE_BUILD_TYPE=Release -DREDIS_PLUS_PLUS_CXX_STANDARD=14 ..
 cpack -G DEB
 ```
 
@@ -206,7 +205,7 @@ The install prefix may be modified as follows:
 
 ```
 mkdir build; cd build
-cmake -DCMAKE_BUILD_TYPE=Release -DREDIS_PLUS_PLUS_BUILD_DEBIAN=ON -DREDIS_PLUS_PLUS_CXX_STANDARD=14 -DCMAKE_INSTALL_PREFIX=/usr ..
+cmake -DCMAKE_BUILD_TYPE=Release -DREDIS_PLUS_PLUS_CXX_STANDARD=14 -DCMAKE_INSTALL_PREFIX=/usr ..
 cpack -G DEB
 ```
 
