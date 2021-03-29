@@ -208,3 +208,25 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/redis++.pc.in"
 
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/cmake/redis++.pc"
         DESTINATION "lib/pkgconfig")
+
+# All the Debian-specific cpack defines.
+if(${CMAKE_VERSION} VERSION_GREATER 3.6)
+  SET(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS "ON")
+endif()
+if(NOT DEFINED CPACK_DEBIAN_PACKAGE_DEPENDS)
+  SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libstdc++6, libhiredis-dev")
+endif()
+SET(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
+SET(CPACK_DEBIAN_PACKAGE_VERSION "${REDIS_PLUS_PLUS_VERSION}")
+SET(CPACK_DEBIAN_PACKAGE_SOURCE "https://github.com/sewenew/redis-plus-plus")
+message(STATUS "Debian package name: ${CPACK_PACKAGE_FILE_NAME}.deb")
+
+# All the common cpack defines.
+if(NOT DEFINED CPACK_PACKAGE_NAME)
+    SET(CPACK_PACKAGE_NAME "libredis++-dev")
+endif()
+SET(CPACK_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
+SET(CPACK_PACKAGE_DESCRIPTION "A pure C++ client for Redis, based on hiredis.")
+SET(CPACK_PACKAGE_CONTACT "anonymous")
+SET(CPACK_GENERATOR "DEB")
+INCLUDE(CPack)

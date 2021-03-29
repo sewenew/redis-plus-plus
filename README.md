@@ -190,6 +190,25 @@ Then you can build it the instructions (links) mentioned above. If you're buildi
 
 **NOTE**: `REDIS_PLUS_PLUS_CXX_STANDARD` is not supported on Windows so far, and TLS/SSL support has not been tested on Windows yet.
 
+##### Building a redis-plus-plus Debian Package (Optional)
+
+Basic support for building a GNU/Debian package is supplied with the use of cmake.
+The following example shows how to build the Debian package:
+
+```
+mkdir build; cd build
+cmake -DCMAKE_BUILD_TYPE=Release -DREDIS_PLUS_PLUS_CXX_STANDARD=14 ..
+cpack -G DEB
+```
+
+The install prefix may be modified as follows:
+
+```
+mkdir build; cd build
+cmake -DCMAKE_BUILD_TYPE=Release -DREDIS_PLUS_PLUS_CXX_STANDARD=14 -DCMAKE_INSTALL_PREFIX=/usr ..
+cpack -G DEB
+```
+
 ### Run Tests (Optional)
 
 *redis-plus-plus* has been fully tested with the following compilers:
@@ -201,6 +220,7 @@ gcc version 6.5.0 20181026 (Ubuntu 6.5.0-2ubuntu1~18.04)
 gcc version 7.4.0 (Ubuntu 7.4.0-1ubuntu1~18.04.1)
 gcc version 8.3.0 (Ubuntu 8.3.0-6ubuntu1~18.04.1)
 gcc version 9.2.1 20191008 (Ubuntu 9.2.1-9ubuntu2)
+gcc version 10.2.1 20210110 (Debian 10.2.1-6)
 clang version 3.9.1-19ubuntu1 (tags/RELEASE_391/rc2)
 clang version 4.0.1-10 (tags/RELEASE_401/final)
 clang version 5.0.1-4 (tags/RELEASE_501/final)
