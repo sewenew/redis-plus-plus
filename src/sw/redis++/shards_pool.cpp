@@ -88,14 +88,22 @@ ConnectionPoolSPtr ShardsPool::fetch(const Node &node) {
 
 void ShardsPool::update() {
     // My might send command to a removed node.
-    // Try at most 3 times.
-    for (auto idx = 0; idx < 3; ++idx) {
+    // Try at most 3 times from the current shard masters and finally with the user given connection options.
+    for (auto idx = 0; idx < 4; ++idx) {
         try {
-            // Randomly pick a connection.
-            auto pool = fetch();
-            assert(pool);
-            SafeConnection safe_connection(*pool);
-            auto shards = _cluster_slots(safe_connection.connection());
+            Shards shards;
+            if (idx < 3) {
+                // Randomly pick a connection.
+                auto pool = fetch();
+                assert(pool);
+                SafeConnection safe_connection(*pool);
+                shards = _cluster_slots(safe_connection.connection());
+            }
+            else {
+                Connection connection(_connection_opts);
+                shards = _cluster_slots(connection);
+            }
+
 
             std::unordered_set<Node, NodeHash> nodes;
             for (const auto &shard : shards) {
