@@ -119,70 +119,135 @@ void ZSetCmdTest<RedisInstance>::_test_range() {
 
     KeyDeleter<RedisInstance> deleter(_redis, key);
 
-    std::map<std::string, double> s = {
+    std::vector<std::pair<std::string, double>> s = {
         std::make_pair("m1", 1),
         std::make_pair("m2", 2),
         std::make_pair("m3", 3),
+        std::make_pair("m4", 4),
     };
+    std::vector<std::string> sKeys;
+    for (const auto &p : s) {
+        sKeys.push_back(p.first);
+    }
+    std::vector<std::string> sReversedKeys = sKeys;
+    std::reverse(sReversedKeys.begin(), sReversedKeys.end());
+
     _redis.zadd(key, s.begin(), s.end());
 
-    REDIS_ASSERT(_redis.zcount(key, UnboundedInterval<double>{}) == 3, "failed to test zcount");
+    REDIS_ASSERT(_redis.zcount(key, UnboundedInterval<double>{}) == s.size(),
+                 "failed to test zcount");
 
     std::vector<std::string> members;
     _redis.zrange(key, 0, -1, std::back_inserter(members));
-    REDIS_ASSERT(members.size() == s.size(), "failed to test zrange");
-    for (const auto &mem : {"m1", "m2", "m3"}) {
-        REDIS_ASSERT(std::find(members.begin(), members.end(), mem) != members.end(),
-                "failed to test zrange");
-    }
+    REDIS_ASSERT(members.size() == s.size() && members == sKeys,
+                 "failed to test zrange");
 
-    std::map<std::string, double> res;
+    std::vector<std::pair<std::string, double>> res;
     _redis.zrange(key, 0, -1, std::inserter(res, res.end()));
     REDIS_ASSERT(s == res, "failed to test zrange with score");
 
     members.clear();
     _redis.zrevrange(key, 0, 0, std::back_inserter(members));
-    REDIS_ASSERT(members.size() == 1 && members[0] == "m3", "failed to test zrevrange");
+    REDIS_ASSERT(members.size() == 1 && members.at(0) == sKeys.at(s.size()-1),
+                 "failed to test zrevrange");
 
     res.clear();
     _redis.zrevrange(key, 0, 0, std::inserter(res, res.end()));
-    REDIS_ASSERT(res.size() == 1 && res.find("m3") != res.end() && res["m3"] == 3,
-            "failed to test zrevrange with score");
+    REDIS_ASSERT(res.size() == 1 && res.at(0) == s.at(s.size()-1),
+                 "failed to test zrevrange with score");
 
     members.clear();
     _redis.zrangebyscore(key, UnboundedInterval<double>{}, std::back_inserter(members));
-    REDIS_ASSERT(members.size() == s.size(), "failed to test zrangebyscore");
-    for (const auto &mem : {"m1", "m2", "m3"}) {
-        REDIS_ASSERT(std::find(members.begin(), members.end(), mem) != members.end(),
-                "failed to test zrangebyscore");
-    }
+    REDIS_ASSERT(members.size() == s.size() && members == sKeys,
+                 "failed to test zrangebyscore");
+
+    LimitOptions limitOpts;
+    limitOpts.offset = 0;
+    limitOpts.count = 2;
+    members.clear();
+    _redis.zrangebyscore(key, UnboundedInterval<double>{}, limitOpts, std::back_inserter(members));
+    REDIS_ASSERT(members.size() == 2 &&
+                 members.at(0) == sKeys.at(0) &&
+                 members.at(1) == sKeys.at(1),
+                 "failed to test zrangebyscore with limits 0, 1");
+
+    limitOpts.offset = 1;
+    members.clear();
+    _redis.zrangebyscore(key, UnboundedInterval<double>{}, limitOpts, std::back_inserter(members));
+    REDIS_ASSERT(members.size() == 2 &&
+                 members.at(0) == sKeys.at(1) &&
+                 members.at(1) == sKeys.at(2),
+                 "failed to test zrangebyscore with limits 1, 2");
+
+    limitOpts.offset = s.size() - 1;
+    members.clear();
+    _redis.zrangebyscore(key, UnboundedInterval<double>{}, limitOpts, std::back_inserter(members));
+    REDIS_ASSERT(members.size() == 1 &&
+                 members.at(0) == sKeys.at(sKeys.size() - 1),
+                 "failed to test zrangebyscore with limits size-1, 2");
 
     members.clear();
     _redis.zrangebyscore(key,
             BoundedInterval<double>(1, 2, BoundType::RIGHT_OPEN),
             std::back_inserter(members));
-    REDIS_ASSERT(members.size() == 1 && members[0] == "m1", "failed to test zrangebyscore");
+    REDIS_ASSERT(members.size() == 1 && members.at(0) == sKeys.at(0),
+                 "failed to test zrangebyscore");
 
     res.clear();
     _redis.zrangebyscore(key,
             LeftBoundedInterval<double>(2, BoundType::OPEN),
             std::inserter(res, res.end()));
-    REDIS_ASSERT(res.size() == 1 && res.find("m3") != res.end() && res["m3"] == 3,
-            "failed to test zrangebyscore");
+    REDIS_ASSERT(res.size() == 2 && res.at(0) == s.at(s.size()-2) && res.at(1) == s.at(s.size()-1),
+                 "failed to test zrangebyscore");
 
     members.clear();
     _redis.zrevrangebyscore(key,
             BoundedInterval<double>(1, 3, BoundType::CLOSED),
             std::back_inserter(members));
-    REDIS_ASSERT(members == std::vector<std::string>({"m3", "m2", "m1"}),
-            "failed to test zrevrangebyscore");
+    REDIS_ASSERT(members.size() == sReversedKeys.size()-1,
+                 "failed to test zrevrangebyscore (size)");
+    for (int i=0; i<members.size(); i++) {
+        REDIS_ASSERT(members.at(i) == sReversedKeys.at(i+1),
+                     "failed to test zrevrangebyscore");
+    }
+
+    limitOpts.offset = 0;
+    members.clear();
+    _redis.zrevrangebyscore(key,
+            BoundedInterval<double>(1, 3, BoundType::CLOSED),
+            limitOpts,
+            std::back_inserter(members));
+    REDIS_ASSERT(members.size() == 2 &&
+                 members.at(0) == sReversedKeys.at(1) &&
+                 members.at(1) == sReversedKeys.at(2),
+                 "failed to test zrevrangebyscore with limits 0, 2");
+
+    limitOpts.offset = 1;
+    members.clear();
+    _redis.zrevrangebyscore(key,
+                            BoundedInterval<double>(1, 3, BoundType::CLOSED),
+                            limitOpts,
+                            std::back_inserter(members));
+    REDIS_ASSERT(members.size() == 2 &&
+                 members.at(0) == sReversedKeys.at(2) &&
+                 members.at(1) == sReversedKeys.at(3),
+                 "failed to test zrevrangebyscore with limits 1, 2");
+
+    limitOpts.offset = s.size()-2;
+    members.clear();
+    _redis.zrevrangebyscore(key,
+                            BoundedInterval<double>(1, 3, BoundType::CLOSED),
+                            limitOpts,
+                            std::back_inserter(members));
+    REDIS_ASSERT(members.size() == 1 &&
+                 members.at(0) == sReversedKeys.at(s.size()-1),
+                 "failed to test zrevrangebyscore with limits size-2, 2");
 
     res.clear();
     _redis.zrevrangebyscore(key,
             RightBoundedInterval<double>(1, BoundType::LEFT_OPEN),
             std::inserter(res, res.end()));
-    REDIS_ASSERT(res.size() == 1 && res.find("m1") != res.end() && res["m1"] == 1,
-            "failed to test zrevrangebyscore");
+    REDIS_ASSERT(res.size() == 1 && res.at(0) == s.at(0), "failed to test zrevrangebyscore");
 
     REDIS_ASSERT(_redis.zremrangebyrank(key, 0, 0) == 1, "failed to test zremrangebyrank");
 
