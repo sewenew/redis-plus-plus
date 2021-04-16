@@ -47,8 +47,8 @@ void StreamCmdsTest<RedisInstance>::_test_stream_cmds() {
         {"f1", "v1"},
         {"f2", "v2"}
     };
-    auto id = "1565427842-0";
-    REDIS_ASSERT(_redis.xadd(key, id, attrs.begin(), attrs.end()) == id,
+    const std::vector<std::string> ids = {"1565427842-0", "1565427842-1"};
+    REDIS_ASSERT(_redis.xadd(key, ids.at(0), attrs.begin(), attrs.end()) == ids.at(0),
             "failed to test xadd");
 
     std::vector<std::pair<std::string, std::string>> keys = {std::make_pair(key, "0-0")};
@@ -58,8 +58,8 @@ void StreamCmdsTest<RedisInstance>::_test_stream_cmds() {
     REDIS_ASSERT(result.size() == 1
             && result.find(key) != result.end()
             && result[key].size() == 1
-            && result[key][0].first == id
-            && result[key][0].second.size() == 2,
+            && result[key].at(0).first == ids.at(0)
+            && result[key].at(0).second.size() == 2,
             "failed to test xread");
 
     result.clear();
@@ -68,12 +68,12 @@ void StreamCmdsTest<RedisInstance>::_test_stream_cmds() {
     REDIS_ASSERT(result.size() == 1
             && result.find(key) != result.end()
             && result[key].size() == 1
-            && result[key][0].first == id
-            && result[key][0].second.size() == 2,
+            && result[key].at(0).first == ids.at(0)
+            && result[key].at(0).second.size() == 2,
             "failed to test xread");
 
     result.clear();
-    keys = {std::make_pair(key, id)};
+    keys = {std::make_pair(key, ids.at(0))};
     _redis.xread(keys.begin(),
                     keys.end(),
                     std::chrono::seconds(1),
@@ -82,29 +82,59 @@ void StreamCmdsTest<RedisInstance>::_test_stream_cmds() {
     REDIS_ASSERT(result.size() == 0, "failed to test xread");
 
     _redis.xread(key,
-                    id,
+                    ids.at(0),
                     std::chrono::seconds(1),
                     2,
                     std::inserter(result, result.end()));
     REDIS_ASSERT(result.size() == 0, "failed to test xread");
 
-    id = "1565427842-1";
-    REDIS_ASSERT(_redis.xadd(key, id, attrs.begin(), attrs.end()) == id,
-            "failed to test xadd");
+    REDIS_ASSERT(_redis.xadd(key, ids.at(1),
+                             attrs.begin(),
+                             attrs.end()) == ids.at(1),
+                 "failed to test xadd");
 
     REDIS_ASSERT(_redis.xlen(key) == 2, "failed to test xlen");
 
+    std::vector<Item> items;
+    _redis.xrange(key, "-", "+", 2, std::back_inserter(items));
+    REDIS_ASSERT(items.size() == 2 &&
+                 items.at(0).first == ids.at(0) &&
+                 items.at(1).first == ids.at(1),
+                 "failed to test xrange with count");
+
+    items.clear();
+    _redis.xrange(key, "-", "+", 1, std::back_inserter(items));
+    REDIS_ASSERT(items.size() == 1 &&
+                 items.at(0).first == ids.at(0),
+                 "failed to test xrange with count");
+
+    items.clear();
+    _redis.xrevrange(key, "+", "-", 2, std::back_inserter(items));
+    REDIS_ASSERT(items.size() == 2 &&
+                 items.at(0).first == ids.at(1) &&
+                 items.at(1).first == ids.at(0),
+                 "failed to test xrevrange with count");
+
+    items.clear();
+    _redis.xrevrange(key, "+", "-", 1, std::back_inserter(items));
+    REDIS_ASSERT(items.size() == 1 &&
+                 items.at(0).first == ids.at(1),
+                 "failed to test xrevrange with count");
+
     REDIS_ASSERT(_redis.xtrim(key, 1, false) == 1, "failed to test xtrim");
 
-    std::vector<Item> items;
+    items.clear();
     _redis.xrange(key, "-", "+", std::back_inserter(items));
-    REDIS_ASSERT(items.size() == 1 && items[0].first == id, "failed to test xrange");
+    REDIS_ASSERT(items.size() == 1 && items[0].first == ids.at(1),
+                 "failed to test xrange");
 
     items.clear();
     _redis.xrevrange(key, "+", "-", std::back_inserter(items));
-    REDIS_ASSERT(items.size() == 1 && items[0].first == id, "failed to test xrevrange");
+    REDIS_ASSERT(items.size() == 1 && items[0].first == ids.at(1),
+                 "failed to test xrevrange");
 
-    REDIS_ASSERT(_redis.xdel(key, {id, "111-111"}) == 1, "failed to test xdel");
+    REDIS_ASSERT(_redis.xdel(key, {ids.at(1), std::string("111-111")}) == 1,
+                 "failed to test xdel");
 }
 
 template <typename RedisInstance>
