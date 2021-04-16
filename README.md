@@ -28,7 +28,7 @@
 
 ## Overview
 
-This is a C++ client for Redis. It's based on [hiredis](https://github.com/redis/hiredis), and written in C++ 11 / C++ 17.
+This is a C++ client library for Redis. It's based on [hiredis](https://github.com/redis/hiredis), and is compatible with C++ 11, C++ 14, and C++ 17.
 
 **NOTE**: I'm not a native speaker. So if the documentation is unclear, please feel free to open an issue or pull request. I'll response ASAP.
 
@@ -107,7 +107,7 @@ If *hiredis* is installed at non-default location, you should use `CMAKE_PREFIX_
 cmake -DCMAKE_PREFIX_PATH=/path/to/hiredis -DCMAKE_INSTALL_PREFIX=/path/to/install/redis-plus-plus ..
 ```
 
-By default, *redis-plus-plus* is built with `-std=c++11` standard. If you want to use the [std::string_view](#stringview) and [std::optional](#optional) features, you can also build *redis-plus-plus* with `-std=c++17` standard by specifying the following cmake flag: `-DREDIS_PLUS_PLUS_CXX_STANDARD=17`.
+By default, *redis-plus-plus* is built with the `-std=c++11` standard. It can also be built with the `-std=c++14` standard. However, if you want to use the [std::string_view](#stringview) and [std::optional](#optional) features, you can build *redis-plus-plus* with the `-std=c++17` standard, by specifying the following cmake flag: `-DREDIS_PLUS_PLUS_CXX_STANDARD=17`.
 
 ```
 cmake -DCMAKE_PREFIX_PATH=/path/to/hiredis -DCMAKE_INSTALL_PREFIX=/path/to/install/redis-plus-plus -DREDIS_PLUS_PLUS_CXX_STANDARD=17 ..
@@ -295,7 +295,7 @@ The bechmark will generate `100` random binary keys for testing, and the size of
 
 ### Use redis-plus-plus In Your Project
 
-After compiling the code, you'll get both shared library and static library. Since *redis-plus-plus* depends on *hiredis*, you need to link both libraries to your Application. Also don't forget to specify the `-std=c++11` and thread-related option.
+After compiling the code, you'll get both shared library and static library. Since *redis-plus-plus* depends on *hiredis*, you need to link both libraries to your Application. Also don't forget to specify the c++ standard, `-std=c++11`, `-std=c++14` or `-std=c++17`, as well as the thread-related option.
 
 #### Use Static Libraries
 
@@ -824,7 +824,7 @@ Most of these methods have the same parameters as the corresponding commands. Th
 
 ##### StringView
 
-[std::string_view](http://en.cppreference.com/w/cpp/string/basic_string_view) is a good option for the type of string parameters. However, by now, not all compilers support `std::string_view`. So if you build *redis-plus-plus* with `-std=c++11` standard (i.e. the default behavior), we wrote a [simple version](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/utils.h#L56), i.e. `StringView`. Instead, if you build *redis-plus-plus* with `-std=c++17` standard (i.e. by specifying `-DREDIS_PLUS_PLUS_CXX_STANDARD=17` with cmake command), you can use `std::string_view`, and we have a typedef for it: `using StringView = std::string_view`.
+[std::string_view](http://en.cppreference.com/w/cpp/string/basic_string_view) is a good choice for read-only string parameter types. `std::string_view` was however only introduced in the C++ 17 standard, so if you build *redis-plus-plus* with the `-std=c++11` (default) or the `-std=c++14` standard, a [simple implementation](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/utils.h#L56) of `std::string_view`, called `StringView`, is available. You could build *redis-plus-plus* with the `-std=c++17` standard (i.e. by specifying `-DREDIS_PLUS_PLUS_CXX_STANDARD=17` with cmake command), which will supply `std::string_view` natively. The `StringView` implementation will then be disregarded by aliasing it to `std::string_view`. This is done inside the *redis-plus-plus* library with: `using StringView = std::string_view`.
 
 Since there are conversions from `std::string` and c-style string to `StringView`, you can just pass `std::string` or c-style string to methods that need a `StringView` parameter.
 
@@ -882,7 +882,7 @@ So, never use the return value to check if the command has been successfully sen
 
 ##### Optional
 
-[std::optional](http://en.cppreference.com/w/cpp/utility/optional) is a good option for return type, if Redis might return *NULL REPLY*. Again, since not all compilers support `std::optional` so far, if you build *redis-plus-plus* with `-std=c++11` standard (i.e. the default behavior), we implement our own [simple version](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/utils.h#L93), i.e. `template Optional<T>`. Instead, if you build *redis-plus-plus* with `-std=c++17` standard (i.e. by specifying `-DREDIS_PLUS_PLUS_CXX_STANDARD=17` with cmake command), you can use `std::optional`, and we have a typedef for it: `template <typename T> using Optional = std::optional<T>`.
+[std::optional](http://en.cppreference.com/w/cpp/utility/optional) is a good option for return type, if Redis might return *NULL REPLY*. Again, since not all compilers support `std::optional` so far, if you build *redis-plus-plus* with `-std=c++11` standard (i.e. the default behavior), we implement our own [simple version](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/utils.h#L93), i.e. `template Optional<T>`. Instead, if you build *redis-plus-plus* with `-std=c++17` standard (i.e. by specifying `-DREDIS_PLUS_PLUS_CXX_STANDARD=17` with cmake command), you can use `std::optional`, and we have an alias for it: `template <typename T> using Optional = std::optional<T>`.
 
 Take the [GET](https://redis.io/commands/get) and [MGET](https://redis.io/commands/mget) commands for example:
 
