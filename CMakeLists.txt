@@ -41,6 +41,9 @@ set(REDIS_PLUS_PLUS_SOURCES
         "${REDIS_PLUS_PLUS_SOURCE_DIR}/shards_pool.cpp"
         "${REDIS_PLUS_PLUS_SOURCE_DIR}/subscriber.cpp"
         "${REDIS_PLUS_PLUS_SOURCE_DIR}/transaction.cpp"
+        "${REDIS_PLUS_PLUS_SOURCE_DIR}/async_connection.cpp"
+        "${REDIS_PLUS_PLUS_SOURCE_DIR}/async_redis.cpp"
+        "${REDIS_PLUS_PLUS_SOURCE_DIR}/event_loop.cpp"
 )
 
 # TLS support
@@ -79,6 +82,12 @@ else()
     endif()
 endif()
 
+message(STATUS "find ub")
+# libuv dependency
+find_path(LIBUV_HEADER uv REQUIRED)
+find_library(LIBUV_LIB uv REQUIRED)
+message(STATUS "find ub ok")
+
 # Build static library
 option(REDIS_PLUS_PLUS_BUILD_STATIC "Build static library" ON)
 message(STATUS "redis-plus-plus build static library: ${REDIS_PLUS_PLUS_BUILD_STATIC}")
@@ -100,6 +109,8 @@ if(REDIS_PLUS_PLUS_BUILD_STATIC)
     else()
         target_include_directories(${STATIC_LIB} PUBLIC $<BUILD_INTERFACE:${HIREDIS_HEADER}>)
     endif()
+
+    target_include_directories(${STATIC_LIB} PUBLIC $<BUILD_INTERFACE:${LIBUV_HEADER}>)
 
     if (WIN32)
         target_compile_definitions(${STATIC_LIB} PRIVATE NOMINMAX)
