@@ -1718,7 +1718,7 @@ public:
                         const StringView &start,
                         const StringView &end,
                         long long count) {
-        return command(cmd::xrange, key, start, end, count);
+        return command(cmd::xrange_count, key, start, end, count);
     }
 
     QueuedRedis& xread(const StringView &key, const StringView &id, long long count) {
@@ -1920,7 +1920,7 @@ public:
                             const StringView &end,
                             const StringView &start,
                             long long count) {
-        return command(cmd::xrevrange, key, end, start, count);
+        return command(cmd::xrevrange_count, key, end, start, count);
     }
 
     QueuedRedis& xtrim(const StringView &key, long long count, bool approx = true) {

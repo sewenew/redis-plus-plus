@@ -39,6 +39,8 @@ private:
 
     void _test_pipeline(const StringView &key, Pipeline &pipe);
 
+    void _test_pipeline_streams(const StringView &key, Pipeline &pipe);
+
     void _test_transaction(const StringView &key, Transaction &tx);
 
     void _test_watch();

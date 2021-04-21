@@ -43,6 +43,13 @@ void PipelineTransactionTest<RedisInstance>::run() {
     }
 
     {
+        auto key = test_key("pipeline");
+        KeyDeleter<RedisInstance> deleter(_redis, key);
+        auto pipe = _pipeline(key, false);
+        _test_pipeline_streams(key, pipe);
+    }
+
+    {
         auto key = test_key("transaction");
         KeyDeleter<RedisInstance> deleter(_redis, key);
         auto tx = _transaction(key, true, true);
@@ -122,6 +129,44 @@ void PipelineTransactionTest<RedisInstance>::_test_pipeline(const StringView &ke
     len = reply::parse<long long>(replies.get(2));
     REDIS_ASSERT(bool(new_val) && *new_val == val && len == val.size(),
             "failed to test pipeline with string operations");
+}
+
+template <typename RedisInstance>
+void PipelineTransactionTest<RedisInstance>::_test_pipeline_streams(const StringView &key,
+        Pipeline &pipe) {
+
+    const std::vector<std::string> ids = {"1565427842-0", "1565427842-1"};
+    std::vector<std::pair<std::string, std::string>> attrs = {
+        {"f1", "v1"},
+        {"f2", "v2"}
+    };
+    for (auto id : ids) {
+        pipe.xadd(key, id, attrs.begin(), attrs.end());
+    }
+    for (auto id : ids) {
+        pipe.xrange(key, "-", "+", 1);
+        pipe.xrevrange(key, "+", "-", 1);
+    }
+    auto replies = pipe.exec();
+    int replyCnt = 0;
+    using Item = std::pair<std::string, std::unordered_map<std::string, std::string>>;
+    std::vector<Item> items;
+    for (auto id : ids) {
+        auto reply = replies.get(replyCnt++);
+        std::string retId = reply::parse<std::string>(reply);
+        REDIS_ASSERT(retId == id, "failed to test pipeline_streams with xadd");
+    }
+    for (auto id : ids) {
+        auto replyXrange = replies.get(replyCnt++);
+        std::vector<Item> items = reply::parse<std::vector<Item>>(replyXrange);
+        auto replyXrevrange = replies.get(replyCnt++);
+        std::vector<Item> itemsRev = reply::parse<std::vector<Item>>(replyXrevrange);
+        REDIS_ASSERT(
+            items.size() == 1 &&
+            items.at(0).first == ids.at(0) &&
+            itemsRev.at(0).first == ids.at(ids.size()-1),
+            "failed to test pipeline_streams with count");
+    }
 }
 
 template <typename RedisInstance>
