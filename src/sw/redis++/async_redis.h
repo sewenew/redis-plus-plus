@@ -47,9 +47,9 @@ public:
     }
 
 private:
-    AsyncConnectionUPtr _connection;
-
     EventLoopSPtr _loop;
+
+    AsyncConnectionSPtr _connection;
 };
 
 }

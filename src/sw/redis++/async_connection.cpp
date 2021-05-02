@@ -22,23 +22,53 @@ namespace sw {
 
 namespace redis {
 
-AsyncConnection::AsyncConnection(EventLoop *loop,
-        const ConnectionOptions &opts) : _opts(opts), _loop(loop), _ctx(_connect(opts)) {
-    assert(_ctx != nullptr);
-
-    if (broken()) {
-        throw_error(_ctx->c, "failed to connect to server");
+FormattedCommand::~FormattedCommand() noexcept {
+    if (_data != nullptr) {
+        redisFreeCommand(_data);
     }
 }
+
+void FormattedCommand::_move(FormattedCommand &&that) noexcept {
+    _data = that._data;
+    _size = that._size;
+    that._data = nullptr;
+    that._size = 0;
+}
+
+AsyncConnection::AsyncConnection(const EventLoopSPtr &loop,
+        const ConnectionOptions &opts) : _loop(loop), _opts(opts) {}
 
 void AsyncConnection::disconnect() {
     if (_ctx != nullptr) {
         redisAsyncDisconnect(_ctx);
-        _ctx = nullptr;
+
+        reset();
     }
 }
 
-redisAsyncContext* AsyncConnection::_connect(const ConnectionOptions &opts) const {
+void AsyncConnection::reconnect() {
+    try {
+        auto ctx = _connect(_opts);
+
+        assert(ctx && ctx->err == REDIS_OK);
+
+        _loop->attach(*ctx);
+
+        _ctx = ctx.release();
+    } catch (...) {
+        reset();
+        throw;
+    }
+}
+
+void AsyncConnection::_clean_async_context(void *data) {
+    auto *async_context = static_cast<AsyncContext*>(data);
+    assert(async_context != nullptr);
+
+    delete async_context;
+}
+
+AsyncConnection::AsyncContextUPtr AsyncConnection::_connect(const ConnectionOptions &opts) {
     redisAsyncContext *context = nullptr;
     switch (opts.type) {
     case ConnectionType::TCP:
@@ -58,7 +88,15 @@ redisAsyncContext* AsyncConnection::_connect(const ConnectionOptions &opts) cons
         throw Error("Failed to allocate memory for connection.");
     }
 
-    return context;
+    auto ctx = AsyncContextUPtr(context);
+    if (ctx->err != REDIS_OK) {
+        throw_error(ctx->c, "failed to connect to server");
+    }
+
+    ctx->data = new AsyncContext(shared_from_this());
+    ctx->dataCleanup = _clean_async_context;
+
+    return ctx;
 }
 
 }

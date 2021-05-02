@@ -84,8 +84,8 @@ endif()
 
 message(STATUS "find ub")
 # libuv dependency
-find_path(LIBUV_HEADER uv REQUIRED)
-find_library(LIBUV_LIB uv REQUIRED)
+find_path(REDIS_PLUS_PLUS_LIBUV_HEADER uv REQUIRED)
+find_library(REDIS_PLUS_PLUS_LIBUV_LIB uv REQUIRED)
 message(STATUS "find ub ok")
 
 # Build static library
@@ -110,7 +110,7 @@ if(REDIS_PLUS_PLUS_BUILD_STATIC)
         target_include_directories(${STATIC_LIB} PUBLIC $<BUILD_INTERFACE:${HIREDIS_HEADER}>)
     endif()
 
-    target_include_directories(${STATIC_LIB} PUBLIC $<BUILD_INTERFACE:${LIBUV_HEADER}>)
+    target_include_directories(${STATIC_LIB} PUBLIC $<BUILD_INTERFACE:${REDIS_PLUS_PLUS_LIBUV_HEADER}>)
 
     if (WIN32)
         target_compile_definitions(${STATIC_LIB} PRIVATE NOMINMAX)
@@ -154,6 +154,9 @@ if(REDIS_PLUS_PLUS_BUILD_SHARED)
         target_include_directories(${SHARED_LIB} PUBLIC $<BUILD_INTERFACE:${HIREDIS_HEADER}>)
         target_link_libraries(${SHARED_LIB} PUBLIC ${REDIS_PLUS_PLUS_HIREDIS_LIBS})
     endif()
+
+    target_include_directories(${SHARED_LIB} PUBLIC $<BUILD_INTERFACE:${REDIS_PLUS_PLUS_LIBUV_HEADER}>)
+    target_link_libraries(${SHARED_LIB} PUBLIC ${REDIS_PLUS_PLUS_LIBUV_LIB})
 
     if(WIN32)
         target_compile_definitions(${SHARED_LIB} PRIVATE NOMINMAX)

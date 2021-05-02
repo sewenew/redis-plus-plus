@@ -38,7 +38,7 @@ namespace sw {
 
 namespace redis {
 
-void throw_error(redisContext &context, const std::string &err_info) {
+void throw_error(const redisContext &context, const std::string &err_info) {
     auto err_code = context.err;
     const auto *err_str = context.errstr;
     if (err_str == nullptr) {

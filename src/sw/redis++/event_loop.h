@@ -19,15 +19,16 @@
 
 #include <unordered_set>
 #include <memory>
+#include <thread>
 #include <uv.h>
 #include "connection.h"
-#include "async_event.h"
 
 namespace sw {
 
 namespace redis {
 
 class AsyncConnection;
+class AsyncEvent;
 
 class EventLoop {
 public:
@@ -42,13 +43,17 @@ public:
 
     ~EventLoop();
 
-    std::unique_ptr<AsyncConnection> watch(const ConnectionOptions &opts);
+    void unwatch(const std::shared_ptr<AsyncConnection> &connection);
 
-    void unwatch(std::unique_ptr<AsyncConnection> connection);
+    void add(std::unique_ptr<AsyncEvent> event);
 
-    void add(AsyncEventUPtr event);
+    void attach(redisAsyncContext &ctx);
 
 private:
+    static void _connect_callback(const redisAsyncContext *ctx, int status);
+
+    static void _disconnect_callback(const redisAsyncContext *ctx, int status);
+
     static void _event_callback(uv_async_t *handle);
 
     static void _stop_callback(uv_async_t *handle);
@@ -58,8 +63,6 @@ private:
     };
 
     using LoopUPtr = std::unique_ptr<uv_loop_t, LoopDeleter>;
-
-    void _attach(redisAsyncContext *ctx);
 
     std::string _err_msg(int err) const {
         return uv_strerror(err);
@@ -77,12 +80,9 @@ private:
 
     void _stop();
 
-    void _connect(const std::vector<AsyncConnection*> &connections);
+    void _disconnect(std::vector<std::shared_ptr<AsyncConnection>> &connections);
 
-    void _disconnect(const std::vector<std::unique_ptr<AsyncConnection>> &connections,
-            std::unordered_set<AsyncConnection*> &to_be_reconnect);
-
-    std::unordered_set<AsyncConnection*> _send_commands(std::vector<AsyncEventUPtr> events);
+    void _send_commands(std::vector<std::unique_ptr<AsyncEvent>> events);
 
     // We must define _event_async and _stop_async before _loop,
     // because these memory can only be release after _loop's deleter
@@ -97,13 +97,9 @@ private:
 
     std::mutex _mtx;
 
-    std::vector<AsyncConnection *> _connect_events;
+    std::vector<std::shared_ptr<AsyncConnection>> _disconnect_events;
 
-    // These connections will be released.
-    // TODO: possible leak
-    std::vector<std::unique_ptr<AsyncConnection>> _disconnect_events;
-
-    std::vector<AsyncEventUPtr> _command_events;
+    std::vector<std::unique_ptr<AsyncEvent>> _command_events;
 };
 
 using EventLoopSPtr = std::shared_ptr<EventLoop>;
