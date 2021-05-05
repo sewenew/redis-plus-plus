@@ -42,6 +42,7 @@ set(REDIS_PLUS_PLUS_SOURCES
         "${REDIS_PLUS_PLUS_SOURCE_DIR}/subscriber.cpp"
         "${REDIS_PLUS_PLUS_SOURCE_DIR}/transaction.cpp"
         "${REDIS_PLUS_PLUS_SOURCE_DIR}/async_connection.cpp"
+        "${REDIS_PLUS_PLUS_SOURCE_DIR}/async_connection_pool.cpp"
         "${REDIS_PLUS_PLUS_SOURCE_DIR}/async_redis.cpp"
         "${REDIS_PLUS_PLUS_SOURCE_DIR}/event_loop.cpp"
 )

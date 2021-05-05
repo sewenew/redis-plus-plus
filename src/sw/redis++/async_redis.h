@@ -18,6 +18,7 @@
 #define SEWENEW_REDISPLUSPLUS_ASYNC_REDIS_H
 
 #include "async_connection.h"
+#include "async_connection_pool.h"
 #include "event_loop.h"
 #include "utils.h"
 #include "command_args.h"
@@ -28,7 +29,9 @@ namespace redis {
 
 class AsyncRedis {
 public:
-    AsyncRedis(const ConnectionOptions &opts, const EventLoopSPtr &loop = nullptr);
+    AsyncRedis(const ConnectionOptions &opts,
+            const ConnectionPoolOptions &pool_opts = {},
+            const EventLoopSPtr &loop = nullptr);
 
     AsyncRedis(const AsyncRedis &) = delete;
     AsyncRedis& operator=(const AsyncRedis &) = delete;
@@ -36,20 +39,25 @@ public:
     AsyncRedis(AsyncRedis &&) = default;
     AsyncRedis& operator=(AsyncRedis &&) = default;
 
-    ~AsyncRedis();
+    ~AsyncRedis() = default;
 
     template <typename Result, typename ...Args>
     Future<Result> command(const StringView &cmd_name, Args &&...args) {
         CmdArgs cmd_args;
         cmd_args.append(cmd_name, std::forward<Args>(args)...);
 
-        return _connection->send<Result>(cmd_args);
+        assert(_pool);
+        SafeAsyncConnection connection(*_pool);
+
+        return connection.connection().send<Result>(cmd_args);
     }
 
 private:
     EventLoopSPtr _loop;
 
-    AsyncConnectionSPtr _connection;
+    //AsyncConnectionSPtr _connection;
+
+    AsyncConnectionPoolSPtr _pool;
 };
 
 }

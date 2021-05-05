@@ -20,20 +20,15 @@ namespace sw {
 
 namespace redis {
 
-AsyncRedis::AsyncRedis(const ConnectionOptions &opts, const EventLoopSPtr &loop) : _loop(loop) {
+AsyncRedis::AsyncRedis(const ConnectionOptions &opts,
+        const ConnectionPoolOptions &pool_opts,
+        const EventLoopSPtr &loop) : _loop(loop) {
     if (!_loop) {
         _loop = std::make_shared<EventLoop>();
     }
 
-    _connection = std::make_shared<AsyncConnection>(_loop, opts);
-}
-
-AsyncRedis::~AsyncRedis() {
-    if (_loop) {
-        assert(_connection);
-
-        _loop->unwatch(_connection);
-    }
+    _pool = std::make_shared<AsyncConnectionPool>(_loop, pool_opts, opts);
+    //_connection = std::make_shared<AsyncConnection>(_loop, opts);
 }
 
 }

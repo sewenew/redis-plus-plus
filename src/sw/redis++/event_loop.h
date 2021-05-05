@@ -43,7 +43,7 @@ public:
 
     ~EventLoop();
 
-    void unwatch(const std::shared_ptr<AsyncConnection> &connection);
+    void unwatch(redisAsyncContext *ctx);
 
     void add(std::unique_ptr<AsyncEvent> event);
 
@@ -80,7 +80,7 @@ private:
 
     void _stop();
 
-    void _disconnect(std::vector<std::shared_ptr<AsyncConnection>> &connections);
+    void _disconnect(std::vector<redisAsyncContext*> &connections);
 
     void _send_commands(std::vector<std::unique_ptr<AsyncEvent>> events);
 
@@ -97,7 +97,7 @@ private:
 
     std::mutex _mtx;
 
-    std::vector<std::shared_ptr<AsyncConnection>> _disconnect_events;
+    std::vector<redisAsyncContext*> _disconnect_events;
 
     std::vector<std::unique_ptr<AsyncEvent>> _command_events;
 };

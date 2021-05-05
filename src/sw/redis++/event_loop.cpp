@@ -40,13 +40,13 @@ EventLoop::~EventLoop() {
     }
 }
 
-void EventLoop::unwatch(const AsyncConnectionSPtr &connection) {
-    assert(connection);
+void EventLoop::unwatch(redisAsyncContext *context) {
+    assert(context != nullptr);
 
     {
         std::lock_guard<std::mutex> lock(_mtx);
 
-        _disconnect_events.push_back(connection);
+        _disconnect_events.push_back(context);
     }
 
     _notify();
@@ -119,7 +119,7 @@ void EventLoop::_event_callback(uv_async_t *handle) {
     auto *event_loop = static_cast<EventLoop*>(handle->data);
     assert(event_loop != nullptr);
 
-    std::vector<AsyncConnectionSPtr> disconnect_events;
+    std::vector<redisAsyncContext*> disconnect_events;
     std::vector<AsyncEventUPtr> command_events;
     {
         std::lock_guard<std::mutex> lock(event_loop->_mtx);
@@ -177,11 +177,11 @@ void EventLoop::LoopDeleter::operator()(uv_loop_t *loop) const {
     delete loop;
 }
 
-void EventLoop::_disconnect(std::vector<AsyncConnectionSPtr> &connections) {
-    for (auto &connection : connections) {
-        assert(connection);
+void EventLoop::_disconnect(std::vector<redisAsyncContext*> &connections) {
+    for (auto &context : connections) {
+        assert(context != nullptr);
 
-        connection->disconnect();
+        redisAsyncDisconnect(context);
     }
 }
 

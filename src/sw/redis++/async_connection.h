@@ -75,19 +75,24 @@ public:
     AsyncConnection(AsyncConnection &&) = delete;
     AsyncConnection& operator=(AsyncConnection &&) = delete;
 
-    ~AsyncConnection() = default;
+    ~AsyncConnection();
 
     bool broken() const noexcept {
         return _ctx == nullptr || _ctx->err != REDIS_OK;
     }
 
-    redisAsyncContext* context() const {
+    redisAsyncContext* context() {
+        _last_active = std::chrono::steady_clock::now();
+
         return _ctx;
     }
 
-    void disconnect();
-
     void reconnect();
+
+    auto last_active() const
+        -> std::chrono::time_point<std::chrono::steady_clock> {
+        return _last_active;
+    }
 
     void reset() noexcept {
         _ctx = nullptr;
@@ -133,6 +138,10 @@ private:
 
     // _ctx will be release by EventLoop after attached.
     redisAsyncContext *_ctx = nullptr;
+
+    // The time that the connection is created or the time that
+    // the connection is used, i.e. *context()* is called.
+    std::chrono::time_point<std::chrono::steady_clock> _last_active{};
 };
 
 using AsyncConnectionSPtr = std::shared_ptr<AsyncConnection>;

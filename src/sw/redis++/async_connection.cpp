@@ -38,11 +38,9 @@ void FormattedCommand::_move(FormattedCommand &&that) noexcept {
 AsyncConnection::AsyncConnection(const EventLoopSPtr &loop,
         const ConnectionOptions &opts) : _loop(loop), _opts(opts) {}
 
-void AsyncConnection::disconnect() {
-    if (_ctx != nullptr) {
-        redisAsyncDisconnect(_ctx);
-
-        reset();
+AsyncConnection::~AsyncConnection() {
+    if (_loop && _ctx != nullptr) {
+        _loop->unwatch(_ctx);
     }
 }
 
