@@ -35,13 +35,11 @@ void FormattedCommand::_move(FormattedCommand &&that) noexcept {
     that._size = 0;
 }
 
-AsyncConnection::AsyncConnection(const EventLoopSPtr &loop,
-        const ConnectionOptions &opts) : _loop(loop), _opts(opts) {}
+AsyncConnection::AsyncConnection(const ConnectionOptions &opts,
+        EventLoop *loop) : _opts(opts), _loop(loop) {}
 
 AsyncConnection::~AsyncConnection() {
-    if (_loop && _ctx != nullptr) {
-        _loop->unwatch(_ctx);
-    }
+    reset();
 }
 
 void AsyncConnection::reconnect() {
@@ -50,13 +48,26 @@ void AsyncConnection::reconnect() {
 
         assert(ctx && ctx->err == REDIS_OK);
 
+        // TODO: after attach OK, if reset() throws, we leak a connection, or might not be thread safe.
         _loop->attach(*ctx);
+
+        reset();
 
         _ctx = ctx.release();
     } catch (...) {
         reset();
         throw;
     }
+}
+
+void AsyncConnection::reset() {
+    assert(_loop != nullptr);
+
+    if (!broken()) {
+        _loop->unwatch(_ctx);
+    }
+
+    _ctx = nullptr;
 }
 
 void AsyncConnection::_clean_async_context(void *data) {

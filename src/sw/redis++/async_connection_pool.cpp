@@ -96,7 +96,7 @@ AsyncConnectionSPtr AsyncConnectionPool::fetch() {
     // _pool is NOT empty.
     auto connection = _fetch();
 
-    auto connection_lifetime = _pool_opts.connection_lifetime;
+    //auto connection_lifetime = _pool_opts.connection_lifetime;
 
     /*
     if (_sentinel) {
@@ -124,6 +124,7 @@ AsyncConnectionSPtr AsyncConnectionPool::fetch() {
 
     assert(connection);
 
+    /*
     if (_need_reconnect(*connection, connection_lifetime)) {
         try {
             connection->reconnect();
@@ -133,6 +134,7 @@ AsyncConnectionSPtr AsyncConnectionPool::fetch() {
             throw;
         }
     }
+    */
 
     return connection;
 }
@@ -169,7 +171,7 @@ AsyncConnectionSPtr AsyncConnectionPool::create() {
     */
         lock.unlock();
 
-        return std::make_shared<AsyncConnection>(_loop, opts);
+        return std::make_shared<AsyncConnection>(opts, _loop.get());
     //}
 }
 
@@ -211,7 +213,7 @@ AsyncConnectionSPtr AsyncConnectionPool::_create() {
     }
     */
 
-    return std::make_shared<AsyncConnection>(_loop, _opts);
+    return std::make_shared<AsyncConnection>(_opts, _loop.get());
 }
 
 /*

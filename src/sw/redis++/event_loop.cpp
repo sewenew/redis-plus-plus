@@ -87,7 +87,7 @@ void EventLoop::_connect_callback(const redisAsyncContext *ctx, int status) {
         assert(async_context != nullptr);
 
         async_context->err = std::current_exception();
-        async_context->connection.reset();
+        async_context->connection->reset();
     }
 }
 
@@ -107,7 +107,7 @@ void EventLoop::_disconnect_callback(const redisAsyncContext *ctx, int status) {
         async_context->err = std::current_exception();
     }
 
-    async_context->connection.reset();
+    async_context->connection->reset();
 }
 
 void EventLoop::_event_callback(uv_async_t *handle) {

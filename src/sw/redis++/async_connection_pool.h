@@ -49,7 +49,12 @@ public:
     AsyncConnectionPool(const AsyncConnectionPool &) = delete;
     AsyncConnectionPool& operator=(const AsyncConnectionPool &) = delete;
 
-    ~AsyncConnectionPool() = default;
+    ~AsyncConnectionPool() {
+        for (auto &conn : _pool) {
+            // TODO: not thread safe
+            conn->reset();
+        }
+    }
 
     // Fetch a connection from pool.
     AsyncConnectionSPtr fetch();

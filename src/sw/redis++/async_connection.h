@@ -67,7 +67,7 @@ private:
 
 class AsyncConnection : public std::enable_shared_from_this<AsyncConnection> {
 public:
-    AsyncConnection(const EventLoopSPtr &loop, const ConnectionOptions &opts);
+    AsyncConnection(const ConnectionOptions &opts, EventLoop *loop);
 
     AsyncConnection(const AsyncConnection &) = delete;
     AsyncConnection& operator=(const AsyncConnection &) = delete;
@@ -94,9 +94,7 @@ public:
         return _last_active;
     }
 
-    void reset() noexcept {
-        _ctx = nullptr;
-    }
+    void reset();
 
     template <typename Result, typename ...Args>
     void send(const char *format, Args &&...args);
@@ -132,9 +130,9 @@ private:
 
     AsyncContextUPtr _connect(const ConnectionOptions &opts);
 
-    EventLoopSPtr _loop;
-
     ConnectionOptions _opts;
+
+    EventLoop *_loop = nullptr;
 
     // _ctx will be release by EventLoop after attached.
     redisAsyncContext *_ctx = nullptr;
@@ -176,7 +174,7 @@ public:
 template <typename Result, typename ResultParser = DefaultResultParser<Result>>
 class CommandEvent : public AsyncEvent {
 public:
-    CommandEvent(const AsyncConnectionSPtr &connection,
+    CommandEvent(AsyncConnection *connection,
             FormattedCommand cmd) : _connection(connection), _cmd(std::move(cmd)) {
         assert(_connection);
     }
@@ -187,6 +185,7 @@ public:
 
     virtual void handle() override {
         if (_connection->broken()) {
+            // TODO: if we'll close it, no need to reconnect
             _connection->reconnect();
         }
 
@@ -197,6 +196,8 @@ public:
                     _reply_callback, this, _cmd.data(), _cmd.size()) != REDIS_OK) {
             throw_error(ctx->c, "failed to send command");
         }
+
+        //_connection.reset();
     }
 
     virtual void set_exception(std::exception_ptr p) override {
@@ -246,7 +247,7 @@ private:
         _pro.set_value();
     }
 
-    AsyncConnectionSPtr _connection;
+    AsyncConnection *_connection;
 
     FormattedCommand _cmd;
 
@@ -258,7 +259,7 @@ using CommandEventUPtr = std::unique_ptr<CommandEvent<Result>>;
 
 template <typename Result>
 Future<Result> AsyncConnection::_send(FormattedCommand cmd) {
-    auto event = CommandEventUPtr<Result>(new CommandEvent<Result>(shared_from_this(), std::move(cmd)));
+    auto event = CommandEventUPtr<Result>(new CommandEvent<Result>(this, std::move(cmd)));
 
     auto fut = event->get_future();
 
