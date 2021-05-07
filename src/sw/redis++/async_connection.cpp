@@ -38,36 +38,14 @@ void FormattedCommand::_move(FormattedCommand &&that) noexcept {
 AsyncConnection::AsyncConnection(const ConnectionOptions &opts,
         EventLoop *loop) : _opts(opts), _loop(loop) {}
 
-AsyncConnection::~AsyncConnection() {
-    reset();
-}
-
 void AsyncConnection::reconnect() {
-    try {
-        auto ctx = _connect(_opts);
+    auto ctx = _connect(_opts);
 
-        assert(ctx && ctx->err == REDIS_OK);
+    assert(ctx && ctx->err == REDIS_OK);
 
-        // TODO: after attach OK, if reset() throws, we leak a connection, or might not be thread safe.
-        _loop->attach(*ctx);
+    _loop->attach(*ctx);
 
-        reset();
-
-        _ctx = ctx.release();
-    } catch (...) {
-        reset();
-        throw;
-    }
-}
-
-void AsyncConnection::reset() {
-    assert(_loop != nullptr);
-
-    if (!broken()) {
-        _loop->unwatch(_ctx);
-    }
-
-    _ctx = nullptr;
+    _ctx = ctx.release();
 }
 
 void AsyncConnection::_clean_async_context(void *data) {

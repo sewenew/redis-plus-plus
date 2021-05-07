@@ -75,7 +75,7 @@ public:
     AsyncConnection(AsyncConnection &&) = delete;
     AsyncConnection& operator=(AsyncConnection &&) = delete;
 
-    ~AsyncConnection();
+    ~AsyncConnection() = default;
 
     bool broken() const noexcept {
         return _ctx == nullptr || _ctx->err != REDIS_OK;
@@ -94,7 +94,9 @@ public:
         return _last_active;
     }
 
-    void reset();
+    void reset() {
+        _ctx = nullptr;
+    }
 
     template <typename Result, typename ...Args>
     void send(const char *format, Args &&...args);
@@ -196,8 +198,6 @@ public:
                     _reply_callback, this, _cmd.data(), _cmd.size()) != REDIS_OK) {
             throw_error(ctx->c, "failed to send command");
         }
-
-        //_connection.reset();
     }
 
     virtual void set_exception(std::exception_ptr p) override {

@@ -77,6 +77,13 @@ AsyncConnectionPool& AsyncConnectionPool::operator=(AsyncConnectionPool &&that) 
     return *this;
 }
 
+AsyncConnectionPool::~AsyncConnectionPool() {
+    assert(_loop);
+    for (auto &connection : _pool) {
+        _loop->unwatch(std::move(connection));
+    }
+}
+
 AsyncConnectionSPtr AsyncConnectionPool::fetch() {
     std::unique_lock<std::mutex> lock(_mutex);
 
