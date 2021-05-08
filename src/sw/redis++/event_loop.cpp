@@ -119,14 +119,9 @@ void EventLoop::_event_callback(uv_async_t *handle) {
     auto *event_loop = static_cast<EventLoop*>(handle->data);
     assert(event_loop != nullptr);
 
-    std::vector<AsyncConnectionSPtr> disconnect_events;
     std::vector<AsyncEventUPtr> command_events;
-    {
-        std::lock_guard<std::mutex> lock(event_loop->_mtx);
-
-        disconnect_events.swap(event_loop->_disconnect_events);
-        command_events.swap(event_loop->_command_events);
-    }
+    std::vector<AsyncConnectionSPtr> disconnect_events;
+    std::tie(command_events, disconnect_events) = event_loop->_event();
 
     event_loop->_send_commands(std::move(command_events));
 
@@ -142,7 +137,37 @@ void EventLoop::_stop_callback(uv_async_t *handle) {
     auto *event_loop = static_cast<EventLoop*>(handle->data);
     assert(event_loop != nullptr);
 
+    std::vector<AsyncEventUPtr> command_events;
+    std::vector<AsyncConnectionSPtr> disconnect_events;
+    std::tie(command_events, disconnect_events) = event_loop->_event();
+
+    event_loop->_clean_up(command_events, disconnect_events);
+
     uv_stop(event_loop->_loop.get());
+}
+
+void EventLoop::_clean_up(std::vector<AsyncEventUPtr> &command_events,
+        std::vector<AsyncConnectionSPtr> &disconnect_events) {
+    auto e = std::make_exception_ptr(Error("event loop is closing"));
+    for (auto &event : command_events) {
+        assert(event);
+
+        event->set_exception(e);
+    }
+
+    for (auto &connection : disconnect_events) {
+        assert(connection);
+
+        auto *ctx = connection->context();
+        if (ctx != nullptr) {
+            auto *async_context = static_cast<AsyncContext*>(ctx->data);
+            assert(async_context != nullptr);
+
+            async_context->err = e;
+
+            redisAsyncFree(ctx);
+        }
+    }
 }
 
 void EventLoop::LoopDeleter::operator()(uv_loop_t *loop) const {
@@ -212,6 +237,20 @@ void EventLoop::_stop() {
     assert(_stop_async);
 
     uv_async_send(_stop_async.get());
+}
+
+auto EventLoop::_event()
+    -> std::pair<std::vector<AsyncEventUPtr>, std::vector<AsyncConnectionSPtr>> {
+    std::vector<AsyncEventUPtr> command_events;
+    std::vector<AsyncConnectionSPtr> disconnect_events;
+    {
+        std::lock_guard<std::mutex> lock(_mtx);
+
+        command_events.swap(_command_events);
+        disconnect_events.swap(_disconnect_events);
+    }
+
+    return std::make_pair(std::move(command_events), std::move(disconnect_events));
 }
 
 EventLoop::UvAsyncUPtr EventLoop::_create_uv_async(AsyncCallback callback) {

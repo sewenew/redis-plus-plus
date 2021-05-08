@@ -80,6 +80,12 @@ private:
 
     void _stop();
 
+    auto _event() -> std::pair<std::vector<std::unique_ptr<AsyncEvent>>,
+                                 std::vector<std::shared_ptr<AsyncConnection>>>;
+
+    void _clean_up(std::vector<std::unique_ptr<AsyncEvent>> &command_events,
+            std::vector<std::shared_ptr<AsyncConnection>> &disconnect_events);
+
     void _disconnect(std::vector<std::shared_ptr<AsyncConnection>> &connections);
 
     void _send_commands(std::vector<std::unique_ptr<AsyncEvent>> events);
@@ -91,8 +97,6 @@ private:
 
     UvAsyncUPtr _stop_async;
 
-    LoopUPtr _loop;
-
     std::thread _loop_thread;
 
     std::mutex _mtx;
@@ -100,6 +104,9 @@ private:
     std::vector<std::shared_ptr<AsyncConnection>> _disconnect_events;
 
     std::vector<std::unique_ptr<AsyncEvent>> _command_events;
+
+    // _loop must be defined at last, since its destructor needs other data members.
+    LoopUPtr _loop;
 };
 
 using EventLoopSPtr = std::shared_ptr<EventLoop>;
