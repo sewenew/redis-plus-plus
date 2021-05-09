@@ -685,6 +685,58 @@ public:
 
     Future<OptionalDouble> zscore(const StringView &key, const StringView &member);
 
+    // SCRIPTING commands.
+
+    template <typename Result, typename Keys, typename Args>
+    Future<Result> eval(const StringView &script,
+                Keys keys_first,
+                Keys keys_last,
+                Args args_first,
+                Args args_last) {
+        CmdArgs args;
+        auto keys_num = std::distance(keys_first, keys_last);
+
+        args << "EVAL" << script << keys_num
+                << std::make_pair(keys_first, keys_last)
+                << std::make_pair(args_first, args_last);
+
+        return _command<Result>(args);
+    }
+
+    template <typename Result>
+    Future<Result> eval(const StringView &script,
+                std::initializer_list<StringView> keys,
+                std::initializer_list<StringView> args) {
+        return eval<Result>(script,
+                keys.begin(), keys.end(),
+                args.begin(), args.end());
+    }
+
+    template <typename Result, typename Keys, typename Args>
+    Future<Result> evalsha(const StringView &script,
+                    Keys keys_first,
+                    Keys keys_last,
+                    Args args_first,
+                    Args args_last) {
+        CmdArgs args;
+        auto keys_num = std::distance(keys_first, keys_last);
+
+        args << "EVALSHA" << script << keys_num
+                << std::make_pair(keys_first, keys_last)
+                << std::make_pair(args_first, args_last);
+
+        return _command<Result>(args);
+    }
+
+    template <typename Result>
+    Future<Result> evalsha(const StringView &script,
+                    std::initializer_list<StringView> keys,
+                    std::initializer_list<StringView> args) {
+        return evalsha<Result>(script,
+                keys.begin(), keys.end(),
+                args.begin(), args.end());
+    }
+
 private:
     template <typename Result, typename ...Args>
     Future<Result> _command(Args &&...args) {
