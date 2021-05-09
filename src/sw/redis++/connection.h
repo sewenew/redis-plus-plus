@@ -190,6 +190,7 @@ private:
 
     ConnectionOptions _opts;
 
+    // TODO: define _tls_ctx before _ctx
     tls::TlsContextUPtr _tls_ctx;
 };
 

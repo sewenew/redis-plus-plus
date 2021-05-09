@@ -22,6 +22,7 @@
     - [Redis Cluster](#redis-cluster)
     - [Redis Sentinel](#redis-sentinel)
     - [Redis Stream](#redis-stream)
+    - [Async Interface](#async-interface)
 - [Redis Recipes](#redis-recipes)
     - [Redlock](#redlock)
 - [Author](#author)
@@ -2311,6 +2312,63 @@ redis.xgroup_destroy("key", "group");
 ```
 
 If you have any problem on sending stream commands to Redis, please feel free to let me know.
+
+## Async Interface
+
+*redis-plus-plus* also support async interface, however, async support for Redis Cluster, Redis Sentinel, Transaction and Subscriber is still on the way.
+
+The async interface depends on third-party event library, and so far, only libuv is supported.
+
+### Installation
+
+You must install *libuv* before install *hiredis* and *redis-plus-plus*. When installing *redis-plus-plus*, you should specify the following command line option: `-DREDIS_PLUS_PLUS_BUILD_ASYNC=libuv`.
+
+```
+cmake -DCMAKE_PREFIX_PATH=/installation/path/to/libuv/and/hiredis -DREDIS_PLUS_PLUS_BUILD_ASYNC=libuv ..
+
+make
+
+make install
+```
+
+### Getting Started
+
+The async interface is similar to sync interface, except that you should define an object of `sw::redis::AsyncRedis`, and the related methods return `Future` object (so far, only `std::future` is supported, support for other implementations of *future* is on the way).
+
+```
+ConnectionOptions opts;
+opts.host = "127.0.0.1";
+opts.port = 6379;
+
+ConnectionPoolOptions pool_opts;
+pool_opts.size = 3;
+
+auto async_redis = AsyncRedis(opts, pool_opts);
+
+Future<string> ping_res = async_redis.ping();
+
+Future<bool> set_res = async_redis.set("key", "val");
+
+Future<Optional<string>> get_res = async_redis.get("key");
+
+unordered_map<string, string> m = {{"a", "b"}, {"c", "d"}};
+Future<void> hmset_res = async_redis.hmset("hash", m.begin(), m.end());
+
+auto hgetall_res = hgetall<vector<string>>("hash");
+
+cout << ping_res.get() << endl;
+cout << set_res.get() << endl;
+auto val = get_res.get();
+if (val)
+    cout << *val << endl;
+else
+    cout << "not exist" << endl;
+
+hmset_res.get();
+
+for (const auto &ele : hgetall_res.get())
+    cout << ele << endl;
+```
 
 ## Redis Recipes
 

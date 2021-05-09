@@ -23,6 +23,18 @@ if(NOT WIN32)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++${REDIS_PLUS_PLUS_CXX_STANDARD}")
 endif()
 
+if(REDIS_PLUS_PLUS_BUILD_ASYNC)
+    if(REDIS_PLUS_PLUS_BUILD_ASYNC STREQUAL "libuv")
+        message(STATUS "redis-plus-plus build async interface with libuv")
+
+        # libuv dependency
+        find_path(REDIS_PLUS_PLUS_ASYNC_LIB_HEADER uv REQUIRED)
+        find_library(REDIS_PLUS_PLUS_ASYNC_LIB uv REQUIRED)
+    else()
+        message(FATAL_ERROR "invalid REDIS_PLUS_PLUS_BUILD_ASYNC")
+    endif()
+endif()
+
 set(REDIS_PLUS_PLUS_SOURCE_DIR src/sw/redis++)
 
 set(REDIS_PLUS_PLUS_SOURCES
@@ -42,6 +54,15 @@ set(REDIS_PLUS_PLUS_SOURCES
         "${REDIS_PLUS_PLUS_SOURCE_DIR}/subscriber.cpp"
         "${REDIS_PLUS_PLUS_SOURCE_DIR}/transaction.cpp"
 )
+
+if(REDIS_PLUS_PLUS_BUILD_ASYNC)
+    list(APPEND REDIS_PLUS_PLUS_SOURCES
+        "${REDIS_PLUS_PLUS_SOURCE_DIR}/async_connection.cpp"
+        "${REDIS_PLUS_PLUS_SOURCE_DIR}/async_connection_pool.cpp"
+        "${REDIS_PLUS_PLUS_SOURCE_DIR}/async_redis.cpp"
+        "${REDIS_PLUS_PLUS_SOURCE_DIR}/event_loop.cpp"
+    )
+endif()
 
 # TLS support
 option(REDIS_PLUS_PLUS_USE_TLS "Build with TLS support" OFF)
@@ -101,6 +122,10 @@ if(REDIS_PLUS_PLUS_BUILD_STATIC)
         target_include_directories(${STATIC_LIB} PUBLIC $<BUILD_INTERFACE:${HIREDIS_HEADER}>)
     endif()
 
+    if(REDIS_PLUS_PLUS_BUILD_ASYNC)
+        target_include_directories(${STATIC_LIB} PUBLIC $<BUILD_INTERFACE:${REDIS_PLUS_PLUS_ASYNC_LIB_HEADER}>)
+    endif()
+
     if (WIN32)
         target_compile_definitions(${STATIC_LIB} PRIVATE NOMINMAX)
         set_target_properties(${STATIC_LIB} PROPERTIES CXX_STANDARD ${REDIS_PLUS_PLUS_CXX_STANDARD})
@@ -144,6 +169,11 @@ if(REDIS_PLUS_PLUS_BUILD_SHARED)
         target_link_libraries(${SHARED_LIB} PUBLIC ${REDIS_PLUS_PLUS_HIREDIS_LIBS})
     endif()
 
+    if(REDIS_PLUS_PLUS_BUILD_ASYNC)
+        target_include_directories(${SHARED_LIB} PUBLIC $<BUILD_INTERFACE:${REDIS_PLUS_PLUS_ASYNC_LIB_HEADER}>)
+        target_link_libraries(${SHARED_LIB} PUBLIC ${REDIS_PLUS_PLUS_ASYNC_LIB})
+    endif()
+
     if(WIN32)
         target_compile_definitions(${SHARED_LIB} PRIVATE NOMINMAX)
         set_target_properties(${SHARED_LIB} PROPERTIES CXX_STANDARD ${REDIS_PLUS_PLUS_CXX_STANDARD})
@@ -183,6 +213,10 @@ install(EXPORT redis++-targets
 # Install headers.
 set(HEADER_PATH "sw/redis++")
 file(GLOB HEADERS "${REDIS_PLUS_PLUS_SOURCE_DIR}/*.h*" "${TLS_SUB_DIR}/*.h")
+if(NOT REDIS_PLUS_PLUS_BUILD_ASYNC)
+    file(GLOB ASYNC_HEADERS "${REDIS_PLUS_PLUS_SOURCE_DIR}/async_*.h" "${REDIS_PLUS_PLUS_SOURCE_DIR}/event_*.h")
+    list(REMOVE_ITEM HEADERS ${ASYNC_HEADERS})
+endif()
 install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${HEADER_PATH})
 
 include(CMakePackageConfigHelpers)
