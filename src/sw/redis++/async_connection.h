@@ -31,7 +31,7 @@ namespace redis {
 
 class FormattedCommand {
 public:
-    FormattedCommand(char *data, std::size_t len) : _data(data), _size(len) {}
+    FormattedCommand(char *data, int len);
 
     FormattedCommand(const FormattedCommand &) = delete;
     FormattedCommand& operator=(const FormattedCommand &) = delete;
@@ -54,7 +54,7 @@ public:
         return _data;
     }
 
-    std::size_t size() const noexcept {
+    int size() const noexcept {
         return _size;
     }
 
@@ -62,7 +62,14 @@ private:
     void _move(FormattedCommand &&that) noexcept;
 
     char *_data = nullptr;
-    std::size_t _size = 0;
+    int _size = 0;
+};
+
+template <typename Result>
+struct DefaultResultParser {
+    Result operator()(redisReply &reply) const {
+        return reply::parse<Result>(reply);
+    }
 };
 
 class AsyncConnection : public std::enable_shared_from_this<AsyncConnection> {
@@ -99,25 +106,17 @@ public:
     }
 
     template <typename Result, typename ...Args>
-    void send(const char *format, Args &&...args);
+    Future<Result> send(const char *format, Args &&...args);
 
-    template <typename Result>
+    template <typename Result, typename ResultParser = DefaultResultParser<Result>>
     Future<Result> send(int argc, const char **argv, const std::size_t *argv_len);
 
-    template <typename Result>
-    Future<Result> send(CmdArgs &args) {
-        char *data = nullptr;
-        auto len = redisFormatCommandArgv(&data, args.size(), args.argv(), args.argv_len());
-        if (len < 0) {
-            throw Error("failed to format command");
-        }
-
-        return _send<Result>(FormattedCommand(data, len));
-    }
+    template <typename Result, typename ResultParser = DefaultResultParser<Result>>
+    Future<Result> send(CmdArgs &args);
 
 private:
-    template <typename Result>
-    Future<Result> _send(FormattedCommand cmd);
+    template <typename Result, typename ResultParser>
+    Future<Result> _send(char *data, int len);
 
     static void _clean_async_context(void *data);
 
@@ -165,15 +164,7 @@ public:
 
 using AsyncEventUPtr = std::unique_ptr<AsyncEvent>;
 
-template <typename Result>
-class DefaultResultParser {
-public:
-    Result operator()(redisReply &reply) const {
-        return reply::parse<Result>(reply);
-    }
-};
-
-template <typename Result, typename ResultParser = DefaultResultParser<Result>>
+template <typename Result, typename ResultParser>
 class CommandEvent : public AsyncEvent {
 public:
     CommandEvent(AsyncConnection *connection,
@@ -254,12 +245,39 @@ private:
     Promise<Result> _pro;
 };
 
-template <typename Result>
-using CommandEventUPtr = std::unique_ptr<CommandEvent<Result>>;
+template <typename Result, typename ResultParser>
+using CommandEventUPtr = std::unique_ptr<CommandEvent<Result, ResultParser>>;
 
-template <typename Result>
-Future<Result> AsyncConnection::_send(FormattedCommand cmd) {
-    auto event = CommandEventUPtr<Result>(new CommandEvent<Result>(this, std::move(cmd)));
+template <typename Result, typename ...Args>
+Future<Result> AsyncConnection::send(const char *format, Args &&...args) {
+    char *data = nullptr;
+    auto len = redisFormatCommand(&data, format, std::forward<Args>(args)...);
+
+    return _send<Result, DefaultResultParser<Result>>(data, len);
+}
+
+template <typename Result, typename ResultParser>
+Future<Result> AsyncConnection::send(int argc, const char **argv, const std::size_t *argv_len) {
+    char *data = nullptr;
+    auto len = redisFormatCommandArgv(&data, argc, argv, argv_len);
+
+    return _send<Result, ResultParser>(data, len);
+}
+
+template <typename Result, typename ResultParser>
+Future<Result> AsyncConnection::send(CmdArgs &args) {
+    char *data = nullptr;
+    auto len = redisFormatCommandArgv(&data, args.size(), args.argv(), args.argv_len());
+
+    return _send<Result, ResultParser>(data, len);
+}
+
+template <typename Result, typename ResultParser>
+Future<Result> AsyncConnection::_send(char *data, int len) {
+    FormattedCommand cmd(data, len);
+
+    auto event = CommandEventUPtr<Result, ResultParser>(
+            new CommandEvent<Result, ResultParser>(this, std::move(cmd)));
 
     auto fut = event->get_future();
 

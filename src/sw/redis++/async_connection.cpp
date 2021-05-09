@@ -22,6 +22,12 @@ namespace sw {
 
 namespace redis {
 
+FormattedCommand::FormattedCommand(char *data, int len) : _data(data), _size(len) {
+    if (data == nullptr || len < 0) {
+        throw Error("failed to format command");
+    }
+}
+
 FormattedCommand::~FormattedCommand() noexcept {
     if (_data != nullptr) {
         redisFreeCommand(_data);
