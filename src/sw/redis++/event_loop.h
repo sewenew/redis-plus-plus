@@ -19,6 +19,7 @@
 
 #include <unordered_set>
 #include <memory>
+#include <mutex>
 #include <thread>
 #include <uv.h>
 #include "connection.h"
