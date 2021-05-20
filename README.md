@@ -22,6 +22,7 @@
     - [Redis Cluster](#redis-cluster)
     - [Redis Sentinel](#redis-sentinel)
     - [Redis Stream](#redis-stream)
+    - [Redis Modules](#redis-modules)
     - [Async Interface](#async-interface)
 - [Redis Recipes](#redis-recipes)
     - [Redlock](#redlock)
@@ -2313,13 +2314,21 @@ redis.xgroup_destroy("key", "group");
 
 If you have any problem on sending stream commands to Redis, please feel free to let me know.
 
-## Async Interface
+### Redis Modules
+
+[Redis Modules](https://redis.io/modules) enrich Redis. However, *redis-plus-plus* does not have built-in support/method for these modules, although you can use the [generic interface](#generic-command-interface) to send commands related to these modules.
+
+Fortunately, [@wingunder](https://github.com/wingunder) did a great job to make the work easier. He wrote [redis-plus-plus-modules](https://github.com/wingunder/redis-plus-plus-modules), which is a header only project that has built-in support for some popular modules. If you need to work with Redis Modules, you should have a try.
+
+@wingunder also contributes a lot to *redis-plus-plus*. Many thanks to @wingunder!
+
+### Async Interface
 
 *redis-plus-plus* also support async interface, however, async support for Redis Cluster, Redis Sentinel, Transaction and Subscriber is still on the way.
 
 The async interface depends on third-party event library, and so far, only libuv is supported.
 
-### Installation
+#### Installation
 
 You must install *libuv* before install *hiredis* and *redis-plus-plus*. When installing *redis-plus-plus*, you should specify the following command line option: `-DREDIS_PLUS_PLUS_BUILD_ASYNC=libuv`.
 
@@ -2331,7 +2340,7 @@ make
 make install
 ```
 
-### Getting Started
+#### Getting Started
 
 The async interface is similar to sync interface, except that you should define an object of `sw::redis::AsyncRedis`, and the related methods return `Future` object (so far, only `std::future` is supported, support for other implementations of *future* is on the way).
 
