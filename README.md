@@ -2354,7 +2354,7 @@ Future<Optional<string>> get_res = async_redis.get("key");
 unordered_map<string, string> m = {{"a", "b"}, {"c", "d"}};
 Future<void> hmset_res = async_redis.hmset("hash", m.begin(), m.end());
 
-auto hgetall_res = hgetall<vector<string>>("hash");
+auto hgetall_res = async_redis.hgetall<vector<string>>("hash");
 
 cout << ping_res.get() << endl;
 cout << set_res.get() << endl;
