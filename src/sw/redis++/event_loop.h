@@ -18,6 +18,7 @@
 #define SEWENEW_REDISPLUSPLUS_EVENT_LOOP_H
 
 #include <unordered_set>
+#include <unordered_map>
 #include <memory>
 #include <mutex>
 #include <thread>
@@ -87,9 +88,13 @@ private:
     void _clean_up(std::vector<std::unique_ptr<AsyncEvent>> &command_events,
             std::vector<std::shared_ptr<AsyncConnection>> &disconnect_events);
 
-    void _disconnect(std::vector<std::shared_ptr<AsyncConnection>> &connections);
+    using PendingEvents = std::unordered_map<AsyncConnection *,
+          std::vector<std::unique_ptr<AsyncEvent>>>;
 
-    void _send_commands(std::vector<std::unique_ptr<AsyncEvent>> events);
+    void _disconnect(std::vector<std::shared_ptr<AsyncConnection>> &connections,
+            PendingEvents &pending_events);
+
+    PendingEvents _send_commands(std::vector<std::unique_ptr<AsyncEvent>> events);
 
     // We must define _event_async and _stop_async before _loop,
     // because these memory can only be release after _loop's deleter

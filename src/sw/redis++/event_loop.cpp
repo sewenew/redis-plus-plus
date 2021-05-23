@@ -76,38 +76,43 @@ void EventLoop::attach(redisAsyncContext &ctx) {
 void EventLoop::_connect_callback(const redisAsyncContext *ctx, int status) {
     assert(ctx != nullptr);
 
+    auto *async_context = static_cast<AsyncContext*>(ctx->data);
+    assert(async_context != nullptr);
+
+    auto &connection = async_context->connection;
+    assert(connection);
+
     if (status == REDIS_OK) {
+        connection->set_status(AsyncConnectionStatus::CONNECTED);
+        connection->prepare();
         return;
     }
 
     try {
         throw_error(ctx->c, "failed to connect to server");
     } catch (const Error &e) {
-        auto *async_context = static_cast<AsyncContext*>(ctx->data);
-        assert(async_context != nullptr);
-
         async_context->err = std::current_exception();
-        async_context->connection->reset();
+        connection->reset();
     }
 }
 
 void EventLoop::_disconnect_callback(const redisAsyncContext *ctx, int status) {
     assert(ctx != nullptr);
 
-    if (status == REDIS_OK) {
-        return;
-    }
-
     auto *async_context = static_cast<AsyncContext*>(ctx->data);
     assert(async_context != nullptr);
 
-    try {
-        throw_error(ctx->c, "failed to disconnect from server");
-    } catch (const Error &e) {
-        async_context->err = std::current_exception();
+    if (status != REDIS_OK) {
+        try {
+            throw_error(ctx->c, "failed to disconnect from server");
+        } catch (const Error &e) {
+            async_context->err = std::current_exception();
+        }
     }
 
-    async_context->connection->reset();
+    auto &connection = async_context->connection;
+    connection->reset();
+    connection->set_status(AsyncConnectionStatus::DISCONNECTED);
 }
 
 void EventLoop::_event_callback(uv_async_t *handle) {
@@ -123,9 +128,20 @@ void EventLoop::_event_callback(uv_async_t *handle) {
     std::vector<AsyncConnectionSPtr> disconnect_events;
     std::tie(command_events, disconnect_events) = event_loop->_event();
 
-    event_loop->_send_commands(std::move(command_events));
+    auto pending_events = event_loop->_send_commands(std::move(command_events));
 
-    event_loop->_disconnect(disconnect_events);
+    event_loop->_disconnect(disconnect_events, pending_events);
+
+    {
+        std::lock_guard<std::mutex> lock(event_loop->_mtx);
+
+        for (auto &ele : pending_events) {
+            auto &events = ele.second;
+            event_loop->_command_events.insert(event_loop->_command_events.end(),
+                    std::make_move_iterator(events.begin()),
+                    std::make_move_iterator(events.end()));
+        }
+    }
 }
 
 void EventLoop::_stop_callback(uv_async_t *handle) {
@@ -202,29 +218,64 @@ void EventLoop::LoopDeleter::operator()(uv_loop_t *loop) const {
     delete loop;
 }
 
-void EventLoop::_disconnect(std::vector<AsyncConnectionSPtr> &connections) {
+void EventLoop::_disconnect(std::vector<AsyncConnectionSPtr> &connections,
+        PendingEvents &pending_events) {
     for (auto &connection : connections) {
         assert(connection);
 
+        auto iter = pending_events.find(connection.get());
+        if (iter != pending_events.end()) {
+            auto e = std::make_exception_ptr(Error("connection is closing"));
+            for (auto &event : iter->second) {
+                event->set_exception(e);
+            }
+            pending_events.erase(iter);
+        }
+
         if (!connection->broken()) {
             redisAsyncDisconnect(connection->context());
+            connection->reset();
+            connection->set_status(AsyncConnectionStatus::DISCONNECTING);
         }
     }
 }
 
-void EventLoop::_send_commands(std::vector<AsyncEventUPtr> events) {
+auto EventLoop::_send_commands(std::vector<AsyncEventUPtr> events)
+    -> PendingEvents {
+    PendingEvents pending_events;
     for (auto &event : events) {
         assert(event);
 
-        try {
-            event->handle();
+        auto *connection = event->connection();
+        switch (connection->status()) {
+        case AsyncConnectionStatus::UNINITIALIZED:
+        case AsyncConnectionStatus::CONNECTING:
+        case AsyncConnectionStatus::CONNECTED:
+        case AsyncConnectionStatus::AUTH:
+        case AsyncConnectionStatus::SELECT_DB:
+            pending_events[connection].push_back(std::move(event));
+            break;
 
-            // CommandEvent::_reply_callback will release the memory.
-            event.release();
-        } catch (...) {
-            event->set_exception(std::current_exception());
+        case AsyncConnectionStatus::READY:
+        case AsyncConnectionStatus::BROKEN:
+        case AsyncConnectionStatus::DISCONNECTING:
+        case AsyncConnectionStatus::DISCONNECTED:
+            try {
+                event->handle();
+
+                // CommandEvent::_reply_callback will release the memory.
+                event.release();
+            } catch (...) {
+                event->set_exception(std::current_exception());
+            }
+            break;
+
+        default:
+            assert(false);
         }
     }
+
+    return pending_events;
 }
 
 void EventLoop::_notify() {
