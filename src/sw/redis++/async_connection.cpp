@@ -25,26 +25,26 @@ using namespace sw::redis;
 void prepare_callback(redisAsyncContext *ctx, void *r, void *) {
     assert(ctx != nullptr);
 
-    auto *async_ctx = static_cast<AsyncContext *>(ctx->data);
-    auto &connection = async_ctx->connection;
+    auto &connection = *(static_cast<AsyncConnectionSPtr *>(ctx->data));
 
     redisReply *reply = static_cast<redisReply *>(r);
     if (reply == nullptr) {
         // Connection has bee closed.
-        connection->reset();
+        //connection->reset();
         // TODO: not sure if we should set this to be DISCONNECTING
-        connection->set_status(AsyncConnectionStatus::DISCONNECTED);
         return;
     }
 
     try {
+        if (reply::is_error(*reply)) {
+            throw_error(*reply);
+        }
+
         reply::parse<void>(*reply);
 
         connection->prepare();
     } catch (const Error &e) {
-        redisAsyncDisconnect(ctx);
-        connection->reset();
-        connection->set_status(AsyncConnectionStatus::DISCONNECTING);
+        connection->disconnect(std::make_exception_ptr(e));
     }
 }
 
@@ -107,11 +107,29 @@ void AsyncConnection::prepare() {
             assert(false);
             break;
         }
+
+        if (_status == AsyncConnectionStatus::READY) {
+            // In case, there're pending commands.
+            _loop->notify();
+        }
     } catch (const Error &e) {
-        redisAsyncDisconnect(_ctx);
-        set_status(AsyncConnectionStatus::DISCONNECTING);
-        reset();
+        disconnect(std::make_exception_ptr(e));
     }
+}
+
+std::exception_ptr AsyncConnection::error() {
+    switch (_status) {
+    case AsyncConnectionStatus::DISCONNECTED:
+        return std::make_exception_ptr(Error("connection has been closed"));
+
+    case AsyncConnectionStatus::UNINITIALIZED:
+        return std::make_exception_ptr(Error("connection is uninitialized"));
+
+    default:
+        break;
+    }
+
+    return _err;
 }
 
 void AsyncConnection::reconnect() {
@@ -124,6 +142,14 @@ void AsyncConnection::reconnect() {
     _ctx = ctx.release();
 
     _status = AsyncConnectionStatus::CONNECTING;
+}
+
+void AsyncConnection::disconnect(std::exception_ptr err) {
+    // TODO: what if this method throw?
+    _loop->unwatch(shared_from_this());
+
+    _err = err;
+    _status = AsyncConnectionStatus::DISCONNECTING;
 }
 
 bool AsyncConnection::_need_auth() const {
@@ -166,10 +192,11 @@ void AsyncConnection::_select_db() {
 }
 
 void AsyncConnection::_clean_async_context(void *data) {
-    auto *async_context = static_cast<AsyncContext*>(data);
-    assert(async_context != nullptr);
+    auto *connection = static_cast<AsyncConnectionSPtr *>(data);
 
-    delete async_context;
+    assert(connection != nullptr);
+
+    delete connection;
 }
 
 AsyncConnection::AsyncContextUPtr AsyncConnection::_connect(const ConnectionOptions &opts) {
@@ -197,7 +224,7 @@ AsyncConnection::AsyncContextUPtr AsyncConnection::_connect(const ConnectionOpti
         throw_error(ctx->c, "failed to connect to server");
     }
 
-    ctx->data = new AsyncContext(shared_from_this());
+    ctx->data = new AsyncConnectionSPtr(shared_from_this());
     ctx->dataCleanup = _clean_async_context;
 
     return ctx;

@@ -75,11 +75,11 @@ struct DefaultResultParser {
 enum class AsyncConnectionStatus {
     UNINITIALIZED = 0,
     CONNECTING,
+    CONNECT_FAILED,
     CONNECTED,
     AUTH,
     SELECT_DB,
     READY,
-    BROKEN,
     DISCONNECTING,
     DISCONNECTED,
 };
@@ -125,6 +125,14 @@ public:
 
     void reset() {
         _ctx = nullptr;
+    }
+
+    void disconnect(std::exception_ptr err);
+
+    std::exception_ptr error();
+
+    void set_error(std::exception_ptr err) {
+        _err = err;
     }
 
     template <typename Result, typename ...Args>
@@ -173,17 +181,11 @@ private:
     std::chrono::time_point<std::chrono::steady_clock> _last_active{};
 
     AsyncConnectionStatus _status = AsyncConnectionStatus::UNINITIALIZED;
+
+    std::exception_ptr _err;
 };
 
 using AsyncConnectionSPtr = std::shared_ptr<AsyncConnection>;
-
-struct AsyncContext {
-    explicit AsyncContext(const AsyncConnectionSPtr &conn) : connection(conn) {}
-
-    std::exception_ptr err;
-
-    AsyncConnectionSPtr connection;
-};
 
 class AsyncEvent {
 public:
@@ -219,10 +221,6 @@ public:
 
     virtual void handle() override {
         auto *conn = connection();
-        if (conn->broken()) {
-            // TODO: if we'll close it, no need to reconnect
-            conn->reconnect();
-        }
 
         assert(!conn->broken());
 
@@ -253,12 +251,16 @@ private:
         try {
             redisReply *reply = static_cast<redisReply *>(r);
             if (reply == nullptr) {
-                auto *async_context = static_cast<AsyncContext*>(ctx->data);
-                assert(async_context != nullptr);
-
                 // TODO: should we set connection status?
+                auto &connection = *(static_cast<AsyncConnectionSPtr *>(ctx->data));
 
-                event->set_exception(async_context->err);
+                event->set_exception(connection->error());
+            } else if (reply::is_error(*reply)) {
+                try {
+                    throw_error(*reply);
+                } catch (const Error &e) {
+                    event->set_exception(std::current_exception());
+                }
             } else {
                 event->set_value(*reply);
             }

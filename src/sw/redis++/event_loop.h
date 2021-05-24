@@ -51,6 +51,8 @@ public:
 
     void attach(redisAsyncContext &ctx);
 
+    void notify();
+
 private:
     static void _connect_callback(const redisAsyncContext *ctx, int status);
 
@@ -78,8 +80,6 @@ private:
 
     UvAsyncUPtr _create_uv_async(AsyncCallback callback);
 
-    void _notify();
-
     void _stop();
 
     auto _event() -> std::pair<std::vector<std::unique_ptr<AsyncEvent>>,
@@ -88,13 +88,12 @@ private:
     void _clean_up(std::vector<std::unique_ptr<AsyncEvent>> &command_events,
             std::vector<std::shared_ptr<AsyncConnection>> &disconnect_events);
 
-    using PendingEvents = std::unordered_map<AsyncConnection *,
-          std::vector<std::unique_ptr<AsyncEvent>>>;
+    void _disconnect(std::vector<std::shared_ptr<AsyncConnection>> &connections);
 
-    void _disconnect(std::vector<std::shared_ptr<AsyncConnection>> &connections,
-            PendingEvents &pending_events);
+    using PendingEvents = std::vector<std::unique_ptr<AsyncEvent>>;
 
-    PendingEvents _send_commands(std::vector<std::unique_ptr<AsyncEvent>> events);
+    PendingEvents _send_commands(std::vector<std::unique_ptr<AsyncEvent>> events,
+            const std::unordered_set<AsyncConnection *> &disconnecting_connections);
 
     // We must define _event_async and _stop_async before _loop,
     // because these memory can only be release after _loop's deleter
