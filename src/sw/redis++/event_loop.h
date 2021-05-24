@@ -18,6 +18,7 @@
 #define SEWENEW_REDISPLUSPLUS_EVENT_LOOP_H
 
 #include <unordered_set>
+#include <unordered_map>
 #include <memory>
 #include <mutex>
 #include <thread>
@@ -50,6 +51,8 @@ public:
 
     void attach(redisAsyncContext &ctx);
 
+    void notify();
+
 private:
     static void _connect_callback(const redisAsyncContext *ctx, int status);
 
@@ -77,8 +80,6 @@ private:
 
     UvAsyncUPtr _create_uv_async(AsyncCallback callback);
 
-    void _notify();
-
     void _stop();
 
     auto _event() -> std::pair<std::vector<std::unique_ptr<AsyncEvent>>,
@@ -89,7 +90,10 @@ private:
 
     void _disconnect(std::vector<std::shared_ptr<AsyncConnection>> &connections);
 
-    void _send_commands(std::vector<std::unique_ptr<AsyncEvent>> events);
+    using PendingEvents = std::vector<std::unique_ptr<AsyncEvent>>;
+
+    PendingEvents _send_commands(std::vector<std::unique_ptr<AsyncEvent>> events,
+            const std::unordered_set<AsyncConnection *> &disconnecting_connections);
 
     // We must define _event_async and _stop_async before _loop,
     // because these memory can only be release after _loop's deleter
