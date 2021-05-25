@@ -94,6 +94,9 @@ void EventLoop::_connect_callback(const redisAsyncContext *ctx, int status) {
         connection->set_error(std::current_exception());
         connection->set_status(AsyncConnectionStatus::CONNECT_FAILED);
     }
+
+    // In case, there're pending commands.
+    connection->notify();
 }
 
 void EventLoop::_disconnect_callback(const redisAsyncContext *ctx, int status) {
@@ -113,6 +116,9 @@ void EventLoop::_disconnect_callback(const redisAsyncContext *ctx, int status) {
 
     connection->reset();
     connection->set_status(AsyncConnectionStatus::DISCONNECTED);
+
+    // In case, there're pending commands.
+    connection->notify();
 }
 
 void EventLoop::_event_callback(uv_async_t *handle) {

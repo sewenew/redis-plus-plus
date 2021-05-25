@@ -123,6 +123,10 @@ public:
         return _last_active;
     }
 
+    void notify() {
+        _loop->notify();
+    }
+
     void reset() {
         _ctx = nullptr;
     }
