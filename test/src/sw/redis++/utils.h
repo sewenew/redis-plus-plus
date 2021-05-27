@@ -40,12 +40,6 @@ inline void redis_assert(bool condition,
     }
 }
 
-inline std::string test_key(const std::string &k) {
-    // Key prefix with hash tag,
-    // so that we can call multiple-key commands on RedisCluster.
-    return "{sw::redis::test}::" + k;
-}
-
 template <typename Test>
 void cluster_specializing_test(Test &test, void (Test::*func)(Redis &instance), Redis &instance) {
     (test.*func)(instance);

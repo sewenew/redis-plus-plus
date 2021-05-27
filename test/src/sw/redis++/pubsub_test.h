@@ -17,7 +17,7 @@
 #ifndef SEWENEW_REDISPLUSPLUS_TEST_SUBPUB_TEST_H
 #define SEWENEW_REDISPLUSPLUS_TEST_SUBPUB_TEST_H
 
-#include <sw/redis++/redis++.h>
+#include "test_base.h"
 
 namespace sw {
 
@@ -26,9 +26,10 @@ namespace redis {
 namespace test {
 
 template <typename RedisInstance>
-class PubSubTest {
+class PubSubTest : public TestBase {
 public:
-    explicit PubSubTest(RedisInstance &instance) : _redis(instance) {}
+    explicit PubSubTest(RedisInstance &instance, const std::string& db_name)
+        : TestBase(db_name), _redis(instance) {}
 
     void run();
 

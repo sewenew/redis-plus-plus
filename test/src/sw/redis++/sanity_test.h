@@ -17,7 +17,7 @@
 #ifndef SEWENEW_REDISPLUSPLUS_TEST_SANITY_TEST_H
 #define SEWENEW_REDISPLUSPLUS_TEST_SANITY_TEST_H
 
-#include <sw/redis++/redis++.h>
+#include "test_base.h"
 
 namespace sw {
 
@@ -26,10 +26,10 @@ namespace redis {
 namespace test {
 
 template <typename RedisInstance>
-class SanityTest {
+class SanityTest : public TestBase {
 public:
-    SanityTest(const ConnectionOptions &opts, RedisInstance &instance)
-        : _opts(opts), _redis(instance) {}
+    SanityTest(const ConnectionOptions &opts, RedisInstance &instance, const std::string& db_name)
+        : TestBase(db_name), _opts(opts), _redis(instance) {}
 
     void run();
 

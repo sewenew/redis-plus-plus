@@ -1,5 +1,5 @@
 /**************************************************************************
-   Copyright (c) 2017 sewenew
+   Copyright (c) 2021 sewenew, wingunder
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -14,43 +14,30 @@
    limitations under the License.
  *************************************************************************/
 
-#ifndef SEWENEW_REDISPLUSPLUS_TEST_KEYS_CMDS_TEST_H
-#define SEWENEW_REDISPLUSPLUS_TEST_KEYS_CMDS_TEST_H
+#ifndef SEWENEW_REDISPLUSPLUS_TEST_TEST_BASE_H
+#define SEWENEW_REDISPLUSPLUS_TEST_TEST_BASE_H
 
-#include "test_base.h"
+#include <sw/redis++/redis++.h>
 
-namespace sw {
+namespace sw::redis::test {
 
-namespace redis {
-
-namespace test {
-
-template <typename RedisInstance>
-class KeysCmdTest : public TestBase {
+class TestBase {
 public:
-    explicit KeysCmdTest(RedisInstance &instance, const std::string& db_name)
-        : TestBase(db_name), _redis(instance) {}
+    TestBase(const std::string& db_name)
+        : _db_name(db_name) {}
 
-    void run();
+    std::string test_key(const std::string &k) const {
+        // Key prefix with hash tag,
+        // so that we can call multiple-key commands on RedisCluster.
+        return "{" + _db_name + "}::" + k;
+    }
+
+    std::string get_db_name() const { return _db_name; }
 
 private:
-    void _test_key();
-
-    void _test_randomkey(Redis &instance);
-
-    void _test_ttl();
-
-    void _test_scan(Redis &instance);
-
-    RedisInstance &_redis;
+    const std::string& _db_name;
 };
 
 }
 
-}
-
-}
-
-#include "keys_cmds_test.hpp"
-
-#endif // end SEWENEW_REDISPLUSPLUS_TEST_KEYS_CMDS_TEST_H
+#endif

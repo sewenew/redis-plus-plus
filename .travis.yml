@@ -24,7 +24,7 @@ install:
 
 script:
   - mkdir compile && cd compile && cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$TRAVIS_BUILD_DIR/install .. && make -j2 && cd ..
-  - ./compile/test/test_redis++ -h 127.0.0.1 -p 6379
+  - ./compile/test/test_redis++ -h 127.0.0.1 -p 6379 -f
 
 branches:
   only:

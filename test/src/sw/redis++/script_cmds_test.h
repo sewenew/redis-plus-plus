@@ -17,7 +17,7 @@
 #ifndef SEWENEW_REDISPLUSPLUS_TEST_SCRIPT_CMDS_TEST_H
 #define SEWENEW_REDISPLUSPLUS_TEST_SCRIPT_CMDS_TEST_H
 
-#include <sw/redis++/redis++.h>
+#include "test_base.h"
 
 namespace sw {
 
@@ -26,9 +26,10 @@ namespace redis {
 namespace test {
 
 template <typename RedisInstance>
-class ScriptCmdTest {
+class ScriptCmdTest : public TestBase {
 public:
-    explicit ScriptCmdTest(RedisInstance &instance) : _redis(instance) {}
+    explicit ScriptCmdTest(RedisInstance &instance, const std::string& db_name, bool do_flush)
+        : TestBase(db_name), _redis(instance), _do_flush(do_flush) {}
 
     void run();
 
@@ -36,6 +37,8 @@ private:
     void _run(Redis &instance);
 
     RedisInstance &_redis;
+
+    const bool _do_flush;
 };
 
 }

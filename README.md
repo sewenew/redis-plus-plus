@@ -270,6 +270,22 @@ By default, the test program will not test running *redis-plus-plus* in multi-th
 ./compile/test/test_redis++ -h host -p port -a auth -n cluster_node -c cluster_port -m
 ```
 
+By default, the test for "SCRIPT FLUSH" is disabled, as it is simply too dangerous to run by default.
+One can however force the "SCRIPT FLUSH" test to be run, by adding the `-f` option:
+
+```
+./compile/test/test_redis++ -h host -p port -f
+```
+
+By default, the keys being used to test with are in the form `{sw::redis::test}::<key>`.
+The `sw::redis::test`-part can however be overridden, by using the `-d` option.
+This comes in handy when running test_redis++ in parallel, pointing it to the same server.
+```
+./compile/test/test_redis++ -h host -p port -f -d sw::redis::test_a &
+./compile/test/test_redis++ -h host -p port -f -d sw::redis::test_b &
+./compile/test/test_redis++ -h host -p port -f -d sw::redis::test_c &
+```
+
 If all tests have been passed, the test program will print the following message:
 
 ```
@@ -2061,7 +2077,7 @@ You can publish and subscribe messages with `RedisCluster`. The interfaces are e
 
 You can also create `Pipeline` and `Transaction` objects with `RedisCluster`, but the interfaces are different from `Redis`. Since all commands in the pipeline and transaction should be sent to a single node in a single connection, we need to tell `RedisCluster` with which node the pipeline or transaction should be created.
 
-Instead of specifing the node's IP and port, `RedisCluster`'s pipeline and transaction interfaces allow you to specify the node with a *hash tag*. `RedisCluster` will calculate the slot number with the given *hash tag*, and create a pipeline or transaction with the node holding the slot.
+Instead of specifying the node's IP and port, `RedisCluster`'s pipeline and transaction interfaces allow you to specify the node with a *hash tag*. `RedisCluster` will calculate the slot number with the given *hash tag*, and create a pipeline or transaction with the node holding the slot.
 
 ```C++
 Pipeline RedisCluster::pipeline(const StringView &hash_tag, bool new_connection = true);
