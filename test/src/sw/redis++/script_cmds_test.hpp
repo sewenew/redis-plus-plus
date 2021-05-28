@@ -115,12 +115,6 @@ void ScriptCmdTest<RedisInstance>::_run(Redis &instance) {
 
     REDIS_ASSERT(instance.script_exists(sha1), "failed to test script exists");
     REDIS_ASSERT(!instance.script_exists("not exist"), "failed to test script exists");
-
-    instance.script_flush();
-    exist_res.clear();
-    instance.script_exists({sha1, sha2, std::string("not exist")}, std::back_inserter(exist_res));
-    REDIS_ASSERT(exist_res == std::list<bool>({false, false, false}),
-            "failed to test script flush");
 }
 
 }

@@ -212,7 +212,7 @@ int getopt(int argc, char **argv, const char *optstring) {
 
 void print_help() {
     std::cerr << "Usage: test_redis++ -h host -p port"
-        << " -n cluster_node -c cluster_port [-a auth] [-b]\n\n";
+        << " -n cluster_node -c cluster_port [-a auth] [-b] [-e key_prefix]\n\n";
     std::cerr << "See https://github.com/sewenew/redis-plus-plus#run-tests-optional"
         << " for details on how to run test" << std::endl;
 }
@@ -232,7 +232,7 @@ auto parse_options(int argc, char **argv)
     TestOptions test_options;
 
     int opt = 0;
-    while ((opt = getopt(argc, argv, "h:p:a:n:c:k:v:r:t:bs:m")) != -1) {
+    while ((opt = getopt(argc, argv, "h:p:a:n:c:e:k:v:r:t:bs:m")) != -1) {
         try {
             switch (opt) {
             case 'h':
@@ -283,8 +283,12 @@ auto parse_options(int argc, char **argv)
                 test_options.run_thread_test = true;
                 break;
 
+            case 'e':
+                sw::redis::test::key_prefix(optarg);
+                break;
+
             default:
-                throw sw::redis::Error("Unknow command line option");
+                throw sw::redis::Error("Unknown command line option");
                 break;
             }
         } catch (const sw::redis::Error &e) {
