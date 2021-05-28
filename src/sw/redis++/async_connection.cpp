@@ -183,7 +183,7 @@ bool AsyncConnection::_need_select_db() const {
 void AsyncConnection::_select_db() {
     assert(!broken());
 
-    if (redisAsyncCommand(_ctx, prepare_callback, nullptr, "SELECT %lld",
+    if (redisAsyncCommand(_ctx, prepare_callback, nullptr, "SELECT %d",
             _opts.db) != REDIS_OK) {
         throw Error("failed to send select command");
     }
