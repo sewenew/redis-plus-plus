@@ -17,7 +17,7 @@
 #ifndef SEWENEW_REDISPLUSPLUS_TEST_LIST_CMDS_TEST_H
 #define SEWENEW_REDISPLUSPLUS_TEST_LIST_CMDS_TEST_H
 
-#include "test_base.h"
+#include <sw/redis++/redis++.h>
 
 namespace sw {
 
@@ -26,10 +26,9 @@ namespace redis {
 namespace test {
 
 template <typename RedisInstance>
-class ListCmdTest : public TestBase {
+class ListCmdTest {
 public:
-    explicit ListCmdTest(RedisInstance &instance, const std::string& db_name)
-        : TestBase(db_name), _redis(instance) {}
+    explicit ListCmdTest(RedisInstance &instance) : _redis(instance) {}
 
     void run();
 

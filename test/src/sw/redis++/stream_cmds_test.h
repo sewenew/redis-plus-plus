@@ -17,7 +17,7 @@
 #ifndef SEWENEW_REDISPLUSPLUS_TEST_STREAM_CMDS_TEST_H
 #define SEWENEW_REDISPLUSPLUS_TEST_STREAM_CMDS_TEST_H
 
-#include "test_base.h"
+#include <sw/redis++/redis++.h>
 
 namespace sw {
 
@@ -26,10 +26,9 @@ namespace redis {
 namespace test {
 
 template <typename RedisInstance>
-class StreamCmdsTest : public TestBase {
+class StreamCmdsTest {
 public:
-    explicit StreamCmdsTest(RedisInstance &instance, const std::string& db_name)
-        : TestBase(db_name), _redis(instance) {}
+    explicit StreamCmdsTest(RedisInstance &instance) : _redis(instance) {}
 
     void run();
 

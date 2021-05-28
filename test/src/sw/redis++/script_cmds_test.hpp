@@ -41,12 +41,7 @@ void ScriptCmdTest<RedisInstance>::_run(Redis &instance) {
 
     KeyDeleter<Redis> deleter(instance, {key1, key2});
 
-    // A comment, based on the db_name,
-    // in order to keep the sha of the stript unique.
-    std::string script_comment = "-- " + get_db_name() + "\n";
-
-    std::string script = script_comment +
-                    "redis.call('set', KEYS[1], 1);"
+    std::string script = "redis.call('set', KEYS[1], 1);"
                     "redis.call('set', KEYS[2], 2);"
                     "local first = redis.call('get', KEYS[1]);"
                     "local second = redis.call('get', KEYS[2]);"
@@ -62,7 +57,7 @@ void ScriptCmdTest<RedisInstance>::_run(Redis &instance) {
             empty_list.begin(), empty_list.end());
     REDIS_ASSERT(num == 3, "failed to test scripting for cluster");
 
-    script = script_comment + "return 1";
+    script = "return 1";
     num = instance.eval<long long>(script, empty_list, empty_list);
     REDIS_ASSERT(num == 1, "failed to test eval");
 
@@ -70,8 +65,7 @@ void ScriptCmdTest<RedisInstance>::_run(Redis &instance) {
             empty_list.begin(), empty_list.end());
     REDIS_ASSERT(num == 1, "failed to test eval");
 
-    auto script_with_args = script_comment +
-        "return {ARGV[1] + 1, ARGV[2] + 2, ARGV[3] + 3}";
+    auto script_with_args = "return {ARGV[1] + 1, ARGV[2] + 2, ARGV[3] + 3}";
     std::initializer_list<StringView> args = {"1", "2", "3"};
     std::vector<long long> res;
     instance.eval(script_with_args,
@@ -121,17 +115,6 @@ void ScriptCmdTest<RedisInstance>::_run(Redis &instance) {
 
     REDIS_ASSERT(instance.script_exists(sha1), "failed to test script exists");
     REDIS_ASSERT(!instance.script_exists("not exist"), "failed to test script exists");
-
-    // When running this test application on a commonly used redis server,
-    // we should disable the script_flush call, as it will flush _all_ scripts,
-    // including the ones that others are using.
-    if (_do_flush) {
-        instance.script_flush();
-        exist_res.clear();
-        instance.script_exists({sha1, sha2, std::string("not exist")}, std::back_inserter(exist_res));
-        REDIS_ASSERT(exist_res == std::list<bool>({false, false, false}),
-                     "failed to test script flush");
-    }
 }
 
 }

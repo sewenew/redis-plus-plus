@@ -17,7 +17,7 @@
 #ifndef SEWENEW_REDISPLUSPLUS_TEST_THREADS_TEST_H
 #define SEWENEW_REDISPLUSPLUS_TEST_THREADS_TEST_H
 
-#include "test_base.h"
+#include <sw/redis++/redis++.h>
 
 namespace sw {
 
@@ -26,10 +26,9 @@ namespace redis {
 namespace test {
 
 template <typename RedisInstance>
-class ThreadsTest : public TestBase {
+class ThreadsTest {
 public:
-    explicit ThreadsTest(const ConnectionOptions &opts, const std::string& db_name)
-        : TestBase(db_name), _opts(opts) {}
+    explicit ThreadsTest(const ConnectionOptions &opts) : _opts(opts) {}
 
     void run();
 

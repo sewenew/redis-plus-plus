@@ -40,6 +40,21 @@ inline void redis_assert(bool condition,
     }
 }
 
+inline std::string key_prefix(const std::string &key = "") {
+    static std::string KEY_PREFIX = "sw::redis::test";
+    if (!key.empty()) {
+        KEY_PREFIX = key;
+    }
+
+    return KEY_PREFIX;
+}
+
+inline std::string test_key(const std::string &k) {
+    // Key prefix with hash tag,
+    // so that we can call multiple-key commands on RedisCluster.
+    return "{" + key_prefix() + "}::" + k;
+}
+
 template <typename Test>
 void cluster_specializing_test(Test &test, void (Test::*func)(Redis &instance), Redis &instance) {
     (test.*func)(instance);

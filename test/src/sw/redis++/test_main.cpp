@@ -62,8 +62,6 @@ int getopt(int argc, char **argv, const char *optstring);
 
 struct TestOptions {
     bool run_thread_test = false;
-    std::string db_name = "sw::redis::test";
-    bool do_flush = false;
 };
 
 void print_help();
@@ -214,7 +212,7 @@ int getopt(int argc, char **argv, const char *optstring) {
 
 void print_help() {
     std::cerr << "Usage: test_redis++ -h host -p port"
-        << " -n cluster_node -c cluster_port [-a auth] [-b] [-f] [-d db_name]\n\n";
+        << " -n cluster_node -c cluster_port [-a auth] [-b] [-e key_prefix]\n\n";
     std::cerr << "See https://github.com/sewenew/redis-plus-plus#run-tests-optional"
         << " for details on how to run test" << std::endl;
 }
@@ -234,7 +232,7 @@ auto parse_options(int argc, char **argv)
     TestOptions test_options;
 
     int opt = 0;
-    while ((opt = getopt(argc, argv, "h:p:a:n:c:d:k:v:r:t:fbs:m")) != -1) {
+    while ((opt = getopt(argc, argv, "h:p:a:n:c:e:k:v:r:t:bs:m")) != -1) {
         try {
             switch (opt) {
             case 'h':
@@ -285,13 +283,8 @@ auto parse_options(int argc, char **argv)
                 test_options.run_thread_test = true;
                 break;
 
-            case 'd':
-                test_options.db_name = optarg;
-                break;
-
-            case 'f':
-                // Supplying '-f' will _enable_ the "SCRIPT FLUSH" test.
-                test_options.do_flush = true;
+            case 'e':
+                sw::redis::test::key_prefix(optarg);
                 break;
 
             default:
@@ -344,7 +337,7 @@ template <typename RedisInstance>
 void run_test(const sw::redis::ConnectionOptions &opts, const TestOptions &test_options) {
     auto instance = RedisInstance(opts);
 
-    sw::redis::test::SanityTest<RedisInstance> sanity_test(opts, instance, test_options.db_name);
+    sw::redis::test::SanityTest<RedisInstance> sanity_test(opts, instance);
     sanity_test.run();
 
     std::cout << "Pass sanity tests" << std::endl;
@@ -354,69 +347,69 @@ void run_test(const sw::redis::ConnectionOptions &opts, const TestOptions &test_
 
     std::cout << "Pass connection commands tests" << std::endl;
 
-    sw::redis::test::KeysCmdTest<RedisInstance> keys_test(instance, test_options.db_name);
+    sw::redis::test::KeysCmdTest<RedisInstance> keys_test(instance);
     keys_test.run();
 
     std::cout << "Pass keys commands tests" << std::endl;
 
-    sw::redis::test::StringCmdTest<RedisInstance> string_test(instance, test_options.db_name);
+    sw::redis::test::StringCmdTest<RedisInstance> string_test(instance);
     string_test.run();
 
     std::cout << "Pass string commands tests" << std::endl;
 
-    sw::redis::test::ListCmdTest<RedisInstance> list_test(instance, test_options.db_name);
+    sw::redis::test::ListCmdTest<RedisInstance> list_test(instance);
     list_test.run();
 
     std::cout << "Pass list commands tests" << std::endl;
 
-    sw::redis::test::HashCmdTest<RedisInstance> hash_test(instance, test_options.db_name);
+    sw::redis::test::HashCmdTest<RedisInstance> hash_test(instance);
     hash_test.run();
 
     std::cout << "Pass hash commands tests" << std::endl;
 
-    sw::redis::test::SetCmdTest<RedisInstance> set_test(instance, test_options.db_name);
+    sw::redis::test::SetCmdTest<RedisInstance> set_test(instance);
     set_test.run();
 
     std::cout << "Pass set commands tests" << std::endl;
 
-    sw::redis::test::ZSetCmdTest<RedisInstance> zset_test(instance, test_options.db_name);
+    sw::redis::test::ZSetCmdTest<RedisInstance> zset_test(instance);
     zset_test.run();
 
     std::cout << "Pass zset commands tests" << std::endl;
 
-    sw::redis::test::HyperloglogCmdTest<RedisInstance> hll_test(instance, test_options.db_name);
+    sw::redis::test::HyperloglogCmdTest<RedisInstance> hll_test(instance);
     hll_test.run();
 
     std::cout << "Pass hyperloglog commands tests" << std::endl;
 
-    sw::redis::test::GeoCmdTest<RedisInstance> geo_test(instance, test_options.db_name);
+    sw::redis::test::GeoCmdTest<RedisInstance> geo_test(instance);
     geo_test.run();
 
     std::cout << "Pass geo commands tests" << std::endl;
 
-    sw::redis::test::ScriptCmdTest<RedisInstance> script_test(instance, test_options.db_name, test_options.do_flush);
+    sw::redis::test::ScriptCmdTest<RedisInstance> script_test(instance);
     script_test.run();
 
     std::cout << "Pass script commands tests" << std::endl;
 
-    sw::redis::test::PubSubTest<RedisInstance> pubsub_test(instance, test_options.db_name);
+    sw::redis::test::PubSubTest<RedisInstance> pubsub_test(instance);
     pubsub_test.run();
 
     std::cout << "Pass pubsub tests" << std::endl;
 
-    sw::redis::test::PipelineTransactionTest<RedisInstance> pipe_tx_test(instance, test_options.db_name);
+    sw::redis::test::PipelineTransactionTest<RedisInstance> pipe_tx_test(instance);
     pipe_tx_test.run();
 
     std::cout << "Pass pipeline and transaction tests" << std::endl;
 
     if (test_options.run_thread_test) {
-        sw::redis::test::ThreadsTest<RedisInstance> threads_test(opts, test_options.db_name);
+        sw::redis::test::ThreadsTest<RedisInstance> threads_test(opts);
         threads_test.run();
 
         std::cout << "Pass threads tests" << std::endl;
     }
 
-    sw::redis::test::StreamCmdsTest<RedisInstance> stream_test(instance, test_options.db_name);
+    sw::redis::test::StreamCmdsTest<RedisInstance> stream_test(instance);
     stream_test.run();
 
     std::cout << "Pass stream commands tests" << std::endl;

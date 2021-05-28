@@ -270,22 +270,6 @@ By default, the test program will not test running *redis-plus-plus* in multi-th
 ./compile/test/test_redis++ -h host -p port -a auth -n cluster_node -c cluster_port -m
 ```
 
-By default, the test for "SCRIPT FLUSH" is disabled, as it is simply too dangerous to run by default.
-One can however force the "SCRIPT FLUSH" test to be run, by adding the `-f` option:
-
-```
-./compile/test/test_redis++ -h host -p port -f
-```
-
-By default, the keys being used to test with are in the form `{sw::redis::test}::<key>`.
-The `sw::redis::test`-part can however be overridden, by using the `-d` option.
-This comes in handy when running test_redis++ in parallel, pointing it to the same server.
-```
-./compile/test/test_redis++ -h host -p port -f -d sw::redis::test_a &
-./compile/test/test_redis++ -h host -p port -f -d sw::redis::test_b &
-./compile/test/test_redis++ -h host -p port -f -d sw::redis::test_c &
-```
-
 If all tests have been passed, the test program will print the following message:
 
 ```

@@ -17,7 +17,7 @@
 #ifndef SEWENEW_REDISPLUSPLUS_TEST_GEO_CMDS_TEST_H
 #define SEWENEW_REDISPLUSPLUS_TEST_GEO_CMDS_TEST_H
 
-#include "test_base.h"
+#include <sw/redis++/redis++.h>
 
 namespace sw {
 
@@ -26,10 +26,9 @@ namespace redis {
 namespace test {
 
 template <typename RedisInstance>
-class GeoCmdTest : public TestBase {
+class GeoCmdTest {
 public:
-    explicit GeoCmdTest(RedisInstance &instance, const std::string& db_name)
-        : TestBase(db_name), _redis(instance) {}
+    explicit GeoCmdTest(RedisInstance &instance) : _redis(instance) {}
 
     void run();
 
