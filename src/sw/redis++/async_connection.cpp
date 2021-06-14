@@ -22,16 +22,19 @@ namespace {
 
 using namespace sw::redis;
 
-void prepare_callback(redisAsyncContext *ctx, void *r, void *) {
+void set_options_callback(redisAsyncContext *ctx, void *r, void *) {
     assert(ctx != nullptr);
 
-    auto &connection = *(static_cast<AsyncConnectionSPtr *>(ctx->data));
+    auto *context = static_cast<AsyncContext *>(ctx->data);
+    assert(context != nullptr);
+
+    auto &connection = context->connection;
+    assert(connection);
 
     redisReply *reply = static_cast<redisReply *>(r);
     if (reply == nullptr) {
         // Connection has bee closed.
-        //connection->reset();
-        // TODO: not sure if we should set this to be DISCONNECTING
+        // TODO: not sure if we should set this to be State::BROKEN
         return;
     }
 
@@ -41,11 +44,14 @@ void prepare_callback(redisAsyncContext *ctx, void *r, void *) {
         }
 
         reply::parse<void>(*reply);
-
-        connection->prepare();
     } catch (const Error &e) {
+        // TODO: disconnect and connect_callback might throw
         connection->disconnect(std::make_exception_ptr(e));
+
+        return;
     }
+
+    connection->connect_callback();
 }
 
 }
@@ -73,130 +79,233 @@ void FormattedCommand::_move(FormattedCommand &&that) noexcept {
     that._size = 0;
 }
 
-AsyncConnection::AsyncConnection(const ConnectionOptions &opts,
-        EventLoop *loop) : _opts(opts), _loop(loop) {}
+AsyncConnection::AsyncConnection(const ConnectionOptions &opts, EventLoop *loop) :
+    _opts(opts),
+    _loop(loop),
+    _state(State::BROKEN) {
+    assert(_loop != nullptr);
+}
 
-void AsyncConnection::prepare() {
+AsyncConnection::~AsyncConnection() {
+    auto events = _get_events();
+
+    // TODO: assert(events.empty());
+
+    auto err = std::make_exception_ptr(Error("connection is closing"));
+    for (auto &event : events) {
+        event->set_exception(err);
+    }
+}
+
+void AsyncConnection::event_callback() {
+    switch (_state) {
+    case State::BROKEN:
+        _connect();
+        break;
+
+    case State::READY:
+        _send();
+        break;
+
+    default:
+        break;
+    }
+}
+
+void AsyncConnection::connect_callback(std::exception_ptr err) {
+    if (err) {
+        // Failed to connect to Redis, fail all pending events.
+        _fail_events(err);
+
+        return;
+    }
+
+    // Connect OK.
     try {
-        switch (_status) {
-        case AsyncConnectionStatus::CONNECTED:
-            if (_need_auth()) {
-                _auth();
-            } else if (_need_select_db()) {
-                _select_db();
-            } else {
-                _status = AsyncConnectionStatus::READY;
-            }
-
+        switch (_state) {
+        case State::CONNECTING:
+            _connecting_callback();
             break;
 
-        case AsyncConnectionStatus::AUTH:
-            if (_need_select_db()) {
-                _select_db();
-            } else {
-                _status = AsyncConnectionStatus::READY;
-            }
-
-            break;
-
-        case AsyncConnectionStatus::SELECT_DB:
-            _status = AsyncConnectionStatus::READY;
+        case State::AUTHING:
+            _authing_callback();
             break;
 
         default:
-            assert(false);
-            break;
-        }
+            assert(_state == State::SELECTING_DB);
 
-        if (_status == AsyncConnectionStatus::READY) {
-            // In case, there're pending commands.
-            _loop->notify();
+            _set_ready();
         }
     } catch (const Error &e) {
         disconnect(std::make_exception_ptr(e));
     }
 }
 
-std::exception_ptr AsyncConnection::error() {
-    switch (_status) {
-    case AsyncConnectionStatus::DISCONNECTED:
-        return std::make_exception_ptr(Error("connection has been closed"));
-
-    case AsyncConnectionStatus::UNINITIALIZED:
-        return std::make_exception_ptr(Error("connection is uninitialized"));
-
-    default:
-        break;
+void AsyncConnection::disconnect(std::exception_ptr err) {
+    if (_ctx == nullptr) {
+        return;
     }
 
-    return _err;
+    _disable_disconnect_callback();
+
+    redisAsyncDisconnect(_ctx);
+
+    _fail_events(err);
 }
 
-void AsyncConnection::reconnect() {
-    auto ctx = _connect(_opts);
-
-    assert(ctx && ctx->err == REDIS_OK);
-
-    _loop->attach(*ctx);
-
-    _ctx = ctx.release();
-
-    _status = AsyncConnectionStatus::CONNECTING;
+void AsyncConnection::disconnect_callback(std::exception_ptr err) {
+    _fail_events(err);
 }
 
-void AsyncConnection::disconnect(std::exception_ptr err) {
-    // TODO: what if this method throw?
-    _loop->unwatch(shared_from_this());
+void AsyncConnection::_disable_disconnect_callback() {
+    assert(_ctx != nullptr);
 
-    _err = err;
-    _status = AsyncConnectionStatus::DISCONNECTING;
+    auto *ctx = static_cast<AsyncContext *>(_ctx->data);
+
+    assert(ctx != nullptr);
+
+    ctx->run_disconnect_callback = false;
 }
 
-bool AsyncConnection::_need_auth() const {
-    return !_opts.password.empty() || _opts.user != "default";
+void AsyncConnection::_send() {
+    auto events = _get_events();
+    auto &ctx = _context();
+    for (auto idx = 0U; idx != events.size(); ++idx) {
+        auto &event = events[idx];
+        try {
+            event->handle(ctx);
+
+            // CommandEvent::_reply_callback will release the memory.
+            event.release();
+        } catch (...) {
+            // Failed to send command, fail subsequent events.
+            auto err = std::current_exception();
+            for (; idx != events.size(); ++idx) {
+                auto &event = events[idx];
+                event->set_exception(err);
+            }
+
+            disconnect(err);
+
+            break;
+        }
+    }
+}
+
+std::vector<AsyncEventUPtr> AsyncConnection::_get_events() {
+    std::vector<AsyncEventUPtr> events;
+    {
+        std::lock_guard<std::mutex> lock(_mtx);
+
+        events.swap(_events);
+    }
+
+    return events;
+}
+
+void AsyncConnection::_fail_events(std::exception_ptr err) {
+    _ctx = nullptr;
+
+    if (!err) {
+        err = std::make_exception_ptr(Error("connection is closing"));
+    }
+
+    auto events = _get_events();
+    for (auto &event : events) {
+        assert(event);
+
+        event->set_exception(err);
+    }
+
+    _state = State::BROKEN;
+}
+
+void AsyncConnection::_connecting_callback() {
+    if (_need_auth()) {
+        _auth();
+    } else if (_need_select_db()) {
+        _select_db();
+    } else {
+        _set_ready();
+    }
+}
+
+void AsyncConnection::_authing_callback() {
+    if (_need_select_db()) {
+        _select_db();
+    } else {
+        _set_ready();
+    }
 }
 
 void AsyncConnection::_auth() {
     assert(!broken());
 
     if (_opts.user == "default") {
-        if (redisAsyncCommand(_ctx, prepare_callback, nullptr, "AUTH %b",
+        if (redisAsyncCommand(_ctx, set_options_callback, nullptr, "AUTH %b",
                     _opts.password.data(), _opts.password.size()) != REDIS_OK) {
             throw Error("failed to send auth command");
         }
     } else {
         // Redis 6.0 or latter
-        if (redisAsyncCommand(_ctx, prepare_callback, nullptr, "AUTH %b %b",
+        if (redisAsyncCommand(_ctx, set_options_callback, nullptr, "AUTH %b %b",
                     _opts.user.data(), _opts.user.size(),
                     _opts.password.data(), _opts.password.size()) != REDIS_OK) {
             throw Error("failed to send auth command");
         }
     }
 
-    _status = AsyncConnectionStatus::AUTH;
+    _state = State::AUTHING;
+}
+
+void AsyncConnection::_select_db() {
+    assert(!broken());
+
+    if (redisAsyncCommand(_ctx, set_options_callback, nullptr, "SELECT %d",
+            _opts.db) != REDIS_OK) {
+        throw Error("failed to send select command");
+    }
+
+    _state = State::SELECTING_DB;
+}
+
+void AsyncConnection::_set_ready() {
+    _state = State::READY;
+
+    // Send pending commands.
+    _send();
+}
+
+void AsyncConnection::_connect() {
+    try {
+        auto ctx = _connect(_opts);
+
+        assert(ctx && ctx->err == REDIS_OK);
+
+        _loop->watch(*ctx);
+
+        _ctx = ctx.release();
+
+        _state = State::CONNECTING;
+    } catch (const Error &err) {
+        _fail_events(std::make_exception_ptr(err));
+    }
+}
+
+bool AsyncConnection::_need_auth() const {
+    return !_opts.password.empty() || _opts.user != "default";
 }
 
 bool AsyncConnection::_need_select_db() const {
     return _opts.db != 0;
 }
 
-void AsyncConnection::_select_db() {
-    assert(!broken());
-
-    if (redisAsyncCommand(_ctx, prepare_callback, nullptr, "SELECT %d",
-            _opts.db) != REDIS_OK) {
-        throw Error("failed to send select command");
-    }
-
-    _status = AsyncConnectionStatus::SELECT_DB;
-}
-
 void AsyncConnection::_clean_async_context(void *data) {
-    auto *connection = static_cast<AsyncConnectionSPtr *>(data);
+    auto *ctx = static_cast<AsyncContext *>(data);
 
-    assert(connection != nullptr);
+    assert(ctx != nullptr);
 
-    delete connection;
+    delete ctx;
 }
 
 AsyncConnection::AsyncContextUPtr AsyncConnection::_connect(const ConnectionOptions &opts) {
@@ -224,7 +333,7 @@ AsyncConnection::AsyncContextUPtr AsyncConnection::_connect(const ConnectionOpti
         throw_error(ctx->c, "failed to connect to server");
     }
 
-    ctx->data = new AsyncConnectionSPtr(shared_from_this());
+    ctx->data = new AsyncContext(shared_from_this());
     ctx->dataCleanup = _clean_async_context;
 
     return ctx;

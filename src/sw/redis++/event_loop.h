@@ -47,11 +47,10 @@ public:
 
     void unwatch(std::shared_ptr<AsyncConnection> connection);
 
-    void add(std::unique_ptr<AsyncEvent> event);
+    void add(std::shared_ptr<AsyncConnection> event);
 
-    void attach(redisAsyncContext &ctx);
-
-    void notify();
+    // Not thread safe. Only call it in callback functions.
+    void watch(redisAsyncContext &ctx);
 
 private:
     static void _connect_callback(const redisAsyncContext *ctx, int status);
@@ -82,18 +81,14 @@ private:
 
     void _stop();
 
-    auto _event() -> std::pair<std::vector<std::unique_ptr<AsyncEvent>>,
-                                 std::vector<std::shared_ptr<AsyncConnection>>>;
+    void _notify();
 
-    void _clean_up(std::vector<std::unique_ptr<AsyncEvent>> &command_events,
+    void _clean_up(std::unordered_set<std::shared_ptr<AsyncConnection>> &command_events,
             std::vector<std::shared_ptr<AsyncConnection>> &disconnect_events);
 
-    void _disconnect(std::vector<std::shared_ptr<AsyncConnection>> &connections);
-
-    using PendingEvents = std::vector<std::unique_ptr<AsyncEvent>>;
-
-    PendingEvents _send_commands(std::vector<std::unique_ptr<AsyncEvent>> events,
-            const std::unordered_set<AsyncConnection *> &disconnecting_connections);
+    auto _get_events()
+        -> std::pair<std::unordered_set<std::shared_ptr<AsyncConnection>>,
+            std::vector<std::shared_ptr<AsyncConnection>>>;
 
     // We must define _event_async and _stop_async before _loop,
     // because these memory can only be release after _loop's deleter
@@ -108,7 +103,7 @@ private:
 
     std::vector<std::shared_ptr<AsyncConnection>> _disconnect_events;
 
-    std::vector<std::unique_ptr<AsyncEvent>> _command_events;
+    std::unordered_set<std::shared_ptr<AsyncConnection>> _command_events;
 
     // _loop must be defined at last, since its destructor needs other data members.
     LoopUPtr _loop;

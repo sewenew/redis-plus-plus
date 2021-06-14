@@ -19,6 +19,9 @@
 
 #include <cassert>
 #include <memory>
+#include <mutex>
+#include <exception>
+#include <vector>
 #include <hiredis/async.h>
 #include "connection.h"
 #include "command_args.h"
@@ -72,17 +75,18 @@ struct DefaultResultParser {
     }
 };
 
-enum class AsyncConnectionStatus {
-    UNINITIALIZED = 0,
-    CONNECTING,
-    CONNECT_FAILED,
-    CONNECTED,
-    AUTH,
-    SELECT_DB,
-    READY,
-    DISCONNECTING,
-    DISCONNECTED,
+class AsyncConnection;
+
+class AsyncEvent {
+public:
+    virtual ~AsyncEvent() = default;
+
+    virtual void handle(redisAsyncContext &ctx) = 0;
+
+    virtual void set_exception(std::exception_ptr err) = 0;
 };
+
+using AsyncEventUPtr = std::unique_ptr<AsyncEvent>;
 
 class AsyncConnection : public std::enable_shared_from_this<AsyncConnection> {
 public:
@@ -94,50 +98,19 @@ public:
     AsyncConnection(AsyncConnection &&) = delete;
     AsyncConnection& operator=(AsyncConnection &&) = delete;
 
-    ~AsyncConnection() = default;
-
-    AsyncConnectionStatus status() const noexcept {
-        return _status;
-    }
-
-    void set_status(AsyncConnectionStatus status) noexcept {
-        _status = status;
-    }
-
-    void prepare();
+    ~AsyncConnection();
 
     bool broken() const noexcept {
+        // TODO: should we check _ctx->err?
         return _ctx == nullptr || _ctx->err != REDIS_OK;
     }
-
-    redisAsyncContext* context() {
-        _last_active = std::chrono::steady_clock::now();
-
-        return _ctx;
-    }
-
-    void reconnect();
 
     auto last_active() const
         -> std::chrono::time_point<std::chrono::steady_clock> {
         return _last_active;
     }
 
-    void notify() {
-        _loop->notify();
-    }
-
-    void reset() {
-        _ctx = nullptr;
-    }
-
     void disconnect(std::exception_ptr err);
-
-    std::exception_ptr error();
-
-    void set_error(std::exception_ptr err) {
-        _err = err;
-    }
 
     template <typename Result, typename ...Args>
     Future<Result> send(const char *format, Args &&...args);
@@ -148,7 +121,53 @@ public:
     template <typename Result, typename ResultParser = DefaultResultParser<Result>>
     Future<Result> send(CmdArgs &args);
 
+    enum class State {
+        BROKEN = 0,
+        CONNECTING,
+        AUTHING,
+        SELECTING_DB,
+        READY,
+    };
+
+    void event_callback();
+
+    void connect_callback(std::exception_ptr err = nullptr);
+
+    void disconnect_callback(std::exception_ptr err);
+
 private:
+    redisAsyncContext& _context() {
+        assert(_ctx != nullptr);
+
+        _last_active = std::chrono::steady_clock::now();
+
+        return *_ctx;
+    }
+
+    void _connecting_callback();
+
+    void _authing_callback();
+
+    bool _need_auth() const;
+
+    void _auth();
+
+    bool _need_select_db() const;
+
+    void _select_db();
+
+    void _set_ready();
+
+    void _connect();
+
+    void _disable_disconnect_callback();
+
+    void _send();
+
+    std::vector<std::unique_ptr<AsyncEvent>> _get_events();
+
+    void _fail_events(std::exception_ptr err);
+
     template <typename Result, typename ResultParser>
     Future<Result> _send(char *data, int len);
 
@@ -165,14 +184,6 @@ private:
 
     AsyncContextUPtr _connect(const ConnectionOptions &opts);
 
-    bool _need_auth() const;
-
-    void _auth();
-
-    bool _need_select_db() const;
-
-    void _select_db();
-
     ConnectionOptions _opts;
 
     EventLoop *_loop = nullptr;
@@ -184,59 +195,41 @@ private:
     // the connection is used, i.e. *context()* is called.
     std::chrono::time_point<std::chrono::steady_clock> _last_active{};
 
-    AsyncConnectionStatus _status = AsyncConnectionStatus::UNINITIALIZED;
+    std::vector<std::unique_ptr<AsyncEvent>> _events;
 
-    std::exception_ptr _err;
+    State _state = State::BROKEN;
+
+    std::mutex _mtx;
 };
 
 using AsyncConnectionSPtr = std::shared_ptr<AsyncConnection>;
 
-class AsyncEvent {
-public:
-    explicit AsyncEvent(AsyncConnection *connection) : _connection(connection) {
-        assert(_connection);
-    }
+struct AsyncContext {
+    AsyncContext(AsyncConnectionSPtr conn) : connection(std::move(conn)) {}
 
-    virtual ~AsyncEvent() = default;
+    AsyncConnectionSPtr connection;
 
-    virtual void handle() = 0;
-
-    virtual void set_exception(std::exception_ptr p) = 0;
-
-    AsyncConnection* connection() {
-        return _connection;
-    }
-
-private:
-    AsyncConnection *_connection = nullptr;
+    bool run_disconnect_callback = true;
 };
-
-using AsyncEventUPtr = std::unique_ptr<AsyncEvent>;
 
 template <typename Result, typename ResultParser>
 class CommandEvent : public AsyncEvent {
 public:
-    CommandEvent(AsyncConnection *connection, FormattedCommand cmd) :
-        AsyncEvent(connection), _cmd(std::move(cmd)) {}
+    explicit CommandEvent(FormattedCommand cmd) : _cmd(std::move(cmd)) {}
 
     Future<Result> get_future() {
         return _pro.get_future();
     }
 
-    virtual void handle() override {
-        auto *conn = connection();
-
-        assert(!conn->broken());
-
-        auto *ctx = conn->context();
-        if (redisAsyncFormattedCommand(ctx,
+    virtual void handle(redisAsyncContext &ctx) override {
+        if (redisAsyncFormattedCommand(&ctx,
                     _reply_callback, this, _cmd.data(), _cmd.size()) != REDIS_OK) {
-            throw_error(ctx->c, "failed to send command");
+            throw_error(ctx.c, "failed to send command");
         }
     }
 
-    virtual void set_exception(std::exception_ptr p) override {
-        _pro.set_exception(p);
+    virtual void set_exception(std::exception_ptr err) override {
+        _pro.set_exception(err);
     }
 
     template <typename T>
@@ -247,18 +240,15 @@ public:
     }
 
 private:
-    static void _reply_callback(redisAsyncContext *ctx, void *r, void *privdata) {
+    static void _reply_callback(redisAsyncContext * /*ctx*/, void *r, void *privdata) {
         auto event = static_cast<CommandEvent<Result, ResultParser> *>(privdata);
 
-        assert(ctx != nullptr && event != nullptr);
+        assert(event != nullptr);
 
         try {
             redisReply *reply = static_cast<redisReply *>(r);
             if (reply == nullptr) {
-                // TODO: should we set connection status?
-                auto &connection = *(static_cast<AsyncConnectionSPtr *>(ctx->data));
-
-                event->set_exception(connection->error());
+                event->set_exception(std::make_exception_ptr(Error("connection has been closed")));
             } else if (reply::is_error(*reply)) {
                 try {
                     throw_error(*reply);
@@ -325,11 +315,17 @@ Future<Result> AsyncConnection::_send(char *data, int len) {
     FormattedCommand cmd(data, len);
 
     auto event = CommandEventUPtr<Result, ResultParser>(
-            new CommandEvent<Result, ResultParser>(this, std::move(cmd)));
+            new CommandEvent<Result, ResultParser>(std::move(cmd)));
 
     auto fut = event->get_future();
 
-    _loop->add(AsyncEventUPtr(std::move(event)));
+    {
+        std::lock_guard<std::mutex> lock(_mtx);
+
+        _events.push_back(std::move(event));
+    }
+
+    _loop->add(shared_from_this());
 
     return fut;
 }
