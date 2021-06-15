@@ -152,7 +152,7 @@ public:
 
     Future<double> incrbyfloat(const StringView &key, double increment);
 
-    template <typename Input, typename Output>
+    template <typename Output, typename Input>
     Future<Output> mget(Input first, Input last) {
         range_check("MGET", first, last);
 
@@ -162,9 +162,9 @@ public:
         return _command<Output>(args);
     }
 
-    template <typename T, typename Output>
+    template <typename Output, typename T>
     Future<Output> mget(std::initializer_list<T> il) {
-        return mget(il.begin(), il.end());
+        return mget<Output>(il.begin(), il.end());
     }
 
     template <typename Input>
@@ -344,7 +344,7 @@ public:
 
     Future<long long> hlen(const StringView &key);
 
-    template <typename Input, typename Output>
+    template <typename Output, typename Input>
     Future<Output> hmget(const StringView &key, Input first, Input last) {
         range_check("HMGET", first, last);
 
@@ -354,9 +354,9 @@ public:
         return _command<Output>(args);
     }
 
-    template <typename T, typename Output>
+    template <typename Output, typename T>
     Future<Output> hmget(const StringView &key, std::initializer_list<T> il) {
-        return hmget(key, il.begin(), il.end());
+        return hmget<Output>(key, il.begin(), il.end());
     }
 
     template <typename Input>
@@ -593,7 +593,7 @@ public:
                 start, stop);
     }
 
-    template <typename Interval, typename Output>
+    template <typename Output, typename Interval>
     Future<Output> zrangebylex(const StringView &key,
                         const Interval &interval,
                         const LimitOptions &opts) {
@@ -608,12 +608,12 @@ public:
                         opts.count);
     }
 
-    template <typename Interval, typename Output>
+    template <typename Output, typename Interval>
     Future<Output> zrangebylex(const StringView &key, const Interval &interval) {
-        return zrangebylex(key, interval, {});
+        return zrangebylex<Output>(key, interval, {});
     }
 
-    template <typename Interval, typename Output>
+    template <typename Output, typename Interval>
     Future<Output> zrangebyscore(const StringView &key, const Interval &interval) {
         return zrangebyscore(key, interval, {});
     }
@@ -661,7 +661,7 @@ public:
                         max.data(), max.size());
     }
 
-    template <typename Interval, typename Output>
+    template <typename Output, typename Interval>
     Future<Output> zrevrangebylex(const StringView &key,
                         const Interval &interval,
                         const LimitOptions &opts) {
@@ -676,9 +676,9 @@ public:
                         opts.count);
     }
 
-    template <typename Interval, typename Output>
+    template <typename Output, typename Interval>
     Future<Output> zrevrangebylex(const StringView &key, const Interval &interval) {
-        return zrevrangebylex(key, interval, {});
+        return zrevrangebylex<Output>(key, interval, {});
     }
 
     Future<OptionalLongLong> zrevrank(const StringView &key, const StringView &member);
