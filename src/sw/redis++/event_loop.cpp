@@ -136,6 +136,11 @@ void EventLoop::_event_callback(uv_async_t *handle) {
     for (auto &connection : disconnect_events) {
         assert(connection);
 
+        // Ensure all pending events have been sent before disconnecting.
+        connection->event_callback();
+
+        // If `event_callback` fails, connection will be release by event loop,
+        // and this `disconnect` call will do nothing.
         connection->disconnect(err);
     }
 }

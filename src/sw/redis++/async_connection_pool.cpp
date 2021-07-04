@@ -103,7 +103,7 @@ AsyncConnectionSPtr AsyncConnectionPool::fetch() {
     // _pool is NOT empty.
     auto connection = _fetch();
 
-    //auto connection_lifetime = _pool_opts.connection_lifetime;
+    auto connection_lifetime = _pool_opts.connection_lifetime;
 
     /*
     if (_sentinel) {
@@ -131,17 +131,21 @@ AsyncConnectionSPtr AsyncConnectionPool::fetch() {
 
     assert(connection);
 
-    /*
     if (_need_reconnect(*connection, connection_lifetime)) {
         try {
-            connection->reconnect();
+            auto tmp_connection = _create();
+
+            std::swap(tmp_connection, connection);
+
+            // Release expired connection.
+            // TODO: If `unwatch` throw, we will leak the connection.
+            _loop->unwatch(std::move(tmp_connection));
         } catch (const Error &e) {
-            // Failed to reconnect, return it to the pool, and retry latter.
+            // Failed, return it to the pool, and retry latter.
             release(std::move(connection));
             throw;
         }
     }
-    */
 
     return connection;
 }
@@ -281,7 +285,7 @@ bool AsyncConnectionPool::_need_reconnect(const AsyncConnection &connection,
 
     if (connection_lifetime > std::chrono::milliseconds(0)) {
         auto now = std::chrono::steady_clock::now();
-        if (now - connection.last_active() > connection_lifetime) {
+        if (now - connection.create_time() > connection_lifetime) {
             return true;
         }
     }

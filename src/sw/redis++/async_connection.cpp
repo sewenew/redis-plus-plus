@@ -82,29 +82,28 @@ void FormattedCommand::_move(FormattedCommand &&that) noexcept {
 AsyncConnection::AsyncConnection(const ConnectionOptions &opts, EventLoop *loop) :
     _opts(opts),
     _loop(loop),
-    _state(State::BROKEN) {
+    _create_time(std::chrono::steady_clock::now()),
+    _state(State::NOT_CONNECTED) {
     assert(_loop != nullptr);
 }
 
 AsyncConnection::~AsyncConnection() {
-    auto events = _get_events();
-
-    // TODO: assert(events.empty());
-
-    auto err = std::make_exception_ptr(Error("connection is closing"));
-    for (auto &event : events) {
-        event->set_exception(err);
-    }
+    _clean_up();
 }
 
 void AsyncConnection::event_callback() {
-    switch (_state) {
-    case State::BROKEN:
+    // NOTE: we should try our best not throw in these callbacks
+    switch (_state.load()) {
+    case State::NOT_CONNECTED:
         _connect();
         break;
 
     case State::READY:
         _send();
+        break;
+
+    case State::BROKEN:
+        _clean_up();
         break;
 
     default:
@@ -122,7 +121,7 @@ void AsyncConnection::connect_callback(std::exception_ptr err) {
 
     // Connect OK.
     try {
-        switch (_state) {
+        switch (_state.load()) {
         case State::CONNECTING:
             _connecting_callback();
             break;
@@ -203,21 +202,28 @@ std::vector<AsyncEventUPtr> AsyncConnection::_get_events() {
     return events;
 }
 
-void AsyncConnection::_fail_events(std::exception_ptr err) {
-    _ctx = nullptr;
-
-    if (!err) {
-        err = std::make_exception_ptr(Error("connection is closing"));
+void AsyncConnection::_clean_up() {
+    if (!_err) {
+        _err = std::make_exception_ptr(Error("connection is closing"));
     }
 
     auto events = _get_events();
     for (auto &event : events) {
         assert(event);
 
-        event->set_exception(err);
+        event->set_exception(_err);
     }
+}
+
+void AsyncConnection::_fail_events(std::exception_ptr err) {
+    _ctx = nullptr;
+
+    _err = err;
 
     _state = State::BROKEN;
+
+    // Must call _clean_up after `_err` has been set.
+    _clean_up();
 }
 
 void AsyncConnection::_connecting_callback() {

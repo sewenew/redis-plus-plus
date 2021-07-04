@@ -20,6 +20,7 @@
 #include <cassert>
 #include <memory>
 #include <mutex>
+#include <atomic>
 #include <exception>
 #include <vector>
 #include <hiredis/async.h>
@@ -101,13 +102,12 @@ public:
     ~AsyncConnection();
 
     bool broken() const noexcept {
-        // TODO: should we check _ctx->err?
-        return _ctx == nullptr || _ctx->err != REDIS_OK;
+        return _state == State::BROKEN;
     }
 
-    auto last_active() const
+    auto create_time() const
         -> std::chrono::time_point<std::chrono::steady_clock> {
-        return _last_active;
+        return _create_time;
     }
 
     void disconnect(std::exception_ptr err);
@@ -121,14 +121,6 @@ public:
     template <typename Result, typename ResultParser = DefaultResultParser<Result>>
     Future<Result> send(CmdArgs &args);
 
-    enum class State {
-        BROKEN = 0,
-        CONNECTING,
-        AUTHING,
-        SELECTING_DB,
-        READY,
-    };
-
     void event_callback();
 
     void connect_callback(std::exception_ptr err = nullptr);
@@ -136,10 +128,17 @@ public:
     void disconnect_callback(std::exception_ptr err);
 
 private:
+    enum class State {
+        BROKEN = 0,
+        NOT_CONNECTED,
+        CONNECTING,
+        AUTHING,
+        SELECTING_DB,
+        READY,
+    };
+
     redisAsyncContext& _context() {
         assert(_ctx != nullptr);
-
-        _last_active = std::chrono::steady_clock::now();
 
         return *_ctx;
     }
@@ -166,6 +165,8 @@ private:
 
     std::vector<std::unique_ptr<AsyncEvent>> _get_events();
 
+    void _clean_up();
+
     void _fail_events(std::exception_ptr err);
 
     template <typename Result, typename ResultParser>
@@ -191,13 +192,14 @@ private:
     // _ctx will be release by EventLoop after attached.
     redisAsyncContext *_ctx = nullptr;
 
-    // The time that the connection is created or the time that
-    // the connection is used, i.e. *context()* is called.
-    std::chrono::time_point<std::chrono::steady_clock> _last_active{};
+    // The time that the connection is created.
+    std::chrono::time_point<std::chrono::steady_clock> _create_time{};
 
     std::vector<std::unique_ptr<AsyncEvent>> _events;
 
-    State _state = State::BROKEN;
+    std::atomic<State> _state{State::NOT_CONNECTED};
+
+    std::exception_ptr _err;
 
     std::mutex _mtx;
 };
