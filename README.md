@@ -192,7 +192,11 @@ Then you can build it the instructions (links) mentioned above. If you're buildi
 
 **NOTE**: `REDIS_PLUS_PLUS_CXX_STANDARD` is not supported on Windows so far, and TLS/SSL support has not been tested on Windows yet.
 
-##### Building a redis-plus-plus Debian Package (Optional)
+##### The Order of Header Files
+
+On Windows platform, if your application code also needs to include *windows.h*. You must ensure that *sw/redis++/redis++.h* is included before *windows.h*. Check [this issue](https://github.com/sewenew/redis-plus-plus/issues/194) for detail.
+
+#### Building a redis-plus-plus Debian Package (Optional)
 
 Basic support for building a GNU/Debian package is supplied with the use of cmake.
 The following example shows how to build the Debian package:
@@ -2324,7 +2328,7 @@ Fortunately, [@wingunder](https://github.com/wingunder) did a great job to make 
 
 ### Async Interface
 
-*redis-plus-plus* also support async interface, however, async support for Redis Cluster, Redis Sentinel, Transaction and Subscriber is still on the way.
+*redis-plus-plus* also supports async interface, however, async support for Redis Cluster, Transaction and Subscriber is still on the way.
 
 The async interface depends on third-party event library, and so far, only libuv is supported.
 
@@ -2342,9 +2346,11 @@ make install
 
 #### Getting Started
 
-The async interface is similar to sync interface, except that you should define an object of `sw::redis::AsyncRedis`, and the related methods return `Future` object (so far, only `std::future` is supported, support for other implementations of *future* is on the way).
+The async interface is similar to sync interface, except that you should include *sw/redis++/async_redis++.h*, and define an object of `sw::redis::AsyncRedis`, and the related methods return `Future` object (so far, only `std::future` is supported, support for other implementations of *future* is on the way).
 
 ```
+#include <sw/redis++/async_redis++.h>
+
 ConnectionOptions opts;
 opts.host = "127.0.0.1";
 opts.port = 6379;
@@ -2377,7 +2383,54 @@ hmset_res.get();
 
 for (const auto &ele : hgetall_res.get())
     cout << ele << endl;
+
+// Generic interface.
+
+// There's no *AsyncRedis::client_getname* interface.
+// But you can use *Redis::command* to get the client name.
+auto getname_res = redis.command<OptionalString>("client", "getname");
+val = getname_res.get();
+if (val) {
+    std::cout << *val << std::endl;
+}
 ```
+
+#### Redis Sentinel
+
+Aysnc interface also supports Redis Sentinel.
+
+```
+SentinelOptions sentinel_opts;
+sentinel_opts.nodes = {
+    {"127.0.0.1", 8000},
+    {"127.0.0.1", 8001},
+    {"127.0.0.1", 8002}
+};
+
+sentinel_opts.connect_timeout = std::chrono::milliseconds(100);
+sentinel_opts.socket_timeout = std::chrono::milliseconds(100);
+
+auto sentinel = std::make_shared<AsyncSentinel>(sentinel_opts);
+
+onnectionOptions connection_opts;
+connection_opts.connect_timeout = std::chrono::milliseconds(100);   // Required.
+connection_opts.socket_timeout = std::chrono::milliseconds(100);   // Required.
+
+ConnectionPoolOptions pool_opts;
+pool_opts.size = 3; // Optional. The default size is 1.
+
+// Connect to master node.
+AsyncRedis redis(sentinel, "mymaster", Role::MASTER, connection_opts, pool_opts);
+
+// The following code randomly connects to one of the slave nodes.
+// AsyncRedis redis(sentinel, "mymaster", Role::SLAVE, connection_opts, pool_opts);
+
+redis.set("key", "value");
+
+auto value = redis.get("key").get();
+```
+
+The async support for sentinel is similar with the sync one, except that you need to create an `AsyncSentinel` object instead of a `Sentinel` object. Check [Redis Sentinel](#redis-sentinel) for more details on `SentinelOptions`, `ConnectionOptions` and `Role`.
 
 ## Redis Recipes
 
