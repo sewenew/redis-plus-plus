@@ -42,6 +42,22 @@ AsyncRedis::AsyncRedis(const ConnectionOptions &opts,
     _pool = std::make_shared<AsyncConnectionPool>(_loop, pool_opts, opts);
 }
 
+AsyncRedis::AsyncRedis(const std::shared_ptr<AsyncSentinel> &sentinel,
+        const std::string &master_name,
+        Role role,
+        const ConnectionOptions &opts,
+        const ConnectionPoolOptions &pool_opts,
+        const EventLoopSPtr &loop) : _loop(loop) {
+    if (!_loop) {
+        _loop = std::make_shared<EventLoop>();
+    }
+
+    _pool = std::make_shared<AsyncConnectionPool>(SimpleAsyncSentinel(sentinel, master_name, role),
+                                                    _loop,
+                                                    pool_opts,
+                                                    opts);
+}
+
 Future<std::string> AsyncRedis::echo(const StringView &msg) {
     return _command<std::string>("ECHO %b", msg.data(), msg.size());
 }

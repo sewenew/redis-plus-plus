@@ -79,12 +79,27 @@ void FormattedCommand::_move(FormattedCommand &&that) noexcept {
     that._size = 0;
 }
 
-AsyncConnection::AsyncConnection(const ConnectionOptions &opts, EventLoop *loop) :
+AsyncConnection::AsyncConnection(const ConnectionOptions &opts,
+        EventLoop *loop,
+        AsyncConnectionMode mode) :
     _opts(opts),
     _loop(loop),
-    _create_time(std::chrono::steady_clock::now()),
-    _state(State::NOT_CONNECTED) {
+    _create_time(std::chrono::steady_clock::now()) {
     assert(_loop != nullptr);
+
+    switch (mode) {
+    case AsyncConnectionMode::SINGLE:
+        _state = State::NOT_CONNECTED;
+        break;
+
+    case AsyncConnectionMode::SENTINEL:
+        _state = State::WAIT_SENTINEL;
+        break;
+
+    default:
+        throw Error("not supporeted async connection mode");
+        break;
+    }
 }
 
 AsyncConnection::~AsyncConnection() {
@@ -94,6 +109,10 @@ AsyncConnection::~AsyncConnection() {
 void AsyncConnection::event_callback() {
     // NOTE: we should try our best not throw in these callbacks
     switch (_state.load()) {
+    case State::WAIT_SENTINEL:
+        _connect_with_sentinel();
+        break;
+
     case State::NOT_CONNECTED:
         _connect();
         break;
@@ -141,19 +160,30 @@ void AsyncConnection::connect_callback(std::exception_ptr err) {
 }
 
 void AsyncConnection::disconnect(std::exception_ptr err) {
-    if (_ctx == nullptr) {
-        return;
+    if (_ctx != nullptr) {
+        _disable_disconnect_callback();
+
+        redisAsyncDisconnect(_ctx);
     }
-
-    _disable_disconnect_callback();
-
-    redisAsyncDisconnect(_ctx);
 
     _fail_events(err);
 }
 
 void AsyncConnection::disconnect_callback(std::exception_ptr err) {
     _fail_events(err);
+}
+
+ConnectionOptions AsyncConnection::options() {
+    std::lock_guard<std::mutex> lock(_mtx);
+
+    return _opts;
+}
+
+void AsyncConnection::update_node_info(const std::string &host, int port) {
+    std::lock_guard<std::mutex> lock(_mtx);
+
+    _opts.host = host;
+    _opts.port = port;
 }
 
 void AsyncConnection::_disable_disconnect_callback() {
@@ -282,9 +312,26 @@ void AsyncConnection::_set_ready() {
     _send();
 }
 
+void AsyncConnection::_connect_with_sentinel() {
+    try {
+        auto opts = options();
+        if (opts.host.empty()) {
+            // Still waiting for sentinel.
+            return;
+        }
+
+        // Already got node info from sentinel
+        _state = State::NOT_CONNECTED;
+
+        _connect();
+    } catch (const Error &err) {
+        _fail_events(std::current_exception());
+    }
+}
+
 void AsyncConnection::_connect() {
     try {
-        auto ctx = _connect(_opts);
+        auto ctx = _connect(options());
 
         assert(ctx && ctx->err == REDIS_OK);
 
@@ -294,7 +341,7 @@ void AsyncConnection::_connect() {
 
         _state = State::CONNECTING;
     } catch (const Error &err) {
-        _fail_events(std::make_exception_ptr(err));
+        _fail_events(std::current_exception());
     }
 }
 
@@ -318,7 +365,7 @@ AsyncConnection::AsyncContextUPtr AsyncConnection::_connect(const ConnectionOpti
     redisAsyncContext *context = nullptr;
     switch (opts.type) {
     case ConnectionType::TCP:
-        context = redisAsyncConnect(opts.host.c_str(), _opts.port);
+        context = redisAsyncConnect(opts.host.c_str(), opts.port);
         break;
 
     case ConnectionType::UNIX:

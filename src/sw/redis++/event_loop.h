@@ -20,6 +20,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <memory>
+#include <exception>
 #include <mutex>
 #include <thread>
 #include <uv.h>
@@ -45,7 +46,7 @@ public:
 
     ~EventLoop();
 
-    void unwatch(std::shared_ptr<AsyncConnection> connection);
+    void unwatch(std::shared_ptr<AsyncConnection> connection, std::exception_ptr err = nullptr);
 
     void add(std::shared_ptr<AsyncConnection> event);
 
@@ -84,11 +85,11 @@ private:
     void _notify();
 
     void _clean_up(std::unordered_set<std::shared_ptr<AsyncConnection>> &command_events,
-            std::vector<std::shared_ptr<AsyncConnection>> &disconnect_events);
+            std::unordered_map<std::shared_ptr<AsyncConnection>, std::exception_ptr> &disconnect_events);
 
     auto _get_events()
         -> std::pair<std::unordered_set<std::shared_ptr<AsyncConnection>>,
-            std::vector<std::shared_ptr<AsyncConnection>>>;
+            std::unordered_map<std::shared_ptr<AsyncConnection>, std::exception_ptr>>;
 
     // We must define _event_async and _stop_async before _loop,
     // because these memory can only be release after _loop's deleter
@@ -101,7 +102,7 @@ private:
 
     std::mutex _mtx;
 
-    std::vector<std::shared_ptr<AsyncConnection>> _disconnect_events;
+    std::unordered_map<std::shared_ptr<AsyncConnection>, std::exception_ptr> _disconnect_events;
 
     std::unordered_set<std::shared_ptr<AsyncConnection>> _command_events;
 

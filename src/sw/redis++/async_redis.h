@@ -19,6 +19,7 @@
 
 #include "async_connection.h"
 #include "async_connection_pool.h"
+#include "async_sentinel.h"
 #include "event_loop.h"
 #include "utils.h"
 #include "command.h"
@@ -34,6 +35,13 @@ public:
     AsyncRedis(const ConnectionOptions &opts,
             const ConnectionPoolOptions &pool_opts = {},
             const EventLoopSPtr &loop = nullptr);
+
+    AsyncRedis(const std::shared_ptr<AsyncSentinel> &sentinel,
+                const std::string &master_name,
+                Role role,
+                const ConnectionOptions &connection_opts,
+                const ConnectionPoolOptions &pool_opts = {},
+                const EventLoopSPtr &loop = nullptr);
 
     AsyncRedis(const AsyncRedis &) = delete;
     AsyncRedis& operator=(const AsyncRedis &) = delete;

@@ -89,9 +89,17 @@ public:
 
 using AsyncEventUPtr = std::unique_ptr<AsyncEvent>;
 
+enum class AsyncConnectionMode {
+    SINGLE = 0,
+    SENTINEL,
+    CLUSTER
+};
+
 class AsyncConnection : public std::enable_shared_from_this<AsyncConnection> {
 public:
-    AsyncConnection(const ConnectionOptions &opts, EventLoop *loop);
+    AsyncConnection(const ConnectionOptions &opts,
+            EventLoop *loop,
+            AsyncConnectionMode = AsyncConnectionMode::SINGLE);
 
     AsyncConnection(const AsyncConnection &) = delete;
     AsyncConnection& operator=(const AsyncConnection &) = delete;
@@ -127,6 +135,10 @@ public:
 
     void disconnect_callback(std::exception_ptr err);
 
+    ConnectionOptions options();
+
+    void update_node_info(const std::string &host, int port);
+
 private:
     enum class State {
         BROKEN = 0,
@@ -135,6 +147,7 @@ private:
         AUTHING,
         SELECTING_DB,
         READY,
+        WAIT_SENTINEL
     };
 
     redisAsyncContext& _context() {
@@ -156,6 +169,8 @@ private:
     void _select_db();
 
     void _set_ready();
+
+    void _connect_with_sentinel();
 
     void _connect();
 

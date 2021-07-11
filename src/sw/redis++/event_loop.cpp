@@ -40,13 +40,13 @@ EventLoop::~EventLoop() {
     }
 }
 
-void EventLoop::unwatch(AsyncConnectionSPtr connection) {
+void EventLoop::unwatch(AsyncConnectionSPtr connection, std::exception_ptr err) {
     assert(connection);
 
     {
         std::lock_guard<std::mutex> lock(_mtx);
 
-        _disconnect_events.push_back(std::move(connection));
+        _disconnect_events.emplace(std::move(connection), err);
     }
 
     _notify();
@@ -123,7 +123,7 @@ void EventLoop::_event_callback(uv_async_t *handle) {
     assert(event_loop != nullptr);
 
     std::unordered_set<AsyncConnectionSPtr> command_events;
-    std::vector<AsyncConnectionSPtr> disconnect_events;
+    std::unordered_map<AsyncConnectionSPtr, std::exception_ptr> disconnect_events;
     std::tie(command_events, disconnect_events) = event_loop->_get_events();
 
     for (auto &connection : command_events) {
@@ -132,12 +132,16 @@ void EventLoop::_event_callback(uv_async_t *handle) {
         connection->event_callback();
     }
 
-    auto err = std::make_exception_ptr(Error("connection is closing"));
-    for (auto &connection : disconnect_events) {
+    for (auto &ele : disconnect_events) {
+        auto &connection = ele.first;
+        auto &err = ele.second;
+
         assert(connection);
 
-        // Ensure all pending events have been sent before disconnecting.
-        connection->event_callback();
+        if (!err) {
+            // Ensure all pending events have been sent before disconnecting.
+            connection->event_callback();
+        }
 
         // If `event_callback` fails, connection will be release by event loop,
         // and this `disconnect` call will do nothing.
@@ -152,7 +156,7 @@ void EventLoop::_stop_callback(uv_async_t *handle) {
     assert(event_loop != nullptr);
 
     std::unordered_set<AsyncConnectionSPtr> command_events;
-    std::vector<AsyncConnectionSPtr> disconnect_events;
+    std::unordered_map<AsyncConnectionSPtr, std::exception_ptr> disconnect_events;
     std::tie(command_events, disconnect_events) = event_loop->_get_events();
 
     event_loop->_clean_up(command_events, disconnect_events);
@@ -161,7 +165,7 @@ void EventLoop::_stop_callback(uv_async_t *handle) {
 }
 
 void EventLoop::_clean_up(std::unordered_set<AsyncConnectionSPtr> &command_events,
-        std::vector<AsyncConnectionSPtr> &disconnect_events) {
+        std::unordered_map<AsyncConnectionSPtr, std::exception_ptr> &disconnect_events) {
     auto err = std::make_exception_ptr(Error("event loop is closing"));
     for (auto &connection : command_events) {
         assert(connection);
@@ -169,10 +173,16 @@ void EventLoop::_clean_up(std::unordered_set<AsyncConnectionSPtr> &command_event
         connection->disconnect(err);
     }
 
-    for (auto &connection : disconnect_events) {
+    for (auto &ele : disconnect_events) {
+        auto &connection = ele.first;
+        auto e = ele.second;
+        if (!e) {
+            e = err;
+        }
+
         assert(connection);
 
-        connection->disconnect(err);
+        connection->disconnect(e);
     }
 }
 
@@ -221,9 +231,10 @@ void EventLoop::_stop() {
 }
 
 auto EventLoop::_get_events()
-    -> std::pair<std::unordered_set<AsyncConnectionSPtr>, std::vector<AsyncConnectionSPtr>> {
+    -> std::pair<std::unordered_set<AsyncConnectionSPtr>,
+                    std::unordered_map<AsyncConnectionSPtr, std::exception_ptr>> {
     std::unordered_set<AsyncConnectionSPtr> command_events;
-    std::vector<AsyncConnectionSPtr> disconnect_events;
+    std::unordered_map<AsyncConnectionSPtr, std::exception_ptr> disconnect_events;
     {
         std::lock_guard<std::mutex> lock(_mtx);
 
