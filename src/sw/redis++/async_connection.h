@@ -28,6 +28,7 @@
 #include "command_args.h"
 #include "event_loop.h"
 #include "async_utils.h"
+#include "tls.h"
 
 namespace sw {
 
@@ -203,6 +204,8 @@ private:
     ConnectionOptions _opts;
 
     EventLoop *_loop = nullptr;
+
+    tls::TlsContextUPtr _tls_ctx;
 
     // _ctx will be release by EventLoop after attached.
     redisAsyncContext *_ctx = nullptr;

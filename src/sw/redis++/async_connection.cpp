@@ -331,12 +331,21 @@ void AsyncConnection::_connect_with_sentinel() {
 
 void AsyncConnection::_connect() {
     try {
-        auto ctx = _connect(options());
+        auto opts = options();
+
+        auto ctx = _connect(opts);
 
         assert(ctx && ctx->err == REDIS_OK);
 
+        const auto &tls_opts = opts.tls;
+        tls::TlsContextUPtr tls_ctx;
+        if (tls::enabled(tls_opts)) {
+            tls_ctx = tls::secure_connection(ctx->c, tls_opts);
+        }
+
         _loop->watch(*ctx);
 
+        _tls_ctx = std::move(tls_ctx);
         _ctx = ctx.release();
 
         _state = State::CONNECTING;
