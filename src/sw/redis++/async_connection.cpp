@@ -17,6 +17,7 @@
 #include "async_connection.h"
 #include <hiredis/async.h>
 #include "errors.h"
+#include "async_shards_pool.h"
 
 namespace {
 
@@ -104,6 +105,16 @@ AsyncConnection::AsyncConnection(const ConnectionOptions &opts,
 
 AsyncConnection::~AsyncConnection() {
     _clean_up();
+}
+
+void AsyncConnection::send(AsyncEventUPtr event) {
+    {
+        std::lock_guard<std::mutex> lock(_mtx);
+
+        _events.push_back(std::move(event));
+    }
+
+    _loop->add(shared_from_this());
 }
 
 void AsyncConnection::event_callback() {

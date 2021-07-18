@@ -61,6 +61,8 @@ public:
 
     ConnectionOptions connection_options();
 
+    Shards shards();
+
 private:
     void _move(ShardsPool &&that);
 

@@ -75,6 +75,10 @@ public:
 
     tls::TlsOptions tls;
 
+    // `readonly` is only used for reading from a slave node in Redis Cluster mode.
+    // Client code should never manually set/get it. This member might be removed in the future.
+    bool readonly = false;
+
 private:
     ConnectionOptions _parse_uri(const std::string &uri) const;
 
@@ -100,12 +104,6 @@ private:
     void _set_tcp_opts(const std::string &path, ConnectionOptions &opts) const;
 
     void _set_unix_opts(const std::string &path, ConnectionOptions &opts) const;
-
-    // `readonly` is only used for reading from a slave node in Redis Cluster mode.
-    friend class ShardsPool;
-    friend class Connection;
-
-    bool readonly = false;
 };
 
 class CmdArgs;

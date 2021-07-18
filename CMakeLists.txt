@@ -62,6 +62,8 @@ if(REDIS_PLUS_PLUS_BUILD_ASYNC)
         "${REDIS_PLUS_PLUS_SOURCE_DIR}/async_redis.cpp"
         "${REDIS_PLUS_PLUS_SOURCE_DIR}/event_loop.cpp"
         "${REDIS_PLUS_PLUS_SOURCE_DIR}/async_sentinel.cpp"
+        "${REDIS_PLUS_PLUS_SOURCE_DIR}/async_redis_cluster.cpp"
+        "${REDIS_PLUS_PLUS_SOURCE_DIR}/async_shards_pool.cpp"
     )
 endif()
 

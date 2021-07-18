@@ -155,11 +155,19 @@ ConnectionOptions ShardsPool::connection_options() {
 
     return _connection_options(slot);
 }
+
+Shards ShardsPool::shards() {
+    std::lock_guard<std::mutex> lock(_mutex);
+
+    return _shards;
+}
+
 void ShardsPool::_move(ShardsPool &&that) {
     _pool_opts = that._pool_opts;
     _connection_opts = that._connection_opts;
     _shards = std::move(that._shards);
     _pools = std::move(that._pools);
+    _role = that._role;
 }
 
 void ShardsPool::_init_pool(const Shards &shards) {
