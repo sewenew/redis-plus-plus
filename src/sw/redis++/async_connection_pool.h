@@ -79,8 +79,6 @@ public:
                     const ConnectionPoolOptions &pool_opts,
                     const ConnectionOptions &connection_opts);
 
-    AsyncConnectionPool() = default;
-
     AsyncConnectionPool(AsyncConnectionPool &&that);
     AsyncConnectionPool& operator=(AsyncConnectionPool &&that);
 

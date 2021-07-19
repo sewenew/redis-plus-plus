@@ -15,6 +15,7 @@
  *************************************************************************/
 
 #include "async_redis_cluster.h"
+#include <cassert>
 
 namespace {
 
@@ -30,6 +31,17 @@ struct SetResultParser {
 namespace sw {
 
 namespace redis {
+
+AsyncRedisCluster::AsyncRedisCluster(const ConnectionOptions &opts,
+        const ConnectionPoolOptions &pool_opts,
+        Role role,
+        const EventLoopSPtr &loop) : _loop(loop) {
+    if (!_loop) {
+        _loop = std::make_shared<EventLoop>();
+    }
+
+    _pool = std::make_shared<AsyncShardsPool>(_loop, pool_opts, opts, role);
+}
 
 Future<OptionalString> AsyncRedisCluster::get(const StringView &key) {
     return _command<OptionalString>(key, "GET %b", key.data(), key.size());

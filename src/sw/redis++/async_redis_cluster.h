@@ -36,9 +36,7 @@ public:
     AsyncRedisCluster(const ConnectionOptions &opts,
             const ConnectionPoolOptions &pool_opts = {},
             Role role = Role::MASTER,
-            const EventLoopSPtr &loop = nullptr) :
-        _loop(loop),
-        _pool(std::make_shared<AsyncShardsPool>(loop, pool_opts, opts, role)) {}
+            const EventLoopSPtr &loop = nullptr);
 
     AsyncRedisCluster(const AsyncRedisCluster &) = delete;
     AsyncRedisCluster& operator=(const AsyncRedisCluster &) = delete;

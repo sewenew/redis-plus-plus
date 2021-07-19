@@ -15,6 +15,7 @@
  *************************************************************************/
 
 #include "async_shards_pool.h"
+#include <cassert>
 #include "errors.h"
 
 namespace sw {
@@ -31,9 +32,16 @@ AsyncShardsPool::AsyncShardsPool(const EventLoopSPtr &loop,
             _connection_opts(connection_opts),
             _role(role),
             _loop(loop) {
+    assert(_loop);
+
     if (_connection_opts.type != ConnectionType::TCP) {
         throw Error("Only support TCP connection for Redis Cluster");
     }
+
+    auto node = Node{_connection_opts.host, _connection_opts.port};
+    _shards.emplace(SlotRange{0U, SHARDS}, node);
+    _pools.emplace(node,
+            std::make_shared<AsyncConnectionPool>(_loop, _pool_opts, _connection_opts));
 
     _worker = std::thread([this]() { this->_run(); });
 }
