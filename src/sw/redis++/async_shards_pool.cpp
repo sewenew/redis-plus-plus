@@ -342,7 +342,7 @@ bool AsyncShardsPool::_redeliver_events(std::queue<RedeliverEvent> &events) {
 
             GuardedAsyncConnection connection(pool);
 
-            connection.connection()->send(std::move(async_event));
+            connection.connection().send(std::move(async_event));
         } catch (...) {
             event.event->set_exception(std::current_exception());
         }

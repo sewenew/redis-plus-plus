@@ -750,7 +750,7 @@ private:
 
         GuardedAsyncConnection connection(pool);
 
-        return connection.connection()->send<Result>(_pool, key, std::forward<Args>(args)...);
+        return connection.connection().send<Result>(_pool, key, std::forward<Args>(args)...);
     }
 
     template <typename Result, typename ResultParser, typename ...Args>
@@ -762,7 +762,7 @@ private:
 
         GuardedAsyncConnection connection(pool);
 
-        return connection.connection()->
+        return connection.connection().
             send<Result, ResultParser>(_pool, key, std::forward<Args>(args)...);
     }
 

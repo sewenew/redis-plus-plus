@@ -163,6 +163,8 @@ public:
     }
 
     AsyncConnection& connection() {
+        assert(_connection);
+
         return *_connection;
     }
 
@@ -193,16 +195,16 @@ public:
         }
     }
 
-    AsyncConnectionSPtr& connection() {
-        return _connection;
+    AsyncConnection& connection() {
+        assert(_connection);
+
+        return *_connection;
     }
 
 private:
     AsyncConnectionPoolSPtr _pool;
     AsyncConnectionSPtr _connection;
 };
-
-using GuardedAsyncConnectionSPtr = std::shared_ptr<GuardedAsyncConnection>;
 
 }
 
