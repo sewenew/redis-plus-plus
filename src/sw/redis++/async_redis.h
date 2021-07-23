@@ -54,28 +54,28 @@ public:
 
     template <typename Result, typename ...Args>
     Future<Result> command(const StringView &cmd_name, Args &&...args) {
-        CmdArgs cmd_args;
-        cmd_args.append(cmd_name, std::forward<Args>(args)...);
+        auto cmd = [](AsyncConnection &connection, const StringView &cmd_name, Args &&...args) {
+            CmdArgs cmd_args;
+            cmd_args.append(cmd_name, std::forward<Args>(args)...);
+            return connection.send<Result>(cmd_args);
+        };
 
-        assert(_pool);
-        SafeAsyncConnection connection(*_pool);
-
-        return connection.connection().send<Result>(cmd_args);
+        return _command<Result>(cmd, cmd_name, std::forward<Args>(args)...);
     }
 
     template <typename Result, typename Input>
     auto command(Input first, Input last)
         -> typename std::enable_if<IsIter<Input>::value, Future<Result>>::type {
-        CmdArgs cmd_args;
-        while (first != last) {
-            cmd_args.append(*first);
-            ++first;
-        }
+        auto cmd = [](AsyncConnection &connection, Input first, Input last) {
+            CmdArgs cmd_args;
+            while (first != last) {
+                cmd_args.append(*first);
+                ++first;
+            }
+            return connection.send<Result>(cmd_args);
+        };
 
-        assert(_pool);
-        SafeAsyncConnection connection(*_pool);
-
-        return connection.connection().send<Result>(cmd_args);
+        return _command<Result>(cmd, first, last);
     }
 
     // CONNECTION commands.
