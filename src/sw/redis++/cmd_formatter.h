@@ -149,50 +149,37 @@ FormattedCommand exists_range(Input first, Input last) {
     return format_cmd(args);
 }
 
-inline FormattedCommand expire(const StringView &key,
-        const std::chrono::seconds &timeout) {
+inline FormattedCommand expire(const StringView &key, const std::chrono::seconds &timeout) {
     return format_cmd("EXPIRE %b %lld", key.data(), key.size(), timeout.count());
 }
 
 inline FormattedCommand expireat(const StringView &key,
         const std::chrono::time_point<std::chrono::system_clock,
                                         std::chrono::seconds> &tp) {
-    return format_cmd("EXPIREAT %b %lld",
-            key.data(), key.size(),
-            tp.time_since_epoch().count());
+    return format_cmd("EXPIREAT %b %lld", key.data(), key.size(), tp.time_since_epoch().count());
 }
 
 inline FormattedCommand pexpire(const StringView &key,
         const std::chrono::milliseconds &timeout) {
-    return format_cmd("PEXPIRE %b %lld",
-            key.data(), key.size(),
-            timeout.count());
+    return format_cmd("PEXPIRE %b %lld", key.data(), key.size(), timeout.count());
 }
 
 inline FormattedCommand pexpireat(const StringView &key,
         const std::chrono::time_point<std::chrono::system_clock,
                                             std::chrono::milliseconds> &tp) {
-    return format_cmd("PEXPIREAT %b %lld",
-            key.data(), key.size(),
-            tp.time_since_epoch().count());
+    return format_cmd("PEXPIREAT %b %lld", key.data(), key.size(), tp.time_since_epoch().count());
 }
 
 inline FormattedCommand pttl(const StringView &key) {
     return format_cmd("PTTL %b", key.data(), key.size());
 }
 
-inline FormattedCommand rename(const StringView &key,
-        const StringView &newkey) {
-    return format_cmd("RENAME %b %b",
-            key.data(), key.size(),
-            newkey.data(), newkey.size());
+inline FormattedCommand rename(const StringView &key, const StringView &newkey) {
+    return format_cmd("RENAME %b %b", key.data(), key.size(), newkey.data(), newkey.size());
 }
 
-inline FormattedCommand renamenx(const StringView &key,
-        const StringView &newkey) {
-    return format_cmd("RENAMENX %b %b",
-            key.data(), key.size(),
-            newkey.data(), newkey.size());
+inline FormattedCommand renamenx(const StringView &key, const StringView &newkey) {
+    return format_cmd("RENAMENX %b %b", key.data(), key.size(), newkey.data(), newkey.size());
 }
 
 inline FormattedCommand ttl(const StringView &key) {
@@ -221,18 +208,12 @@ inline FormattedCommand incr(const StringView &key) {
     return format_cmd("INCR %b", key.data(), key.size());
 }
 
-inline FormattedCommand incrby(const StringView &key,
-        long long increment) {
-    return format_cmd("INCRBY %b %lld",
-            key.data(), key.size(),
-            increment);
+inline FormattedCommand incrby(const StringView &key, long long increment) {
+    return format_cmd("INCRBY %b %lld", key.data(), key.size(), increment);
 }
 
-inline FormattedCommand incrbyfloat(const StringView &key,
-        double increment) {
-    return format_cmd("INCRBYFLOAT %b %f",
-            key.data(), key.size(),
-            increment);
+inline FormattedCommand incrbyfloat(const StringView &key, double increment) {
+    return format_cmd("INCRBYFLOAT %b %f", key.data(), key.size(), increment);
 }
 
 template <typename Input>
@@ -279,17 +260,12 @@ inline FormattedCommand strlen(const StringView &key) {
     return format_cmd("STRLEN %b", key.data(), key.size());
 }
 
-inline FormattedCommand blpop(const StringView &key,
-        const std::chrono::seconds &timeout) {
-    return format_cmd("BLPOP %b %lld",
-            key.data(), key.size(),
-            timeout.count());
+inline FormattedCommand blpop(const StringView &key, const std::chrono::seconds &timeout) {
+    return format_cmd("BLPOP %b %lld", key.data(), key.size(), timeout.count());
 }
 
 template <typename Input>
-FormattedCommand blpop_range(Input first,
-        Input last,
-        const std::chrono::seconds &timeout) {
+FormattedCommand blpop_range(Input first, Input last, const std::chrono::seconds &timeout) {
     assert(first != last);
 
     CmdArgs args;
@@ -298,17 +274,13 @@ FormattedCommand blpop_range(Input first,
     return format_cmd(args);
 }
 
-inline FormattedCommand brpop(const StringView &key,
-        const std::chrono::seconds &timeout) {
-    return format_cmd("BRPOP %b %lld",
-            key.data(), key.size(), timeout.count());
+inline FormattedCommand brpop(const StringView &key, const std::chrono::seconds &timeout) {
+    return format_cmd("BRPOP %b %lld", key.data(), key.size(), timeout.count());
 }
 
 
 template <typename Input>
-FormattedCommand brpop_range(Input first,
-        Input last,
-        const std::chrono::seconds &timeout) {
+FormattedCommand brpop_range(Input first, Input last, const std::chrono::seconds &timeout) {
     assert(first != last);
 
     CmdArgs args;
@@ -334,17 +306,12 @@ inline FormattedCommand lpop(const StringView &key) {
     return format_cmd("LPOP %b", key.data(), key.size());
 }
 
-inline FormattedCommand lpush(const StringView &key,
-        const StringView &val) {
-    return format_cmd("LPUSH %b %b",
-            key.data(), key.size(),
-            val.data(), val.size());
+inline FormattedCommand lpush(const StringView &key, const StringView &val) {
+    return format_cmd("LPUSH %b %b", key.data(), key.size(), val.data(), val.size());
 }
 
 template <typename Input>
-FormattedCommand lpush_range(const StringView &key,
-        Input first,
-        Input last) {
+FormattedCommand lpush_range(const StringView &key, Input first, Input last) {
     assert(first != last);
 
     CmdArgs args;
@@ -353,53 +320,34 @@ FormattedCommand lpush_range(const StringView &key,
     return format_cmd(args);
 }
 
-inline FormattedCommand lrange(const StringView &key,
-        long long start,
-        long long stop) {
-    return format_cmd("LRANGE %b %lld %lld",
-            key.data(), key.size(),
-            start, stop);
+inline FormattedCommand lrange(const StringView &key, long long start, long long stop) {
+    return format_cmd("LRANGE %b %lld %lld", key.data(), key.size(), start, stop);
 }
 
-inline FormattedCommand lrem(const StringView &key,
-        long long count,
-        const StringView &val) {
-    return format_cmd("LREM %b %lld %b",
-            key.data(), key.size(),
-            count,
-            val.data(), val.size());
+inline FormattedCommand lrem(const StringView &key, long long count, const StringView &val) {
+    return format_cmd("LREM %b %lld %b", key.data(), key.size(), count, val.data(), val.size());
 }
 
-inline FormattedCommand ltrim(const StringView &key,
-        long long start,
-        long long stop) {
-    return format_cmd("LTRIM %b %lld %lld",
-            key.data(), key.size(),
-            start, stop);
+inline FormattedCommand ltrim(const StringView &key, long long start, long long stop) {
+    return format_cmd("LTRIM %b %lld %lld", key.data(), key.size(), start, stop);
 }
 
 inline FormattedCommand rpop(const StringView &key) {
     return format_cmd("RPOP %b", key.data(), key.size());
 }
 
-inline FormattedCommand rpoplpush(const StringView &source,
-        const StringView &destination) {
+inline FormattedCommand rpoplpush(const StringView &source, const StringView &destination) {
     return format_cmd("RPOPLPUSH %b %b",
             source.data(), source.size(),
             destination.data(), destination.size());
 }
 
-inline FormattedCommand rpush(const StringView &key,
-        const StringView &val) {
-    return format_cmd("RPUSH %b %b",
-            key.data(), key.size(),
-            val.data(), val.size());
+inline FormattedCommand rpush(const StringView &key, const StringView &val) {
+    return format_cmd("RPUSH %b %b", key.data(), key.size(), val.data(), val.size());
 }
 
 template <typename Input>
-FormattedCommand rpush_range(const StringView &key,
-        Input first,
-        Input last) {
+FormattedCommand rpush_range(const StringView &key, Input first, Input last) {
     assert(first != last);
 
     CmdArgs args;
@@ -410,17 +358,12 @@ FormattedCommand rpush_range(const StringView &key,
 
 // HASH commands.
 
-inline FormattedCommand hdel(const StringView &key,
-        const StringView &field) {
-    return format_cmd("HDEL %b %b",
-            key.data(), key.size(),
-            field.data(), field.size());
+inline FormattedCommand hdel(const StringView &key, const StringView &field) {
+    return format_cmd("HDEL %b %b", key.data(), key.size(), field.data(), field.size());
 }
 
 template <typename Input>
-FormattedCommand hdel_range(const StringView &key,
-        Input first,
-        Input last) {
+FormattedCommand hdel_range(const StringView &key, Input first, Input last) {
     assert(first != last);
 
     CmdArgs args;
@@ -429,18 +372,12 @@ FormattedCommand hdel_range(const StringView &key,
     return format_cmd(args);
 }
 
-inline FormattedCommand hexists(const StringView &key,
-        const StringView &field) {
-    return format_cmd("HEXISTS %b %b",
-            key.data(), key.size(),
-            field.data(), field.size());
+inline FormattedCommand hexists(const StringView &key, const StringView &field) {
+    return format_cmd("HEXISTS %b %b", key.data(), key.size(), field.data(), field.size());
 }
 
-inline FormattedCommand hget(const StringView &key,
-        const StringView &field) {
-    return format_cmd("HGET %b %b",
-            key.data(), key.size(),
-            field.data(), field.size());
+inline FormattedCommand hget(const StringView &key, const StringView &field) {
+    return format_cmd("HGET %b %b", key.data(), key.size(), field.data(), field.size());
 }
 
 inline FormattedCommand hgetall(const StringView &key) {
@@ -474,9 +411,7 @@ inline FormattedCommand hlen(const StringView &key) {
 }
 
 template <typename Input>
-FormattedCommand hmget(const StringView &key,
-        Input first,
-        Input last) {
+FormattedCommand hmget(const StringView &key, Input first, Input last) {
     assert(first != last);
 
     CmdArgs args;
@@ -486,9 +421,7 @@ FormattedCommand hmget(const StringView &key,
 }
 
 template <typename Input>
-FormattedCommand hmset(const StringView &key,
-        Input first,
-        Input last) {
+FormattedCommand hmset(const StringView &key, Input first, Input last) {
     assert(first != last);
 
     CmdArgs args;
@@ -510,7 +443,8 @@ template <typename Input>
 auto hset_range(const StringView &key,
         Input first,
         Input last)
-    -> typename std::enable_if<!std::is_convertible<Input, StringView>::value, FormattedCommand>::type {
+    -> typename std::enable_if<!std::is_convertible<Input, StringView>::value,
+                                FormattedCommand>::type {
     assert(first != last);
 
     CmdArgs args;
@@ -525,17 +459,12 @@ inline FormattedCommand hvals(const StringView &key) {
 
 // SET commands.
 
-inline FormattedCommand sadd(const StringView &key,
-        const StringView &member) {
-    return format_cmd("SADD %b %b",
-            key.data(), key.size(),
-            member.data(), member.size());
+inline FormattedCommand sadd(const StringView &key, const StringView &member) {
+    return format_cmd("SADD %b %b", key.data(), key.size(), member.data(), member.size());
 }
 
 template <typename Input>
-FormattedCommand sadd_range(const StringView &key,
-        Input first,
-        Input last) {
+FormattedCommand sadd_range(const StringView &key, Input first, Input last) {
     assert(first != last);
 
     CmdArgs args;
@@ -548,11 +477,8 @@ inline FormattedCommand scard(const StringView &key) {
     return format_cmd("SCARD %b", key.data(), key.size());
 }
 
-inline FormattedCommand sismember(const StringView &key,
-        const StringView &member) {
-    return format_cmd("SISMEMBER %b %b",
-            key.data(), key.size(),
-            member.data(), member.size());
+inline FormattedCommand sismember(const StringView &key, const StringView &member) {
+    return format_cmd("SISMEMBER %b %b", key.data(), key.size(), member.data(), member.size());
 }
 
 inline FormattedCommand smembers(const StringView &key) {
@@ -567,17 +493,12 @@ inline FormattedCommand spop(const StringView &key, long long count) {
     return format_cmd("SPOP %b %lld", key.data(), key.size(), count);
 }
 
-inline FormattedCommand srem(const StringView &key,
-        const StringView &member) {
-    return format_cmd("SREM %b %b",
-            key.data(), key.size(),
-            member.data(), member.size());
+inline FormattedCommand srem(const StringView &key, const StringView &member) {
+    return format_cmd("SREM %b %b", key.data(), key.size(), member.data(), member.size());
 }
 
 template <typename Input>
-FormattedCommand srem_range(const StringView &key,
-        Input first,
-        Input last) {
+FormattedCommand srem_range(const StringView &key, Input first, Input last) {
     assert(first != last);
 
     CmdArgs args;
@@ -588,11 +509,8 @@ FormattedCommand srem_range(const StringView &key,
 
 // SORTED SET commands.
 
-inline FormattedCommand bzpopmax(const StringView &key,
-        const std::chrono::seconds &timeout) {
-    return format_cmd("BZPOPMAX %b %lld",
-            key.data(), key.size(),
-            timeout.count());
+inline FormattedCommand bzpopmax(const StringView &key, const std::chrono::seconds &timeout) {
+    return format_cmd("BZPOPMAX %b %lld", key.data(), key.size(), timeout.count());
 }
 
 template <typename Input>
@@ -607,17 +525,12 @@ FormattedCommand bzpopmax_range(Input first,
     return format_cmd(args);
 }
 
-inline FormattedCommand bzpopmin(const StringView &key,
-        const std::chrono::seconds &timeout) {
-    return format_cmd("BZPOPMIN %b %lld",
-            key.data(), key.size(),
-            timeout.count());
+inline FormattedCommand bzpopmin(const StringView &key, const std::chrono::seconds &timeout) {
+    return format_cmd("BZPOPMIN %b %lld", key.data(), key.size(), timeout.count());
 }
 
 template <typename Input>
-FormattedCommand bzpopmin_range(Input first,
-        Input last,
-        const std::chrono::seconds &timeout) {
+FormattedCommand bzpopmin_range(Input first, Input last, const std::chrono::seconds &timeout) {
     assert(first != last);
 
     CmdArgs args;
@@ -674,8 +587,7 @@ inline FormattedCommand zcard(const StringView &key) {
 }
 
 template <typename Interval>
-FormattedCommand zcount(const StringView &key,
-        const Interval &interval) {
+FormattedCommand zcount(const StringView &key, const Interval &interval) {
     return format_cmd("ZCOUNT %b %s %s",
             key.data(), key.size(),
             interval.min().c_str(),
@@ -719,9 +631,7 @@ inline FormattedCommand zpopmin_count(const StringView &key, long long count) {
     return format_cmd("ZPOPMIN %b %lld", key.data(), key.size(), count);
 }
 
-inline FormattedCommand zrange(const StringView &key,
-        long long start,
-        long long stop) {
+inline FormattedCommand zrange(const StringView &key, long long start, long long stop) {
     return format_cmd("ZRANGE %b %lld %lld", key.data(), key.size(), start, stop);
 }
 
@@ -755,20 +665,16 @@ FormattedCommand zrangebyscore(const StringView &key,
                     opts.count);
 }
 
-inline FormattedCommand rank(const StringView &key,
-        const StringView &member) {
+inline FormattedCommand rank(const StringView &key, const StringView &member) {
     return format_cmd("RANK %b %b", key.data(), key.size(), member.data(), member.size());
 }
 
-inline FormattedCommand zrem(const StringView &key,
-        const StringView &member) {
+inline FormattedCommand zrem(const StringView &key, const StringView &member) {
     return format_cmd("ZREM %b %b", key.data(), key.size(), member.data(), member.size());
 }
 
 template <typename Input>
-FormattedCommand zrem_range(const StringView &key,
-        Input first,
-        Input last) {
+FormattedCommand zrem_range(const StringView &key, Input first, Input last) {
     assert(first != last);
 
     CmdArgs args;
@@ -788,9 +694,7 @@ FormattedCommand zremrangebylex(const StringView &key, const Interval &interval)
                     max.data(), max.size());
 }
 
-inline FormattedCommand zremrangebyrank(const StringView &key,
-        long long start,
-        long long stop) {
+inline FormattedCommand zremrangebyrank(const StringView &key, long long start, long long stop) {
     return format_cmd("ZREMRANGEBYRANK %b %lld %lld", key.data(), key.size(), start, stop);
 }
 
@@ -821,8 +725,7 @@ FormattedCommand zrevrangebylex(const StringView &key,
                     opts.count);
 }
 
-inline FormattedCommand zrevrank(const StringView &key,
-        const StringView &member) {
+inline FormattedCommand zrevrank(const StringView &key, const StringView &member) {
     return format_cmd("ZREVRANK %b %b", key.data(), key.size(), member.data(), member.size());
 }
 
