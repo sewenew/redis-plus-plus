@@ -18,6 +18,7 @@
 #include <hiredis/async.h>
 #include "errors.h"
 #include "async_shards_pool.h"
+#include "cmd_formatter.h"
 
 namespace {
 
@@ -60,25 +61,6 @@ void set_options_callback(redisAsyncContext *ctx, void *r, void *) {
 namespace sw {
 
 namespace redis {
-
-FormattedCommand::FormattedCommand(char *data, int len) : _data(data), _size(len) {
-    if (data == nullptr || len < 0) {
-        throw Error("failed to format command");
-    }
-}
-
-FormattedCommand::~FormattedCommand() noexcept {
-    if (_data != nullptr) {
-        redisFreeCommand(_data);
-    }
-}
-
-void FormattedCommand::_move(FormattedCommand &&that) noexcept {
-    _data = that._data;
-    _size = that._size;
-    that._data = nullptr;
-    that._size = 0;
-}
 
 AsyncConnection::AsyncConnection(const ConnectionOptions &opts,
         EventLoop *loop,
