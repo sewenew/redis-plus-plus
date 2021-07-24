@@ -769,12 +769,12 @@ private:
 
     template <typename Result, typename ResultParser, typename Formatter, typename ...Args>
     Future<Result> _command_with_parser(Formatter formatter, Args &&...args) {
-        auto formated_cmd = formatter(std::forward<Args>(args)...);
+        auto formatted_cmd = formatter(std::forward<Args>(args)...);
 
         assert(_pool);
         SafeAsyncConnection connection(*_pool);
 
-        return connection.connection().send<Result, ResultParser>(std::move(formated_cmd));
+        return connection.connection().send<Result, ResultParser>(std::move(formatted_cmd));
     }
 
     EventLoopSPtr _loop;

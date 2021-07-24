@@ -17,17 +17,6 @@
 #include "async_redis_cluster.h"
 #include <cassert>
 
-namespace {
-
-struct SetResultParser {
-    bool operator()(redisReply &reply) const {
-        sw::redis::reply::rewrite_set_reply(reply);
-        return sw::redis::reply::parse<bool>(reply);
-    }
-};
-
-}
-
 namespace sw {
 
 namespace redis {
@@ -42,28 +31,6 @@ AsyncRedisCluster::AsyncRedisCluster(const ConnectionOptions &opts,
 
     _pool = std::make_shared<AsyncShardsPool>(_loop, pool_opts, opts, role);
 }
-
-Future<OptionalString> AsyncRedisCluster::get(const StringView &key) {
-    return _command<OptionalString>(key, "GET %b", key.data(), key.size());
-}
-
-/*
-Future<bool> AsyncRedisCluster::set(const StringView &key,
-        const StringView &val,
-        const std::chrono::milliseconds &ttl,
-        UpdateType type) {
-    CmdArgs args;
-    args << "SET" << key << val;
-
-    if (ttl > std::chrono::milliseconds(0)) {
-        args << "PX" << ttl.count();
-    }
-
-    cmd::detail::set_update_type(args, type);
-
-    return _command_with_parser<bool, SetResultParser>(key, args);
-}
-*/
 
 }
 

@@ -18,5 +18,6 @@
 #define SEWENEW_REDISPLUSPLUS_ASYNC_REDISPLUSPLUS_H
 
 #include "async_redis.h"
+#include "async_redis_cluster.h"
 
 #endif // end SEWENEW_REDISPLUSPLUS_ASYNC_REDISPLUSPLUS_H

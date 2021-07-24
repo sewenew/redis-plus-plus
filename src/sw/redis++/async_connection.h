@@ -91,20 +91,10 @@ public:
     template <typename Result, typename ResultParser>
     Future<Result> send(FormattedCommand cmd);
 
-    template <typename Result, typename ...Args>
+    template <typename Result, typename ResultParser>
     Future<Result> send(const std::shared_ptr<AsyncShardsPool> &pool,
             const StringView &key,
-            const char *format, Args &&...args);
-
-    template <typename Result, typename ResultParser = DefaultResultParser<Result>>
-    Future<Result> send(const std::shared_ptr<AsyncShardsPool> &pool,
-            const StringView &key,
-            int argc, const char **argv, const std::size_t *argv_len);
-
-    template <typename Result, typename ResultParser = DefaultResultParser<Result>>
-    Future<Result> send(const std::shared_ptr<AsyncShardsPool> &pool,
-            const StringView &key,
-            CmdArgs &args);
+            FormattedCommand cmd);
 
     void send(AsyncEventUPtr event);
 
@@ -162,11 +152,6 @@ private:
     void _clean_up();
 
     void _fail_events(std::exception_ptr err);
-
-    template <typename Result, typename ResultParser>
-    Future<Result> _send(const std::shared_ptr<AsyncShardsPool> &pool,
-            const StringView &key,
-            char *data, int len);
 
     static void _clean_async_context(void *data);
 
@@ -367,36 +352,6 @@ private:
 template <typename Result, typename ResultParser>
 using ClusterEventUPtr = std::unique_ptr<ClusterEvent<Result, ResultParser>>;
 
-template <typename Result, typename ...Args>
-Future<Result> AsyncConnection::send(const std::shared_ptr<AsyncShardsPool> &pool,
-        const StringView &key,
-        const char *format, Args &&...args) {
-    char *data = nullptr;
-    auto len = redisFormatCommand(&data, format, std::forward<Args>(args)...);
-
-    return _send<Result, DefaultResultParser<Result>>(pool, key, data, len);
-}
-
-template <typename Result, typename ResultParser>
-Future<Result> AsyncConnection::send(const std::shared_ptr<AsyncShardsPool> &pool,
-        const StringView &key,
-        int argc, const char **argv, const std::size_t *argv_len) {
-    char *data = nullptr;
-    auto len = redisFormatCommandArgv(&data, argc, argv, argv_len);
-
-    return _send<Result, ResultParser>(pool, key, data, len);
-}
-
-template <typename Result, typename ResultParser>
-Future<Result> AsyncConnection::send(const std::shared_ptr<AsyncShardsPool> &pool,
-        const StringView &key,
-        CmdArgs &args) {
-    char *data = nullptr;
-    auto len = redisFormatCommandArgv(&data, args.size(), args.argv(), args.argv_len());
-
-    return _send<Result, ResultParser>(pool, key, data, len);
-}
-
 template <typename Result, typename ResultParser>
 Future<Result> AsyncConnection::send(FormattedCommand cmd) {
     auto event = CommandEventUPtr<Result, ResultParser>(
@@ -416,11 +371,9 @@ Future<Result> AsyncConnection::send(FormattedCommand cmd) {
 }
 
 template <typename Result, typename ResultParser>
-Future<Result> AsyncConnection::_send(const std::shared_ptr<AsyncShardsPool> &pool,
+Future<Result> AsyncConnection::send(const std::shared_ptr<AsyncShardsPool> &pool,
         const StringView &key,
-        char *data, int len) {
-    FormattedCommand cmd(data, len);
-
+        FormattedCommand cmd) {
     auto event = ClusterEventUPtr<Result, ResultParser>(
             new ClusterEvent<Result, ResultParser>(pool, key, std::move(cmd)));
 
