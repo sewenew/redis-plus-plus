@@ -394,6 +394,24 @@ AsyncConnection::AsyncContextUPtr AsyncConnection::_connect(const ConnectionOpti
     return ctx;
 }
 
+GuardedAsyncConnection::GuardedAsyncConnection(const AsyncConnectionPoolSPtr &pool) :
+    _pool(pool), _connection(_pool->fetch()) {
+    assert(!_connection->broken());
+}
+
+GuardedAsyncConnection::~GuardedAsyncConnection() {
+    // If `GuardedAsyncConnection` has been moved, `_pool` will be nullptr.
+    if (_pool) {
+        _pool->release(std::move(_connection));
+    }
+}
+
+AsyncConnection& GuardedAsyncConnection::connection() {
+    assert(_connection);
+
+    return *_connection;
+}
+
 }
 
 }

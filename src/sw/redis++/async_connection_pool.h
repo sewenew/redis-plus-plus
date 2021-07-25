@@ -173,39 +173,6 @@ private:
     AsyncConnectionSPtr _connection;
 };
 
-// NOTE: This class is similar to `SafeAsyncConnection`.
-// The difference is that `SafeAsyncConnection` tries to avoid copying a std::shared_ptr.
-class GuardedAsyncConnection {
-public:
-    explicit GuardedAsyncConnection(const AsyncConnectionPoolSPtr &pool) : _pool(pool),
-                                                        _connection(_pool->fetch()) {
-        assert(!_connection->broken());
-    }
-
-    GuardedAsyncConnection(const GuardedAsyncConnection &) = delete;
-    GuardedAsyncConnection& operator=(const GuardedAsyncConnection &) = delete;
-
-    GuardedAsyncConnection(GuardedAsyncConnection &&) = default;
-    GuardedAsyncConnection& operator=(GuardedAsyncConnection &&) = default;
-
-    ~GuardedAsyncConnection() {
-        // If `GuardedAsyncConnection` has been moved, `_pool` will be nullptr.
-        if (_pool) {
-            _pool->release(std::move(_connection));
-        }
-    }
-
-    AsyncConnection& connection() {
-        assert(_connection);
-
-        return *_connection;
-    }
-
-private:
-    AsyncConnectionPoolSPtr _pool;
-    AsyncConnectionSPtr _connection;
-};
-
 }
 
 }
