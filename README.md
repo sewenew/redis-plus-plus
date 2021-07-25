@@ -2328,7 +2328,7 @@ Fortunately, [@wingunder](https://github.com/wingunder) did a great job to make 
 
 ### Async Interface
 
-*redis-plus-plus* also supports async interface, however, async support for Redis Cluster, Transaction and Subscriber is still on the way.
+*redis-plus-plus* also supports async interface, however, async support for Transaction and Subscriber is still on the way.
 
 The async interface depends on third-party event library, and so far, only libuv is supported.
 
@@ -2400,6 +2400,8 @@ if (val) {
 Aysnc interface also supports Redis Sentinel.
 
 ```
+#include <sw/redis++/async_redis++.h>
+
 SentinelOptions sentinel_opts;
 sentinel_opts.nodes = {
     {"127.0.0.1", 8000},
@@ -2431,6 +2433,42 @@ auto value = redis.get("key").get();
 ```
 
 The async support for sentinel is similar with the sync one, except that you need to create an `AsyncSentinel` object instead of a `Sentinel` object. Check [Redis Sentinel](#redis-sentinel) for more details on `SentinelOptions`, `ConnectionOptions` and `Role`.
+
+#### Redis Cluster
+
+Aysnc interface also supports Redis Cluster. Instead of `AsyncRedis`, you need to create an `AsyncRedisCluster` object.
+
+```
+ConnectionOptions opts;
+opts.host = "127.0.0.1";
+opts.port = 6379;
+
+ConnectionPoolOptions pool_opts;
+pool_opts.size = 3;
+
+auto async_cluster = AsyncRedisCluster(opts, pool_opts);
+
+Future<bool> set_res = async_cluster.set("key", "val");
+
+Future<Optional<string>> get_res = async_cluster.get("key");
+
+auto mget_res = async_cluster.mget<std::vector<OptionalString>>({"{hashtag}key1", "{hashhag}key2", "{hashtag}key3"});
+
+unordered_map<string, string> m = {{"a", "b"}, {"c", "d"}};
+Future<void> hmset_res = async_redis.hmset("hash", m.begin(), m.end());
+```
+
+#### Event Loop
+
+By default, `AsyncRedis` and `AsyncRedisCluster` create a default event loop, and runs the loop in a dedicated thread to handle read and write operations. However, you can also share the underlying event loop with multiple `AsyncRedis` and `AsyncRedisCluster` objects. In order to do that, you need to create a `std::shared_ptr<EventLoop>`, and pass it to the constructors of `AsyncRedis` and `AsyncRedisCluster`.
+
+```
+auto event_loop = std::make_shared<EventLoop>();
+
+auto redis = AsyncRedis(connection_opts, pool_opts, loop);
+
+auto cluster = AsyncRedisCluster(connection_opts, pool_opts, Role::MASTER, loop);
+```
 
 ## Redis Recipes
 
