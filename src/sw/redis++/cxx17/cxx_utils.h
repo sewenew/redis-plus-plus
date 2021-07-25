@@ -29,6 +29,8 @@ using StringView = std::string_view;
 template <typename T>
 using Optional = std::optional<T>;
 
+#define REDIS_PLUS_PLUS_HAS_OPTIONAL
+
 }
 
 }
