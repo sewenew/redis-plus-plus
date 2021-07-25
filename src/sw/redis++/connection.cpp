@@ -357,13 +357,13 @@ timeval Connection::Connector::_to_timeval(const std::chrono::milliseconds &dur)
 
 void swap(Connection &lhs, Connection &rhs) noexcept {
     std::swap(lhs._ctx, rhs._ctx);
-    std::swap(lhs._last_active, rhs._last_active);
+    std::swap(lhs._create_time, rhs._create_time);
     std::swap(lhs._opts, rhs._opts);
 }
 
 Connection::Connection(const ConnectionOptions &opts) :
             _ctx(Connector(opts).connect()),
-            _last_active(std::chrono::steady_clock::now()),
+            _create_time(std::chrono::steady_clock::now()),
             _opts(opts) {
     assert(_ctx && !broken());
 

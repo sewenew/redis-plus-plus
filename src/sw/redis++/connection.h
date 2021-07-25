@@ -137,9 +137,9 @@ public:
 
     void reconnect();
 
-    auto last_active() const
+    auto create_time() const
         -> std::chrono::time_point<std::chrono::steady_clock> {
-        return _last_active;
+        return _create_time;
     }
 
     template <typename ...Args>
@@ -182,9 +182,8 @@ private:
 
     ContextUPtr _ctx;
 
-    // The time that the connection is created or the time that
-    // the connection is used, i.e. *context()* is called.
-    std::chrono::time_point<std::chrono::steady_clock> _last_active{};
+    // The time that the connection is created.
+    std::chrono::time_point<std::chrono::steady_clock> _create_time{};
 
     ConnectionOptions _opts;
 
@@ -217,8 +216,6 @@ inline void Connection::send(const char *format, Args &&...args) {
 }
 
 inline redisContext* Connection::_context() {
-    _last_active = std::chrono::steady_clock::now();
-
     return _ctx.get();
 }
 

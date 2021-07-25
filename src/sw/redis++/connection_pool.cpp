@@ -255,7 +255,7 @@ bool ConnectionPool::_need_reconnect(const Connection &connection,
 
     if (connection_lifetime > std::chrono::milliseconds(0)) {
         auto now = std::chrono::steady_clock::now();
-        if (now - connection.last_active() > connection_lifetime) {
+        if (now - connection.create_time() > connection_lifetime) {
             return true;
         }
     }
