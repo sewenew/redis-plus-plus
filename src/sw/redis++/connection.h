@@ -154,7 +154,7 @@ public:
 
     void send(CmdArgs &args);
 
-    ReplyUPtr recv();
+    ReplyUPtr recv(bool handle_error_reply = true);
 
     const ConnectionOptions& options() const {
         return _opts;

@@ -413,7 +413,7 @@ void Connection::send(CmdArgs &args) {
     assert(!broken());
 }
 
-ReplyUPtr Connection::recv() {
+ReplyUPtr Connection::recv(bool handle_error_reply) {
     auto *ctx = _context();
 
     assert(ctx != nullptr);
@@ -427,7 +427,7 @@ ReplyUPtr Connection::recv() {
 
     auto reply = ReplyUPtr(static_cast<redisReply*>(r));
 
-    if (reply::is_error(*reply)) {
+    if (handle_error_reply && reply::is_error(*reply)) {
         throw_error(*reply);
     }
 

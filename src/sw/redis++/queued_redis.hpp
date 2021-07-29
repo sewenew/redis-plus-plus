@@ -241,6 +241,10 @@ inline redisReply& QueuedReplies::get(std::size_t idx) {
 
     assert(reply);
 
+    if (reply::is_error(*reply)) {
+        throw_error(*reply);
+    }
+
     return *reply;
 }
 
