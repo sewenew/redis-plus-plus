@@ -364,6 +364,7 @@ void swap(Connection &lhs, Connection &rhs) noexcept {
 Connection::Connection(const ConnectionOptions &opts) :
             _ctx(Connector(opts).connect()),
             _create_time(std::chrono::steady_clock::now()),
+            _last_active(std::chrono::steady_clock::now()),
             _opts(opts) {
     assert(_ctx && !broken());
 

@@ -141,6 +141,7 @@ AsyncConnectionSPtr AsyncConnectionPool::fetch() {
     auto connection = _fetch();
 
     auto connection_lifetime = _pool_opts.connection_lifetime;
+    auto connection_idle_time = _pool_opts.connection_idle_time;
 
     if (_sentinel) {
         auto opts = _opts;
@@ -149,7 +150,7 @@ AsyncConnectionSPtr AsyncConnectionPool::fetch() {
 
         lock.unlock();
 
-        if (role_changed || _need_reconnect(*connection, connection_lifetime)) {
+        if (role_changed || _need_reconnect(*connection, connection_lifetime, connection_idle_time)) {
             try {
                 auto tmp_connection = sentinel.create(opts, shared_from_this(), _loop.get());
 
@@ -172,7 +173,7 @@ AsyncConnectionSPtr AsyncConnectionPool::fetch() {
 
     assert(connection);
 
-    if (_need_reconnect(*connection, connection_lifetime)) {
+    if (_need_reconnect(*connection, connection_lifetime, connection_idle_time)) {
         try {
             auto tmp_connection = _create();
 
@@ -310,14 +311,21 @@ void AsyncConnectionPool::_wait_for_connection(std::unique_lock<std::mutex> &loc
 }
 
 bool AsyncConnectionPool::_need_reconnect(const AsyncConnection &connection,
-                                    const std::chrono::milliseconds &connection_lifetime) const {
+                                    const std::chrono::milliseconds &connection_lifetime,
+                                    const std::chrono::milliseconds &connection_idle_time) const {
     if (connection.broken()) {
         return true;
     }
 
+    auto now = std::chrono::steady_clock::now();
     if (connection_lifetime > std::chrono::milliseconds(0)) {
-        auto now = std::chrono::steady_clock::now();
         if (now - connection.create_time() > connection_lifetime) {
+            return true;
+        }
+    }
+
+    if (connection_idle_time > std::chrono::milliseconds(0)) {
+        if (now - connection.last_active() > connection_idle_time) {
             return true;
         }
     }

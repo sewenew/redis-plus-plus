@@ -142,6 +142,11 @@ public:
         return _create_time;
     }
 
+    auto last_active() const
+        -> std::chrono::time_point<std::chrono::steady_clock> {
+        return _last_active;
+    }
+
     template <typename ...Args>
     void send(const char *format, Args &&...args);
 
@@ -185,6 +190,10 @@ private:
     // The time that the connection is created.
     std::chrono::time_point<std::chrono::steady_clock> _create_time{};
 
+    // The time that the connection is created or the time that
+    // the connection is recently used, i.e. `_context()` is called.
+    std::chrono::time_point<std::chrono::steady_clock> _last_active{};
+
     ConnectionOptions _opts;
 
     // TODO: define _tls_ctx before _ctx
@@ -216,6 +225,8 @@ inline void Connection::send(const char *format, Args &&...args) {
 }
 
 inline redisContext* Connection::_context() {
+    _last_active = std::chrono::steady_clock::now();
+
     return _ctx.get();
 }
 

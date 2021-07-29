@@ -39,6 +39,9 @@ struct ConnectionPoolOptions {
 
     // Max lifetime of a connection. 0ms means we never expire the connection.
     std::chrono::milliseconds connection_lifetime{0};
+
+    // Max idle time of a connection. 0ms means we never expire the connection.
+    std::chrono::milliseconds connection_idle_time{0};
 };
 
 class ConnectionPool {
@@ -85,7 +88,8 @@ private:
     void _wait_for_connection(std::unique_lock<std::mutex> &lock);
 
     bool _need_reconnect(const Connection &connection,
-                            const std::chrono::milliseconds &connection_lifetime) const;
+                            const std::chrono::milliseconds &connection_lifetime,
+                            const std::chrono::milliseconds &connection_idle_time) const;
 
     void _update_connection_opts(const std::string &host, int port) {
         _opts.host = host;

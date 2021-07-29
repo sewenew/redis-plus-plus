@@ -87,6 +87,11 @@ public:
         return _create_time;
     }
 
+    auto last_active() const
+        -> std::chrono::time_point<std::chrono::steady_clock> {
+        return _last_active;
+    }
+
     void disconnect(std::exception_ptr err);
 
     template <typename Result, typename ResultParser>
@@ -122,6 +127,8 @@ private:
 
     redisAsyncContext& _context() {
         assert(_ctx != nullptr);
+
+        _last_active = std::chrono::steady_clock::now();
 
         return *_ctx;
     }
@@ -178,6 +185,10 @@ private:
 
     // The time that the connection is created.
     std::chrono::time_point<std::chrono::steady_clock> _create_time{};
+
+    // The time that the connection is created or the time that
+    // the connection is recently used, i.e. `_context()` is called.
+    std::atomic<std::chrono::time_point<std::chrono::steady_clock>> _last_active{};
 
     std::vector<std::unique_ptr<AsyncEvent>> _events;
 
