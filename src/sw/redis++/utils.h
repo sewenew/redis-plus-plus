@@ -17,23 +17,9 @@
 #ifndef SEWENEW_REDISPLUSPLUS_UTILS_H
 #define SEWENEW_REDISPLUSPLUS_UTILS_H
 
-// Refer to https://gcc.gnu.org/onlinedocs/cpp/_005f_005fhas_005finclude.html
-#if __cplusplus >= 201703L
-#  if defined __has_include
-#    if __has_include(<variant>)
-#      define REDIS_PLUS_PLUS_HAS_VARIANT
-#    endif
-#  endif
-#endif
-
 #include <cstring>
 #include <string>
 #include <type_traits>
-
-#if defined REDIS_PLUS_PLUS_HAS_VARIANT
-#include <variant>
-#endif
-
 #include "cxx_utils.h"
 
 namespace sw {
@@ -47,15 +33,6 @@ using OptionalLongLong = Optional<long long>;
 using OptionalDouble = Optional<double>;
 
 using OptionalStringPair = Optional<std::pair<std::string, std::string>>;
-
-#if defined REDIS_PLUS_PLUS_HAS_VARIANT
-
-template <typename ...Args>
-using Variant = std::variant<Args...>;
-
-using Monostate = std::monostate;
-
-#endif
 
 template <typename ...>
 struct IsKvPair : std::false_type {};

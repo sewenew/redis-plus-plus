@@ -19,6 +19,11 @@
 
 #include <string_view>
 #include <optional>
+#include <variant>
+
+#define REDIS_PLUS_PLUS_HAS_OPTIONAL
+
+#define REDIS_PLUS_PLUS_HAS_VARIANT
 
 namespace sw {
 
@@ -29,7 +34,10 @@ using StringView = std::string_view;
 template <typename T>
 using Optional = std::optional<T>;
 
-#define REDIS_PLUS_PLUS_HAS_OPTIONAL
+template <typename ...Args>
+using Variant = std::variant<Args...>;
+
+using Monostate = std::monostate;
 
 }
 
