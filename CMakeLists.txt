@@ -67,6 +67,18 @@ if(REDIS_PLUS_PLUS_BUILD_ASYNC)
         "${REDIS_PLUS_PLUS_SOURCE_DIR}/async_redis_cluster.cpp"
         "${REDIS_PLUS_PLUS_SOURCE_DIR}/async_shards_pool.cpp"
     )
+
+    if(NOT REDIS_PLUS_PLUS_ASYNC_FUTURE)
+        set(REDIS_PLUS_PLUS_ASYNC_FUTURE "std")
+    endif()
+
+    if(REDIS_PLUS_PLUS_ASYNC_FUTURE STREQUAL "std")
+        set(REDIS_PLUS_PLUS_ASYNC_FUTURE_HEADER "${REDIS_PLUS_PLUS_SOURCE_DIR}/future/std")
+    elseif(REDIS_PLUS_PLUS_ASYNC_FUTURE STREQUAL "boost")
+        set(REDIS_PLUS_PLUS_ASYNC_FUTURE_HEADER "${REDIS_PLUS_PLUS_SOURCE_DIR}/future/boost")
+    else()
+        message(FATAL_ERROR "invalid REDIS_PLUS_PLUS_ASYNC_FUTURE")
+    endif()
 endif()
 
 # cxx utils
@@ -136,6 +148,8 @@ if(REDIS_PLUS_PLUS_BUILD_STATIC)
     endif()
 
     if(REDIS_PLUS_PLUS_BUILD_ASYNC)
+        target_include_directories(${STATIC_LIB} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${REDIS_PLUS_PLUS_ASYNC_FUTURE_HEADER}>)
+
         target_include_directories(${STATIC_LIB} PUBLIC $<BUILD_INTERFACE:${REDIS_PLUS_PLUS_ASYNC_LIB_HEADER}>)
     endif()
 
@@ -184,6 +198,7 @@ if(REDIS_PLUS_PLUS_BUILD_SHARED)
     endif()
 
     if(REDIS_PLUS_PLUS_BUILD_ASYNC)
+        target_include_directories(${SHARED_LIB} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${REDIS_PLUS_PLUS_ASYNC_FUTURE_HEADER}>)
         target_include_directories(${SHARED_LIB} PUBLIC $<BUILD_INTERFACE:${REDIS_PLUS_PLUS_ASYNC_LIB_HEADER}>)
         target_link_libraries(${SHARED_LIB} PUBLIC ${REDIS_PLUS_PLUS_ASYNC_LIB})
     endif()
@@ -226,7 +241,7 @@ install(EXPORT redis++-targets
 
 # Install headers.
 set(HEADER_PATH "sw/redis++")
-file(GLOB HEADERS "${REDIS_PLUS_PLUS_SOURCE_DIR}/*.h*" "${TLS_SUB_DIR}/*.h" "${CXX_UTILS_DIR}/*.h")
+file(GLOB HEADERS "${REDIS_PLUS_PLUS_SOURCE_DIR}/*.h*" "${TLS_SUB_DIR}/*.h" "${CXX_UTILS_DIR}/*.h" "${REDIS_PLUS_PLUS_ASYNC_FUTURE_HEADER}/*.h")
 if(NOT REDIS_PLUS_PLUS_BUILD_ASYNC)
     file(GLOB ASYNC_HEADERS "${REDIS_PLUS_PLUS_SOURCE_DIR}/async_*.h" "${REDIS_PLUS_PLUS_SOURCE_DIR}/event_*.h")
     list(REMOVE_ITEM HEADERS ${ASYNC_HEADERS})

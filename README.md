@@ -2473,6 +2473,31 @@ auto redis = AsyncRedis(connection_opts, pool_opts, loop);
 auto cluster = AsyncRedisCluster(connection_opts, pool_opts, Role::MASTER, loop);
 ```
 
+#### Future with Continuation
+
+Unfortunately, `std::future` doesn't support [continuation](https://en.cppreference.com/w/cpp/experimental/future/then) so far, which is inconvenient. However, some other libraries, e.g. boost and folly, have continuation support.
+
+By default, *redis-plus-plus* returns `std::future` for async interface. However, you can also make it return `boost::future` by specifying `-DREDIS_PLUS_PLUS_ASYNC_FUTURE=boost` when running cmake (`folly` and other libraries might be supported in the future). Of course, in this case, you need to install boost first.
+
+```
+cmake -DREDIS_PLUS_PLUS_BUILD_ASYNC=libuv -DREDIS_PLUS_PLUS_ASYNC_FUTURE=boost ..
+```
+
+Then you can take advantage of `boost::future`'s continuation support:
+
+```
+#include <sw/redis++/async_redis++.h>
+#include <boost/thread/executors/basic_thread_pool.hpp>
+
+boost::executors::basic_thread_pool pool(3);
+ConnectionOptions opts;
+opts.host = "127.0.0.1";
+opts.port = 6379;
+auto redis = AsyncRedis(opts);
+auto fut = redis.get("key").then(pool,
+        [](sw::redis::Future<sw::redis::Optional<std::string>> val) { if (val) cout << *val << endl; });
+```
+
 ## Redis Recipes
 
 We can create many interesting data structures and algorithms based on Redis, such as [Redlock](https://redis.io/topics/distlock). We call these data structures and algorithms as **Redis Recipes**. *redis-plus-plus* will support some of these recipes.
