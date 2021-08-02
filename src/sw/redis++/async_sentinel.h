@@ -20,6 +20,7 @@
 #include <mutex>
 #include <memory>
 #include <queue>
+#include <condition_variable>
 #include "sentinel.h"
 #include "async_connection.h"
 
