@@ -88,7 +88,7 @@ public:
     }
 
     auto last_active() const
-        -> std::chrono::time_point<std::chrono::steady_clock> {
+        -> std::chrono::steady_clock::duration {
         return _last_active;
     }
 
@@ -128,7 +128,7 @@ private:
     redisAsyncContext& _context() {
         assert(_ctx != nullptr);
 
-        _last_active = std::chrono::steady_clock::now();
+        _last_active = std::chrono::steady_clock::now().time_since_epoch();
 
         return *_ctx;
     }
@@ -188,7 +188,9 @@ private:
 
     // The time that the connection is created or the time that
     // the connection is recently used, i.e. `_context()` is called.
-    std::atomic<std::chrono::time_point<std::chrono::steady_clock>> _last_active{};
+    // NOTE: `_last_active` is `std::atomic`, and we cannot make it of type time_point,
+    // since time_point's constructor is non-trival.
+    std::atomic<std::chrono::steady_clock::duration> _last_active{};
 
     std::vector<std::unique_ptr<AsyncEvent>> _events;
 

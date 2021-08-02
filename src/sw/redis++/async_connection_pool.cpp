@@ -325,7 +325,7 @@ bool AsyncConnectionPool::_need_reconnect(const AsyncConnection &connection,
     }
 
     if (connection_idle_time > std::chrono::milliseconds(0)) {
-        if (now - connection.last_active() > connection_idle_time) {
+        if (now.time_since_epoch() - connection.last_active() > connection_idle_time) {
             return true;
         }
     }

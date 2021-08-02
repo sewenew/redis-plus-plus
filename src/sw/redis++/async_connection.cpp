@@ -68,7 +68,7 @@ AsyncConnection::AsyncConnection(const ConnectionOptions &opts,
     _opts(opts),
     _loop(loop),
     _create_time(std::chrono::steady_clock::now()),
-    _last_active(std::chrono::steady_clock::now()) {
+    _last_active(std::chrono::steady_clock::now().time_since_epoch()) {
     assert(_loop != nullptr);
 
     switch (mode) {
