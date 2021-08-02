@@ -2337,7 +2337,7 @@ The async interface depends on third-party event library, and so far, only libuv
 
 #### Installation
 
-You must install *libuv* before install *hiredis* and *redis-plus-plus*. When installing *redis-plus-plus*, you should specify the following command line option: `-DREDIS_PLUS_PLUS_BUILD_ASYNC=libuv`.
+You must install *libuv*(e.g. *apt-get install libuv1-dev*) before install *hiredis* and *redis-plus-plus*. When installing *redis-plus-plus*, you should specify the following command line option: `-DREDIS_PLUS_PLUS_BUILD_ASYNC=libuv`.
 
 ```
 cmake -DCMAKE_PREFIX_PATH=/installation/path/to/libuv/and/hiredis -DREDIS_PLUS_PLUS_BUILD_ASYNC=libuv ..
@@ -2349,7 +2349,9 @@ make install
 
 #### Getting Started
 
-The async interface is similar to sync interface, except that you should include *sw/redis++/async_redis++.h*, and define an object of `sw::redis::AsyncRedis`, and the related methods return `Future` object (so far, only `std::future` is supported, support for other implementations of *future* is on the way).
+The async interface is similar to sync interface, except that you should include *sw/redis++/async_redis++.h*, and define an object of `sw::redis::AsyncRedis`, and the related methods return `Future` object (so far, only `std::future` and `boost::future` are supported, support for other implementations of *future* is on the way).
+
+**NOTE**: When building your application code, don't forget to link libuv.
 
 ```
 #include <sw/redis++/async_redis++.h>
@@ -2483,19 +2485,43 @@ By default, *redis-plus-plus* returns `std::future` for async interface. However
 cmake -DREDIS_PLUS_PLUS_BUILD_ASYNC=libuv -DREDIS_PLUS_PLUS_ASYNC_FUTURE=boost ..
 ```
 
+**NOTE**: When building your application code, don't forget to link boost related libs, e.g. -lboost_thread, -lboost_system.
+
 Then you can take advantage of `boost::future`'s continuation support:
+
+```
+#include <sw/redis++/async_redis++.h>
+
+ConnectionOptions opts;
+opts.host = "127.0.0.1";
+opts.port = 6379;
+auto redis = AsyncRedis(opts);
+auto fut = redis.get("key").then([](sw::redis::Future<sw::redis::Optional<std::string>> fut) {
+                                    auto val = fut.get();
+                                    if (val) cout << *val << endl;
+                                });
+// Do other things
+
+// Wait for the continuation finishes.
+fut.get();
+```
+
+You can also use a thread pool to run the continuation:
 
 ```
 #include <sw/redis++/async_redis++.h>
 #include <boost/thread/executors/basic_thread_pool.hpp>
 
 boost::executors::basic_thread_pool pool(3);
-ConnectionOptions opts;
-opts.host = "127.0.0.1";
-opts.port = 6379;
-auto redis = AsyncRedis(opts);
 auto fut = redis.get("key").then(pool,
-        [](sw::redis::Future<sw::redis::Optional<std::string>> val) { if (val) cout << *val << endl; });
+        [](sw::redis::Future<sw::redis::Optional<std::string>> fut) {
+            auto val = fut.get();
+            if (val) cout << *val << endl;
+        });
+
+// Do other things
+
+fut.get();
 ```
 
 ## Redis Recipes
