@@ -30,7 +30,8 @@ if(REDIS_PLUS_PLUS_BUILD_ASYNC)
         message(STATUS "redis-plus-plus build async interface with libuv")
 
         # libuv dependency
-        find_package(LibUV REQUIRED)
+        find_path(REDIS_PLUS_PLUS_ASYNC_LIB_HEADER NAMES uv.h)
+        find_library(REDIS_PLUS_PLUS_ASYNC_LIB uv)
     else()
         message(FATAL_ERROR "invalid REDIS_PLUS_PLUS_BUILD_ASYNC")
     endif()
@@ -75,6 +76,7 @@ if(REDIS_PLUS_PLUS_BUILD_ASYNC)
         set(REDIS_PLUS_PLUS_ASYNC_FUTURE_HEADER "${REDIS_PLUS_PLUS_SOURCE_DIR}/future/std")
     elseif(REDIS_PLUS_PLUS_ASYNC_FUTURE STREQUAL "boost")
         set(REDIS_PLUS_PLUS_ASYNC_FUTURE_HEADER "${REDIS_PLUS_PLUS_SOURCE_DIR}/future/boost")
+        find_package(Boost REQUIRED COMPONENTS system thread)
     else()
         message(FATAL_ERROR "invalid REDIS_PLUS_PLUS_ASYNC_FUTURE")
     endif()
@@ -148,7 +150,8 @@ if(REDIS_PLUS_PLUS_BUILD_STATIC)
 
     if(REDIS_PLUS_PLUS_BUILD_ASYNC)
         target_include_directories(${STATIC_LIB} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${REDIS_PLUS_PLUS_ASYNC_FUTURE_HEADER}>)
-        target_link_libraries(${SHARED_LIB} PUBLIC LibUV::LibUV)
+
+        target_include_directories(${STATIC_LIB} PUBLIC $<BUILD_INTERFACE:${REDIS_PLUS_PLUS_ASYNC_LIB_HEADER}>)
     endif()
 
     if (WIN32)
@@ -197,7 +200,8 @@ if(REDIS_PLUS_PLUS_BUILD_SHARED)
 
     if(REDIS_PLUS_PLUS_BUILD_ASYNC)
         target_include_directories(${SHARED_LIB} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${REDIS_PLUS_PLUS_ASYNC_FUTURE_HEADER}>)
-        target_link_libraries(${SHARED_LIB} PUBLIC LibUV::LibUV)
+        target_include_directories(${SHARED_LIB} PUBLIC $<BUILD_INTERFACE:${REDIS_PLUS_PLUS_ASYNC_LIB_HEADER}>)
+        target_link_libraries(${SHARED_LIB} PUBLIC ${REDIS_PLUS_PLUS_ASYNC_LIB})
     endif()
 
     if(WIN32)
