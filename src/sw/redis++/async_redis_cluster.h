@@ -705,7 +705,11 @@ public:
                 Keys keys_last,
                 Args args_first,
                 Args args_last) {
-        return _command<Result>(fmt::eval<Keys, Args>, script,
+        if (keys_first == keys_last) {
+            throw Error("DO NOT support Lua script without key");
+        }
+
+        return _generic_command<Result>(fmt::eval<Keys, Args>, *keys_first, script,
                 keys_first, keys_last,
                 args_first, args_last);
     }
@@ -725,7 +729,11 @@ public:
                     Keys keys_last,
                     Args args_first,
                     Args args_last) {
-        return _command<Result>(fmt::evalsha<Keys, Args>, script,
+        if (keys_first == keys_last) {
+            throw Error("DO NOT support Lua script without key");
+        }
+
+        return _generic_command<Result>(fmt::evalsha<Keys, Args>, *keys_first, script,
                 keys_first, keys_last, args_first, args_last);
     }
 
