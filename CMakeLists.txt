@@ -150,8 +150,10 @@ if(REDIS_PLUS_PLUS_BUILD_STATIC)
 
     if(REDIS_PLUS_PLUS_BUILD_ASYNC)
         target_include_directories(${STATIC_LIB} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${REDIS_PLUS_PLUS_ASYNC_FUTURE_HEADER}>)
-
         target_include_directories(${STATIC_LIB} PUBLIC $<BUILD_INTERFACE:${REDIS_PLUS_PLUS_ASYNC_LIB_HEADER}>)
+        if(REDIS_PLUS_PLUS_ASYNC_FUTURE STREQUAL "boost")
+            target_include_directories(${STATIC_LIB} SYSTEM PUBLIC $<BUILD_INTERFACE:${Boost_INCLUDE_DIR}>)
+        endif()
     endif()
 
     if (WIN32)
@@ -202,6 +204,9 @@ if(REDIS_PLUS_PLUS_BUILD_SHARED)
         target_include_directories(${SHARED_LIB} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${REDIS_PLUS_PLUS_ASYNC_FUTURE_HEADER}>)
         target_include_directories(${SHARED_LIB} PUBLIC $<BUILD_INTERFACE:${REDIS_PLUS_PLUS_ASYNC_LIB_HEADER}>)
         target_link_libraries(${SHARED_LIB} PUBLIC ${REDIS_PLUS_PLUS_ASYNC_LIB})
+        if(REDIS_PLUS_PLUS_ASYNC_FUTURE STREQUAL "boost")
+            target_include_directories(${SHARED_LIB} SYSTEM PUBLIC $<BUILD_INTERFACE:${Boost_INCLUDE_DIR}>)
+        endif()
     endif()
 
     if(WIN32)
