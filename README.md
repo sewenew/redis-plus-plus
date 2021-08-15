@@ -2337,7 +2337,11 @@ The async interface depends on third-party event library, and so far, only libuv
 
 #### Installation
 
-You must install *libuv*(e.g. *apt-get install libuv1-dev*) before install *hiredis* and *redis-plus-plus*. When installing *redis-plus-plus*, you should specify the following command line option: `-DREDIS_PLUS_PLUS_BUILD_ASYNC=libuv`.
+You must install *libuv*(e.g. *apt-get install libuv1-dev*) before install *hiredis* and *redis-plus-plus*.
+
+*hiredis* v1.0.0's async interface is different from older version, and *redis-plus-plus* only supports *hiredis* v1.0.0 or later. So you need to ensure you've installed the right version of hiredis before installing *redis-plus-plus*. Also, you should NEVER install multiple versions of *hiredis*, otherwise, you'll get some wired problems. If you already installed an older version, remove it, and install a newer version.
+
+When installing *redis-plus-plus*, you should specify the following command line option: `-DREDIS_PLUS_PLUS_BUILD_ASYNC=libuv`.
 
 ```
 cmake -DCMAKE_PREFIX_PATH=/installation/path/to/libuv/and/hiredis -DREDIS_PLUS_PLUS_BUILD_ASYNC=libuv ..
