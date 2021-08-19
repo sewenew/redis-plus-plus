@@ -1973,6 +1973,16 @@ private:
 
 class QueuedReplies {
 public:
+    QueuedReplies() = default;
+
+    QueuedReplies(const QueuedReplies &) = delete;
+    QueuedReplies& operator=(const QueuedReplies &) = delete;
+
+    QueuedReplies(QueuedReplies &&) = default;
+    QueuedReplies& operator=(QueuedReplies &&) = default;
+
+    ~QueuedReplies() = default;
+
     std::size_t size() const;
 
     redisReply& get(std::size_t idx);
