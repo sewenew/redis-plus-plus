@@ -94,7 +94,7 @@ mkdir build
 
 cd build
 
-cmake ..
+cmake -DREDIS_PLUS_PLUS_CXX_STANDARD=17 ..
 
 make
 
@@ -114,6 +114,8 @@ Since version 1.3.0, by default, *redis-plus-plus* is built with the `-std=c++17
 ```
 cmake -DCMAKE_PREFIX_PATH=/path/to/hiredis -DCMAKE_INSTALL_PREFIX=/path/to/install/redis-plus-plus -DREDIS_PLUS_PLUS_CXX_STANDARD=11 ..
 ```
+
+**NOTE**: You should build *redis-plus-plus* and your application with the same standard, e.g. if you build *redis-plus-plus* with C++17 standard, you MUST also build your application code with C++17 standard.
 
 When compiling *redis-plus-plus*, it also compiles a test program, which might take a while. However, you can disable building test with the following cmake option: `-DREDIS_PLUS_PLUS_BUILD_TEST=OFF`.
 
@@ -351,6 +353,11 @@ Check [this StackOverflow question](https://stackoverflow.com/questions/480764) 
 If you're using cmake to build your application, you need to add *hiredis* and *redis-plus-plus* dependencies in your *CMakeLists.txt*:
 
 ```CMake
+# <---------- set c++ standard ------------->
+# NOTE: you must build redis-plus-plus and your application code with the same standard.
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # <------------ add hiredis dependency --------------->
 find_path(HIREDIS_HEADER hiredis)
 target_include_directories(target PUBLIC ${HIREDIS_HEADER})
