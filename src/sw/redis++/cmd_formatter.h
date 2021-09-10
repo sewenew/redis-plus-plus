@@ -665,8 +665,8 @@ FormattedCommand zrangebyscore(const StringView &key,
                     opts.count);
 }
 
-inline FormattedCommand rank(const StringView &key, const StringView &member) {
-    return format_cmd("RANK %b %b", key.data(), key.size(), member.data(), member.size());
+inline FormattedCommand zrank(const StringView &key, const StringView &member) {
+    return format_cmd("ZRANK %b %b", key.data(), key.size(), member.data(), member.size());
 }
 
 inline FormattedCommand zrem(const StringView &key, const StringView &member) {

@@ -665,8 +665,8 @@ public:
         return zrangebyscore(key, interval, {});
     }
 
-    Future<OptionalLongLong> rank(const StringView &key, const StringView &member) {
-        return _command<OptionalLongLong>(fmt::rank, key, member);
+    Future<OptionalLongLong> zrank(const StringView &key, const StringView &member) {
+        return _command<OptionalLongLong>(fmt::zrank, key, member);
     }
 
     Future<long long> zrem(const StringView &key, const StringView &member) {
