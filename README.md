@@ -2524,6 +2524,11 @@ fut.get();
 You can also use a thread pool to run the continuation:
 
 ```
+#define BOOST_THREAD_PROVIDES_EXECUTORS
+
+// You might also need to `#define BOOST_THREAD_USES_MOVE` with some version of Boost.
+// See [this issue](https://github.com/sewenew/redis-plus-plus/issues/272) for detail.
+
 #include <sw/redis++/async_redis++.h>
 #include <boost/thread/executors/basic_thread_pool.hpp>
 
