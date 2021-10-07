@@ -3086,7 +3086,8 @@ public:
     /// @param store_dist Whether store distance info instead of geo info to destination.
     /// @param count Limit the first N members.
     /// @return Number of members stored in destination.
-    /// @note If key does not exist, returns `OptionalLongLong{}` (`std::nullopt`).
+    /// @note Before Redis 6.2.6, if key does not exist, returns `OptionalLongLong{}` (`std::nullopt`).
+    ///       Since Redis 6.2.6, if key does not exist, returns 0.
     /// @see `GeoUnit`
     /// @see `Redis::georadiusbymember`
     /// @see https://redis.io/commands/georadius
@@ -3149,8 +3150,9 @@ public:
     /// @param store_dist Whether store distance info instead of geo info to destination.
     /// @param count Limit the first N members.
     /// @return Number of members stored in destination.
-    /// @note If key does not exist, returns `OptionalLongLong{}` (`std::nullopt`). If
-    ///       member does not exist, throw an `ReplyError`.
+    /// @note Before Redis 6.2.6, if key does not exist, returns `OptionalLongLong{}` (`std::nullopt`).
+    ///       Since Redis 6.2.6, if key does not exist, returns 0.
+    /// @note If member does not exist, throw an `ReplyError`.
     /// @see `GeoUnit`
     /// @see `Redis::georadius`
     /// @see https://redis.io/commands/georadiusbymember

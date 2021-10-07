@@ -96,7 +96,7 @@ void GeoCmdTest<RedisInstance>::run() {
                             dest,
                             false,
                             10);
-    REDIS_ASSERT(!num, "failed to test georadius with store option");
+    REDIS_ASSERT(!num || (num && *num == 0), "failed to test georadius with store option");
 
     std::vector<std::string> mems;
     _redis.georadius(key,
@@ -144,7 +144,7 @@ void GeoCmdTest<RedisInstance>::run() {
                                     dest,
                                     false,
                                     10);
-    REDIS_ASSERT(!num, "failed to test georadiusbymember with store option");
+    REDIS_ASSERT(!num || (num && *num == 0), "failed to test georadiusbymember with store option");
 
     mems.clear();
     _redis.georadiusbymember(key,
