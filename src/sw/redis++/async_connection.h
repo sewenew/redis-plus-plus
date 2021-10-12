@@ -306,20 +306,28 @@ public:
         if (redisAsyncCommand(&ctx, _asking_callback, this, "ASKING") != REDIS_OK) {
             throw_error(ctx.c, "failed to send ASKING command");
         }
+
+        assert(_event != nullptr);
+
+        _event->handle(ctx);
+
+        _event = nullptr;
     }
 
     virtual void set_exception(std::exception_ptr err) override {
-        assert(_event != nullptr);
-
-        _event->set_exception(err);
+        if (_event != nullptr) {
+            _event->set_exception(err);
+        }
     }
 
 private:
-    static void _asking_callback(redisAsyncContext *ctx, void *r, void *privdata) {
+    static void _asking_callback(redisAsyncContext * /*ctx*/, void *r, void *privdata) {
         auto event = static_cast<AskingEvent *>(privdata);
 
         assert(event != nullptr);
 
+        // TODO: No need to check the reply. It seems that we can simply ignore the reply,
+        // and delete the event.
         try {
             redisReply *reply = static_cast<redisReply *>(r);
             if (reply == nullptr) {
@@ -332,15 +340,6 @@ private:
                 }
             } else {
                 reply::parse<void>(*reply);
-
-                assert(ctx != nullptr);
-                auto *context = static_cast<AsyncContext *>(ctx->data);
-                assert(context != nullptr);
-                auto &conn = context->connection;
-                assert(conn);
-
-                conn->send(AsyncEventUPtr(event->_event));
-                event->_event = nullptr;
             }
         } catch (...) {
             event->set_exception(std::current_exception());
