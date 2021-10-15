@@ -133,6 +133,7 @@ if(REDIS_PLUS_PLUS_BUILD_STATIC)
     set(STATIC_LIB redis++_static)
 
     add_library(${STATIC_LIB} STATIC ${REDIS_PLUS_PLUS_SOURCES})
+    add_library(redis++::${STATIC_LIB} ALIAS ${STATIC_LIB})
 
     list(APPEND REDIS_PLUS_PLUS_TARGETS ${STATIC_LIB})
 
@@ -184,7 +185,8 @@ if(REDIS_PLUS_PLUS_BUILD_SHARED)
     set(SHARED_LIB redis++)
 
     add_library(${SHARED_LIB} SHARED ${REDIS_PLUS_PLUS_SOURCES})
-
+    add_library(redis++::${SHARED_LIB} ALIAS ${SHARED_LIB})
+    
     list(APPEND REDIS_PLUS_PLUS_TARGETS ${SHARED_LIB})
 
     target_include_directories(${SHARED_LIB} PUBLIC
