@@ -2269,8 +2269,9 @@ Attrs attrs = { {"f1", "v1"}, {"f2", "v2"} };
 // Add an item into the stream. This method returns the auto generated id.
 auto id = redis.xadd("key", "*", attrs.begin(), attrs.end());
 
-// Each item is assigned with an id: pair<id, attributes>.
-using Item = std::pair<std::string, Attrs>;
+// Each item is assigned with an id: pair<id, Optional<attributes>>.
+// NOTE: the attribute part might be nil reply, check [this issue](https://github.com/sewenew/redis-plus-plus/issues/283) for detail.
+using Item = std::pair<std::string, Optional<Attrs>>;
 using ItemStream = std::vector<Item>;
 
 // If you don't care the order of items in the stream, you can also use unordered_map:
