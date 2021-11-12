@@ -55,4 +55,6 @@ else()
     set(REDIS_PLUS_PLUS_LIB redis++)
 endif()
 
+set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32")
+
 target_link_libraries(${PROJECT_NAME} ${REDIS_PLUS_PLUS_LIB} ${CMAKE_THREAD_LIBS_INIT})

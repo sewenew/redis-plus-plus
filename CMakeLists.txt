@@ -175,6 +175,8 @@ if(REDIS_PLUS_PLUS_BUILD_STATIC)
     if(REDIS_PLUS_PLUS_BUILD_STATIC_WITH_PIC)
         set_target_properties(${STATIC_LIB} PROPERTIES POSITION_INDEPENDENT_CODE ON)
     endif()
+
+    set_target_properties(${STATIC_LIB} PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32")
 endif()
 
 # Build shared library
@@ -224,6 +226,8 @@ if(REDIS_PLUS_PLUS_BUILD_SHARED)
     set_target_properties(${SHARED_LIB} PROPERTIES CXX_EXTENSIONS OFF)
     set_target_properties(${SHARED_LIB} PROPERTIES POSITION_INDEPENDENT_CODE ON)
     set_target_properties(${SHARED_LIB} PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_MAJOR})
+
+    set_target_properties(${SHARED_LIB} PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32")
 endif()
 
 option(REDIS_PLUS_PLUS_BUILD_TEST "Build tests for redis++" ON)
