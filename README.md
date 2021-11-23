@@ -472,11 +472,13 @@ try {
     };
     redis.zadd("sorted_set", scores.begin(), scores.end());
 
-    // Redis SORTED SET to std::unordered_map<std::string, double>.
-    scores.clear();
+    // Redis SORTED SET to std::vector<std::pair<std::string, double>>.
+    // NOTE: The return results of zrangebyscore are ordered, if you save the results
+    // in to `std::unordered_map<std::string, double>`, you'll lose the order.
+    std::vector<std::pair<std::string, double>> zset_result;
     redis.zrangebyscore("sorted_set",
             UnboundedInterval<double>{},            // (-inf, +inf)
-            std::inserter(scores, scores.begin()));
+            std::back_inserter(zset_result));
 
     // Only get member names:
     // pass an inserter of std::vector<std::string> type as output parameter.
@@ -486,11 +488,11 @@ try {
             std::back_inserter(without_score));
 
     // Get both member names and scores:
-    // pass an inserter of std::unordered_map<std::string, double> as output parameter.
-    std::unordered_map<std::string, double> with_score;
+    // pass an back_inserter of std::vector<std::pair<std::string, double>> as output parameter.
+    std::vector<std::pair<std::string, double>> with_score;
     redis.zrangebyscore("sorted_set",
             BoundedInterval<double>(1.5, 3.4, BoundType::LEFT_OPEN),    // (1.5, 3.4]
-            std::inserter(with_score, with_score.end()));
+            std::back_inserter(with_score));
 
     // ***** SCRIPTING commands *****
 
@@ -1261,8 +1263,8 @@ redis.zrange("list", 0, -1, std::back_inserter(members));
 
 // If it's an iterator of a container of a <string, double> pair,
 // we send *ZRANGE* command with *WITHSCORES* option.
-std::unordered_map<std::string, double> res_with_score;
-redis.zrange("list", 0, -1, std::inserter(res_with_score, res_with_score.end()));
+std::vector<std::pair<std::string, double>> res_with_score;
+redis.zrange("list", 0, -1, std::back_inserter(res_with_score));
 
 // The above examples also apply to other command with the *WITHSCORES* options,
 // e.g. *ZRANGEBYSCORE*, *ZREVRANGE*, *ZREVRANGEBYSCORE*.

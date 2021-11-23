@@ -2445,8 +2445,8 @@ public:
     /// std::vector<std::string> result;
     /// redis.zrange("zset", 0, -1, std::back_inserter(result));
     /// // send command with *WITHSCORES* option:
-    /// std::unordered_map<std::string, double> with_score;
-    /// redis.zrange("zset", 0, -1, std::inserter(with_score, with_score.end()));
+    /// std::vector<std::pair<std::string, double>> with_score;
+    /// redis.zrange("zset", 0, -1, std::back_inserter(with_score));
     /// @endcode
     /// @param key Key where the sorted set is stored.
     /// @param start Start rank. Inclusive and can be negative.
@@ -2529,10 +2529,10 @@ public:
     /// redis.zrangebyscore("zset", BoundedInterval<double>(3, 6, BoundType::OPEN),
     ///     std::back_inserter(result));
     /// // Send command with *WITHSCORES* option:
-    /// std::unordered_map<std::string, double> with_score;
+    /// std::vector<std::pair<std::string, double>> with_score;
     /// // Get members whose score between [3, +inf).
     /// redis.zrangebyscore("zset", LeftBoundedInterval<double>(3, BoundType::RIGHT_OPEN),
-    ///     std::inserter(with_score, with_score.end()));
+    ///     std::back_inserter(with_score));
     /// @endcode
     /// @param key Key where the sorted set is stored.
     /// @param interval the min-max range by score.
@@ -2562,10 +2562,10 @@ public:
     /// redis.zrangebyscore("zset", BoundedInterval<double>(3, 6, BoundType::OPEN),
     ///     opts, std::back_inserter(result));
     /// // Send command with *WITHSCORES* option:
-    /// std::unordered_map<std::string, double> with_score;
+    /// std::vector<std::pair<std::string, double>> with_score;
     /// // Get members whose score between [3, +inf).
     /// redis.zrangebyscore("zset", LeftBoundedInterval<double>(3, BoundType::RIGHT_OPEN),
-    ///     opts, std::inserter(with_score, with_score.end()));
+    ///     opts, std::back_inserter(with_score));
     /// @endcode
     /// @param key Key where the sorted set is stored.
     /// @param interval the min-max range by score.
@@ -2661,8 +2661,8 @@ public:
     /// std::vector<std::string> result;
     /// redis.zrevrange("key", 0, -1, std::back_inserter(result));
     /// // send command with *WITHSCORES* option:
-    /// std::unordered_map<std::string, double> with_score;
-    /// redis.zrevrange("key", 0, -1, std::inserter(with_score, with_score.end()));
+    /// std::vector<std::pair<std::string, double>> with_score;
+    /// redis.zrevrange("key", 0, -1, std::back_inserter(with_score));
     /// @endcode
     /// @param key Key where the sorted set is stored.
     /// @param start Start rank. Inclusive and can be negative.
@@ -2745,10 +2745,10 @@ public:
     /// redis.zrevrangebyscore("zset", BoundedInterval<double>(3, 6, BoundType::OPEN),
     ///     std::back_inserter(result));
     /// // Send command with *WITHSCORES* option:
-    /// std::unordered_map<std::string, double> with_score;
+    /// std::vector<std::pair<std::string, double>> with_score;
     /// // Get members whose score between [3, +inf) in reverse order.
     /// redis.zrevrangebyscore("zset", LeftBoundedInterval<double>(3, BoundType::RIGHT_OPEN),
-    ///     std::inserter(with_score, with_score.end()));
+    ///     std::back_inserter(with_score));
     /// @endcode
     /// @param key Key where the sorted set is stored.
     /// @param interval the min-max range by score.
@@ -2778,10 +2778,10 @@ public:
     /// redis.zrevrangebyscore("zset", BoundedInterval<double>(3, 6, BoundType::OPEN),
     ///     opts, std::back_inserter(result));
     /// // Send command with *WITHSCORES* option:
-    /// std::unordered_map<std::string, double> with_score;
+    /// std::vector<std::pair<std::string, double>> with_score;
     /// // Get members whose score between [3, +inf) in reverse order.
     /// redis.zrevrangebyscore("zset", LeftBoundedInterval<double>(3, BoundType::RIGHT_OPEN),
-    ///     opts, std::inserter(with_score, with_score.end()));
+    ///     opts, std::back_inserter(with_score));
     /// @endcode
     /// @param key Key where the sorted set is stored.
     /// @param interval the min-max range by score.
@@ -2814,10 +2814,10 @@ public:
     /// Example:
     /// @code{.cpp}
     /// auto cursor = 0LL;
-    /// std::unordered_map<std::string, double> members;
+    /// std::vector<std::pair<std::string, double>> members;
     /// while (true) {
     ///     cursor = redis.zscan("zset", cursor, "pattern:*",
-    ///         10, std::inserter(members, members.begin()));
+    ///         10, std::back_inserter(members));
     ///     if (cursor == 0) {
     ///         break;
     ///     }
