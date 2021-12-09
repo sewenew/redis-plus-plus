@@ -143,8 +143,12 @@ void AsyncConnection::connect_callback(std::exception_ptr err) {
             _authing_callback();
             break;
 
+        case State::SELECTING_DB:
+            _select_db_callback();
+            break;
+
         default:
-            assert(_state == State::SELECTING_DB);
+            assert(_state == State::ENABLE_READONLY);
 
             _set_ready();
         }
@@ -255,6 +259,8 @@ void AsyncConnection::_connecting_callback() {
         _auth();
     } else if (_need_select_db()) {
         _select_db();
+    } else if (_need_enable_readonly()) {
+        _enable_readonly();
     } else {
         _set_ready();
     }
@@ -263,6 +269,16 @@ void AsyncConnection::_connecting_callback() {
 void AsyncConnection::_authing_callback() {
     if (_need_select_db()) {
         _select_db();
+    } else if (_need_enable_readonly()) {
+        _enable_readonly();
+    } else {
+        _set_ready();
+    }
+}
+
+void AsyncConnection::_select_db_callback() {
+    if (_need_enable_readonly()) {
+        _enable_readonly();
     } else {
         _set_ready();
     }
@@ -297,6 +313,16 @@ void AsyncConnection::_select_db() {
     }
 
     _state = State::SELECTING_DB;
+}
+
+void AsyncConnection::_enable_readonly() {
+    assert(!broken());
+
+    if (redisAsyncCommand(_ctx, set_options_callback, nullptr, "READONLY") != REDIS_OK) {
+        throw Error("failed to send readonly command");
+    }
+
+    _state = State::ENABLE_READONLY;
 }
 
 void AsyncConnection::_set_ready() {
@@ -354,6 +380,10 @@ bool AsyncConnection::_need_auth() const {
 
 bool AsyncConnection::_need_select_db() const {
     return _opts.db != 0;
+}
+
+bool AsyncConnection::_need_enable_readonly() const {
+    return _opts.readonly;
 }
 
 void AsyncConnection::_clean_async_context(void *data) {

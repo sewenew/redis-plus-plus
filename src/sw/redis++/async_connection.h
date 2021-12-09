@@ -122,7 +122,8 @@ private:
         AUTHING,
         SELECTING_DB,
         READY,
-        WAIT_SENTINEL
+        WAIT_SENTINEL,
+        ENABLE_READONLY
     };
 
     redisAsyncContext& _context() {
@@ -137,6 +138,8 @@ private:
 
     void _authing_callback();
 
+    void _select_db_callback();
+
     bool _need_auth() const;
 
     void _auth();
@@ -144,6 +147,10 @@ private:
     bool _need_select_db() const;
 
     void _select_db();
+
+    bool _need_enable_readonly() const;
+
+    void _enable_readonly();
 
     void _set_ready();
 
@@ -387,6 +394,12 @@ public:
     }
 
 private:
+    enum class State {
+        NORMAL = 0,
+        MOVED,
+        ASKING
+    };
+
     static void _cluster_reply_callback(redisAsyncContext * /*ctx*/, void *r, void *privdata) {
         auto event = static_cast<ClusterEvent<Result, ResultParser> *>(privdata);
 
@@ -406,9 +419,24 @@ private:
                     event->_pool->update(event->_key, AsyncEventUPtr(event));
                     return;
                 } catch (const MovedError &err) {
+                    switch (event->_state) {
+                    case State::MOVED:
+                        throw Error("too many moved error");
+                        break;
+
+                    case State::ASKING:
+                        throw Error("Slot migrating...");
+                        break;
+
+                    default:
+                        break;
+                    }
+
+                    event->_state = State::MOVED;
                     event->_pool->update(event->_key, AsyncEventUPtr(event));
                     return;
                 } catch (const AskError &err) {
+                    event->_state = State::ASKING;
                     auto pool = event->_pool->fetch(err.node());
                     assert(pool);
                     GuardedAsyncConnection connection(pool);
@@ -430,6 +458,8 @@ private:
     std::shared_ptr<AsyncShardsPool> _pool;
 
     std::string _key;
+
+    State _state = State::NORMAL;
 };
 
 template <typename Result, typename ResultParser>
