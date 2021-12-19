@@ -148,7 +148,7 @@ void StringCmdTest<RedisInstance>::_test_bit() {
 
     // dest_key -> 11101111
     v = _redis.get(dest_key);
-    REDIS_ASSERT(v && *v == std::string(1, 0xEF), "failed to test bitop");
+    REDIS_ASSERT(v && *v == std::string(1, '\xEF'), "failed to test bitop");
 }
 
 template <typename RedisInstance>

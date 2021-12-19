@@ -134,7 +134,7 @@ void ZSetCmdTest<RedisInstance>::_test_range() {
 
     _redis.zadd(key, s.begin(), s.end());
 
-    REDIS_ASSERT(_redis.zcount(key, UnboundedInterval<double>{}) == s.size(),
+    REDIS_ASSERT(_redis.zcount(key, UnboundedInterval<double>{}) == static_cast<long long int>(s.size()),
                  "failed to test zcount");
 
     std::vector<std::string> members;
@@ -206,7 +206,7 @@ void ZSetCmdTest<RedisInstance>::_test_range() {
             std::back_inserter(members));
     REDIS_ASSERT(members.size() == sReversedKeys.size()-1,
                  "failed to test zrevrangebyscore (size)");
-    for (int i=0; i<members.size(); i++) {
+    for (size_t i=0; i<members.size(); i++) {
         REDIS_ASSERT(members.at(i) == sReversedKeys.at(i+1),
                      "failed to test zrevrangebyscore");
     }
