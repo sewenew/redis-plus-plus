@@ -247,7 +247,7 @@ Visual Studio 2017 (Win 10)
 Visual Studio 2019 (Win 10)
 ```
 
-If you build *redis-plus-plus* with `-DREDIS_PLUS_PLUS_BUILD_TEST=ON` (the default behavior, and you can disable building test with `-DREDIS_PLUS_PLUS_BUILD_TEST=OFF`), you'll get a test program in *compile/test* directory: *compile/test/test_redis++*.
+If you build *redis-plus-plus* with `-DREDIS_PLUS_PLUS_BUILD_TEST=ON` (the default behavior, and you can disable building test with `-DREDIS_PLUS_PLUS_BUILD_TEST=OFF`), you'll get a test program in *build/test* directory: *build/test/test_redis++*.
 
 In order to run the tests, you need to set up a Redis instance, and a Redis Cluster. Since the test program will send most of Redis commands to the server and cluster, you need to set up Redis of the latest version (by now, it's 5.0). Otherwise, the tests might fail. For example, if you set up Redis 4.0 for testing, the test program will fail when it tries to send the `ZPOPMAX` command (a Redis 5.0 command) to the server. If you want to run the tests with other Redis versions, you have to comment out commands that haven't been supported by your Redis, from test source files in *redis-plus-plus/test/src/sw/redis++/* directory. Sorry for the inconvenience, and I'll fix this problem to make the test program work with any version of Redis in the future.
 
@@ -258,7 +258,7 @@ In order to run the tests, you need to set up a Redis instance, and a Redis Clus
 In order to run tests with both Redis and Redis Cluster, you can run the test program with the following command:
 
 ```
-./compile/test/test_redis++ -h host -p port -a auth -n cluster_node -c cluster_port
+./build/test/test_redis++ -h host -p port -a auth -n cluster_node -c cluster_port
 ```
 
 - *host* and *port* are the host and port number of the Redis instance.
@@ -268,19 +268,19 @@ In order to run tests with both Redis and Redis Cluster, you can run the test pr
 If you only want to run tests with Redis, you only need to specify *host*, *port* and *auth* options:
 
 ```
-./compile/test/test_redis++ -h host -p port -a auth
+./build/test/test_redis++ -h host -p port -a auth
 ```
 
 Similarly, if you only want to run tests with Redis Cluster, just specify *cluster_node*, *cluster_port* and *auth* options:
 
 ```
-./compile/test/test_redis++ -a auth -n cluster_node -c cluster_port
+./build/test/test_redis++ -a auth -n cluster_node -c cluster_port
 ```
 
 By default, the test program will not test running *redis-plus-plus* in multi-threads environment. If you want to do multi-threads test, which might cost a long time, you can specify the *-m* option:
 
 ```
-./compile/test/test_redis++ -h host -p port -a auth -n cluster_node -c cluster_port -m
+./build/test/test_redis++ -h host -p port -a auth -n cluster_node -c cluster_port -m
 ```
 
 If all tests have been passed, the test program will print the following message:
@@ -296,7 +296,7 @@ Otherwise, it prints the error message.
 *redis-plus-plus* runs as fast as *hiredis*, since it's a wrapper of *hiredis*. You can run *test_redis++* in benchmark mode to check the performance in your environment.
 
 ```
-./compile/test/test_redis++ -h host -p port -a auth -n cluster_node -c cluster_port -b -t thread_num -s connection_pool_size -r request_num -k key_len -v val_len
+./build/test/test_redis++ -h host -p port -a auth -n cluster_node -c cluster_port -b -t thread_num -s connection_pool_size -r request_num -k key_len -v val_len
 ```
 
 - *-b* option turns the test program into benchmark mode.
