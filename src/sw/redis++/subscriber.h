@@ -142,6 +142,7 @@ private:
     explicit Subscriber(Connection connection);
 
     MsgType _msg_type(redisReply *reply) const;
+    MsgType _msg_type(std::string const& type) const;
 
     void _check_connection();
 
@@ -160,9 +161,6 @@ private:
     using MetaCallback = std::function<void (MsgType type,
                                                 OptionalString channel,
                                                 long long num)>;
-
-    using TypeIndex = std::unordered_map<std::string, MsgType>;
-    static const TypeIndex _msg_type_index;
 
     Connection _connection;
 

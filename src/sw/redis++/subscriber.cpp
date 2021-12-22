@@ -21,15 +21,6 @@ namespace sw {
 
 namespace redis {
 
-const Subscriber::TypeIndex Subscriber::_msg_type_index = {
-    {"message", MsgType::MESSAGE},
-    {"pmessage", MsgType::PMESSAGE},
-    {"subscribe", MsgType::SUBSCRIBE},
-    {"unsubscribe", MsgType::UNSUBSCRIBE},
-    {"psubscribe", MsgType::PSUBSCRIBE},
-    {"punsubscribe", MsgType::PUNSUBSCRIBE}
-};
-
 Subscriber::Subscriber(Connection connection) : _connection(std::move(connection)) {}
 
 void Subscriber::subscribe(const StringView &channel) {
@@ -117,14 +108,27 @@ Subscriber::MsgType Subscriber::_msg_type(redisReply *reply) const {
         throw ProtoError("Null type reply.");
     }
 
-    auto type = reply::parse<std::string>(*reply);
+    return _msg_type(reply::parse<std::string>(*reply));
+}
 
-    auto iter = _msg_type_index.find(type);
-    if (iter == _msg_type_index.end()) {
-        throw ProtoError("Invalid message type.");
+Subscriber::MsgType Subscriber::_msg_type(std::string const& type) const
+{
+    if ("message" == type) {
+        return MsgType::MESSAGE;
+    } else if ("pmessage" == type) {
+        return MsgType::PMESSAGE;
+    } else if ("subscribe" == type) {
+        return MsgType::SUBSCRIBE;
+    } else if ("unsubscribe" == type) {
+        return MsgType::UNSUBSCRIBE;
+    } else if ("psubscribe" == type) {
+        return MsgType::PSUBSCRIBE;
+    } else if ("punsubscribe" == type) {
+        return MsgType::PUNSUBSCRIBE;
     }
 
-    return iter->second;
+    throw ProtoError("Invalid message type.");
+    return MsgType::MESSAGE; // Silence "no return" warnings.
 }
 
 void Subscriber::_check_connection() {
