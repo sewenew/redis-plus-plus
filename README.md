@@ -1496,6 +1496,32 @@ You can use `Redis::publish` to publish messages to channels. `Redis` randomly p
 
 When you subscribe to a channel with a connection, all messages published to the channel are sent back to that connection. So there's NO `Redis::subscribe` method. Instead, you can call `Redis::subscriber` to create a `Subscriber` and the `Subscriber` maintains a connection to Redis. The underlying connection is a new connection, NOT picked from the connection pool. This new connection has the same `ConnectionOptions` as the `Redis` object.
 
+If you want to have different connection options, e.g. `ConnectionOptions::socket_timeout`, for different channels, you should create `Redis` objects with different connection options, then you can create `Subscriber` objects with these `Redis` objects. Check [this issue](https://github.com/sewenew/redis-plus-plus/issues/307#issuecomment-1002015671) for a use case.
+
+```
+ConnectionOptions opts1;
+opts1.host = "127.0.0.1";
+opts1.port = 6379;
+opts1.socket_timeout = std::chrono::milliseconds(100);
+
+auto redis1 = Redis(opts1);
+
+// sub1's socket_timeout is 100ms.
+auto sub1 = redis1.subscriber();
+
+ConnectionOptions opts2;
+opts2.host = "127.0.0.1";
+opts2.port = 6379;
+opts2.socket_timeout = std::chrono::milliseconds(300);
+
+auto redis2 = Redis(opts2);
+
+// sub2's socket_timeout is 300ms.
+auto sub2 = redis2.subscriber();
+```
+
+**NOTE**: Although the above code creates two `Redis` objects, it has no performance penalty. Because `Redis` object creates connections lazily, i.e. no connection will be created until we send some command with `Redis` object, and the connection is created only when we call `Redis::subscriber` to create `Subscriber` object.
+
 With `Subscriber`, you can call `Subscriber::subscribe`, `Subscriber::unsubscribe`, `Subscriber::psubscribe` and `Subscriber::punsubscribe` to send *SUBSCRIBE*, *UNSUBSCRIBE*, *PSUBSCRIBE* and *PUNSUBSCRIBE* commands to Redis.
 
 #### Thread Safety
