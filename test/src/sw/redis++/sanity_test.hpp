@@ -68,9 +68,14 @@ void SanityTest<RedisInstance>::_test_uri_ctor() {
         REDIS_ASSERT(false, "Unknown connection type");
     }
 
-    auto instance = RedisInstance(uri);
-
-    cluster_specializing_test(*this, &SanityTest<RedisInstance>::_ping, instance);
+    {
+        auto stack_instance = RedisInstance(uri);
+        cluster_specializing_test(*this, &SanityTest<RedisInstance>::_ping, stack_instance);
+    }
+    {
+        auto heap_instance = std::make_unique<RedisInstance>(uri);
+        cluster_specializing_test(*this, &SanityTest<RedisInstance>::_ping, *heap_instance);
+    }
 }
 
 template <typename RedisInstance>
