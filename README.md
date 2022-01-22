@@ -2523,7 +2523,7 @@ auto cluster = AsyncRedisCluster(connection_opts, pool_opts, Role::MASTER, loop)
 
 Unfortunately, `std::future` doesn't support [continuation](https://en.cppreference.com/w/cpp/experimental/future/then) so far, which is inconvenient. However, some other libraries, e.g. boost and folly, have continuation support.
 
-By default, *redis-plus-plus* returns `std::future` for async interface. However, you can also make it return `boost::future` by specifying `-DREDIS_PLUS_PLUS_ASYNC_FUTURE=boost` when running cmake (`folly` and other libraries might be supported in the future). Of course, in this case, you need to install boost first.
+By default, *redis-plus-plus* returns `std::future` for async interface. However, you can also make it return `boost::future` by specifying `-DREDIS_PLUS_PLUS_ASYNC_FUTURE=boost` when running cmake (`folly` and other libraries might be supported in the future). Of course, in this case, you need to install Boost first (the minimum version requirement for Boost is **1.55.0**).
 
 ```
 cmake -DREDIS_PLUS_PLUS_BUILD_ASYNC=libuv -DREDIS_PLUS_PLUS_ASYNC_FUTURE=boost ..
