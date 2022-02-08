@@ -500,7 +500,7 @@ try {
     auto num = redis.eval<long long>("return 1", {}, {});
 
     // Script returns an array of elements.
-    std::vector<long long> nums;
+    std::vector<std::string> nums;
     redis.eval("return {ARGV[1], ARGV[2]}", {}, {"1", "2"}, std::back_inserter(nums));
 
     // mset with TTL
@@ -516,7 +516,7 @@ try {
     // Set multiple key-value pairs with TTL of 60 seconds.
     auto keys = {"key1", "key2", "key3"};
     std::vector<std::string> args = {"val1", "val2", "val3", "60"};
-    redis.eval<long long>(mset_with_ttl_script, keys.begin(), keys.end(), vals.begin(), vals.end());
+    redis.eval<long long>(mset_with_ttl_script, keys.begin(), keys.end(), args.begin(), args.end());
 
     // ***** Pipeline *****
 
