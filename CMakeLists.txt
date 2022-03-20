@@ -239,10 +239,12 @@ if(REDIS_PLUS_PLUS_BUILD_TEST)
     add_subdirectory(test)
 endif()
 
+include(GNUInstallDirs)
+
 install(TARGETS ${REDIS_PLUS_PLUS_TARGETS}
         EXPORT redis++-targets
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME DESTINATION bin
         INCLUDES DESTINATION include)
 
@@ -284,7 +286,7 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/redis++.pc.in"
         "${CMAKE_CURRENT_BINARY_DIR}/cmake/redis++.pc" @ONLY)
 
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/cmake/redis++.pc"
-        DESTINATION "lib/pkgconfig")
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
 
 # All the Debian-specific cpack defines.
 if(${CMAKE_VERSION} VERSION_GREATER 3.6)
