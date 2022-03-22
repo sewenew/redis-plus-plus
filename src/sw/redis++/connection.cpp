@@ -53,7 +53,7 @@ ConnectionOptions ConnectionOptions::_parse_uri(const std::string &uri) const {
 
     opts.db = db;
 
-    if (type == "tcp") {
+    if (type == "tcp" || type == "redis") {
         _set_tcp_opts(path, opts);
     } else if (type == "unix") {
         _set_unix_opts(path, opts);
@@ -93,8 +93,6 @@ void ConnectionOptions::_set_option(const std::string &key,
         opts.connect_timeout = _parse_timeout_option(val);
     } else if (key == "socket_timeout") {
         opts.socket_timeout = _parse_timeout_option(val);
-    } else {
-        throw Error("unknown uri parameter");
     }
 }
 

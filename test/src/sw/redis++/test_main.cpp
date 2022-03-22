@@ -211,7 +211,7 @@ int getopt(int argc, char **argv, const char *optstring) {
 #endif
 
 void print_help() {
-    std::cerr << "Usage: test_redis++ -h host -p port"
+    std::cerr << "Usage: test_redis++ -h host -p port -u uri"
         << " -n cluster_node -c cluster_port [-a auth] [-b] [-e key_prefix]\n\n";
     std::cerr << "See https://github.com/sewenew/redis-plus-plus#run-tests-optional"
         << " for details on how to run test" << std::endl;
@@ -226,15 +226,20 @@ auto parse_options(int argc, char **argv)
     int port = 0;
     std::string auth;
     std::string cluster_node;
+    std::string uri;
     int cluster_port = 0;
     bool benchmark = false;
     sw::redis::test::BenchmarkOptions tmp_benchmark_opts;
     TestOptions test_options;
 
     int opt = 0;
-    while ((opt = getopt(argc, argv, "h:p:a:n:c:e:k:v:r:t:bs:m")) != -1) {
+    while ((opt = getopt(argc, argv, "u:h:p:a:n:c:e:k:v:r:t:bs:m")) != -1) {
         try {
             switch (opt) {
+            case 'u':
+                uri = optarg;
+                break;
+
             case 'h':
                 host = optarg;
                 break;
@@ -301,7 +306,9 @@ auto parse_options(int argc, char **argv)
     }
 
     sw::redis::Optional<sw::redis::ConnectionOptions> opts;
-    if (!host.empty() && port > 0) {
+    if (!uri.empty()) {
+        opts = sw::redis::Optional<sw::redis::ConnectionOptions>(uri);
+    } else if (!host.empty() && port > 0) {
         sw::redis::ConnectionOptions tmp;
         tmp.host = host;
         tmp.port = port;

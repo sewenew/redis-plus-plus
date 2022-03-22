@@ -261,6 +261,12 @@ In order to run tests with both Redis and Redis Cluster, you can run the test pr
 ./build/test/test_redis++ -h host -p port -a auth -n cluster_node -c cluster_port
 ```
 
+Alternatively you can provide a redis connection uri with -u, e.g. "redis://127.0.0.1:6379":
+
+```
+./build/test/test_redis++ -u uri
+```
+
 - *host* and *port* are the host and port number of the Redis instance.
 - *cluster_node* and *cluster_port* are the host and port number of Redis Cluster. You only need to set the host and port number of a single node in the cluster, *redis-plus-plus* will find other nodes automatically.
 - *auth* is the password of the Redis instance and Redis Cluster. The Redis instance and Redis Cluster must be configured with the same password. If there's no password configured, don't set this option.
