@@ -7,7 +7,6 @@ set(REDIS_PLUS_PLUS_TEST_SOURCES src/sw/redis++/test_main.cpp)
 add_executable(${PROJECT_NAME} ${REDIS_PLUS_PLUS_TEST_SOURCES})
 
 # hiredis dependency
-# hiredis dependency
 find_package(hiredis REQUIRED)
 if(hiredis_FOUND)
     set(HIREDIS_HEADER ${hiredis_INCLUDE_DIRS})

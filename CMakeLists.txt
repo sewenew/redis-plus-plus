@@ -137,19 +137,19 @@ if(DOWNLOAD_HIREDIS)
 
   # Create an empty *-config.cmake for find_package
   # See: https://github.com/abandonware-pjz37/cmake-find-package-include/blob/master/hooks/fetch.cmake
-  set(stub_dir "${CMAKE_CURRENT_BINARY_DIR}/generated/pkg")
+  set(hiredis_stub_dir "${CMAKE_CURRENT_BINARY_DIR}/generated/pkg")
 
-  file(WRITE "${stub_dir}/hiredis-config.cmake" "")
+  file(WRITE "${hiredis_stub_dir}/hiredis-config.cmake" "")
 
-  set(hiredis_DIR ${stub_dir})
+  set(hiredis_DIR ${hiredis_stub_dir})
   # Set variables normally got from hiredis-config.cmake
   set(hiredis_LIBRARIES hiredis::hiredis)
   set(hiredis_INCLUDE_DIRS "${CMAKE_CURRENT_BINARY_DIR}/_deps")
   set(HIREDIS_HEADER {hiredis_INCLUDE_DIRS})
 
   if(ENABLE_SSL)
-    file(WRITE "${stub_dir}/hiredis_ssl-config.cmake" "")
-    set(hiredis_ssl_DIR ${stub_dir})
+    file(WRITE "${hiredis_stub_dir}/hiredis_ssl-config.cmake" "")
+    set(hiredis_ssl_DIR ${hiredis_stub_dir})
   endif()
 
 else()
