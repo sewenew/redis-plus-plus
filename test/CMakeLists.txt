@@ -7,17 +7,20 @@ set(REDIS_PLUS_PLUS_TEST_SOURCES src/sw/redis++/test_main.cpp)
 add_executable(${PROJECT_NAME} ${REDIS_PLUS_PLUS_TEST_SOURCES})
 
 # hiredis dependency
+# hiredis dependency
+find_package(hiredis REQUIRED)
+if(hiredis_FOUND)
+    set(HIREDIS_HEADER ${hiredis_INCLUDE_DIRS})
+endif()
+
+if(NOT TARGET hiredis::hiredis)
+  # Add target to support older hiredis releases
+  add_library(hiredis::hiredis ALIAS hiredis)
+endif()
+
 find_path(HIREDIS_HEADER hiredis REQUIRED)
 target_include_directories(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:${HIREDIS_HEADER}>)
-
-find_library(TEST_HIREDIS_LIB libhiredis.a)
-if(NOT TEST_HIREDIS_LIB)
-    find_library(TEST_HIREDIS_LIB libhiredis_static.a)
-    if(NOT TEST_HIREDIS_LIB)
-        find_library(TEST_HIREDIS_LIB hiredis)
-    endif()
-endif()
-target_link_libraries(${PROJECT_NAME} ${TEST_HIREDIS_LIB})
+target_link_libraries(${PROJECT_NAME} hiredis::hiredis)
 
 if(REDIS_PLUS_PLUS_USE_TLS)
     find_package(OpenSSL REQUIRED)

@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.1)
 
+# Options from https://github.com/Nordix/hiredis-cluster/blob/master/CMakeLists.txt
+option(DOWNLOAD_HIREDIS  "Download the dependency hiredis from GitHub" ON)
+option(ENABLE_SSL        "Enable SSL/TLS support" OFF)
+option(DISABLE_TESTS     "Disable compilation of test" OFF)
+
 set(REDIS_PLUS_PLUS_VERSION "1.3.3")
 message(STATUS "redis-plus-plus version: ${REDIS_PLUS_PLUS_VERSION}")
 
@@ -12,7 +17,7 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 message(STATUS "redis-plus-plus build type: ${CMAKE_BUILD_TYPE}")
 
-set(REDIS_PLUS_PLUS_DEFAULT_CXX_STANDARD 17)
+set(REDIS_PLUS_PLUS_DEFAULT_CXX_STANDARD 11)
 if(NOT REDIS_PLUS_PLUS_CXX_STANDARD)
     set(REDIS_PLUS_PLUS_CXX_STANDARD ${REDIS_PLUS_PLUS_DEFAULT_CXX_STANDARD} CACHE STRING "Set CXX standard" FORCE)
     set_property(CACHE REDIS_PLUS_PLUS_CXX_STANDARD PROPERTY STRINGS "11" "14" "17" "20")
@@ -109,8 +114,50 @@ else()
     set(REDIS_PLUS_PLUS_DEPENDS "hiredis")
 endif()
 
+# From https://github.com/Nordix/hiredis-cluster/blob/master/CMakeLists.txt
+if(DOWNLOAD_HIREDIS)
+  message("Downloading dependency 'hiredis'..")
+
+  include(FetchContent)
+  FetchContent_Declare(hiredis
+    GIT_REPOSITORY https://github.com/redis/hiredis
+    GIT_TAG        v1.0.2
+    SOURCE_DIR     "${CMAKE_CURRENT_BINARY_DIR}/_deps/hiredis"
+  )
+
+  # Disable tests in hiredis
+  set(DISABLE_TESTS_OLD ${DISABLE_TESTS})
+  set(DISABLE_TESTS ON CACHE INTERNAL "")
+  FetchContent_GetProperties(hiredis)
+  if(NOT hiredis_POPULATED)
+    FetchContent_Populate(hiredis)
+    add_subdirectory(${hiredis_SOURCE_DIR} ${hiredis_BINARY_DIR})
+  endif()
+  set(DISABLE_TESTS ${DISABLE_TESTS_OLD} CACHE INTERNAL "")
+
+  # Create an empty *-config.cmake for find_package
+  # See: https://github.com/abandonware-pjz37/cmake-find-package-include/blob/master/hooks/fetch.cmake
+  set(stub_dir "${CMAKE_CURRENT_BINARY_DIR}/generated/pkg")
+
+  file(WRITE "${stub_dir}/hiredis-config.cmake" "")
+
+  set(hiredis_DIR ${stub_dir})
+  # Set variables normally got from hiredis-config.cmake
+  set(hiredis_LIBRARIES hiredis::hiredis)
+  set(hiredis_INCLUDE_DIRS "${CMAKE_CURRENT_BINARY_DIR}/_deps")
+  set(HIREDIS_HEADER {hiredis_INCLUDE_DIRS})
+
+  if(ENABLE_SSL)
+    file(WRITE "${stub_dir}/hiredis_ssl-config.cmake" "")
+    set(hiredis_ssl_DIR ${stub_dir})
+  endif()
+
+else()
+  message("Expecting to find dependencies in path..")
+endif()
+
 # hiredis dependency
-find_package(hiredis QUIET)
+find_package(hiredis REQUIRED)
 if(hiredis_FOUND)
     list(APPEND REDIS_PLUS_PLUS_HIREDIS_LIBS hiredis::hiredis)
 
@@ -129,6 +176,11 @@ else()
     endif()
 endif()
 
+if(NOT TARGET hiredis::hiredis)
+  # Add target to support older hiredis releases
+  add_library(hiredis::hiredis ALIAS hiredis)
+endif()
+
 # Build static library
 option(REDIS_PLUS_PLUS_BUILD_STATIC "Build static library" ON)
 message(STATUS "redis-plus-plus build static library: ${REDIS_PLUS_PLUS_BUILD_STATIC}")
@@ -145,6 +197,7 @@ if(REDIS_PLUS_PLUS_BUILD_STATIC)
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${REDIS_PLUS_PLUS_SOURCE_DIR}>
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${TLS_SUB_DIR}>
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${CXX_UTILS_DIR}>
+            $<BUILD_INTERFACE:${hiredis_INCLUDE_DIRS}>
             $<INSTALL_INTERFACE:include>)
 
     if(hiredis_FOUND)
@@ -182,7 +235,7 @@ if(REDIS_PLUS_PLUS_BUILD_STATIC)
 endif()
 
 # Build shared library
-option(REDIS_PLUS_PLUS_BUILD_SHARED "Build shared library" ON)
+option(REDIS_PLUS_PLUS_BUILD_SHARED "Build shared library" OFF)
 message(STATUS "redis-plus-plus build shared library: ${REDIS_PLUS_PLUS_BUILD_SHARED}")
 
 if(REDIS_PLUS_PLUS_BUILD_SHARED)
@@ -194,6 +247,7 @@ if(REDIS_PLUS_PLUS_BUILD_SHARED)
     list(APPEND REDIS_PLUS_PLUS_TARGETS ${SHARED_LIB})
 
     target_include_directories(${SHARED_LIB} PUBLIC
+            $<BUILD_INTERFACE:${hiredis_INCLUDE_DIRS}>
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${REDIS_PLUS_PLUS_SOURCE_DIR}>
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${TLS_SUB_DIR}>
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${CXX_UTILS_DIR}>
