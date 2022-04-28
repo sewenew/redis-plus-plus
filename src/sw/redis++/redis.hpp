@@ -51,9 +51,9 @@ auto Redis::command(Cmd cmd, Args &&...args)
 template <typename ...Args>
 auto Redis::command(const StringView &cmd_name, Args &&...args)
     -> typename std::enable_if<!IsIter<typename LastType<Args...>::type>::value, ReplyUPtr>::type {
-    auto cmd = [](Connection &connection, const StringView &cmd_name, Args &&...args) {
+    auto cmd = [](Connection &connection, const StringView &name, Args &&...params) {
                     CmdArgs cmd_args;
-                    cmd_args.append(cmd_name, std::forward<Args>(args)...);
+                    cmd_args.append(name, std::forward<Args>(params)...);
                     connection.send(cmd_args);
     };
 
@@ -65,11 +65,11 @@ auto Redis::command(Input first, Input last)
     -> typename std::enable_if<IsIter<Input>::value, ReplyUPtr>::type {
     range_check("command", first, last);
 
-    auto cmd = [](Connection &connection, Input first, Input last) {
+    auto cmd = [](Connection &connection, Input start, Input stop) {
                     CmdArgs cmd_args;
-                    while (first != last) {
-                        cmd_args.append(*first);
-                        ++first;
+                    while (start != stop) {
+                        cmd_args.append(*start);
+                        ++start;
                     }
                     connection.send(cmd_args);
     };
