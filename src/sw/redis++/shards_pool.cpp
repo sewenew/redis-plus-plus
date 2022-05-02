@@ -234,7 +234,7 @@ Node ShardsPool::_parse_node(redisReply *reply) const {
     }
 
     auto host = reply::parse<std::string>(*(reply->element[0]));
-    int port = reply::parse<long long>(*(reply->element[1]));
+    auto port = static_cast<int>(reply::parse<long long>(*(reply->element[1])));
 
     return {host, port};
 }
@@ -282,11 +282,11 @@ Slot ShardsPool::_slot(const StringView &key) const {
     // And I did some minor changes.
 
     const auto *k = key.data();
-    auto keylen = key.size();
+    auto keylen = static_cast<int>(key.size());
 
     // start-end indexes of { and }.
-    std::size_t s = 0;
-    std::size_t e = 0;
+    int s = 0;
+    int e = 0;
 
     // Search the first occurrence of '{'.
     for (s = 0; s < keylen; s++)

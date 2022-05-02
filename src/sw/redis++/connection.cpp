@@ -36,29 +36,29 @@ ConnectionOptions::ConnectionOptions(const std::string &uri) :
                                         ConnectionOptions(_parse_uri(uri)) {}
 
 ConnectionOptions ConnectionOptions::_parse_uri(const std::string &uri) const {
-    std::string type;
+    std::string scheme;
     std::string auth;
-    std::string path;
-    std::tie(type, auth, path) = _split_uri(uri);
+    std::string spath;
+    std::tie(scheme, auth, spath) = _split_uri(uri);
 
     ConnectionOptions opts;
 
     _set_auth_opts(auth, opts);
 
-    auto db = 0;
+    auto db_num = 0;
     std::string parameter_string;
-    std::tie(path, db, parameter_string) = _split_path(path);
+    std::tie(spath, db_num, parameter_string) = _split_path(spath);
 
     _parse_parameters(parameter_string, opts);
 
-    opts.db = db;
+    opts.db = db_num;
 
-    if (type == "tcp") {
-        _set_tcp_opts(path, opts);
-    } else if (type == "unix") {
-        _set_unix_opts(path, opts);
+    if (scheme == "tcp") {
+        _set_tcp_opts(spath, opts);
+    } else if (scheme == "unix") {
+        _set_unix_opts(spath, opts);
     } else {
-        throw Error("invalid URI: invalid type");
+        throw Error("invalid URI: invalid scheme");
     }
 
     return opts;
@@ -167,42 +167,42 @@ auto ConnectionOptions::_split_uri(const std::string &uri) const
         throw Error("invalid URI: no scheme");
     }
 
-    auto type = uri.substr(0, pos);
+    auto scheme = uri.substr(0, pos);
 
     auto start = pos + 3;
     pos = uri.find("@", start);
     if (pos == std::string::npos) {
         // No auth info.
-        return std::make_tuple(type, std::string{}, uri.substr(start));
+        return std::make_tuple(scheme, std::string{}, uri.substr(start));
     }
 
     auto auth = uri.substr(start, pos - start);
 
-    return std::make_tuple(type, auth, uri.substr(pos + 1));
+    return std::make_tuple(scheme, auth, uri.substr(pos + 1));
 }
 
-auto ConnectionOptions::_split_path(const std::string &path) const
+auto ConnectionOptions::_split_path(const std::string &spath) const
     -> std::tuple<std::string, int, std::string> {
-    auto parameter_pos = path.rfind("?");
+    auto parameter_pos = spath.rfind("?");
     std::string parameter_string;
     if (parameter_pos != std::string::npos) {
-        parameter_string = path.substr(parameter_pos + 1);
+        parameter_string = spath.substr(parameter_pos + 1);
     }
 
-    auto pos = path.rfind("/");
+    auto pos = spath.rfind("/");
     if (pos != std::string::npos) {
         // Might specified a db number.
         try {
-            auto db = std::stoi(path.substr(pos + 1));
+            auto db_num = std::stoi(spath.substr(pos + 1));
 
-            return std::make_tuple(path.substr(0, pos), db, parameter_string);
+            return std::make_tuple(spath.substr(0, pos), db_num, parameter_string);
         } catch (const std::exception &) {
             // Not a db number, and it might be a path to unix domain socket.
         }
     }
 
     // No db number specified, and use default one, i.e. 0.
-    return std::make_tuple(path.substr(0, parameter_pos), 0, parameter_string);
+    return std::make_tuple(spath.substr(0, parameter_pos), 0, parameter_string);
 }
 
 void ConnectionOptions::_set_auth_opts(const std::string &auth, ConnectionOptions &opts) const {
@@ -221,25 +221,25 @@ void ConnectionOptions::_set_auth_opts(const std::string &auth, ConnectionOption
     }
 }
 
-void ConnectionOptions::_set_tcp_opts(const std::string &path, ConnectionOptions &opts) const {
+void ConnectionOptions::_set_tcp_opts(const std::string &spath, ConnectionOptions &opts) const {
     opts.type = ConnectionType::TCP;
 
-    auto pos = path.find(":");
+    auto pos = spath.find(":");
     if (pos != std::string::npos) {
         // Port number specified.
         try {
-            opts.port = std::stoi(path.substr(pos + 1));
+            opts.port = std::stoi(spath.substr(pos + 1));
         } catch (const std::exception &) {
             throw Error("invalid URI: invalid port");
         }
     } // else use default port, i.e. 6379.
 
-    opts.host = path.substr(0, pos);
+    opts.host = spath.substr(0, pos);
 }
 
-void ConnectionOptions::_set_unix_opts(const std::string &path, ConnectionOptions &opts) const {
+void ConnectionOptions::_set_unix_opts(const std::string &spath, ConnectionOptions &opts) const {
     opts.type = ConnectionType::UNIX;
-    opts.path = path;
+    opts.path = spath;
 }
 
 class Connection::Connector {
@@ -404,7 +404,7 @@ void Connection::send(CmdArgs &args) {
     assert(ctx != nullptr);
 
     if (redisAppendCommandArgv(ctx,
-                                args.size(),
+                                static_cast<int>(args.size()),
                                 args.argv(),
                                 args.argv_len()) != REDIS_OK) {
         throw_error(*ctx, "Failed to send command");

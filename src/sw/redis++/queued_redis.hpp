@@ -78,9 +78,9 @@ auto QueuedRedis<Impl>::command(Cmd cmd, Args &&...args)
 template <typename Impl>
 template <typename ...Args>
 QueuedRedis<Impl>& QueuedRedis<Impl>::command(const StringView &cmd_name, Args &&...args) {
-    auto cmd = [](Connection &connection, const StringView &cmd_name, Args &&...args) {
+    auto cmd = [](Connection &connection, const StringView &name, Args &&...params) {
                     CmdArgs cmd_args;
-                    cmd_args.append(cmd_name, std::forward<Args>(args)...);
+                    cmd_args.append(name, std::forward<Args>(params)...);
                     connection.send(cmd_args);
     };
 
@@ -95,11 +95,11 @@ auto QueuedRedis<Impl>::command(Input first, Input last)
         throw Error("command: empty range");
     }
 
-    auto cmd = [](Connection &connection, Input first, Input last) {
+    auto cmd = [](Connection &connection, Input start, Input stop) {
                     CmdArgs cmd_args;
-                    while (first != last) {
-                        cmd_args.append(*first);
-                        ++first;
+                    while (start != stop) {
+                        cmd_args.append(*start);
+                        ++start;
                     }
                     connection.send(cmd_args);
     };

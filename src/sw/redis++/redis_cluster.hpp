@@ -83,12 +83,12 @@ auto RedisCluster::command(Input first, Input last)
     const auto &key = *first;
     ++first;
 
-    auto cmd = [&key](Connection &connection, Input first, Input last) {
+    auto cmd = [&key](Connection &connection, Input start, Input stop) {
                         CmdArgs cmd_args;
                         cmd_args.append(key);
-                        while (first != last) {
-                            cmd_args.append(*first);
-                            ++first;
+                        while (start != stop) {
+                            cmd_args.append(*start);
+                            ++start;
                         }
                         connection.send(cmd_args);
     };
@@ -1337,12 +1337,12 @@ ReplyUPtr RedisCluster::_command(Cmd cmd, const StringView &key, Args &&...args)
             SafeConnection safe_connection(*pool);
 
             return _command(cmd, safe_connection.connection(), std::forward<Args>(args)...);
-        } catch (const IoError &err) {
+        } catch (const IoError &) {
             // When master is down, one of its replicas will be promoted to be the new master.
             // If we try to send command to the old master, we'll get an *IoError*.
             // In this case, we need to update the slots mapping.
             _pool.update();
-        } catch (const ClosedError &err) {
+        } catch (const ClosedError &) {
             // Node might be removed.
             // 1. Get up-to-date slot mapping to check if the node still exists.
             _pool.update();
@@ -1350,7 +1350,7 @@ ReplyUPtr RedisCluster::_command(Cmd cmd, const StringView &key, Args &&...args)
             // TODO:
             // 2. If it's NOT exist, update slot mapping, and retry.
             // 3. If it's still exist, that means the node is down, NOT removed, throw exception.
-        } catch (const MovedError &err) {
+        } catch (const MovedError &) {
             // Slot mapping has been changed, update it and try again.
             _pool.update();
         } catch (const AskError &err) {
@@ -1365,7 +1365,7 @@ ReplyUPtr RedisCluster::_command(Cmd cmd, const StringView &key, Args &&...args)
             // 2. resend last command.
             try {
                 return _command(cmd, connection, std::forward<Args>(args)...);
-            } catch (const MovedError &err) {
+            } catch (const MovedError &) {
                 throw Error("Slot migrating... ASKING node hasn't been set to IMPORTING state");
             }
         } // For other exceptions, just throw it.
