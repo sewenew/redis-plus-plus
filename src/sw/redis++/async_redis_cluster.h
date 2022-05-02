@@ -46,9 +46,9 @@ public:
 
     template <typename Result, typename ...Args>
     Future<Result> command(const StringView &cmd_name, const StringView &key, Args &&...args) {
-        auto formatter = [&cmd_name](const StringView &key, Args &&...args) {
+        auto formatter = [&cmd_name](const StringView &k, Args &&...params) {
             CmdArgs cmd_args;
-            cmd_args.append(cmd_name, key, std::forward<Args>(args)...);
+            cmd_args.append(cmd_name, k, std::forward<Args>(params)...);
             return fmt::format_cmd(cmd_args);
         };
 
@@ -65,12 +65,12 @@ public:
         const auto &cmd_name = *first;
         ++first;
 
-        auto formatter = [&cmd_name](Input first, Input last) {
+        auto formatter = [&cmd_name](Input start, Input stop) {
             CmdArgs cmd_args;
             cmd_args.append(cmd_name);
-            while (first != last) {
-                cmd_args.append(*first);
-                ++first;
+            while (start != stop) {
+                cmd_args.append(*start);
+                ++start;
             }
             return fmt::format_cmd(cmd_args);
         };

@@ -167,8 +167,7 @@ if(REDIS_PLUS_PLUS_BUILD_STATIC)
         set_target_properties(${STATIC_LIB} PROPERTIES CXX_STANDARD ${REDIS_PLUS_PLUS_CXX_STANDARD})
         set_target_properties(${STATIC_LIB} PROPERTIES OUTPUT_NAME redis++_static)
     else()
-        # Add -Wsign-conversion when hiredis approves https://github.com/redis/hiredis/pull/1064
-        target_compile_options(${STATIC_LIB} PRIVATE "-Wall" "-Wextra" "-Wshadow" "-Wconversion" "-Wcast-qual" "-Werror")
+        target_compile_options(${STATIC_LIB} PRIVATE "-Wall" "-Wextra" "-Werror")
         set_target_properties(${STATIC_LIB} PROPERTIES OUTPUT_NAME redis++)
     endif()
 
@@ -223,8 +222,7 @@ if(REDIS_PLUS_PLUS_BUILD_SHARED)
         set_target_properties(${SHARED_LIB} PROPERTIES CXX_STANDARD ${REDIS_PLUS_PLUS_CXX_STANDARD})
         set_target_properties(${SHARED_LIB} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
     else()
-        # Add -Wsign-conversion when hiredis approves https://github.com/redis/hiredis/pull/1064
-        target_compile_options(${SHARED_LIB} PRIVATE "-Wall" "-Wextra" "-Wshadow" "-Wconversion" "-Wcast-qual" "-Werror")
+        target_compile_options(${SHARED_LIB} PRIVATE "-Wall" "-Wextra" "-Werror")
     endif()
 
     set_target_properties(${SHARED_LIB} PROPERTIES OUTPUT_NAME redis++)

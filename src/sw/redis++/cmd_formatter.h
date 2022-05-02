@@ -90,14 +90,14 @@ inline FormattedCommand format_cmd(int argc, const char **argv, const std::size_
     char *data = nullptr;
     auto len = redisFormatCommandArgv(&data, argc, argv, argv_len);
 
-    return FormattedCommand(data, len);
+    return FormattedCommand(data, static_cast<int>(len));
 }
 
 inline FormattedCommand format_cmd(CmdArgs &args) {
     char *data = nullptr;
-    auto len = redisFormatCommandArgv(&data, args.size(), args.argv(), args.argv_len());
+    auto len = redisFormatCommandArgv(&data, static_cast<int>(args.size()), args.argv(), args.argv_len());
 
-    return FormattedCommand(data, len);
+    return FormattedCommand(data, static_cast<int>(len));
 }
 
 struct SetResultParser {

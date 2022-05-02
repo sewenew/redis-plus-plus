@@ -54,9 +54,9 @@ public:
 
     template <typename Result, typename ...Args>
     Future<Result> command(const StringView &cmd_name, Args &&...args) {
-        auto formatter = [](const StringView &cmd_name, Args &&...args) {
+        auto formatter = [](const StringView &name, Args &&...params) {
             CmdArgs cmd_args;
-            cmd_args.append(cmd_name, std::forward<Args>(args)...);
+            cmd_args.append(name, std::forward<Args>(params)...);
             return fmt::format_cmd(cmd_args);
         };
 
@@ -66,11 +66,11 @@ public:
     template <typename Result, typename Input>
     auto command(Input first, Input last)
         -> typename std::enable_if<IsIter<Input>::value, Future<Result>>::type {
-        auto formatter = [](Input first, Input last) {
+        auto formatter = [](Input start, Input stop) {
             CmdArgs cmd_args;
-            while (first != last) {
-                cmd_args.append(*first);
-                ++first;
+            while (start != stop) {
+                cmd_args.append(*start);
+                ++start;
             }
             return fmt::format_cmd(cmd_args);
         };

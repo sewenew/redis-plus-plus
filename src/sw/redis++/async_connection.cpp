@@ -208,8 +208,7 @@ void AsyncConnection::_send() {
             // Failed to send command, fail subsequent events.
             auto err = std::current_exception();
             for (; idx != events.size(); ++idx) {
-                auto &event = events[idx];
-                event->set_exception(err);
+                events[idx]->set_exception(err);
             }
 
             disconnect(err);
