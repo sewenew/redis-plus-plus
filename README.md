@@ -679,10 +679,12 @@ You can also connect to Redis server with a URI:
 ```
 tcp://[[username:]password@]host[:port][/db]
 
+redis://[[username:]password@]host[:port][/db]
+
 unix://[[username:]password@]path-to-unix-domain-socket[/db]
 ```
 
-The *scheme* and *host* parts are required, and others are optional. If you're connecting to Redis with Unix Domain Socket, you should use the *unix* scheme, otherwise, you should use *tcp* scheme. The following is a list of default values for those optional parts:
+The *scheme* and *host* parts are required, and others are optional. If you're connecting to Redis with Unix Domain Socket, you should use the *unix* scheme, otherwise, you should use *tcp* or *redis* scheme. The following is a list of default values for those optional parts:
 
 - username: *default*
 - password: empty string, i.e. no password

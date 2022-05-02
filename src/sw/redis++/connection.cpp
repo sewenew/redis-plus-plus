@@ -53,7 +53,7 @@ ConnectionOptions ConnectionOptions::_parse_uri(const std::string &uri) const {
 
     opts.db = db_num;
 
-    if (scheme == "tcp") {
+    if (scheme == "tcp" || scheme == "redis") {
         _set_tcp_opts(spath, opts);
     } else if (scheme == "unix") {
         _set_unix_opts(spath, opts);
