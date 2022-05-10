@@ -166,7 +166,7 @@ CmdArgs& CmdArgs::_append(std::true_type, const std::pair<Iter, Iter> &range) {
     auto first = range.first;
     auto last = range.second;
     while (first != last) {
-        *this << first->first << first->second;
+        *this << (*first).first << (*first).second;
         ++first;
     }
 
