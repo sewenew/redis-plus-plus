@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/sewenew/redis-plus-plus.svg?branch=master)](https://travis-ci.org/sewenew/redis-plus-plus)
 
-[中文交流群](http://github.com/sewenew/redis-plus-plus/blob/dev/Chinese.md)
+[中文交流群](http://github.com/sewenew/redis-plus-plus/blob/master/Chinese.md)
 
 - [Overview](#overview)
     - [Features](#features)
