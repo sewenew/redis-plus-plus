@@ -70,6 +70,8 @@ if(REDIS_PLUS_PLUS_BUILD_ASYNC)
         "${REDIS_PLUS_PLUS_SOURCE_DIR}/async_sentinel.cpp"
         "${REDIS_PLUS_PLUS_SOURCE_DIR}/async_redis_cluster.cpp"
         "${REDIS_PLUS_PLUS_SOURCE_DIR}/async_shards_pool.cpp"
+        "${REDIS_PLUS_PLUS_SOURCE_DIR}/async_subscriber.cpp"
+        "${REDIS_PLUS_PLUS_SOURCE_DIR}/async_subscriber_impl.cpp"
     )
 
     if(NOT REDIS_PLUS_PLUS_ASYNC_FUTURE)

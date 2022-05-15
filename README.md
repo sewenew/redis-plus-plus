@@ -2511,6 +2511,61 @@ unordered_map<string, string> m = {{"a", "b"}, {"c", "d"}};
 Future<void> hmset_res = async_redis.hmset("hash", m.begin(), m.end());
 ```
 
+#### Async Subscriber
+
+**NOTE**: I'm not quite satisfied with the interface of `AsyncSubscriber`. If you have a better idea, feel free to open an issue for discussion.
+
+You can use `AsyncSubscriber` to subscribe to channels or patterns asynchronously. The interface is similar to `Subscriber`, except a few differences (please read [Publish/Subscribe section](#publishsubscribe) first):
+
+- There's no `consume` method for `AsyncSubscriber`. Once you setup callbacks, and subscribe to some channel, redis-plus-plus will run callbacks with received messages in the underlying event loop.
+- `AsyncSubscriber::subscribe`, `AsyncSubscriber::psubscriber` and other related methods return `Future<void>`. You can use it to check if the subscription has been sent.
+- You need to setup a error callback with `AsyncSubscriber::on_error(ErrCallback &&)` to handle possible errors. The error callback interface is: `void (std::exception_ptr err)`, and you can get the exception with given exception pointer.
+
+##### Tips
+
+- Since redis-plus-plus runs callbacks in the event loop, you MUST NOT run slow operations, e.g. IO operation, in callbacks. Otherwise, you might get performance problem.
+- `AsyncSubscriber` is NOT thread-safe. If you want to call its member functions in multi-thread environment, you need to synchronize between threads manually.
+- You MUST setup callbacks before subscribing to some channel. Once the subscription begins, you cannot change the callback, otherwise, the behavior is undefined.
+- If you subscribe to multiple channels or patterns, error callback might called multiple times. Say, if you subscribe to 2 channels, and somehow, the server closes the connection, the error callback will be called twice. So you MUST ensure that the error callback can be run multiple times.
+
+##### Examples
+
+The following example is a common pattern to use `AsyncSubscriber`:
+
+```
+// Create an `AsyncSubscriber`. You can create it with either an `AsyncRedis` or `AsyncRedisCluster` object.
+auto sub = async_redis.subscriber();
+
+// Set callbacks.
+sub.on_message([](std::string channel, std::string msg) {
+            // Process message of MESSAGE type.
+        });
+
+sub.on_pmessage([](std::string pattern, std::string channel, std::string msg) {
+            // Process message of PMESSAGE type.
+        });
+
+sub.on_meta([](Subscriber::MsgType type, OptionalString channel, long long num) {
+            // Process message of META type.
+        });
+
+// You need to set error callback to handle error.
+sub.on_error([](std::exception_ptr e) {
+            try {
+                std::rethrow_exception(e);
+            } catch (const std::exception &err) {
+                std::cerr << "err: " << err.what() << std::endl;
+            }
+        });
+
+// Subscribe to channels and patterns.
+Future<void> fut1 = sub.subscribe("channel");
+Future<void> fut2 = sub.psubscribe("pattern1*");
+
+// Once you call `subscribe` or `psubscribe`, callbacks will be run in the underlying
+// event loop automatically.
+```
+
 #### Event Loop
 
 By default, `AsyncRedis` and `AsyncRedisCluster` create a default event loop, and runs the loop in a dedicated thread to handle read and write operations. However, you can also share the underlying event loop with multiple `AsyncRedis` and `AsyncRedisCluster` objects. In order to do that, you need to create a `std::shared_ptr<EventLoop>`, and pass it to the constructors of `AsyncRedis` and `AsyncRedisCluster`.

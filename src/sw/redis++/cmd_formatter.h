@@ -766,6 +766,78 @@ FormattedCommand evalsha(const StringView &script,
     return format_cmd(args);
 }
 
+// PUBSUB commands.
+
+inline FormattedCommand psubscribe(const StringView &pattern) {
+    return format_cmd("PSUBSCRIBE %b", pattern.data(), pattern.size());
+}
+
+template <typename Input>
+inline FormattedCommand psubscribe_range(Input first, Input last) {
+    assert(first != last);
+
+    CmdArgs args;
+    args << "PSUBSCRIBE" << std::make_pair(first, last);
+
+    return format_cmd(args);
+}
+
+inline FormattedCommand publish(const StringView &channel, const StringView &message) {
+    return format_cmd("PUBLISH %b %b",
+                    channel.data(), channel.size(),
+                    message.data(), message.size());
+}
+
+inline FormattedCommand punsubscribe() {
+    return format_cmd("PUNSUBSCRIBE");
+}
+
+inline FormattedCommand punsubscribe(const StringView &pattern) {
+    return format_cmd("PUNSUBSCRIBE %b", pattern.data(), pattern.size());
+}
+
+template <typename Input>
+inline FormattedCommand punsubscribe_range(Input first, Input last) {
+    assert(first != last);
+
+    CmdArgs args;
+    args << "PUNSUBSCRIBE" << std::make_pair(first, last);
+
+    return format_cmd(args);
+}
+
+inline FormattedCommand subscribe(const StringView &channel) {
+    return format_cmd("SUBSCRIBE %b", channel.data(), channel.size());
+}
+
+template <typename Input>
+inline FormattedCommand subscribe_range(Input first, Input last) {
+    assert(first != last);
+
+    CmdArgs args;
+    args << "SUBSCRIBE" << std::make_pair(first, last);
+
+    return format_cmd(args);
+}
+
+inline FormattedCommand unsubscribe() {
+    return format_cmd("UNSUBSCRIBE");
+}
+
+inline FormattedCommand unsubscribe(const StringView &channel) {
+    return format_cmd("UNSUBSCRIBE %b", channel.data(), channel.size());
+}
+
+template <typename Input>
+inline FormattedCommand unsubscribe_range(Input first, Input last) {
+    assert(first != last);
+
+    CmdArgs args;
+    args << "UNSUBSCRIBE" << std::make_pair(first, last);
+
+    return format_cmd(args);
+}
+
 }
 
 }

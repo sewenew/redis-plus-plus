@@ -32,6 +32,17 @@ AsyncRedisCluster::AsyncRedisCluster(const ConnectionOptions &opts,
     _pool = std::make_shared<AsyncShardsPool>(_loop, pool_opts, opts, role);
 }
 
+AsyncSubscriber AsyncRedisCluster::subscriber() {
+    assert(_pool);
+
+    auto opts = _pool->connection_options();
+
+    auto connection = std::make_shared<AsyncConnection>(opts, _loop.get());
+    connection->set_subscriber_mode();
+
+    return AsyncSubscriber(_loop, std::move(connection));
+}
+
 }
 
 }

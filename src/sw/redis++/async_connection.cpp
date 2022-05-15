@@ -200,10 +200,10 @@ void AsyncConnection::_send() {
     for (auto idx = 0U; idx != events.size(); ++idx) {
         auto &event = events[idx];
         try {
-            event->handle(ctx);
-
-            // CommandEvent::_reply_callback will release the memory.
-            event.release();
+            if (event->handle(ctx)) {
+                // CommandEvent::_reply_callback will release the memory.
+                event.release();
+            }
         } catch (...) {
             // Failed to send command, fail subsequent events.
             auto err = std::current_exception();
