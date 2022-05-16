@@ -2527,6 +2527,7 @@ You can use `AsyncSubscriber` to subscribe to channels or patterns asynchronousl
 - `AsyncSubscriber` is NOT thread-safe. If you want to call its member functions in multi-thread environment, you need to synchronize between threads manually.
 - You MUST setup callbacks before subscribing to some channel. Once the subscription begins, you cannot change the callback, otherwise, the behavior is undefined.
 - If you subscribe to multiple channels or patterns, error callback might called multiple times. Say, if you subscribe to 2 channels, and somehow, the server closes the connection, the error callback will be called twice. So you MUST ensure that the error callback can be run multiple times.
+- When `AsyncSubscriber` is destroyed, the underlying connection will be closed. If there're still channels or patterns not unsubscribed, the error callback will be called. In order to avoid it, you need to call `AsyncSubscriber::unsubscribe()` or `AsyncSubscriber::punsubscribe()` to unsubscribe all channels or patterns before destroying `AsyncSubscriber`. NOTE: this behavior might be changed in the future, i.e. we'll unsubscribe channels and patterns in the destructor of `AsyncSubscriber`.
 
 ##### Examples
 
