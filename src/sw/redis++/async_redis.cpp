@@ -47,6 +47,19 @@ AsyncRedis::AsyncRedis(const std::shared_ptr<AsyncSentinel> &sentinel,
                                                     opts);
 }
 
+AsyncSubscriber AsyncRedis::subscriber() {
+    // TODO: maybe we don't need to check this,
+    // since there's no Transaction or Pipeline for AsyncRedis
+    if (!_pool) {
+        throw Error("cannot create subscriber in single connection mode");
+    }
+
+    auto connection = _pool->create();
+    connection->set_subscriber_mode();
+
+    return AsyncSubscriber(_loop, std::move(connection));
+}
+
 }
 
 }

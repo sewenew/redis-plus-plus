@@ -31,6 +31,8 @@
 #include "tls.h"
 #include "shards.h"
 #include "cmd_formatter.h"
+#include "async_subscriber_impl.h"
+#include "async_connection.h"
 
 namespace sw {
 
@@ -51,7 +53,8 @@ class AsyncEvent {
 public:
     virtual ~AsyncEvent() = default;
 
-    virtual void handle(redisAsyncContext &ctx) = 0;
+    // @return true if we'll release AsyncEvent memory in callback
+    virtual bool handle(redisAsyncContext &ctx) = 0;
 
     virtual void set_exception(std::exception_ptr err) = 0;
 };
@@ -113,6 +116,18 @@ public:
     ConnectionOptions options();
 
     void update_node_info(const std::string &host, int port);
+
+    void set_subscriber_mode() {
+        _subscriber_impl = std::unique_ptr<AsyncSubscriberImpl>(new AsyncSubscriberImpl);
+    }
+
+    AsyncSubscriberImpl& subscriber() {
+        if (!_subscriber_impl) {
+            throw Error("not in subscriber mode");
+        }
+
+        return *_subscriber_impl;
+    }
 
 private:
     enum class State {
@@ -205,6 +220,8 @@ private:
 
     std::exception_ptr _err;
 
+    AsyncSubscriberImplUPtr _subscriber_impl;
+
     std::mutex _mtx;
 };
 
@@ -227,8 +244,9 @@ public:
         return _pro.get_future();
     }
 
-    virtual void handle(redisAsyncContext &ctx) override {
+    virtual bool handle(redisAsyncContext &ctx) override {
         _handle(ctx, _reply_callback);
+        return true;
     }
 
     virtual void set_exception(std::exception_ptr err) override {
@@ -252,7 +270,6 @@ protected:
         }
     }
 
-private:
     static void _reply_callback(redisAsyncContext * /*ctx*/, void *r, void *privdata) {
         auto event = static_cast<CommandEvent<Result, ResultParser> *>(privdata);
 
@@ -309,7 +326,7 @@ public:
         }
     }
 
-    virtual void handle(redisAsyncContext &ctx) override {
+    virtual bool handle(redisAsyncContext &ctx) override {
         if (redisAsyncCommand(&ctx, _asking_callback, this, "ASKING") != REDIS_OK) {
             throw_error(ctx.c, "failed to send ASKING command");
         }
@@ -319,6 +336,8 @@ public:
         _event->handle(ctx);
 
         _event = nullptr;
+
+        return true;
     }
 
     virtual void set_exception(std::exception_ptr err) override {
@@ -389,8 +408,10 @@ public:
         _pool(pool),
         _key(key.data(), key.size()) {}
 
-    virtual void handle(redisAsyncContext &ctx) override {
+    virtual bool handle(redisAsyncContext &ctx) override {
         CommandEvent<Result, ResultParser>::_handle(ctx, _cluster_reply_callback);
+
+        return true;
     }
 
 private:

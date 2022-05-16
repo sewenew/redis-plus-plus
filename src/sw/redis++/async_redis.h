@@ -20,6 +20,7 @@
 #include "async_connection.h"
 #include "async_connection_pool.h"
 #include "async_sentinel.h"
+#include "async_subscriber.h"
 #include "event_loop.h"
 #include "utils.h"
 #include "command.h"
@@ -51,6 +52,8 @@ public:
     AsyncRedis& operator=(AsyncRedis &&) = default;
 
     ~AsyncRedis() = default;
+
+    AsyncSubscriber subscriber();
 
     template <typename Result, typename ...Args>
     Future<Result> command(const StringView &cmd_name, Args &&...args) {
@@ -758,6 +761,12 @@ public:
         return evalsha<Result>(script,
                 keys.begin(), keys.end(),
                 args.begin(), args.end());
+    }
+
+    // PUBSUB commands.
+
+    Future<long long> publish(const StringView &channel, const StringView &message) {
+        return _command<long long>(fmt::publish, channel, message);
     }
 
 private:
