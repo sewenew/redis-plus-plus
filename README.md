@@ -654,7 +654,7 @@ pool_options.connection_lifetime = std::chrono::minutes(10);
 Redis redis2(connection_options, pool_options);
 ```
 
-**NOTE**: if you set `ConnectionOptions::socket_timeout`, and try to call blocking commands, e.g. `Redis::brpop`, `Redis::blpop`, `Redis::bzpopmax`, `Redis::bzpopmin`, you must ensure that `ConnectionOptions::socket_timeout` is larger than the timeout specified with these blocking commands. Otherwise, you might get `TimeoutError`, and lose message.
+**NOTE**: if you set `ConnectionOptions::socket_timeout`, and try to call blocking commands, e.g. `Redis::brpop`, `Redis::blpop`, `Redis::bzpopmax`, `Redis::bzpopmin`, you must ensure that `ConnectionOptions::socket_timeout` is larger than the timeout specified with these blocking commands. Otherwise, you might get `TimeoutError`, and lose messages.
 
 See [ConnectionOptions](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/connection.h#L40) and [ConnectionPoolOptions](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/connection_pool.h#L30) for more options. Also see [issue 80](https://github.com/sewenew/redis-plus-plus/issues/80) for discussion on connection pool.
 
