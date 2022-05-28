@@ -256,6 +256,22 @@ inline FormattedCommand set(const StringView &key,
     return format_cmd(args);
 }
 
+inline FormattedCommand set_keepttl(const StringView &key,
+        const StringView &val,
+        bool keepttl,
+        UpdateType type) {
+    CmdArgs args;
+    args << "SET" << key << val;
+
+    if (keepttl) {
+        args << "KEEPTTL";
+    }
+
+    cmd::detail::set_update_type(args, type);
+
+    return format_cmd(args);
+}
+
 inline FormattedCommand strlen(const StringView &key) {
     return format_cmd("STRLEN %b", key.data(), key.size());
 }

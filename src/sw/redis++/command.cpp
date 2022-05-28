@@ -72,6 +72,23 @@ void set(Connection &connection,
     connection.send(args);
 }
 
+void set_keepttl(Connection &connection,
+            const StringView &key,
+            const StringView &val,
+            bool keepttl,
+            UpdateType type) {
+    CmdArgs args;
+    args << "SET" << key << val;
+
+    if (keepttl) {
+        args << "KEEPTTL";
+    }
+
+    detail::set_update_type(args, type);
+
+    connection.send(args);
+}
+
 // LIST commands.
 
 void linsert(Connection &connection,

@@ -462,6 +462,15 @@ public:
         return command(cmd::set, key, val, ttl.count(), type);
     }
 
+    QueuedRedis& set(const StringView &key,
+                        const StringView &val,
+                        bool keepttl,
+                        UpdateType type = UpdateType::ALWAYS) {
+        _set_cmd_indexes.push_back(_cmd_num);
+
+        return command(cmd::set_keepttl, key, val, keepttl, type);
+    }
+
     QueuedRedis& setex(const StringView &key,
                         long long ttl,
                         const StringView &val) {

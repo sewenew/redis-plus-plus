@@ -243,6 +243,13 @@ public:
         return _command_with_parser<bool, fmt::SetResultParser>(fmt::set, key, val, ttl, type);
     }
 
+    Future<bool> set(const StringView &key,
+                const StringView &val,
+                bool keepttl,
+                UpdateType type = UpdateType::ALWAYS) {
+        return _command_with_parser<bool, fmt::SetResultParser>(fmt::set_keepttl, key, val, keepttl, type);
+    }
+
     Future<long long> strlen(const StringView &key) {
         return _command<long long>(fmt::strlen, key);
     }

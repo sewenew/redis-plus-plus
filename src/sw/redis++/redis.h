@@ -911,10 +911,14 @@ public:
     /// @retval true If the key has been set.
     /// @retval false If the key was not set, because of the given option.
     /// @see https://redis.io/commands/set
-    // TODO: Support KEEPTTL option for Redis 6.0
     bool set(const StringView &key,
                 const StringView &val,
                 const std::chrono::milliseconds &ttl = std::chrono::milliseconds(0),
+                UpdateType type = UpdateType::ALWAYS);
+
+    bool set(const StringView &key,
+                const StringView &val,
+                bool keepttl,
                 UpdateType type = UpdateType::ALWAYS);
 
     // TODO: add SETBIT command.
