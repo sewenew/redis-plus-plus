@@ -184,6 +184,10 @@ public:
 
     // STRING commands.
 
+    Future<long long> append(const StringView &key, const StringView &str) {
+        return _command<long long>(fmt::append, key, str);
+    }
+
     Future<OptionalString> get(const StringView &key) {
         return _command<OptionalString>(fmt::get, key);
     }

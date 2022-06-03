@@ -200,6 +200,12 @@ FormattedCommand unlink_range(Input first, Input last) {
 
 // STRING commands.
 
+inline FormattedCommand append(const StringView &key, const StringView &str) {
+    return format_cmd("APPEND %b %b",
+            key.data(), key.size(),
+            str.data(), str.size());
+}
+
 inline FormattedCommand get(const StringView &key) {
     return format_cmd("GET %b", key.data(), key.size());
 }
