@@ -100,6 +100,9 @@ public:
     template <typename Result, typename ResultParser>
     Future<Result> send(FormattedCommand cmd);
 
+    template <typename Result, typename ResultParser, typename Callback>
+    void send(FormattedCommand cmd, Callback &&cb);
+
     template <typename Result, typename ResultParser>
     Future<Result> send(const std::shared_ptr<AsyncShardsPool> &pool,
             const StringView &key,
@@ -316,6 +319,53 @@ protected:
 template <typename Result, typename ResultParser>
 using CommandEventUPtr = std::unique_ptr<CommandEvent<Result, ResultParser>>;
 
+template <typename Result, typename ResultParser, typename Callback>
+class CallbackEvent : public CommandEvent<Result, ResultParser> {
+public:
+    CallbackEvent(FormattedCommand cmd, Callback &&cb) :
+        CommandEvent<Result, ResultParser>(std::move(cmd)), _cb(std::forward<Callback>(cb)) {}
+
+    virtual bool handle(redisAsyncContext &ctx) override {
+        CommandEvent<Result, ResultParser>::_handle(ctx, _callback);
+        return true;
+    }
+
+private:
+    static void _callback(redisAsyncContext * /*ctx*/, void *r, void *privdata) {
+        auto event = static_cast<CallbackEvent<Result, ResultParser, Callback> *>(privdata);
+
+        assert(event != nullptr);
+
+        try {
+            auto *reply = static_cast<redisReply *>(r);
+            if (reply == nullptr) {
+                event->set_exception(std::make_exception_ptr(Error("connection has been closed")));
+            } else if (reply::is_error(*reply)) {
+                try {
+                    throw_error(*reply);
+                } catch (const Error &) {
+                    event->set_exception(std::current_exception());
+                }
+            } else {
+                event->set_value(*reply);
+            }
+        } catch (...) {
+            event->set_exception(std::current_exception());
+        }
+
+        assert(event->_cb);
+
+        (event->_cb)(event->get_future());
+
+        delete event;
+    }
+
+    std::function<void (Future<Result> &&)> _cb;
+};
+
+template <typename Result, typename ResultParser, typename Callback>
+using CallbackEventUPtr = std::unique_ptr<CallbackEvent<Result, ResultParser, Callback>>;
+
 class AskingEvent : public AsyncEvent {
 public:
     explicit AskingEvent(AsyncEvent *event) : _event(event) {}
@@ -496,6 +546,15 @@ Future<Result> AsyncConnection::send(FormattedCommand cmd) {
     send(std::move(event));
 
     return fut;
+}
+
+template <typename Result, typename ResultParser, typename Callback>
+void AsyncConnection::send(FormattedCommand cmd, Callback &&cb) {
+    auto event = CallbackEventUPtr<Result, ResultParser, Callback>(
+            new CallbackEvent<Result, ResultParser, Callback>(std::move(cmd),
+                std::forward<Callback>(cb)));
+
+    send(std::move(event));
 }
 
 template <typename Result, typename ResultParser>

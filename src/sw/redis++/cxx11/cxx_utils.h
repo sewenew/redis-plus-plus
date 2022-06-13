@@ -18,6 +18,8 @@
 #define SEWENEW_REDISPLUSPLUS_CXX_UTILS_H
 
 #include <string>
+#include <functional>
+#include <type_traits>
 #include <utility>
 
 namespace sw {
@@ -105,6 +107,12 @@ public:
 private:
     std::pair<bool, T> _value;
 };
+
+template <typename F, typename ...Args>
+struct IsInvocable :
+    std::is_constructible<
+        std::function<void (Args...)>,
+        std::reference_wrapper<typename std::remove_reference<F>::type>> {};
 
 }
 

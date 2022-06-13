@@ -18,6 +18,7 @@
 #define SEWENEW_REDISPLUSPLUS_CXX_UTILS_H
 
 #include <string_view>
+#include <type_traits>
 #include <optional>
 #include <variant>
 
@@ -38,6 +39,9 @@ template <typename ...Args>
 using Variant = std::variant<Args...>;
 
 using Monostate = std::monostate;
+
+template <typename F, typename ...Args>
+using IsInvocable = std::is_invocable<F, Args...>;
 
 }
 

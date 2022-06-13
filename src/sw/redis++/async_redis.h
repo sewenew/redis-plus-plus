@@ -56,7 +56,9 @@ public:
     AsyncSubscriber subscriber();
 
     template <typename Result, typename ...Args>
-    Future<Result> command(const StringView &cmd_name, Args &&...args) {
+    auto command(const StringView &cmd_name, Args &&...args)
+        -> typename std::enable_if<!IsInvocable<typename LastType<Args...>::type,
+                                        Future<Result> &&>::value, Future<Result>>::type {
         auto formatter = [](const StringView &name, Args &&...params) {
             CmdArgs cmd_args;
             cmd_args.append(name, std::forward<Args>(params)...);
@@ -64,6 +66,16 @@ public:
         };
 
         return _command<Result>(formatter, cmd_name, std::forward<Args>(args)...);
+    }
+
+    template <typename Result, typename ...Args>
+    auto command(const StringView &cmd_name, Args &&...args)
+        -> typename std::enable_if<IsInvocable<typename LastType<Args...>::type,
+                                        Future<Result> &&>::value, void>::type {
+        _callback_idx_command<Result>(LastValue(std::forward<Args>(args)...),
+                cmd_name,
+                MakeIndexSequence<sizeof...(Args) - 1>(),
+                std::forward<Args>(args)...);
     }
 
     template <typename Result, typename Input>
@@ -79,6 +91,22 @@ public:
         };
 
         return _command<Result>(formatter, first, last);
+    }
+
+    template <typename Result, typename Input, typename Callback>
+    auto command(Input first, Input last, Callback &&cb)
+        -> typename std::enable_if<IsIter<Input>::value, void>::type {
+        auto formatter = [](Input start, Input stop) {
+            CmdArgs cmd_args;
+            while (start != stop) {
+                cmd_args.append(*start);
+                ++start;
+            }
+            return fmt::format_cmd(cmd_args);
+        };
+
+        _callback_fmt_command<Result>(std::forward<Callback>(cb), formatter,
+                first, last);
     }
 
     // CONNECTION commands.
@@ -795,6 +823,43 @@ private:
         SafeAsyncConnection connection(*_pool);
 
         return connection.connection().send<Result, ResultParser>(std::move(formatted_cmd));
+    }
+
+    template <typename Result, typename Callback, std::size_t ...Is, typename ...Args>
+    void _callback_idx_command(Callback &&cb, const StringView &cmd_name,
+            const IndexSequence<Is...> &, Args &&...args) {
+        _callback_command<Result>(std::forward<Callback>(cb), cmd_name,
+                NthValue<Is>(std::forward<Args>(args)...)...);
+    }
+
+    template <typename Result, typename Callback, typename ...Args>
+    void _callback_command(Callback &&cb, const StringView &cmd_name, Args &&...args) {
+        auto formatter = [](const StringView &name, Args &&...params) {
+            CmdArgs cmd_args;
+            cmd_args.append(name, std::forward<Args>(params)...);
+            return fmt::format_cmd(cmd_args);
+        };
+
+        _callback_fmt_command<Result>(std::forward<Callback>(cb), formatter, cmd_name,
+                std::forward<Args>(args)...);
+    }
+
+    template <typename Result, typename Callback, typename Formatter, typename ...Args>
+    void _callback_fmt_command(Callback &&cb, Formatter formatter, Args &&...args) {
+        _callback_command_with_parser<Result, DefaultResultParser<Result>, Callback>(
+                std::forward<Callback>(cb), formatter, std::forward<Args>(args)...);
+    }
+
+    template <typename Result, typename ResultParser, typename Callback,
+             typename Formatter, typename ...Args>
+    void _callback_command_with_parser(Callback &&cb, Formatter formatter, Args &&...args) {
+        auto formatted_cmd = formatter(std::forward<Args>(args)...);
+
+        assert(_pool);
+        SafeAsyncConnection connection(*_pool);
+
+        connection.connection().send<Result, ResultParser, Callback>(
+                std::move(formatted_cmd), std::forward<Callback>(cb));
     }
 
     EventLoopSPtr _loop;
