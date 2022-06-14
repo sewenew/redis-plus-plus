@@ -48,7 +48,9 @@ public:
     AsyncSubscriber subscriber();
 
     template <typename Result, typename ...Args>
-    Future<Result> command(const StringView &cmd_name, const StringView &key, Args &&...args) {
+    auto command(const StringView &cmd_name, const StringView &key, Args &&...args)
+        -> typename std::enable_if<!IsInvocable<typename LastType<Args...>::type,
+                                        Future<Result> &&>::value, Future<Result>>::type {
         auto formatter = [&cmd_name](const StringView &k, Args &&...params) {
             CmdArgs cmd_args;
             cmd_args.append(cmd_name, k, std::forward<Args>(params)...);
@@ -56,6 +58,17 @@ public:
         };
 
         return _command<Result>(formatter, key, std::forward<Args>(args)...);
+    }
+
+    template <typename Result, typename ...Args>
+    auto command(const StringView &cmd_name, const StringView &key, Args &&...args)
+        -> typename std::enable_if<IsInvocable<typename LastType<Args...>::type,
+                                        Future<Result> &&>::value, void>::type {
+        _callback_idx_command<Result>(LastValue(std::forward<Args>(args)...),
+                cmd_name,
+                key,
+                MakeIndexSequence<sizeof...(Args) - 1>(),
+                std::forward<Args>(args)...);
     }
 
     template <typename Result, typename Input>
@@ -79,6 +92,29 @@ public:
         };
 
         return _command<Result>(formatter, first, last);
+    }
+
+    template <typename Result, typename Input, typename Callback>
+    auto command(Input first, Input last, Callback &&cb)
+        -> typename std::enable_if<IsIter<Input>::value, void>::type {
+        if (first == last || std::next(first) == last) {
+            throw Error("command: invalid range");
+        }
+
+        const auto &cmd_name = *first;
+        ++first;
+
+        auto formatter = [&cmd_name](Input start, Input stop) {
+            CmdArgs cmd_args;
+            cmd_args.append(cmd_name);
+            while (start != stop) {
+                cmd_args.append(*start);
+                ++start;
+            }
+            return fmt::format_cmd(cmd_args);
+        };
+
+        _callback_fmt_command<Result>(std::forward<Callback>(cb), formatter, first, last);
     }
 
     // CONNECTION commands.
@@ -825,6 +861,88 @@ private:
     Future<Result> _range_command(Formatter formatter, std::false_type,
             Input &&input, Args &&...args) {
         return _generic_command<Result>(formatter, std::get<0>(*input),
+                std::forward<Input>(input), std::forward<Args>(args)...);
+    }
+
+    template <typename Result, typename Callback, std::size_t ...Is, typename ...Args>
+    void _callback_idx_command(Callback &&cb, const StringView &cmd_name, const StringView &key,
+            const IndexSequence<Is...> &, Args &&...args) {
+        _callback_command<Result>(std::forward<Callback>(cb), cmd_name, key,
+                NthValue<Is>(std::forward<Args>(args)...)...);
+    }
+
+    template <typename Result, typename Callback, typename ...Args>
+    void _callback_command(Callback &&cb, const StringView &cmd_name,
+            const StringView &key, Args &&...args) {
+        auto formatter = [&cmd_name](const StringView &k, Args &&...params) {
+            CmdArgs cmd_args;
+            cmd_args.append(cmd_name, k, std::forward<Args>(params)...);
+            return fmt::format_cmd(cmd_args);
+        };
+
+        _callback_fmt_command<Result>(std::forward<Callback>(cb), formatter, key,
+                std::forward<Args>(args)...);
+    }
+
+    template <typename Result, typename Callback, typename Formatter, typename Key, typename ...Args>
+    void _callback_fmt_command(Callback &&cb, Formatter formatter, Key &&key, Args &&...args) {
+        _callback_generic_command<Result>(std::forward<Callback>(cb),
+                formatter,
+                std::is_convertible<typename std::decay<Key>::type, StringView>(),
+                std::forward<Key>(key),
+                std::forward<Args>(args)...);
+    }
+
+    template <typename Result, typename Callback, typename Formatter, typename ...Args>
+    void _callback_generic_command(Callback &&cb, Formatter formatter, std::true_type,
+            const StringView &key, Args &&...args) {
+        _callback_generic_command<Result>(std::forward<Callback>(cb), formatter, key, key, std::forward<Args>(args)...);
+    }
+
+    template <typename Result, typename Callback, typename Formatter, typename Input, typename ...Args>
+    void _callback_generic_command(Callback &&cb, Formatter formatter, std::false_type, Input &&input, Args &&...args) {
+        _callback_range_command<Result>(std::forward<Callback>(cb),
+                formatter,
+                std::is_convertible<typename std::decay<
+                    decltype(*std::declval<Input>())>::type, StringView>(),
+                std::forward<Input>(input),
+                std::forward<Args>(args)...);
+    }
+
+    template <typename Result, typename Callback, typename Formatter, typename ...Args>
+    void _callback_generic_command(Callback &&cb, Formatter formatter, const StringView &key, Args &&...args) {
+        return _callback_command_with_parser<Result, DefaultResultParser<Result>, Callback>(
+                std::forward<Callback>(cb), formatter, key, std::forward<Args>(args)...);
+    }
+
+    template <typename Result, typename ResultParser, typename Callback,
+             typename Formatter, typename ...Args>
+    void _callback_command_with_parser(Callback &&cb, Formatter formatter,
+            const StringView &key, Args &&...args) {
+        auto formatted_cmd = formatter(std::forward<Args>(args)...);
+
+        assert(_pool);
+
+        auto pool = _pool->fetch(key);
+        assert(pool);
+
+        GuardedAsyncConnection connection(pool);
+
+        return connection.connection().send<Result, ResultParser, Callback>(
+                _pool, key, std::move(formatted_cmd), std::forward<Callback>(cb));
+    }
+
+    template <typename Result, typename Callback, typename Formatter, typename Input, typename ...Args>
+    void _callback_range_command(Callback &&cb, Formatter formatter, std::true_type,
+            Input &&input, Args &&...args) {
+        _callback_generic_command<Result>(std::forward<Callback>(cb), formatter, *input,
+                std::forward<Input>(input), std::forward<Args>(args)...);
+    }
+
+    template <typename Result, typename Callback, typename Formatter, typename Input, typename ...Args>
+    void _callback_range_command(Callback &&cb, Formatter formatter, std::false_type,
+            Input &&input, Args &&...args) {
+        _callback_generic_command<Result>(std::forward<Callback>(cb), formatter, std::get<0>(*input),
                 std::forward<Input>(input), std::forward<Args>(args)...);
     }
 

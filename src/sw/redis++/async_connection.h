@@ -108,6 +108,12 @@ public:
             const StringView &key,
             FormattedCommand cmd);
 
+    template <typename Result, typename ResultParser, typename Callback>
+    void send(const std::shared_ptr<AsyncShardsPool> &pool,
+            const StringView &key,
+            FormattedCommand cmd,
+            Callback &&cb);
+
     void send(AsyncEventUPtr event);
 
     void event_callback();
@@ -451,7 +457,7 @@ private:
 template <typename Result, typename ResultParser>
 class ClusterEvent : public CommandEvent<Result, ResultParser> {
 public:
-    explicit ClusterEvent(const std::shared_ptr<AsyncShardsPool> &pool,
+    ClusterEvent(const std::shared_ptr<AsyncShardsPool> &pool,
             const StringView &key,
             FormattedCommand cmd) :
         CommandEvent<Result, ResultParser>(std::move(cmd)),
@@ -536,6 +542,102 @@ private:
 template <typename Result, typename ResultParser>
 using ClusterEventUPtr = std::unique_ptr<ClusterEvent<Result, ResultParser>>;
 
+template <typename Result, typename ResultParser, typename Callback>
+class CallbackClusterEvent : public CommandEvent<Result, ResultParser> {
+public:
+    CallbackClusterEvent(const std::shared_ptr<AsyncShardsPool> &pool,
+            const StringView &key,
+            FormattedCommand cmd,
+            Callback &&cb) :
+        CommandEvent<Result, ResultParser>(std::move(cmd)),
+        _pool(pool),
+        _key(key.data(), key.size()),
+        _cb(std::forward<Callback>(cb)) {}
+
+    virtual bool handle(redisAsyncContext &ctx) override {
+        CommandEvent<Result, ResultParser>::_handle(ctx, _callback_cluster_reply_callback);
+
+        return true;
+    }
+
+private:
+    enum class State {
+        NORMAL = 0,
+        MOVED,
+        ASKING
+    };
+
+    static void _callback_cluster_reply_callback(redisAsyncContext * /*ctx*/, void *r, void *privdata) {
+        auto event = static_cast<CallbackClusterEvent<Result, ResultParser, Callback> *>(privdata);
+
+        assert(event != nullptr);
+
+        try {
+            redisReply *reply = static_cast<redisReply *>(r);
+            if (reply == nullptr) {
+                event->set_exception(std::make_exception_ptr(Error("connection has been closed")));
+            } else if (reply::is_error(*reply)) {
+                try {
+                    throw_error(*reply);
+                } catch (const IoError &err) {
+                    event->_pool->update(event->_key, AsyncEventUPtr(event));
+                    return;
+                } catch (const ClosedError &err) {
+                    event->_pool->update(event->_key, AsyncEventUPtr(event));
+                    return;
+                } catch (const MovedError &err) {
+                    switch (event->_state) {
+                    case State::MOVED:
+                        throw Error("too many moved error");
+                        break;
+
+                    case State::ASKING:
+                        throw Error("Slot migrating...");
+                        break;
+
+                    default:
+                        break;
+                    }
+
+                    event->_state = State::MOVED;
+                    event->_pool->update(event->_key, AsyncEventUPtr(event));
+                    return;
+                } catch (const AskError &err) {
+                    event->_state = State::ASKING;
+                    auto pool = event->_pool->fetch(err.node());
+                    assert(pool);
+                    GuardedAsyncConnection connection(pool);
+                    connection.connection().send(AsyncEventUPtr(new AskingEvent(event)));
+                    return;
+                } catch (const Error &e) {
+                    event->set_exception(std::current_exception());
+                }
+            } else {
+                event->set_value(*reply);
+            }
+        } catch (...) {
+            event->set_exception(std::current_exception());
+        }
+
+        assert(event->_cb);
+
+        (event->_cb)(event->get_future());
+
+        delete event;
+    }
+
+    std::shared_ptr<AsyncShardsPool> _pool;
+
+    std::string _key;
+
+    State _state = State::NORMAL;
+
+    std::function<void (Future<Result> &&)> _cb;
+};
+
+template <typename Result, typename ResultParser, typename Callback>
+using CallbackClusterEventUPtr = std::unique_ptr<CallbackClusterEvent<Result, ResultParser, Callback>>;
+
 template <typename Result, typename ResultParser>
 Future<Result> AsyncConnection::send(FormattedCommand cmd) {
     auto event = CommandEventUPtr<Result, ResultParser>(
@@ -569,6 +671,18 @@ Future<Result> AsyncConnection::send(const std::shared_ptr<AsyncShardsPool> &poo
     send(std::move(event));
 
     return fut;
+}
+
+template <typename Result, typename ResultParser, typename Callback>
+void AsyncConnection::send(const std::shared_ptr<AsyncShardsPool> &pool,
+        const StringView &key,
+        FormattedCommand cmd,
+        Callback &&cb) {
+    auto event = CallbackClusterEventUPtr<Result, ResultParser, Callback>(
+            new CallbackClusterEvent<Result, ResultParser, Callback>(pool, key,
+                std::move(cmd), std::forward<Callback>(cb)));
+
+    send(std::move(event));
 }
 
 }
