@@ -47,6 +47,12 @@
 #include "stream_cmds_test.h"
 #include "benchmark_test.h"
 
+#ifdef REDIS_PLUS_PLUS_RUN_ASYNC_TEST
+
+#include "async_test.h"
+
+#endif
+
 namespace {
 
 #ifdef _MSC_VER
@@ -108,6 +114,26 @@ int main(int argc, char **argv) {
                 run_test<sw::redis::RedisCluster>(*cluster_node_opts, test_options);
             }
         }
+
+#ifdef REDIS_PLUS_PLUS_RUN_ASYNC_TEST
+        if (opts) {
+            std::cout << "Testing AsyncRedis..." << std::endl;
+
+            auto async_test = sw::redis::test::AsyncTest<sw::redis::AsyncRedis>(*opts);
+            async_test.run();
+
+            std::cout << "Pass AsyncRedis tests" << std::endl;
+        }
+
+        if (cluster_node_opts) {
+            std::cout << "Testing AsyncRedisCluster..." << std::endl;
+
+            auto async_test = sw::redis::test::AsyncTest<sw::redis::AsyncRedisCluster>(*cluster_node_opts);
+            async_test.run();
+
+            std::cout << "Pass AsyncRedisCluster tests" << std::endl;
+        }
+#endif
 
         std::cout << "Pass all tests" << std::endl;
     } catch (const sw::redis::Error &e) {

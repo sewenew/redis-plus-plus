@@ -6,6 +6,11 @@ set(REDIS_PLUS_PLUS_TEST_SOURCES src/sw/redis++/test_main.cpp)
 
 add_executable(${PROJECT_NAME} ${REDIS_PLUS_PLUS_TEST_SOURCES})
 
+if(REDIS_PLUS_PLUS_BUILD_ASYNC_TEST)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE REDIS_PLUS_PLUS_RUN_ASYNC_TEST)
+    target_link_libraries(${PROJECT_NAME} ${REDIS_PLUS_PLUS_ASYNC_LIB})
+endif()
+
 # hiredis dependency
 find_path(HIREDIS_HEADER hiredis REQUIRED)
 target_include_directories(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:${HIREDIS_HEADER}>)

@@ -237,6 +237,9 @@ endif()
 option(REDIS_PLUS_PLUS_BUILD_TEST "Build tests for redis++" ON)
 message(STATUS "redis-plus-plus build test: ${REDIS_PLUS_PLUS_BUILD_TEST}")
 
+option(REDIS_PLUS_PLUS_BUILD_ASYNC_TEST "Build async tests for redis++" OFF)
+message(STATUS "redis-plus-plus build async test: ${REDIS_PLUS_PLUS_BUILD_ASYNC_TEST}")
+
 if(REDIS_PLUS_PLUS_BUILD_TEST)
     add_subdirectory(test)
 endif()
