@@ -2375,7 +2375,7 @@ Fortunately, [@wingunder](https://github.com/wingunder) did a great job to make 
 
 ### Async Interface
 
-*redis-plus-plus* also supports async interface, however, async support for Transaction and Subscriber is still on the way.
+*redis-plus-plus* also supports async interface, however, async support for Transaction is still on the way.
 
 The async interface depends on third-party event library, and so far, only libuv is supported.
 
@@ -2399,7 +2399,20 @@ make install
 
 The async interface is similar to sync interface, except that you should include *sw/redis++/async_redis++.h*, and define an object of `sw::redis::AsyncRedis`, and the related methods return `Future` object (so far, only `std::future` and `boost::future` are supported, support for other implementations of *future* is on the way).
 
-**NOTE**: When building your application code, don't forget to link libuv.
+However, C++'s support for continuation and executor is not done yet, so the async interface also supports the old callback way. The following is the callback interface:
+
+```
+template <typename ReplyType>
+void (sw::redis::Future<ReplyType> &&fut);
+```
+
+In the callback, in order to get the reply, you need to call `sw::redis::Future<ReplyType>::get()`. If something bad happened, `get` throws exception. So you need to catch possible exception in the callback. The callback runs in the underlying event loop thread, so DO NOT do slow operations in the callback, otherwise, it blocks the event loop and hurts performance.
+
+**NOTE**:
+
+- When building your application code, don't forget to link libuv.
+- So far, the callback interface only implements few built-in commands. For other commands, you need to use the generic interface to send command to Redis (see below for example). You're always welcome to contribute more built-in commands.
+- You must ensure `AsyncRedis` alive before all callbacks have been executed.
 
 ```c++
 #include <sw/redis++/async_redis++.h>
@@ -2417,7 +2430,28 @@ Future<string> ping_res = async_redis.ping();
 
 Future<bool> set_res = async_redis.set("key", "val");
 
+async_redis.set("key", "val",
+        [](Future<bool> &&fut) {
+            try {
+                auto set_res = fut.get();
+            } catch (const Error &err) {
+                // handle error
+            }
+        });
+
 Future<Optional<string>> get_res = async_redis.get("key");
+
+async_redis.get("key", [](Future<OptionalString> &&fut) {
+            try {
+                auto val = fut.get();
+                if (val)
+                    cout << *val << endl;
+                else
+                    cout << "not exist" << endl;
+            } catch (const Error &err) {
+                // handle error
+            }
+        });
 
 unordered_map<string, string> m = {{"a", "b"}, {"c", "d"}};
 Future<void> hmset_res = async_redis.hmset("hash", m.begin(), m.end());
@@ -2441,11 +2475,29 @@ for (const auto &ele : hgetall_res.get())
 
 // There's no *AsyncRedis::client_getname* interface.
 // But you can use *Redis::command* to get the client name.
-auto getname_res = redis.command<OptionalString>("client", "getname");
+auto getname_res = async_redis.command<OptionalString>("client", "getname");
 val = getname_res.get();
 if (val) {
     std::cout << *val << std::endl;
 }
+
+async_redis.command<OptionalString>("client", "getname",
+        [](Future<OptionalString> &&fut) {
+            try {
+                auto val = fut.get();
+            } catch (const Error &e) {
+                // handle error
+            }
+        });
+
+async_redis.command<long long>("incr", "number",
+        [](Future<long long> &&fut) {
+            try {
+                cout << fut.get() << endl;
+            } catch (const Error &e) {
+                // handle error
+            }
+        });
 ```
 
 #### Redis Sentinel
