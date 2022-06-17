@@ -119,7 +119,7 @@ int main(int argc, char **argv) {
         if (opts) {
             std::cout << "Testing AsyncRedis..." << std::endl;
 
-            auto async_test = sw::redis::test::AsyncTest<sw::redis::AsyncRedis>(*opts);
+            sw::redis::test::AsyncTest<sw::redis::AsyncRedis> async_test(*opts);
             async_test.run();
 
             std::cout << "Pass AsyncRedis tests" << std::endl;
@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
         if (cluster_node_opts) {
             std::cout << "Testing AsyncRedisCluster..." << std::endl;
 
-            auto async_test = sw::redis::test::AsyncTest<sw::redis::AsyncRedisCluster>(*cluster_node_opts);
+            sw::redis::test::AsyncTest<sw::redis::AsyncRedisCluster> async_test(*cluster_node_opts);
             async_test.run();
 
             std::cout << "Pass AsyncRedisCluster tests" << std::endl;
