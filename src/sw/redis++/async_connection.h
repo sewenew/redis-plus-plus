@@ -361,7 +361,11 @@ private:
 
         assert(event->_cb);
 
-        (event->_cb)(event->get_future());
+        try {
+            (event->_cb)(event->get_future());
+        } catch (...) {
+            // Catch all possible exceptions thrown by user defined callbacks.
+        }
 
         delete event;
     }
@@ -621,7 +625,11 @@ private:
 
         assert(event->_cb);
 
-        (event->_cb)(event->get_future());
+        try {
+            (event->_cb)(event->get_future());
+        } catch (...) {
+            // Catch all possible exceptions thrown by user defined callbacks.
+        }
 
         delete event;
     }
