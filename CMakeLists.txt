@@ -169,7 +169,7 @@ if(REDIS_PLUS_PLUS_BUILD_STATIC)
         set_target_properties(${STATIC_LIB} PROPERTIES CXX_STANDARD ${REDIS_PLUS_PLUS_CXX_STANDARD})
         set_target_properties(${STATIC_LIB} PROPERTIES OUTPUT_NAME redis++_static)
     else()
-        target_compile_options(${STATIC_LIB} PRIVATE "-Wall" "-Wextra" "-Werror")
+        target_compile_options(${STATIC_LIB} PRIVATE "-Wall" "-Wextra" "-Werror" "-fcoroutines-ts")
         set_target_properties(${STATIC_LIB} PROPERTIES OUTPUT_NAME redis++)
     endif()
 

@@ -991,6 +991,23 @@ public:
         return _command<long long>(fmt::publish, channel, message);
     }
 
+    // co_command* are used internally. DO NOT use them.
+
+    template <typename Result, typename Callback>
+    void co_command(FormattedCommand cmd, Callback &&cb) {
+        return co_command_with_parser<Result, DefaultResultParser<Result>, Callback>(
+                std::move(cmd), std::forward<Callback>(cb));
+    }
+
+    template <typename Result, typename ResultParser, typename Callback>
+    void co_command_with_parser(FormattedCommand cmd, Callback &&cb) {
+        assert(_pool);
+        SafeAsyncConnection connection(*_pool);
+
+        connection.connection().send<Result, ResultParser, Callback>(
+                std::move(cmd), std::forward<Callback>(cb));
+    }
+
 private:
     template <typename Result, typename Formatter, typename ...Args>
     Future<Result> _command(Formatter formatter, Args &&...args) {
