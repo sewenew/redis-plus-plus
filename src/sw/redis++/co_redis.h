@@ -17,10 +17,9 @@
 #ifndef SEWENEW_REDISPLUSPLUS_CO_REDIS_H
 #define SEWENEW_REDISPLUSPLUS_CO_REDIS_H
 
-#include <experimental/coroutine>
+#include <coroutine>
 #include "async_redis.h"
 #include "cxx_utils.h"
-#include "co_redis_awaiter.h"
 #include "cmd_formatter.h"
 
 namespace sw {
@@ -40,6 +39,70 @@ public:
 
     ~CoRedis() = default;
 
+    template <typename Result, typename ResultParser = DefaultResultParser<Result>, typename = void>
+    class Awaiter {
+    public:
+        bool await_ready() noexcept {
+            return false;
+        }
+
+        void await_suspend(std::coroutine_handle<> handle) {
+            _async_redis->co_command_with_parser<Result, ResultParser>(std::move(_cmd),
+                    [this, handle](Future<Result> &&fut) mutable {
+                        _result = std::move(fut);
+
+                        handle.resume();
+                    });
+        }
+
+        Result await_resume() {
+            return _result.get();
+        }
+
+    private:
+        friend class CoRedis;
+
+        Awaiter(AsyncRedis *r, FormattedCommand cmd) : _async_redis(r), _cmd(std::move(cmd)) {}
+
+        AsyncRedis *_async_redis = nullptr;
+
+        FormattedCommand _cmd;
+
+        Future<Result> _result;
+    };
+
+    template <typename Result>
+    class Awaiter<Result, DefaultResultParser<Result>,
+          std::enable_if<std::is_same<Result, void>::value, void>::type> {
+    public:
+        bool await_ready() noexcept {
+            return false;
+        }
+
+        void await_suspend(std::coroutine_handle<> handle) {
+            _async_redis->co_command_with_parser<void, DefaultResultParser<void>>(std::move(_cmd),
+                    [this, handle](Future<void> &&fut) mutable {
+                        _result = std::move(fut);
+
+                        handle.resume();
+                    });
+        }
+
+        void await_resume() {
+            _result.get();
+        }
+
+    private:
+        friend class CoRedis;
+
+        Awaiter(AsyncRedis *r, FormattedCommand cmd) : _async_redis(r), _cmd(std::move(cmd)) {}
+
+        AsyncRedis *_async_redis = nullptr;
+
+        FormattedCommand _cmd;
+
+        Future<void> _result;
+    };
     template <typename Result, typename ...Args>
     Awaiter<Result> command(const StringView &cmd_name, Args &&...args) {
         auto formatter = [](const StringView &name, Args &&...params) {

@@ -17,7 +17,7 @@
 #ifndef SEWENEW_REDISPLUSPLUS_CO_REDIS_CLUSTER_H
 #define SEWENEW_REDISPLUSPLUS_CO_REDIS_CLUSTER_H
 
-#include <experimental/coroutine>
+#include <coroutine>
 #include "async_redis_cluster.h"
 #include "cxx_utils.h"
 #include "co_redis_awaiter.h"
@@ -40,14 +40,14 @@ public:
 
     ~CoRedisCluster() = default;
 
-    template <typename Result, typename ResultParser = DefaultResultParser<Result>>
+    template <typename Result, typename ResultParser = DefaultResultParser<Result>, typename = void>
     class Awaiter {
     public:
         bool await_ready() noexcept {
             return false;
         }
 
-        void await_suspend(std::experimental::coroutine_handle<> handle) {
+        void await_suspend(std::coroutine_handle<> handle) {
             _async_redis->co_command_with_parser<Result, ResultParser>(_key, std::move(_cmd),
                     [this, handle](Future<Result> &&fut) mutable {
                         _result = std::move(fut);
@@ -61,12 +61,12 @@ public:
         }
 
     private:
-        friend class CoRedis;
+        friend class CoRedisCluster;
 
-        Awaiter(AsyncRedis *r, const StringView &key, FormattedCommand cmd) :
+        Awaiter(AsyncRedisCluster *r, const StringView &key, FormattedCommand cmd) :
             _async_redis(r), _key(key), _cmd(std::move(cmd)) {}
 
-        AsyncRedis *_async_redis = nullptr;
+        AsyncRedisCluster *_async_redis = nullptr;
 
         StringView _key;
 
@@ -75,14 +75,15 @@ public:
         Future<Result> _result;
     };
 
-    template <>
-    class Awaiter<void, DefaultResultParser<void>> {
+    template <typename Result>
+    class Awaiter<Result, DefaultResultParser<Result>,
+          std::enable_if<std::is_same<Result, void>::value, void>::type> {
     public:
         bool await_ready() noexcept {
             return false;
         }
 
-        void await_suspend(std::experimental::coroutine_handle<> handle) {
+        void await_suspend(std::coroutine_handle<> handle) {
             _async_redis->co_command_with_parser<void, DefaultResultParser<void>>(_key, std::move(_cmd),
                     [this, handle](Future<void> &&fut) mutable {
                         _result = std::move(fut);
@@ -96,12 +97,12 @@ public:
         }
 
     private:
-        friend class CoRedis;
+        friend class CoRedisCluster;
 
-        Awaiter(AsyncRedis *r, const StringView &key, FormattedCommand cmd) :
+        Awaiter(AsyncRedisCluster *r, const StringView &key, FormattedCommand cmd) :
             _async_redis(r), _key(key), _cmd(std::move(cmd)) {}
 
-        AsyncRedis *_async_redis = nullptr;
+        AsyncRedisCluster *_async_redis = nullptr;
 
         StringView _key;
 
@@ -121,7 +122,6 @@ public:
         return _command<Result>(formatter, key, std::forward<Args>(args)...);
     }
 
-    /*
     template <typename Result, typename Input>
     auto command(Input first, Input last)
         -> typename std::enable_if<IsIter<Input>::value, Awaiter<Result>>::type {
@@ -144,7 +144,6 @@ public:
 
         return _command<Result>(formatter, first, last);
     }
-    */
 
     // STRING commands.
 
@@ -172,14 +171,14 @@ public:
             const StringView &val,
             const std::chrono::milliseconds &ttl = std::chrono::milliseconds(0),
             UpdateType type = UpdateType::ALWAYS) {
-        return _command_with_parser<bool, fmt::SetResultParser>(fmt::set, key, val, ttl, type);
+        return _command_with_parser<bool, fmt::SetResultParser>(fmt::set, key, key, val, ttl, type);
     }
 
     Awaiter<bool, fmt::SetResultParser> set(const StringView &key,
             const StringView &val,
             bool keepttl,
             UpdateType type = UpdateType::ALWAYS) {
-        return _command_with_parser<bool, fmt::SetResultParser>(fmt::set_keepttl, key, val, keepttl, type);
+        return _command_with_parser<bool, fmt::SetResultParser>(fmt::set_keepttl, key, key, val, keepttl, type);
     }
 
     // HASH commands.
@@ -273,16 +272,62 @@ public:
     }
 
 private:
+    template <typename Result, typename Formatter, typename Key, typename ...Args>
+    Awaiter<Result> _command(Formatter &&formatter, Key &&key, Args &&...args) {
+        return _generic_command<Result>(std::forward<Formatter>(formatter),
+                std::is_convertible<typename std::decay<Key>::type, StringView>(),
+                std::forward<Key>(key),
+                std::forward<Args>(args)...);
+    }
+
     template <typename Result, typename Formatter, typename ...Args>
-    Awaiter<Result> _command(Formatter &&formatter, const StringView &key, Args &&...args) {
-        return _command_with_parser<Result, DefaultResultParser<Result>>(std::forward<Formatter>(formatter),
-                key, std::forward<Args>(args)...);
+    Awaiter<Result> _generic_command(Formatter &&formatter, std::true_type,
+            const StringView &key, Args &&...args) {
+        return _generic_command<Result>(std::forward<Formatter>(formatter),
+                key, key, std::forward<Args>(args)...);
+    }
+
+    template <typename Result, typename Formatter, typename Input, typename ...Args>
+    Awaiter<Result> _generic_command(Formatter &&formatter, std::false_type,
+            Input &&input, Args &&...args) {
+        return _range_command<Result>(std::forward<Formatter>(formatter),
+                std::is_convertible<typename std::decay<
+                    decltype(*std::declval<Input>())>::type, StringView>(),
+                std::forward<Input>(input),
+                std::forward<Args>(args)...);
+    }
+
+    template <typename Result, typename Formatter, typename Input, typename ...Args>
+    Awaiter<Result> _range_command(Formatter &&formatter, std::true_type,
+            Input &&input, Args &&...args) {
+        return _generic_command<Result>(std::forward<Formatter>(formatter),
+                *input,
+                std::forward<Input>(input),
+                std::forward<Args>(args)...);
+    }
+
+    template <typename Result, typename Formatter, typename Input, typename ...Args>
+    Awaiter<Result> _range_command(Formatter &&formatter, std::false_type,
+            Input &&input, Args &&...args) {
+        return _generic_command<Result>(std::forward<Formatter>(formatter),
+                std::get<0>(*input),
+                std::forward<Input>(input),
+                std::forward<Args>(args)...);
+    }
+
+    template <typename Result, typename Formatter, typename ...Args>
+    Awaiter<Result> _generic_command(Formatter &&formatter,
+            const StringView &key, Args &&...args) {
+        return _command_with_parser<Result, DefaultResultParser<Result>>(
+                std::forward<Formatter>(formatter),
+                key,
+                std::forward<Args>(args)...);
     }
 
     template <typename Result, typename ResultParser, typename Formatter, typename ...Args>
     Awaiter<Result, ResultParser> _command_with_parser(Formatter &&formatter,
             const StringView &key, Args &&...args) {
-        return Awaiter<Result, ResultParser>(&_async_redis, key, formatter(key, std::forward<Args>(args)...));
+        return Awaiter<Result, ResultParser>(&_async_redis, key, formatter(std::forward<Args>(args)...));
     }
 
     AsyncRedisCluster _async_redis;
