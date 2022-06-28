@@ -26,6 +26,7 @@
     - [Redis Stream](#redis-stream)
     - [Redis Modules](#redis-modules)
     - [Async Interface](#async-interface)
+    - [Coroutine Interface](#coroutine-interface)
 - [Redis Recipes](#redis-recipes)
     - [Redlock](#redlock)
 - [Author](#author)
@@ -2683,6 +2684,64 @@ auto fut = redis.get("key").then(pool,
 // Do other things
 
 fut.get();
+```
+
+### Coroutine Interface
+
+*redis-plus-plus* also supports coroutine interface, however, coroutine support for Sentinel, Subscriber and Transaction is still on the way.
+
+#### Installation
+
+The coroutine interface depends on async interface, which depends on third-party event library. So you need to install *libuv* first, and *hiredis* v1.0.0 or later. Check [async interface](#async-interface) for detail.
+
+When installing *redis-plus-plus*, you should specify the following command line option: `-DREDIS_PLUS_PLUS_BUILD_ASYNC=libuv` and `-DREDIS_PLUS_PLUS_BUILD_CORO=ON`.
+
+```shell
+cmake -DCMAKE_PREFIX_PATH=/installation/path/to/libuv/and/hiredis -DREDIS_PLUS_PLUS_BUILD_ASYNC=libuv -DREDIS_PLUS_PLUS_BUILD_CORO=ON ..
+
+make
+
+make install
+```
+
+#### Getting Started
+
+The coroutine interface is similar to sync interface, except that you should include *sw/redis++/co_redis++.h*, and define an object of `sw::redis::CoRedis` or `sw::redis::CoRedisCluster`, and the related methods return `sw::redis::CoRedis::Awaiter<Result>` object.
+
+**NOTE**:
+- So far, the coroutine interface only implements a few built-in commands. For other commands, you need to use the generic interface to send command to Redis (see below for example). You're always welcome to contribute more built-in commands.
+- Unfortunately, the C++ coroutine support is limited. In order to make it easier to use coroutine, you'd better take advantages of some third-party libs, e.g. [cppcoro](https://github.com/andreasbuhr/cppcoro).
+
+```c++
+#include <sw/redis++/co_redis++.h>
+#include <cppcoro/task.hpp>
+#include <cppcoro/sync_wait.hpp>
+
+ConnectionOptions opts;
+opts.host = "127.0.0.1";
+opts.port = 6379;
+
+ConnectionPoolOptions pool_opts;
+pool_opts.size = 3;
+
+// `CoRedisCluster` has similar inteface as `CoRedis`.
+// auto co_redis_cluster = CoRedisCluster(opts, pool_opts);
+auto co_redis = CoRedis(opts, pool_opts);
+cppcoro::sync_wait([&co_redis]() -> cppcoro::task<> {
+        try {
+            co_await co_redis.set("key", "val");
+            auto val = co_await co_redis.get("key");
+            if (val)
+                cout << *val << endl;
+            else
+                cout << "not exist" << endl;
+
+            co_await co_redis.command<long long>("incr", "num");
+            val = co_redis.command<OptionalString>("get", "num");
+        } catch (const Error &e) {
+            cout << e.what() << endl;
+        }
+    }());
 ```
 
 ## Redis Recipes
