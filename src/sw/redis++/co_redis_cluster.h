@@ -20,7 +20,6 @@
 #include <coroutine>
 #include "async_redis_cluster.h"
 #include "cxx_utils.h"
-#include "co_redis_awaiter.h"
 #include "cmd_formatter.h"
 
 namespace sw {
@@ -77,7 +76,7 @@ public:
 
     template <typename Result>
     class Awaiter<Result, DefaultResultParser<Result>,
-          std::enable_if<std::is_same<Result, void>::value, void>::type> {
+          typename std::enable_if<std::is_same<Result, void>::value, void>::type> {
     public:
         bool await_ready() noexcept {
             return false;
