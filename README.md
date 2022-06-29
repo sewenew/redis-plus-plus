@@ -53,6 +53,8 @@ This is a C++ client library for Redis. It's based on [hiredis](https://github.c
 - Redlock.
 - Redis ACL.
 - TLS/SSL support.
+- Sync and Async interface.
+- Coroutine support.
 
 ### Branches
 
@@ -101,7 +103,7 @@ mkdir build
 
 cd build
 
-cmake -DREDIS_PLUS_PLUS_CXX_STANDARD=17 ..
+cmake ..
 
 make
 
@@ -2382,7 +2384,7 @@ The async interface depends on third-party event library, and so far, only libuv
 
 #### Installation
 
-You must install *libuv*(e.g. *apt-get install libuv1-dev*) before install *hiredis* and *redis-plus-plus*.
+You must install *libuv*(e.g. *apt-get install libuv1-dev*) before install *hiredis* and *redis-plus-plus*. The required libuv version is *1.x*.
 
 *hiredis* v1.0.0's async interface is different from older version, and *redis-plus-plus* only supports *hiredis* v1.0.0 or later. So you need to ensure you've installed the right version of hiredis before installing *redis-plus-plus*. Also, you should NEVER install multiple versions of *hiredis*, otherwise, you'll get some wired problems. If you already installed an older version, remove it, and install a newer version.
 
@@ -2694,10 +2696,10 @@ fut.get();
 
 The coroutine interface depends on async interface, which depends on third-party event library. So you need to install *libuv* first, and *hiredis* v1.0.0 or later. Check [async interface](#async-interface) for detail.
 
-When installing *redis-plus-plus*, you should specify the following command line option: `-DREDIS_PLUS_PLUS_BUILD_ASYNC=libuv` and `-DREDIS_PLUS_PLUS_BUILD_CORO=ON`.
+When installing *redis-plus-plus*, you should specify the following command line options: `-DREDIS_PLUS_PLUS_BUILD_ASYNC=libuv`, `-DREDIS_PLUS_PLUS_BUILD_CORO=ON` and `-DREDIS_PLUS_PLUS_CXX_STANDARD=20`.
 
 ```shell
-cmake -DCMAKE_PREFIX_PATH=/installation/path/to/libuv/and/hiredis -DREDIS_PLUS_PLUS_BUILD_ASYNC=libuv -DREDIS_PLUS_PLUS_BUILD_CORO=ON ..
+cmake -DCMAKE_PREFIX_PATH=/installation/path/to/libuv/and/hiredis -DREDIS_PLUS_PLUS_CXX_STANDARD=20 -DREDIS_PLUS_PLUS_BUILD_ASYNC=libuv -DREDIS_PLUS_PLUS_BUILD_CORO=ON ..
 
 make
 
@@ -2706,7 +2708,7 @@ make install
 
 #### Getting Started
 
-The coroutine interface is similar to sync interface, except that you should include *sw/redis++/co_redis++.h*, and define an object of `sw::redis::CoRedis` or `sw::redis::CoRedisCluster`, and the related methods return `sw::redis::CoRedis::Awaiter<Result>` object.
+The coroutine interface is similar to sync interface, except that you should include *sw/redis++/co_redis++.h*, and define an object of `sw::redis::CoRedis` or `sw::redis::CoRedisCluster`, and the related methods return `sw::redis::CoRedis::Awaiter<Result>` or `sw::redis::CoRedisCluster::Awaiter<Result>` object.
 
 **NOTE**:
 - So far, the coroutine interface only implements a few built-in commands. For other commands, you need to use the generic interface to send command to Redis (see below for example). You're always welcome to contribute more built-in commands.
@@ -2737,7 +2739,7 @@ cppcoro::sync_wait([&co_redis]() -> cppcoro::task<> {
                 cout << "not exist" << endl;
 
             co_await co_redis.command<long long>("incr", "num");
-            val = co_redis.command<OptionalString>("get", "num");
+            val = co_await co_redis.command<OptionalString>("get", "num");
         } catch (const Error &e) {
             cout << e.what() << endl;
         }
