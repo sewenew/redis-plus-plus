@@ -41,8 +41,12 @@ if(REDIS_PLUS_PLUS_BUILD_ASYNC)
     endif()
 endif()
 
-if(REDIS_PLUS_PLUS_BUILD_CORO AND NOT REDIS_PLUS_PLUS_BUILD_ASYNC)
-    message(FATAL_ERROR "In order to build coroutine support, you must set REDIS_PLUS_PLUS_BUILD_ASYNC")
+if(REDIS_PLUS_PLUS_BUILD_CORO)
+    if(NOT REDIS_PLUS_PLUS_BUILD_ASYNC)
+        message(FATAL_ERROR "In order to build coroutine support, you must set REDIS_PLUS_PLUS_BUILD_ASYNC")
+    endif()
+
+    message(STATUS "redis-plus-plus build coroutine support: " ${REDIS_PLUS_PLUS_BUILD_CORO})
 endif()
 
 set(REDIS_PLUS_PLUS_SOURCE_DIR src/sw/redis++)
