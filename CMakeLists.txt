@@ -41,6 +41,14 @@ if(REDIS_PLUS_PLUS_BUILD_ASYNC)
     endif()
 endif()
 
+if(REDIS_PLUS_PLUS_BUILD_CORO)
+    if(NOT REDIS_PLUS_PLUS_BUILD_ASYNC)
+        message(FATAL_ERROR "In order to build coroutine support, you must set REDIS_PLUS_PLUS_BUILD_ASYNC")
+    endif()
+
+    message(STATUS "redis-plus-plus build coroutine support: " ${REDIS_PLUS_PLUS_BUILD_CORO})
+endif()
+
 set(REDIS_PLUS_PLUS_SOURCE_DIR src/sw/redis++)
 
 set(REDIS_PLUS_PLUS_SOURCES
@@ -269,6 +277,12 @@ if(NOT REDIS_PLUS_PLUS_BUILD_ASYNC)
     file(GLOB ASYNC_HEADERS "${REDIS_PLUS_PLUS_SOURCE_DIR}/async_*.h" "${REDIS_PLUS_PLUS_SOURCE_DIR}/event_*.h")
     list(REMOVE_ITEM HEADERS ${ASYNC_HEADERS})
 endif()
+
+if(NOT REDIS_PLUS_PLUS_BUILD_CORO)
+    file(GLOB CORO_HEADERS "${REDIS_PLUS_PLUS_SOURCE_DIR}/co_*.h")
+    list(REMOVE_ITEM HEADERS ${CORO_HEADERS})
+endif()
+
 install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${HEADER_PATH})
 
 include(CMakePackageConfigHelpers)
