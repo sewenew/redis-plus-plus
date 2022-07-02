@@ -33,6 +33,20 @@ EventLoop::EventLoop() {
 }
 
 EventLoop::~EventLoop() {
+    stop();
+}
+
+void EventLoop::stop() {
+    {
+        std::lock_guard<std::mutex> lock(_mtx);
+
+        if (_stopped) {
+            return;
+        }
+
+        _stopped = true;
+    }
+
     _stop();
 
     if (_loop_thread.joinable()) {

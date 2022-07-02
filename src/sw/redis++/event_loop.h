@@ -40,9 +40,8 @@ public:
     EventLoop(const EventLoop &) = delete;
     EventLoop& operator=(const EventLoop &) = delete;
 
-    EventLoop(EventLoop &&that);
-
-    EventLoop& operator=(EventLoop &&that);
+    EventLoop(EventLoop &&that) = delete;
+    EventLoop& operator=(EventLoop &&that) = delete;
 
     ~EventLoop();
 
@@ -52,6 +51,8 @@ public:
 
     // Not thread safe. Only call it in callback functions.
     void watch(redisAsyncContext &ctx);
+
+    void stop();
 
 private:
     static void _connect_callback(const redisAsyncContext *ctx, int status);
@@ -108,6 +109,8 @@ private:
 
     // _loop must be defined at last, since its destructor needs other data members.
     LoopUPtr _loop;
+
+    bool _stopped{false};
 };
 
 using EventLoopSPtr = std::shared_ptr<EventLoop>;
