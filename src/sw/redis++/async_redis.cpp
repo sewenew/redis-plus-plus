@@ -26,6 +26,7 @@ AsyncRedis::AsyncRedis(const ConnectionOptions &opts,
         const EventLoopSPtr &loop) : _loop(loop) {
     if (!_loop) {
         _loop = std::make_shared<EventLoop>();
+        _own_loop = true;
     }
 
     _pool = std::make_shared<AsyncConnectionPool>(_loop, pool_opts, opts);
@@ -39,12 +40,19 @@ AsyncRedis::AsyncRedis(const std::shared_ptr<AsyncSentinel> &sentinel,
         const EventLoopSPtr &loop) : _loop(loop) {
     if (!_loop) {
         _loop = std::make_shared<EventLoop>();
+        _own_loop = true;
     }
 
     _pool = std::make_shared<AsyncConnectionPool>(SimpleAsyncSentinel(sentinel, master_name, role),
                                                     _loop,
                                                     pool_opts,
                                                     opts);
+}
+
+AsyncRedis::~AsyncRedis() {
+    if (_own_loop && _loop) {
+        _loop->stop();
+    }
 }
 
 AsyncSubscriber AsyncRedis::subscriber() {

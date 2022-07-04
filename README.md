@@ -2415,7 +2415,9 @@ In the callback, in order to get the reply, you need to call `sw::redis::Future<
 
 - When building your application code, don't forget to link libuv.
 - So far, the callback interface only implements few built-in commands. For other commands, you need to use the generic interface to send command to Redis (see below for example). You're always welcome to contribute more built-in commands.
-- You must ensure `AsyncRedis` alive before all callbacks have been executed.
+- You must ensure `AsyncRedis` alive before all callbacks have been executed (with some synchronization work). Because, once `AsyncRedis` is destroyed, it will stop the underlying event loop. And any commands that haven't sent to Redis yet, might fail.
+
+These notes also work with `AsyncRedisCluster`.
 
 ```c++
 #include <sw/redis++/async_redis++.h>
@@ -2624,6 +2626,8 @@ Future<void> fut2 = sub.psubscribe("pattern1*");
 
 #### Event Loop
 
+**NOTE**: The following is an experimental feature, and might be modified or abandaned in the future.
+
 By default, `AsyncRedis` and `AsyncRedisCluster` create a default event loop, and runs the loop in a dedicated thread to handle read and write operations. However, you can also share the underlying event loop with multiple `AsyncRedis` and `AsyncRedisCluster` objects. In order to do that, you need to create a `std::shared_ptr<EventLoop>`, and pass it to the constructors of `AsyncRedis` and `AsyncRedisCluster`.
 
 ```c++
@@ -2633,6 +2637,8 @@ auto redis = AsyncRedis(connection_opts, pool_opts, loop);
 
 auto cluster = AsyncRedisCluster(connection_opts, pool_opts, Role::MASTER, loop);
 ```
+
+**NOTE**: You must ensure `event_loop` lives longer than `AsyncRedis` and `AsyncRedisCluster` objects.
 
 #### Future with Continuation
 

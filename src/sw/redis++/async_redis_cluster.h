@@ -43,7 +43,7 @@ public:
     AsyncRedisCluster(AsyncRedisCluster &&) = default;
     AsyncRedisCluster& operator=(AsyncRedisCluster &&) = default;
 
-    ~AsyncRedisCluster() = default;
+    ~AsyncRedisCluster();
 
     AsyncSubscriber subscriber();
 
@@ -1156,6 +1156,8 @@ private:
     }
 
     EventLoopSPtr _loop;
+
+    bool _own_loop{false};
 
     AsyncShardsPoolSPtr _pool;
 };
