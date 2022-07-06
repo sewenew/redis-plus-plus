@@ -102,8 +102,7 @@ inline FormattedCommand format_cmd(CmdArgs &args) {
 
 struct SetResultParser {
     bool operator()(redisReply &reply) const {
-        sw::redis::reply::rewrite_set_reply(reply);
-        return sw::redis::reply::parse<bool>(reply);
+        return sw::redis::reply::parse_set_reply(reply);
     }
 };
 

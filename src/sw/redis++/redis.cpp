@@ -365,9 +365,7 @@ bool Redis::set(const StringView &key,
                     UpdateType type) {
     auto reply = command(cmd::set, key, val, ttl.count(), type);
 
-    reply::rewrite_set_reply(*reply);
-
-    return reply::parse<bool>(*reply);
+    return reply::parse_set_reply(*reply);
 }
 
 bool Redis::set(const StringView &key,
@@ -376,9 +374,7 @@ bool Redis::set(const StringView &key,
                     UpdateType type) {
     auto reply = command(cmd::set_keepttl, key, val, keepttl, type);
 
-    reply::rewrite_set_reply(*reply);
-
-    return reply::parse<bool>(*reply);
+    return reply::parse_set_reply(*reply);
 }
 
 void Redis::setex(const StringView &key,
