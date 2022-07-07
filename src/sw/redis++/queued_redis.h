@@ -22,6 +22,7 @@
 #include <memory>
 #include <initializer_list>
 #include <vector>
+#include <unordered_set>
 #include "connection.h"
 #include "connection_pool.h"
 #include "utils.h"
@@ -457,7 +458,7 @@ public:
                         const StringView &val,
                         const std::chrono::milliseconds &ttl = std::chrono::milliseconds(0),
                         UpdateType type = UpdateType::ALWAYS) {
-        _set_cmd_indexes.push_back(_cmd_num);
+        _set_cmd_indexes.insert(_cmd_num);
 
         return command(cmd::set, key, val, ttl.count(), type);
     }
@@ -466,7 +467,7 @@ public:
                         const StringView &val,
                         bool keepttl,
                         UpdateType type = UpdateType::ALWAYS) {
-        _set_cmd_indexes.push_back(_cmd_num);
+        _set_cmd_indexes.insert(_cmd_num);
 
         return command(cmd::set_keepttl, key, val, keepttl, type);
     }
@@ -1973,7 +1974,7 @@ private:
 
     std::size_t _cmd_num = 0;
 
-    std::vector<std::size_t> _set_cmd_indexes;
+    std::unordered_set<std::size_t> _set_cmd_indexes;
 
     std::vector<std::size_t> _empty_array_cmd_indexes;
 
@@ -1997,7 +1998,24 @@ public:
     redisReply& get(std::size_t idx);
 
     template <typename Result>
-    Result get(std::size_t idx);
+    auto get(std::size_t idx)
+        -> typename std::enable_if<!std::is_same<Result, bool>::value, Result>::type {
+        auto &reply = get(idx);
+
+        return reply::parse<Result>(reply);
+    }
+
+    template <typename Result>
+    auto get(std::size_t idx)
+        -> typename std::enable_if<std::is_same<Result, bool>::value, Result>::type {
+        auto &reply = get(idx);
+
+        if (_set_cmd_indexes.count(idx) > 0) {
+            return reply::parse_set_reply(reply);
+        } else {
+            return reply::parse<Result>(reply);
+        }
+    }
 
     template <typename Output>
     void get(std::size_t idx, Output output);
@@ -2006,11 +2024,15 @@ private:
     template <typename Impl>
     friend class QueuedRedis;
 
-    explicit QueuedReplies(std::vector<ReplyUPtr> replies) : _replies(std::move(replies)) {}
+    QueuedReplies(std::vector<ReplyUPtr> replies,
+            std::unordered_set<std::size_t> set_cmd_indexes) :
+        _replies(std::move(replies)), _set_cmd_indexes(std::move(set_cmd_indexes)) {}
 
     void _index_check(std::size_t idx) const;
 
     std::vector<ReplyUPtr> _replies;
+
+    std::unordered_set<std::size_t> _set_cmd_indexes;
 };
 
 }

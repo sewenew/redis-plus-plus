@@ -123,7 +123,7 @@ void PipelineTransactionTest<RedisInstance>::_test_pipeline(const StringView &ke
     REDIS_ASSERT(bool(new_val) && *new_val == val && len == val.size(),
             "failed to test pipeline with string operations");
 
-    REDIS_ASSERT(reply::parse<bool>(replies.get(0)), "failed to test pipeline with set operation");
+    reply::parse<void>(replies.get(0));
 
     new_val = reply::parse<OptionalString>(replies.get(1));
     len = reply::parse<long long>(replies.get(2));

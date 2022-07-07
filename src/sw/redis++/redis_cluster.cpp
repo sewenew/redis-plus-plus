@@ -259,9 +259,7 @@ bool RedisCluster::set(const StringView &key,
                     UpdateType type) {
     auto reply = command(cmd::set, key, val, ttl.count(), type);
 
-    reply::rewrite_set_reply(*reply);
-
-    return reply::parse<bool>(*reply);
+    return reply::parse_set_reply(*reply);
 }
 
 bool RedisCluster::set(const StringView &key,
@@ -270,9 +268,7 @@ bool RedisCluster::set(const StringView &key,
                     UpdateType type) {
     auto reply = command(cmd::set_keepttl, key, val, keepttl, type);
 
-    reply::rewrite_set_reply(*reply);
-
-    return reply::parse<bool>(*reply);
+    return reply::parse_set_reply(*reply);
 }
 
 void RedisCluster::setex(const StringView &key,
