@@ -2433,8 +2433,10 @@ auto async_redis = AsyncRedis(opts, pool_opts);
 
 Future<string> ping_res = async_redis.ping();
 
+// Async interface returning Future object.
 Future<bool> set_res = async_redis.set("key", "val");
 
+// Async interface with callback.
 async_redis.set("key", "val",
         [](Future<bool> &&fut) {
             try {
@@ -2696,7 +2698,7 @@ fut.get();
 
 ### Coroutine Interface
 
-*redis-plus-plus* also supports coroutine interface, however, coroutine support for Sentinel, Subscriber and Transaction is still on the way.
+*redis-plus-plus* also supports coroutine interface, however, coroutine support for Subscriber and Transaction is still on the way.
 
 #### Installation
 
@@ -2751,6 +2753,53 @@ cppcoro::sync_wait([&co_redis]() -> cppcoro::task<> {
         }
     }());
 ```
+
+#### Redis Sentinel
+
+Coroutine interface also supports Redis Sentinel.
+
+```c++
+#include <sw/redis++/co_redis++.h>
+
+SentinelOptions sentinel_opts;
+sentinel_opts.nodes = {
+    {"127.0.0.1", 8000},
+    {"127.0.0.1", 8001},
+    {"127.0.0.1", 8002}
+};
+
+sentinel_opts.connect_timeout = std::chrono::milliseconds(100);
+sentinel_opts.socket_timeout = std::chrono::milliseconds(100);
+
+auto sentinel = std::make_shared<CoSentinel>(sentinel_opts);
+
+onnectionOptions connection_opts;
+connection_opts.connect_timeout = std::chrono::milliseconds(100);   // Required.
+connection_opts.socket_timeout = std::chrono::milliseconds(100);   // Required.
+
+ConnectionPoolOptions pool_opts;
+pool_opts.size = 3; // Optional. The default size is 1.
+
+// Connect to master node.
+CoRedis co_redis(sentinel, "mymaster", Role::MASTER, connection_opts, pool_opts);
+
+// The following code randomly connects to one of the slave nodes.
+// CoRedis co_redis(sentinel, "mymaster", Role::SLAVE, connection_opts, pool_opts);
+
+cppcoro::sync_wait([&co_redis]() -> cppcoro::task<> {
+        try {
+            auto val = co_await co_redis.get("key");
+            if (val)
+                cout << *val << endl;
+            else
+                cout << "not exist" << endl;
+        } catch (const Error &e) {
+            cout << e.what() << endl;
+        }
+    }());
+```
+
+The coroutine support for sentinel is similar with the sync one, except that you need to create an `CoSentinel` object instead of a `Sentinel` object. Check [Redis Sentinel](#redis-sentinel) for more details on `SentinelOptions`, `ConnectionOptions` and `Role`.
 
 ## Redis Recipes
 
