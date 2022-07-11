@@ -57,6 +57,8 @@ public:
     virtual bool handle(redisAsyncContext &ctx) = 0;
 
     virtual void set_exception(std::exception_ptr err) = 0;
+
+    virtual void set_value(redisReply & /*reply*/) {}
 };
 
 using AsyncEventUPtr = std::unique_ptr<AsyncEvent>;
@@ -265,7 +267,7 @@ public:
     template <typename T>
     struct ResultType {};
 
-    void set_value(redisReply &reply) {
+    virtual void set_value(redisReply &reply) override {
         _set_value(reply, ResultType<Result>{});
     }
 
@@ -331,43 +333,25 @@ public:
     CallbackEvent(FormattedCommand cmd, Callback &&cb) :
         CommandEvent<Result, ResultParser>(std::move(cmd)), _cb(std::forward<Callback>(cb)) {}
 
-    virtual bool handle(redisAsyncContext &ctx) override {
-        CommandEvent<Result, ResultParser>::_handle(ctx, _callback);
-        return true;
+    virtual void set_exception(std::exception_ptr err) override {
+        CommandEvent<Result, ResultParser>::set_exception(err);
+        _run_callback();
+    }
+
+    virtual void set_value(redisReply &reply) override {
+        CommandEvent<Result, ResultParser>::set_value(reply);
+        _run_callback();
     }
 
 private:
-    static void _callback(redisAsyncContext * /*ctx*/, void *r, void *privdata) {
-        auto event = static_cast<CallbackEvent<Result, ResultParser, Callback> *>(privdata);
-
-        assert(event != nullptr);
+    void _run_callback() {
+        assert(_cb);
 
         try {
-            auto *reply = static_cast<redisReply *>(r);
-            if (reply == nullptr) {
-                event->set_exception(std::make_exception_ptr(Error("connection has been closed")));
-            } else if (reply::is_error(*reply)) {
-                try {
-                    throw_error(*reply);
-                } catch (const Error &) {
-                    event->set_exception(std::current_exception());
-                }
-            } else {
-                event->set_value(*reply);
-            }
-        } catch (...) {
-            event->set_exception(std::current_exception());
-        }
-
-        assert(event->_cb);
-
-        try {
-            (event->_cb)(event->get_future());
+            _cb(CommandEvent<Result, ResultParser>::get_future());
         } catch (...) {
             // Catch all possible exceptions thrown by user defined callbacks.
         }
-
-        delete event;
     }
 
     std::function<void (Future<Result> &&)> _cb;
@@ -547,98 +531,35 @@ template <typename Result, typename ResultParser>
 using ClusterEventUPtr = std::unique_ptr<ClusterEvent<Result, ResultParser>>;
 
 template <typename Result, typename ResultParser, typename Callback>
-class CallbackClusterEvent : public CommandEvent<Result, ResultParser> {
+class CallbackClusterEvent : public ClusterEvent<Result, ResultParser> {
 public:
     CallbackClusterEvent(const std::shared_ptr<AsyncShardsPool> &pool,
             const StringView &key,
             FormattedCommand cmd,
             Callback &&cb) :
-        CommandEvent<Result, ResultParser>(std::move(cmd)),
-        _pool(pool),
-        _key(key.data(), key.size()),
+        ClusterEvent<Result, ResultParser>(pool, key, std::move(cmd)),
         _cb(std::forward<Callback>(cb)) {}
 
-    virtual bool handle(redisAsyncContext &ctx) override {
-        CommandEvent<Result, ResultParser>::_handle(ctx, _callback_cluster_reply_callback);
+    virtual void set_exception(std::exception_ptr err) override {
+        ClusterEvent<Result, ResultParser>::set_exception(err);
+        _run_callback();
+    }
 
-        return true;
+    virtual void set_value(redisReply &reply) override {
+        ClusterEvent<Result, ResultParser>::set_value(reply);
+        _run_callback();
     }
 
 private:
-    enum class State {
-        NORMAL = 0,
-        MOVED,
-        ASKING
-    };
-
-    static void _callback_cluster_reply_callback(redisAsyncContext * /*ctx*/, void *r, void *privdata) {
-        auto event = static_cast<CallbackClusterEvent<Result, ResultParser, Callback> *>(privdata);
-
-        assert(event != nullptr);
+    void _run_callback() {
+        assert(_cb);
 
         try {
-            redisReply *reply = static_cast<redisReply *>(r);
-            if (reply == nullptr) {
-                event->set_exception(std::make_exception_ptr(Error("connection has been closed")));
-            } else if (reply::is_error(*reply)) {
-                try {
-                    throw_error(*reply);
-                } catch (const IoError &err) {
-                    event->_pool->update(event->_key, AsyncEventUPtr(event));
-                    return;
-                } catch (const ClosedError &err) {
-                    event->_pool->update(event->_key, AsyncEventUPtr(event));
-                    return;
-                } catch (const MovedError &err) {
-                    switch (event->_state) {
-                    case State::MOVED:
-                        throw Error("too many moved error");
-                        break;
-
-                    case State::ASKING:
-                        throw Error("Slot migrating...");
-                        break;
-
-                    default:
-                        break;
-                    }
-
-                    event->_state = State::MOVED;
-                    event->_pool->update(event->_key, AsyncEventUPtr(event));
-                    return;
-                } catch (const AskError &err) {
-                    event->_state = State::ASKING;
-                    auto pool = event->_pool->fetch(err.node());
-                    assert(pool);
-                    GuardedAsyncConnection connection(pool);
-                    connection.connection().send(AsyncEventUPtr(new AskingEvent(event)));
-                    return;
-                } catch (const Error &e) {
-                    event->set_exception(std::current_exception());
-                }
-            } else {
-                event->set_value(*reply);
-            }
-        } catch (...) {
-            event->set_exception(std::current_exception());
-        }
-
-        assert(event->_cb);
-
-        try {
-            (event->_cb)(event->get_future());
+            _cb(CommandEvent<Result, ResultParser>::get_future());
         } catch (...) {
             // Catch all possible exceptions thrown by user defined callbacks.
         }
-
-        delete event;
     }
-
-    std::shared_ptr<AsyncShardsPool> _pool;
-
-    std::string _key;
-
-    State _state = State::NORMAL;
 
     std::function<void (Future<Result> &&)> _cb;
 };
