@@ -41,6 +41,23 @@ struct ReplyDeleter {
 
 using ReplyUPtr = std::unique_ptr<redisReply, ReplyDeleter>;
 
+class ParseError : public ProtoError {
+public:
+    ParseError(const std::string &expect_type,
+            const redisReply &reply) : ProtoError(_err_info(expect_type, reply)) {}
+
+    ParseError(const ParseError &) = default;
+    ParseError& operator=(const ParseError &) = default;
+
+    ParseError(ParseError &&) = default;
+    ParseError& operator=(ParseError &&) = default;
+
+    virtual ~ParseError() override = default;
+
+private:
+    std::string _err_info(const std::string &type, const redisReply &reply) const;
+};
+
 namespace reply {
 
 template <typename T>
@@ -118,6 +135,8 @@ inline bool is_array(redisReply &reply) {
     return reply.type == REDIS_REPLY_ARRAY;
 }
 
+std::string type_to_string(int type);
+
 std::string to_status(redisReply &reply);
 
 template <typename Output>
@@ -146,7 +165,7 @@ namespace detail {
 template <typename Output>
 void to_array(redisReply &reply, Output output) {
     if (!is_array(reply)) {
-        throw ProtoError("Expect ARRAY reply");
+        throw ParseError("ARRAY", reply);
     }
 
     if (reply.element == nullptr) {
@@ -290,7 +309,7 @@ Optional<T> parse(ParseTag<Optional<T>>, redisReply &reply) {
 template <typename T, typename U>
 std::pair<T, U> parse(ParseTag<std::pair<T, U>>, redisReply &reply) {
     if (!is_array(reply)) {
-        throw ProtoError("Expect ARRAY reply");
+        throw ParseError("ARRAY", reply);
     }
 
     if (reply.elements != 2) {
@@ -318,11 +337,12 @@ std::tuple<Args...> parse(ParseTag<std::tuple<Args...>>, redisReply &reply) {
     static_assert(size > 0, "DO NOT support parsing tuple with 0 element");
 
     if (!is_array(reply)) {
-        throw ProtoError("Expect ARRAY reply");
+        throw ParseError("ARRAY", reply);
     }
 
     if (reply.elements != size) {
-        throw ProtoError("Expect tuple reply with " + std::to_string(size) + "elements");
+        throw ProtoError("Expect tuple reply with " + std::to_string(size) + " elements" +
+                ", but got " + std::to_string(reply.elements) + " elements");
     }
 
     if (reply.element == nullptr) {
@@ -344,7 +364,7 @@ Variant<Args...> parse(ParseTag<Variant<Args...>>, redisReply &reply) {
 template <typename T, typename std::enable_if<IsSequenceContainer<T>::value, int>::type>
 T parse(ParseTag<T>, redisReply &reply) {
     if (!is_array(reply)) {
-        throw ProtoError("Expect ARRAY reply");
+        throw ParseError("ARRAY", reply);
     }
 
     T container;
@@ -357,7 +377,7 @@ T parse(ParseTag<T>, redisReply &reply) {
 template <typename T, typename std::enable_if<IsAssociativeContainer<T>::value, int>::type>
 T parse(ParseTag<T>, redisReply &reply) {
     if (!is_array(reply)) {
-        throw ProtoError("Expect ARRAY reply");
+        throw ParseError("ARRAY", reply);
     }
 
     T container;
@@ -395,7 +415,7 @@ long long parse_scan_reply(redisReply &reply, Output output) {
 template <typename Output>
 void to_array(redisReply &reply, Output output) {
     if (!is_array(reply)) {
-        throw ProtoError("Expect ARRAY reply");
+        throw ParseError("ARRAY", reply);
     }
 
     detail::to_array(typename IsKvPairIter<Output>::type(), reply, output);

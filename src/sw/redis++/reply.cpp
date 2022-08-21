@@ -22,11 +22,42 @@ namespace sw {
 
 namespace redis {
 
+std::string ParseError::_err_info(const std::string &expect_type,
+        const redisReply &reply) const {
+    return "expect " + expect_type + " reply, but got " +
+        reply::type_to_string(reply.type) + " reply";
+}
+
 namespace reply {
+
+std::string type_to_string(int type) {
+    switch (type) {
+    case REDIS_REPLY_ERROR:
+        return "ERROR";
+
+    case REDIS_REPLY_NIL:
+        return "NULL";
+
+    case REDIS_REPLY_STRING:
+        return "STRING";
+
+    case REDIS_REPLY_STATUS:
+        return "STATUS";
+
+    case REDIS_REPLY_INTEGER:
+        return "INTEGER";
+
+    case REDIS_REPLY_ARRAY:
+        return "ARRAY";
+
+    default:
+        return "UNKNOWN";
+    }
+}
 
 std::string to_status(redisReply &reply) {
     if (!reply::is_status(reply)) {
-        throw ProtoError("Expect STATUS reply");
+        throw ParseError("STATUS", reply);
     }
 
     if (reply.str == nullptr) {
@@ -40,7 +71,7 @@ std::string to_status(redisReply &reply) {
 
 std::string parse(ParseTag<std::string>, redisReply &reply) {
     if (!reply::is_string(reply) && !reply::is_status(reply)) {
-        throw ProtoError("Expect STRING reply");
+        throw ParseError("STRING or STATUS", reply);
     }
 
     if (reply.str == nullptr) {
@@ -54,7 +85,7 @@ std::string parse(ParseTag<std::string>, redisReply &reply) {
 
 long long parse(ParseTag<long long>, redisReply &reply) {
     if (!reply::is_integer(reply)) {
-        throw ProtoError("Expect INTEGER reply");
+        throw ParseError("INTEGER", reply);
     }
 
     return reply.integer;
@@ -84,7 +115,7 @@ bool parse(ParseTag<bool>, redisReply &reply) {
 
 void parse(ParseTag<void>, redisReply &reply) {
     if (!reply::is_status(reply)) {
-        throw ProtoError("Expect STATUS reply");
+        throw ParseError("STATUS", reply);
     }
 
     if (reply.str == nullptr) {
