@@ -20,6 +20,12 @@
 #include "async_shards_pool.h"
 #include "cmd_formatter.h"
 
+#ifdef _MSC_VER
+
+#include <winsock2.h>   // for `timeval` with MSVC compiler
+
+#endif
+
 namespace {
 
 using namespace sw::redis;
@@ -54,6 +60,16 @@ void set_options_callback(redisAsyncContext *ctx, void *r, void *) {
     }
 
     connection->connect_callback();
+}
+
+timeval to_timeval(const std::chrono::milliseconds &dur) {
+    auto sec = std::chrono::duration_cast<std::chrono::seconds>(dur);
+    auto msec = std::chrono::duration_cast<std::chrono::microseconds>(dur - sec);
+
+    timeval t;
+    t.tv_sec = sec.count();
+    t.tv_usec = msec.count();
+    return t;
 }
 
 }
@@ -394,14 +410,29 @@ void AsyncConnection::_clean_async_context(void *data) {
 }
 
 AsyncConnection::AsyncContextUPtr AsyncConnection::_connect(const ConnectionOptions &opts) {
-    redisAsyncContext *context = nullptr;
+    redisOptions redis_opts{};
+
+    timeval connect_timeout{};
+    if (opts.connect_timeout > std::chrono::milliseconds(0)) {
+        connect_timeout = to_timeval(opts.connect_timeout);
+        redis_opts.connect_timeout = &connect_timeout;
+    }
+    timeval socket_timeout{};
+    if (opts.socket_timeout > std::chrono::milliseconds(0)) {
+        socket_timeout = to_timeval(opts.socket_timeout);
+        redis_opts.command_timeout = &socket_timeout;
+    }
+
     switch (opts.type) {
     case ConnectionType::TCP:
-        context = redisAsyncConnect(opts.host.c_str(), opts.port);
+        redis_opts.type = REDIS_CONN_TCP;
+        redis_opts.endpoint.tcp.ip = opts.host.c_str();
+        redis_opts.endpoint.tcp.port = opts.port;
         break;
 
     case ConnectionType::UNIX:
-        context = redisAsyncConnectUnix(opts.path.c_str());
+        redis_opts.type = REDIS_CONN_UNIX;
+        redis_opts.endpoint.unix_socket = opts.path.c_str();
         break;
 
     default:
@@ -409,6 +440,7 @@ AsyncConnection::AsyncContextUPtr AsyncConnection::_connect(const ConnectionOpti
         throw Error("Unknown connection type");
     }
 
+    auto *context = redisAsyncConnectWithOptions(&redis_opts);
     if (context == nullptr) {
         throw Error("Failed to allocate memory for connection.");
     }
