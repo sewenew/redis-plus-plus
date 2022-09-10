@@ -410,14 +410,16 @@ void AsyncConnection::_clean_async_context(void *data) {
 }
 
 AsyncConnection::AsyncContextUPtr AsyncConnection::_connect(const ConnectionOptions &opts) {
-    redisOptions redis_opts{};
+    redisOptions redis_opts;
+    // GCC 4.8 doesn't support zero initializer for C struct. Damn it!
+    std::memset(&redis_opts, 0, sizeof(redis_opts));
 
-    timeval connect_timeout{};
+    timeval connect_timeout;
     if (opts.connect_timeout > std::chrono::milliseconds(0)) {
         connect_timeout = to_timeval(opts.connect_timeout);
         redis_opts.connect_timeout = &connect_timeout;
     }
-    timeval socket_timeout{};
+    timeval socket_timeout;
     if (opts.socket_timeout > std::chrono::milliseconds(0)) {
         socket_timeout = to_timeval(opts.socket_timeout);
         redis_opts.command_timeout = &socket_timeout;
