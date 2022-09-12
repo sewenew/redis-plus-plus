@@ -214,7 +214,6 @@ if(REDIS_PLUS_PLUS_BUILD_SHARED)
 
     add_library(${SHARED_LIB} SHARED ${REDIS_PLUS_PLUS_SOURCES})
     add_library(redis++::${SHARED_LIB} ALIAS ${SHARED_LIB})
-
     list(APPEND REDIS_PLUS_PLUS_TARGETS ${SHARED_LIB})
 
     target_include_directories(${SHARED_LIB} PUBLIC
