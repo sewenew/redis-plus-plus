@@ -152,12 +152,17 @@ if(REDIS_PLUS_PLUS_BUILD_STATIC)
 
     # For the static build, link to the static version of hiredis
     set(REDIS_PLUS_PLUS_HIREDIS_LIBS_STATIC ${REDIS_PLUS_PLUS_HIREDIS_LIBS})
-    string(REPLACE "hiredis::hiredis" "hiredis::hiredis_static" REDIS_PLUS_PLUS_HIREDIS_LIBS_STATIC
-      "${REDIS_PLUS_PLUS_HIREDIS_LIBS_STATIC}")
 
-    # If SSL is not enabled, this line will have no effect
-    string(REPLACE "hiredis::hiredis_ssl" "hiredis::hiredis_ssl_static" REDIS_PLUS_PLUS_HIREDIS_LIBS_STATIC
-      "${REDIS_PLUS_PLUS_HIREDIS_LIBS_STATIC}")
+    if (TARGET hiredis::hiredis_static)
+      string(REPLACE "hiredis::hiredis" "hiredis::hiredis_static" REDIS_PLUS_PLUS_HIREDIS_LIBS_STATIC
+        "${REDIS_PLUS_PLUS_HIREDIS_LIBS_STATIC}")
+    endif()
+
+    if (TARGET hiredis::hiredis_ssl_static)
+      # If SSL is not enabled, this line will have no effect
+      string(REPLACE "hiredis::hiredis_ssl" "hiredis::hiredis_ssl_static" REDIS_PLUS_PLUS_HIREDIS_LIBS_STATIC
+        "${REDIS_PLUS_PLUS_HIREDIS_LIBS_STATIC}")
+    endif()
 
     add_library(${STATIC_LIB} STATIC ${REDIS_PLUS_PLUS_SOURCES})
     add_library(redis++::${STATIC_LIB} ALIAS ${STATIC_LIB})
