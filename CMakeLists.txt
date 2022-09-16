@@ -127,6 +127,8 @@ if(hiredis_FOUND)
     if(REDIS_PLUS_PLUS_USE_TLS)
         find_package(hiredis_ssl REQUIRED)
         list(APPEND REDIS_PLUS_PLUS_HIREDIS_LIBS hiredis::hiredis_ssl)
+        find_package(OpenSSL REQUIRED)
+        list(APPEND REDIS_PLUS_PLUS_HIREDIS_LIBS ${OPENSSL_LIBRARIES})
     endif()
 else()
     find_path(HIREDIS_HEADER hiredis)
@@ -136,6 +138,8 @@ else()
     if(REDIS_PLUS_PLUS_USE_TLS)
         find_library(HIREDIS_TLS_LIB hiredis_ssl)
         list(APPEND REDIS_PLUS_PLUS_HIREDIS_LIBS ${HIREDIS_TLS_LIB})
+        find_package(OpenSSL REQUIRED)
+        list(APPEND REDIS_PLUS_PLUS_HIREDIS_LIBS ${OPENSSL_LIBRARIES})
     endif()
 endif()
 
@@ -145,6 +149,20 @@ message(STATUS "redis-plus-plus build static library: ${REDIS_PLUS_PLUS_BUILD_ST
 
 if(REDIS_PLUS_PLUS_BUILD_STATIC)
     set(STATIC_LIB redis++_static)
+
+    # For the static build, link to the static version of hiredis
+    set(REDIS_PLUS_PLUS_HIREDIS_LIBS_STATIC ${REDIS_PLUS_PLUS_HIREDIS_LIBS})
+
+    if (TARGET hiredis::hiredis_static)
+      string(REPLACE "hiredis::hiredis" "hiredis::hiredis_static" REDIS_PLUS_PLUS_HIREDIS_LIBS_STATIC
+        "${REDIS_PLUS_PLUS_HIREDIS_LIBS_STATIC}")
+    endif()
+
+    if (TARGET hiredis::hiredis_ssl_static)
+      # If SSL is not enabled, this line will have no effect
+      string(REPLACE "hiredis::hiredis_ssl" "hiredis::hiredis_ssl_static" REDIS_PLUS_PLUS_HIREDIS_LIBS_STATIC
+        "${REDIS_PLUS_PLUS_HIREDIS_LIBS_STATIC}")
+    endif()
 
     add_library(${STATIC_LIB} STATIC ${REDIS_PLUS_PLUS_SOURCES})
     add_library(redis++::${STATIC_LIB} ALIAS ${STATIC_LIB})
@@ -159,7 +177,7 @@ if(REDIS_PLUS_PLUS_BUILD_STATIC)
 
     if(hiredis_FOUND)
         target_include_directories(${STATIC_LIB} PUBLIC $<BUILD_INTERFACE:${hiredis_INCLUDE_DIRS}>)
-        target_link_libraries(${STATIC_LIB} PUBLIC ${REDIS_PLUS_PLUS_HIREDIS_LIBS})
+        target_link_libraries(${STATIC_LIB} PUBLIC ${REDIS_PLUS_PLUS_HIREDIS_LIBS_STATIC})
     else()
         target_include_directories(${STATIC_LIB} PUBLIC $<BUILD_INTERFACE:${HIREDIS_HEADER}>)
     endif()
@@ -201,7 +219,6 @@ if(REDIS_PLUS_PLUS_BUILD_SHARED)
 
     add_library(${SHARED_LIB} SHARED ${REDIS_PLUS_PLUS_SOURCES})
     add_library(redis++::${SHARED_LIB} ALIAS ${SHARED_LIB})
-    
     list(APPEND REDIS_PLUS_PLUS_TARGETS ${SHARED_LIB})
 
     target_include_directories(${SHARED_LIB} PUBLIC
