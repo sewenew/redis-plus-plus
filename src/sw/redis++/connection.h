@@ -79,6 +79,9 @@ public:
     // Client code should never manually set/get it. This member might be removed in the future.
     bool readonly = false;
 
+    // RESP version.
+    int resp = 2;
+
 private:
     ConnectionOptions _parse_uri(const std::string &uri) const;
 
@@ -162,6 +165,10 @@ public:
 
     friend void swap(Connection &lhs, Connection &rhs) noexcept;
 
+#ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
+    void set_push_callback(redisPushFn *push_func);
+#endif
+
 private:
     class Connector;
 
@@ -182,6 +189,8 @@ private:
     void _select_db();
 
     void _enable_readonly();
+
+    void _set_resp_version();
 
     redisContext* _context();
 

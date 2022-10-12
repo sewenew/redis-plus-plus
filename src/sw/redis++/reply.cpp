@@ -70,9 +70,16 @@ std::string to_status(redisReply &reply) {
 }
 
 std::string parse(ParseTag<std::string>, redisReply &reply) {
+#ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
+    if (!reply::is_string(reply) && !reply::is_status(reply)
+            && !reply::is_verb(reply) && !reply::is_bignum(reply)) {
+        throw ParseError("STRING or STATUS or VERB or BIGNUM", reply);
+    }
+#else
     if (!reply::is_string(reply) && !reply::is_status(reply)) {
         throw ParseError("STRING or STATUS", reply);
     }
+#endif
 
     if (reply.str == nullptr) {
         throw ProtoError("A null string reply");
@@ -92,6 +99,12 @@ long long parse(ParseTag<long long>, redisReply &reply) {
 }
 
 double parse(ParseTag<double>, redisReply &reply) {
+#ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
+    if (is_double(reply)) {
+        return reply.dval;
+    } else {
+        // Return by string reply.
+#endif
     try {
         return std::stod(parse<std::string>(reply));
     } catch (const std::invalid_argument &) {
@@ -99,10 +112,22 @@ double parse(ParseTag<double>, redisReply &reply) {
     } catch (const std::out_of_range &) {
         throw ProtoError("double reply out of range");
     }
+#ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
+    }
+#endif
 }
 
 bool parse(ParseTag<bool>, redisReply &reply) {
+#ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
+    long long ret = 0;
+    if (is_bool(reply) || is_integer(reply)) {
+        ret = reply.integer;
+    } else {
+        throw ProtoError("BOOL or INTEGER");
+    }
+#else
     auto ret = parse<long long>(reply);
+#endif
 
     if (ret == 1) {
         return true;
@@ -155,7 +180,11 @@ void rewrite_empty_array_reply(redisReply &reply) {
 namespace detail {
 
 bool is_flat_array(redisReply &reply) {
+#ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
+    assert(reply::is_array(reply) || reply::is_map(reply) || reply::is_set(reply));
+#else
     assert(reply::is_array(reply));
+#endif
 
     // Empty array reply.
     if (reply.element == nullptr || reply.elements == 0) {

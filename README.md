@@ -733,6 +733,20 @@ Redis redis6("tcp://127.0.0.1?socket_timeout=50ms&connect_timeout=1s");
 Redis redis7("unix://path/to/socket");
 ```
 
+#### RESP3
+
+Since Redis 6.0, it supports a new version of Redis protocol, i.e. RESP3. In order to use this new protocol, you need to set `ConnectionOptions::resp` to be 3.
+
+```
+ConnectionOptions opts;
+opts.resp = 3;
+// Set other options...
+```
+
+By default, `ConnectionOptions::resp` is 2, i.e. use RESP version 2. So far, only version 2 and 3 are supported, and the behavior is undefined, if you set `ConnectionOptions::resp` to other numbers.
+
+**NOTE**: In order to use this new protocol, you need to install the latest hiredis (even hiredis-v1.0.2 has bugs on RESP3 support).
+
 #### Lazily Create Connection
 
 Connections in the pool are lazily created. When the connection pool is initialized, i.e. the constructor of `Redis`, `Redis` does NOT connect to the server. Instead, it connects to the server only when you try to send command. In this way, we can avoid unnecessary connections. So if the pool size is 5, but the number of max concurrent connections is 3, there will be only 3 connections in the pool.

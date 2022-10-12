@@ -43,6 +43,10 @@ inline void auth(Connection &connection, const StringView &user, const StringVie
                     password.data(), password.size());
 }
 
+inline void hello(Connection &connection, long long version) {
+    connection.send("HELLO %lld", version);
+}
+
 inline void echo(Connection &connection, const StringView &msg) {
     connection.send("ECHO %b", msg.data(), msg.size());
 }

@@ -27,6 +27,12 @@
 #include "errors.h"
 #include "utils.h"
 
+#ifdef REDIS_REPLY_MAP
+
+#define REDIS_PLUS_PLUS_RESP_VERSION_3
+
+#endif
+
 namespace sw {
 
 namespace redis {
@@ -135,6 +141,42 @@ inline bool is_array(redisReply &reply) {
     return reply.type == REDIS_REPLY_ARRAY;
 }
 
+#ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
+
+inline bool is_double(redisReply &reply) {
+    return reply.type == REDIS_REPLY_DOUBLE;
+}
+
+inline bool is_bool(redisReply &reply) {
+    return reply.type == REDIS_REPLY_BOOL;
+}
+
+inline bool is_map(redisReply &reply) {
+    return reply.type == REDIS_REPLY_MAP;
+}
+
+inline bool is_set(redisReply &reply) {
+    return reply.type == REDIS_REPLY_SET;
+}
+
+inline bool is_attr(redisReply &reply) {
+    return reply.type == REDIS_REPLY_ATTR;
+}
+
+inline bool is_push(redisReply &reply) {
+    return reply.type == REDIS_REPLY_PUSH;
+}
+
+inline bool is_bignum(redisReply &reply) {
+    return reply.type == REDIS_REPLY_BIGNUM;
+}
+
+inline bool is_verb(redisReply &reply) {
+    return reply.type == REDIS_REPLY_VERB;
+}
+
+#endif
+
 std::string type_to_string(int type);
 
 std::string to_status(redisReply &reply);
@@ -164,9 +206,15 @@ namespace detail {
 
 template <typename Output>
 void to_array(redisReply &reply, Output output) {
+#ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
+    if (!is_array(reply) && !is_map(reply) && !is_set(reply)) {
+        throw ParseError("ARRAY or MAP or SET", reply);
+    }
+#else
     if (!is_array(reply)) {
         throw ParseError("ARRAY", reply);
     }
+#endif
 
     if (reply.element == nullptr) {
         // Empty array.
@@ -312,12 +360,22 @@ std::pair<T, U> parse(ParseTag<std::pair<T, U>>, redisReply &reply) {
         throw ParseError("ARRAY", reply);
     }
 
-    if (reply.elements != 2) {
-        throw ProtoError("NOT key-value PAIR reply");
-    }
-
     if (reply.element == nullptr) {
         throw ProtoError("Null PAIR reply");
+    }
+
+    if (reply.elements == 1) {
+        // Nested array reply. Check the first element of the nested array.
+        auto *nested_element = reply.element[0];
+        if (nested_element == nullptr) {
+            throw ProtoError("null nested PAIR reply");
+        }
+
+        return parse(ParseTag<std::pair<T, U>>{}, *nested_element);
+    }
+
+    if (reply.elements != 2) {
+        throw ProtoError("NOT key-value PAIR reply");
     }
 
     auto *first = reply.element[0];
@@ -363,7 +421,12 @@ Variant<Args...> parse(ParseTag<Variant<Args...>>, redisReply &reply) {
 
 template <typename T, typename std::enable_if<IsSequenceContainer<T>::value, int>::type>
 T parse(ParseTag<T>, redisReply &reply) {
+#ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
+    if (!is_array(reply) && !is_set(reply)) {
+        throw ParseError("ARRAY or SET", reply);
+#else
     if (!is_array(reply)) {
+#endif
         throw ParseError("ARRAY", reply);
     }
 
@@ -376,7 +439,11 @@ T parse(ParseTag<T>, redisReply &reply) {
 
 template <typename T, typename std::enable_if<IsAssociativeContainer<T>::value, int>::type>
 T parse(ParseTag<T>, redisReply &reply) {
+#ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
+    if (!is_array(reply) && !is_map(reply) && !is_set(reply)) {
+#else
     if (!is_array(reply)) {
+#endif
         throw ParseError("ARRAY", reply);
     }
 
@@ -414,9 +481,15 @@ long long parse_scan_reply(redisReply &reply, Output output) {
 
 template <typename Output>
 void to_array(redisReply &reply, Output output) {
+#ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
+    if (!is_array(reply) && !is_map(reply) && !is_set(reply)) {
+        throw ParseError("ARRAY or MAP or SET", reply);
+    }
+#else
     if (!is_array(reply)) {
         throw ParseError("ARRAY", reply);
     }
+#endif
 
     detail::to_array(typename IsKvPairIter<Output>::type(), reply, output);
 }
