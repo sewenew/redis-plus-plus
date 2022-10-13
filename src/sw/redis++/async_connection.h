@@ -140,6 +140,10 @@ public:
         return *_subscriber_impl;
     }
 
+#ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
+    void set_push_callback(redisAsyncPushFn *push_func);
+#endif
+
 private:
     enum class State {
         BROKEN = 0,
@@ -149,7 +153,8 @@ private:
         SELECTING_DB,
         READY,
         WAIT_SENTINEL,
-        ENABLE_READONLY
+        ENABLE_READONLY,
+        SET_RESP
     };
 
     redisAsyncContext& _context() {
@@ -162,9 +167,15 @@ private:
 
     void _connecting_callback();
 
+    void _set_resp_callback();
+
     void _authing_callback();
 
     void _select_db_callback();
+
+    bool _need_set_resp() const;
+
+    void _set_resp();
 
     bool _need_auth() const;
 

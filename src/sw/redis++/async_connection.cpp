@@ -30,6 +30,40 @@ namespace {
 
 using namespace sw::redis;
 
+// TODO: hello_callback is almost the same as set_options_callback.
+void hello_callback(redisAsyncContext *ctx, void *r, void *) {
+    assert(ctx != nullptr);
+
+    auto *context = static_cast<AsyncContext *>(ctx->data);
+    assert(context != nullptr);
+
+    auto &connection = context->connection;
+    assert(connection);
+
+    redisReply *reply = static_cast<redisReply *>(r);
+    if (reply == nullptr) {
+        // Connection has bee closed.
+        // TODO: not sure if we should set this to be State::BROKEN
+        return;
+    }
+
+    try {
+        if (reply::is_error(*reply)) {
+            throw_error(*reply);
+        }
+
+        // TODO: parse HELLO reply
+        //reply::parse<HELLO>(*reply);
+    } catch (const Error &e) {
+        // TODO: disconnect and connect_callback might throw
+        connection->disconnect(std::make_exception_ptr(e));
+
+        return;
+    }
+
+    connection->connect_callback();
+}
+
 void set_options_callback(redisAsyncContext *ctx, void *r, void *) {
     assert(ctx != nullptr);
 
@@ -155,6 +189,10 @@ void AsyncConnection::connect_callback(std::exception_ptr err) {
             _connecting_callback();
             break;
 
+        case State::SET_RESP:
+            _set_resp_callback();
+            break;
+
         case State::AUTHING:
             _authing_callback();
             break;
@@ -199,6 +237,14 @@ void AsyncConnection::update_node_info(const std::string &host, int port) {
     _opts.host = host;
     _opts.port = port;
 }
+
+#ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
+
+void AsyncConnection::set_push_callback(redisAsyncPushFn *push_func) {
+    redisAsyncSetPushCallback(_ctx, push_func);
+}
+
+#endif
 
 void AsyncConnection::_disable_disconnect_callback() {
     assert(_ctx != nullptr);
@@ -270,6 +316,20 @@ void AsyncConnection::_fail_events(std::exception_ptr err) {
 }
 
 void AsyncConnection::_connecting_callback() {
+    if (_need_set_resp()) {
+        _set_resp();
+    } else if (_need_auth()) {
+        _auth();
+    } else if (_need_select_db()) {
+        _select_db();
+    } else if (_need_enable_readonly()) {
+        _enable_readonly();
+    } else {
+        _set_ready();
+    }
+}
+
+void AsyncConnection::_set_resp_callback() {
     if (_need_auth()) {
         _auth();
     } else if (_need_select_db()) {
@@ -297,6 +357,17 @@ void AsyncConnection::_select_db_callback() {
     } else {
         _set_ready();
     }
+}
+
+void AsyncConnection::_set_resp() {
+    assert(!broken());
+
+    if (redisAsyncCommand(_ctx, hello_callback, nullptr, "HELLO %d",
+            _opts.resp) != REDIS_OK) {
+        throw Error("failed to send hello command");
+    }
+
+    _state = State::SET_RESP;
 }
 
 void AsyncConnection::_auth() {
@@ -383,10 +454,20 @@ void AsyncConnection::_connect() {
         _tls_ctx = std::move(tls_ctx);
         _ctx = ctx.release();
 
+#ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
+        if (_subscriber_impl && opts.resp > 2) {
+            set_push_callback(nullptr);
+        }
+#endif
+
         _state = State::CONNECTING;
     } catch (const Error &err) {
         _fail_events(std::current_exception());
     }
+}
+
+bool AsyncConnection::_need_set_resp() const {
+    return _opts.resp > 2;
 }
 
 bool AsyncConnection::_need_auth() const {

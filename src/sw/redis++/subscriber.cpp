@@ -21,7 +21,13 @@ namespace sw {
 
 namespace redis {
 
-Subscriber::Subscriber(Connection connection) : _connection(std::move(connection)) {}
+Subscriber::Subscriber(Connection connection) : _connection(std::move(connection)) {
+#ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
+    if (_connection.options().resp > 2) {
+        _connection.set_push_callback(nullptr);
+    }
+#endif
+}
 
 void Subscriber::subscribe(const StringView &channel) {
     _check_connection();
@@ -77,7 +83,11 @@ void Subscriber::consume() {
 
     assert(reply);
 
+#ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
+    if (!(reply::is_push(*reply) || reply::is_array(*reply)) || reply->elements < 1 || reply->element == nullptr) {
+#else
     if (!reply::is_array(*reply) || reply->elements < 1 || reply->element == nullptr) {
+#endif
         throw ProtoError("Invalid subscribe message");
     }
 

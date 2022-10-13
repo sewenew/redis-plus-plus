@@ -434,7 +434,21 @@ ReplyUPtr Connection::recv(bool handle_error_reply) {
     return reply;
 }
 
+#ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
+
+void Connection::set_push_callback(redisPushFn *push_func) {
+    assert(!broken());
+
+    redisSetPushCallback(_context(), push_func);
+}
+
+#endif
+
 void Connection::_set_options() {
+    if (_opts.resp > 2) {
+        _set_resp_version();
+    }
+
     _auth();
 
     _select_db();
@@ -452,6 +466,16 @@ void Connection::_enable_readonly() {
     assert(reply);
 
     reply::parse<void>(*reply);
+}
+
+void Connection::_set_resp_version() {
+    cmd::hello(*this, _opts.resp);
+
+    auto reply = recv();
+
+    assert(reply);
+
+    // TODO: parse hello reply.
 }
 
 void Connection::_auth() {

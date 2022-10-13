@@ -48,7 +48,11 @@ void AsyncSubscriberImpl::_run_err_callback(std::exception_ptr err) {
 }
 
 void AsyncSubscriberImpl::_run_callback(redisReply &reply) {
+#ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
+    if (!(reply::is_array(reply) || reply::is_push(reply)) || reply.elements < 1 || reply.element == nullptr) {
+#else
     if (!reply::is_array(reply) || reply.elements < 1 || reply.element == nullptr) {
+#endif
         throw ProtoError("Invalid subscribe message");
     }
 
