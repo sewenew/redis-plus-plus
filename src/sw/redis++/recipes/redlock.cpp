@@ -16,21 +16,20 @@
 
 #include "redlock.h"
 #include <cassert>
-#include <thread>
 
 namespace sw {
 
 namespace redis {
 
-RedMutex::RedMutex(Redis &master, const std::string &resource) : _resource(resource) {
+RedMutexTx::RedMutexTx(Redis &master, const std::string &resource) : _resource(resource) {
     _masters.push_back(std::ref(master));
 }
 
-RedMutex::RedMutex(std::initializer_list<std::reference_wrapper<Redis>> masters,
+RedMutexTx::RedMutexTx(std::initializer_list<std::reference_wrapper<Redis>> masters,
                     const std::string &resource)
                         : _masters(masters.begin(), masters.end()), _resource(resource) {}
 
-std::chrono::milliseconds RedMutex::try_lock(const std::string &val,
+std::chrono::milliseconds RedMutexTx::try_lock(const std::string &val,
         const std::chrono::milliseconds &ttl) {
     auto start = std::chrono::steady_clock::now();
 
@@ -53,12 +52,12 @@ std::chrono::milliseconds RedMutex::try_lock(const std::string &val,
     return time_left;
 }
 
-std::chrono::milliseconds RedMutex::try_lock(const std::string &val,
+std::chrono::milliseconds RedMutexTx::try_lock(const std::string &val,
         const std::chrono::time_point<std::chrono::system_clock> &tp) {
     return try_lock(val, RedLockUtils::ttl(tp));
 }
 
-std::chrono::milliseconds RedMutex::extend_lock(const std::string &val,
+std::chrono::milliseconds RedMutexTx::extend_lock(const std::string &val,
         const std::chrono::milliseconds &ttl) {
     // TODO: this method is almost duplicate with `try_lock`. I'll refactor it soon.
     auto start = std::chrono::steady_clock::now();
@@ -90,12 +89,12 @@ std::chrono::milliseconds RedMutex::extend_lock(const std::string &val,
     return time_left;
 }
 
-std::chrono::milliseconds RedMutex::extend_lock(const std::string &val,
+std::chrono::milliseconds RedMutexTx::extend_lock(const std::string &val,
         const std::chrono::time_point<std::chrono::system_clock> &tp) {
     return extend_lock(val, RedLockUtils::ttl(tp));
 }
 
-bool RedMutex::_extend_lock_master(Redis &master,
+bool RedMutexTx::_extend_lock_master(Redis &master,
         const std::string &val,
         const std::chrono::milliseconds &ttl) {
     auto tx = master.transaction(true);
@@ -118,7 +117,7 @@ bool RedMutex::_extend_lock_master(Redis &master,
     return true;
 }
 
-void RedMutex::unlock(const std::string &val) {
+void RedMutexTx::unlock(const std::string &val) {
     for (auto &master : _masters) {
         try {
             _unlock_master(master.get(), val);
@@ -128,7 +127,7 @@ void RedMutex::unlock(const std::string &val) {
     }
 }
 
-void RedMutex::_unlock_master(Redis &master, const std::string &val) {
+void RedMutexTx::_unlock_master(Redis &master, const std::string &val) {
     auto tx = master.transaction(true);
     auto r = tx.redis();
     try {
@@ -146,7 +145,7 @@ void RedMutex::_unlock_master(Redis &master, const std::string &val) {
     }
 }
 
-bool RedMutex::_try_lock(const std::string &val, const std::chrono::milliseconds &ttl) {
+bool RedMutexTx::_try_lock(const std::string &val, const std::chrono::milliseconds &ttl) {
     std::size_t lock_cnt = 0U;
     for (auto &master : _masters) {
         if (_try_lock_master(master.get(), val, ttl)) {
@@ -157,7 +156,7 @@ bool RedMutex::_try_lock(const std::string &val, const std::chrono::milliseconds
     return lock_cnt >= _quorum();
 }
 
-bool RedMutex::_try_lock_master(Redis &master,
+bool RedMutexTx::_try_lock_master(Redis &master,
         const std::string &val,
         const std::chrono::milliseconds &ttl) {
     return master.set(_resource, val, ttl, UpdateType::NOT_EXIST);
@@ -323,6 +322,230 @@ void RedLockMutexVessel::unlock(const LockInfo& lock_info)
 {
     for (auto& instance : _instances) {
         _unlock_instance(instance, lock_info.resource, lock_info.random_string);
+    }
+}
+
+void RedMutexImpl::lock() {
+    std::lock_guard<std::mutex> lock(_mtx);
+
+    _sanity_check();
+
+    if (_locked()) {
+        throw Error("RedMutex is not reentrant");
+    }
+
+    auto lock_id = RedLockUtils::lock_id();
+
+    _lock(lock_id, _ttl);
+
+    _lock_id.swap(lock_id);
+
+    _keeper->keep(shared_from_this());
+}
+
+void RedMutexImpl::unlock() {
+    std::lock_guard<std::mutex> lock(_mtx);
+
+    _sanity_check();
+
+    if (!_locked()) {
+        throw Error("RedMutex is not locked");
+    }
+
+    // TODO: what if unlock fail?
+    _unlock(_lock_id);
+
+    _lock_id.clear();
+}
+
+bool RedMutexImpl::try_lock() {
+    std::lock_guard<std::mutex> lock(_mtx);
+
+    _sanity_check();
+
+    if (_locked()) {
+        throw Error("RedMutex is not reentrant");
+    }
+
+    auto lock_id = RedLockUtils::lock_id();
+    if (_try_lock(lock_id, _ttl)) {
+        _lock_id.swap(lock_id);
+        _keeper->keep(shared_from_this());
+    }
+
+    return _locked();
+}
+
+bool RedMutexImpl::extend_lock() {
+    std::lock_guard<std::mutex> lock(_mtx);
+
+    _sanity_check();
+
+    if (!_locked()) {
+        throw Error("cannot extend an unlocked RedMutex");
+    }
+
+    try {
+        if (_extend_lock(_lock_id, _ttl) <= std::chrono::milliseconds(0)) {
+            throw Error("failed to extend RedMutex");
+        }
+    } catch (...) {
+        if (_auto_extend_err_callback) {
+            try {
+                _auto_extend_err_callback(std::current_exception());
+            } catch (...) {
+                // Ignore exceptions thrown by user code.
+            }
+        }
+
+        _valid = false;
+
+        return false;
+    }
+
+    return true;
+}
+
+bool RedMutexImpl::locked() {
+    std::lock_guard<std::mutex> lock(_mtx);
+
+    _sanity_check();
+
+    return _locked();
+}
+
+bool LockKeeper::Task::run() {
+    auto mtx = _mtx.lock();
+    if (!mtx) {
+        // RedMutex already destroyed.
+        return false;
+    }
+
+    if (!mtx->locked()) {
+        // No longer locked.
+        return false;
+    }
+
+    if (!mtx->extend_lock()) {
+        // Failed to extend lock.
+        return false;
+    }
+
+    _update(mtx);
+
+    return true;
+}
+
+LockKeeper::LockKeeper() : _keeper_thread([this]() { this->_run(); }) {}
+
+LockKeeper::~LockKeeper() {
+    // A default constructed `Task` will end `_keeper_thread`.
+    _keep(Task{});
+
+    _cv.notify_one();
+
+    if (_keeper_thread.joinable()) {
+        _keeper_thread.join();
+    }
+}
+
+void LockKeeper::keep(const std::shared_ptr<RedMutexImpl> &mtx) {
+    if (!mtx) {
+        throw Error("null RedMutex to keep");
+    }
+
+    _keep(Task{mtx});
+}
+
+void LockKeeper::_keep(Task task) {
+    {
+        std::lock_guard<std::mutex> lock(_mtx);
+
+        _tasks.push(std::move(task));
+    }
+
+    _cv.notify_one();
+}
+
+void LockKeeper::_run() {
+    while (true) {
+        auto ready_tasks = _fetch_tasks();
+
+        auto rescheduled_tasks = _run_tasks(std::move(ready_tasks));
+        if (!rescheduled_tasks) {
+            // Get a terminating task, quit the loop.
+            return;
+        }
+
+        _reschedule_tasks(*rescheduled_tasks);
+    }
+}
+
+std::chrono::milliseconds LockKeeper::_next_schedule_time() {
+    if (_tasks.empty()) {
+        return std::chrono::seconds(3);
+    }
+
+    auto &task = _tasks.top();
+    return task.scheduled_time();
+}
+
+auto LockKeeper::_ready_tasks() -> std::vector<Task> {
+    std::vector<Task> tasks;
+    while (!_tasks.empty()) {
+        const auto &task = _tasks.top();
+        if (!task.is_ready()) {
+            break;
+        }
+
+        tasks.push_back(task);
+        _tasks.pop();
+    }
+
+    return tasks;
+}
+
+auto LockKeeper::_fetch_tasks() -> std::vector<Task> {
+    std::unique_lock<std::mutex> lock(_mtx);
+
+    auto timeout = _next_schedule_time();
+    if (timeout > std::chrono::milliseconds(0)) {
+        // It doesn't matter if we wakeup spuriously.
+        _cv.wait_for(lock, timeout);
+    }
+
+    return _ready_tasks();
+}
+
+auto LockKeeper::_run_tasks(std::vector<Task> ready_tasks) -> Optional<std::vector<Task>> {
+    std::vector<Task> rescheduled_tasks;
+    rescheduled_tasks.reserve(ready_tasks.size());
+    for (auto &task : ready_tasks) {
+        if (task.is_terminate_task()) {
+#if defined REDIS_PLUS_PLUS_HAS_OPTIONAL
+            return std::nullopt;
+#else
+            return {};
+#endif
+        }
+
+        try {
+            if (task.run()) {
+                rescheduled_tasks.push_back(std::move(task));
+            }
+        } catch (...) {
+            // If something bad happens, no longer keep it.
+        }
+    }
+
+    return rescheduled_tasks;
+}
+
+void LockKeeper::_reschedule_tasks(std::vector<Task> &tasks) {
+    std::lock_guard<std::mutex> lock(_mtx);
+
+    for (auto &task : tasks) {
+        _tasks.push(std::move(task));
     }
 }
 

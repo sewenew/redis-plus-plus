@@ -19,7 +19,12 @@
 
 #include <random>
 #include <chrono>
+#include <condition_variable>
+#include <queue>
+#include <memory>
+#include <mutex>
 #include <string>
+#include <thread>
 #include <vector>
 #include <functional>
 #include "../redis++.h"
@@ -37,23 +42,26 @@ public:
     static std::string lock_id();
 };
 
-class RedMutex {
+class RedMutexTx {
 public:
     // Lock with a single Redis master.
-    RedMutex(Redis &master, const std::string &resource);
+    RedMutexTx(Redis &master, const std::string &resource);
 
     // Distributed version, i.e. lock with a list of Redis masters.
     // Only successfully acquire the lock if we can lock on more than half masters.
-    RedMutex(std::initializer_list<std::reference_wrapper<Redis>> masters,
+    RedMutexTx(std::initializer_list<std::reference_wrapper<Redis>> masters,
                 const std::string &resource);
 
-    RedMutex(const RedMutex &) = delete;
-    RedMutex& operator=(const RedMutex &) = delete;
+    template <typename Input>
+    RedMutexTx(Input first, Input last, const std::string &resource) : _masters(first, last), _resource(resource) {}
 
-    RedMutex(RedMutex &&) = delete;
-    RedMutex& operator=(RedMutex &&) = delete;
+    RedMutexTx(const RedMutexTx &) = delete;
+    RedMutexTx& operator=(const RedMutexTx &) = delete;
 
-    ~RedMutex() = default;
+    RedMutexTx(RedMutexTx &&) = delete;
+    RedMutexTx& operator=(RedMutexTx &&) = delete;
+
+    ~RedMutexTx() = default;
 
     std::chrono::milliseconds try_lock(const std::string &val,
             const std::chrono::milliseconds &ttl);
@@ -183,6 +191,9 @@ public:
     explicit RedLockMutexVessel(Redis& instance);
     explicit RedLockMutexVessel(std::initializer_list<std::reference_wrapper<Redis>> instances);
 
+    template <typename Input>
+    RedLockMutexVessel(Input first, Input last) : _instances(first, last) {}
+
     RedLockMutexVessel(const RedLockMutexVessel &) = delete;
     RedLockMutexVessel& operator=(const RedLockMutexVessel &) = delete;
 
@@ -258,6 +269,10 @@ public:
                     const std::string &resource) :
         _redlock_mutex(instances), _resource(resource) {}
 
+    template <typename Input>
+    RedLockMutex(Input first, Input last, const std::string &resource) :
+        _redlock_mutex(first, last), _resource(resource) {}
+
     RedLockMutex(const RedLockMutex &) = delete;
     RedLockMutex& operator=(const RedLockMutex &) = delete;
 
@@ -308,6 +323,279 @@ public:
 private:
     RedLockMutexVessel _redlock_mutex;
     const std::string _resource;
+};
+
+struct RedMutexOptions {
+    std::chrono::milliseconds ttl = std::chrono::seconds(3);
+
+    // TODO: support clock drift
+    //double clock_drift_factor = 0.01;
+
+    std::chrono::milliseconds retry_delay = std::chrono::milliseconds{100};
+
+    bool scripting = true;
+};
+
+class LockKeeper;
+
+class RedMutexImpl : public std::enable_shared_from_this<RedMutexImpl> {
+public:
+    template <typename ErrCallback>
+    RedMutexImpl(const std::chrono::milliseconds &ttl,
+            const std::shared_ptr<LockKeeper> &keeper,
+            ErrCallback &&auto_extend_err_callback) :
+        _ttl(ttl),
+        _keeper(keeper),
+        _auto_extend_err_callback(std::forward<ErrCallback>(auto_extend_err_callback)) {
+        if (!_keeper) {
+            _keeper = std::make_shared<LockKeeper>();
+        }
+    }
+
+    RedMutexImpl(const RedMutexImpl &) = delete;
+    RedMutexImpl& operator=(const RedMutexImpl &) = delete;
+
+    RedMutexImpl(RedMutexImpl &&) = delete;
+    RedMutexImpl& operator=(RedMutexImpl &&) = delete;
+
+    virtual ~RedMutexImpl() = default;
+
+    void lock();
+
+    void unlock();
+
+    // @return true if extending lock successfully, false, otherwise.
+    bool extend_lock();
+
+    bool try_lock();
+
+    bool locked();
+
+    const std::chrono::milliseconds& ttl() {
+        return _ttl;
+    }
+
+private:
+    virtual void _lock(const std::string &lock_id, const std::chrono::milliseconds &ttl) = 0;
+
+    virtual void _unlock(const std::string &lock_id) = 0;
+
+    virtual std::chrono::milliseconds _extend_lock(const std::string &lock_id, const std::chrono::milliseconds &ttl) = 0;
+
+    virtual bool _try_lock(const std::string &lock_id, const std::chrono::milliseconds &ttl) = 0;
+
+    void _sanity_check() const {
+        if (!_valid) {
+            throw Error("RedMutex is invalid");
+        }
+    }
+
+    bool _locked() const {
+        return !_lock_id.empty();
+    }
+
+    friend class LockKeeper;
+
+    std::mutex _mtx;
+
+    const std::chrono::milliseconds _ttl{};
+
+    std::string _lock_id;
+
+    bool _valid = true;
+
+    std::shared_ptr<LockKeeper> _keeper;
+
+    std::function<void (std::exception_ptr)> _auto_extend_err_callback;
+};
+
+template <typename Mutex>
+class RedMutexImplTpl : public RedMutexImpl {
+public:
+    template <typename Input, typename ErrCallback>
+    RedMutexImplTpl(Input first, Input last,
+            const std::string &resource,
+            ErrCallback &&auto_extend_err_callback,
+            const RedMutexOptions &opts,
+            const std::shared_ptr<LockKeeper> &keeper) :
+        RedMutexImpl(opts.ttl, keeper, std::forward<ErrCallback>(auto_extend_err_callback)),
+        _mtx(first, last, resource),
+        _opts(opts) {}
+
+private:
+    virtual void _lock(const std::string &lock_id, const std::chrono::milliseconds &ttl) override {
+        while (true) {
+            auto time_left = _mtx.try_lock(lock_id, ttl);
+            // TODO: Make it configurable.
+            if (time_left > std::chrono::milliseconds(0)) {
+                break;
+            }
+
+            std::this_thread::sleep_for(_opts.retry_delay);
+        }
+    }
+
+    virtual void _unlock(const std::string &lock_id) override {
+        _mtx.unlock(lock_id);
+    }
+
+    virtual std::chrono::milliseconds _extend_lock(const std::string &lock_id, const std::chrono::milliseconds &ttl) override {
+        return _mtx.extend_lock(lock_id, ttl);
+    }
+
+    virtual bool _try_lock(const std::string &lock_id, const std::chrono::milliseconds &ttl) override {
+        return _mtx.try_lock(lock_id, ttl) > std::chrono::milliseconds(0);
+    }
+
+    Mutex _mtx;
+
+    RedMutexOptions _opts;
+};
+
+class RedMutex {
+public:
+    template <typename ErrCallback>
+    RedMutex(Redis &master,
+            const std::string &resource,
+            ErrCallback &&auto_extend_err_callback = nullptr,
+            const RedMutexOptions &opts = {},
+            const std::shared_ptr<LockKeeper> &keeper = nullptr) :
+        RedMutex(std::initializer_list<std::reference_wrapper<Redis>>{master},
+                resource, std::forward<ErrCallback>(auto_extend_err_callback), opts, keeper) {}
+
+    template <typename ErrCallback>
+    RedMutex(std::initializer_list<std::reference_wrapper<Redis>> masters,
+            const std::string &resource,
+            ErrCallback &&auto_extend_err_callback = nullptr,
+            const RedMutexOptions &opts = {},
+            const std::shared_ptr<LockKeeper> &keeper = nullptr) :
+        RedMutex(masters.begin(), masters.end(),
+                resource, std::forward<ErrCallback>(auto_extend_err_callback), opts, keeper) {}
+
+    template <typename Input, typename ErrCallback>
+    RedMutex(Input first, Input last,
+            const std::string &resource,
+            ErrCallback &&auto_extend_err_callback = nullptr,
+            const RedMutexOptions &opts = {},
+            const std::shared_ptr<LockKeeper> &keeper = nullptr) {
+        if (opts.scripting) {
+            _mtx = std::make_shared<RedMutexImplTpl<RedLockMutex>>(first, last, resource,
+                    std::forward<ErrCallback>(auto_extend_err_callback), opts, keeper);
+        } else {
+            _mtx = std::make_shared<RedMutexImplTpl<RedMutexTx>>(first, last, resource,
+                    std::forward<ErrCallback>(auto_extend_err_callback), opts, keeper);
+        }
+    }
+
+    void lock() {
+        _sanity_check();
+
+        _mtx->lock();
+    }
+
+    void unlock() {
+        _sanity_check();
+
+        _mtx->unlock();
+    }
+
+    bool try_lock() {
+        _sanity_check();
+
+        return _mtx->try_lock();
+    }
+
+private:
+    void _sanity_check() const {
+        if (!_mtx) {
+            throw Error("null RedMutex");
+        }
+    }
+
+    std::shared_ptr<RedMutexImpl> _mtx;
+};
+
+class LockKeeper {
+public:
+    LockKeeper();
+
+    LockKeeper(const LockKeeper &) = delete;
+    LockKeeper& operator=(const LockKeeper &) = delete;
+
+    LockKeeper(LockKeeper &&) = delete;
+    LockKeeper& operator=(LockKeeper &&) = delete;
+
+    ~LockKeeper();
+
+    void keep(const std::shared_ptr<RedMutexImpl> &mtx);
+
+private:
+    using SteadyTime = std::chrono::time_point<std::chrono::steady_clock>;
+
+    class Task {
+    public:
+        // Default constructed Task will be on the top of task queue.
+        Task() = default;
+
+        explicit Task(const std::shared_ptr<RedMutexImpl> &mtx) : _mtx(mtx) {
+            _update(mtx);
+        }
+
+        bool operator<(const Task &that) const {
+            return _timestamp > that._timestamp;
+        }
+
+        // @return true, if we need to reschedule the task. false, otherwise.
+        bool run();
+
+        std::chrono::milliseconds scheduled_time() const {
+            return std::chrono::duration_cast<std::chrono::milliseconds>(
+                    _timestamp - std::chrono::steady_clock::now());
+        }
+
+        bool is_ready() const {
+            // TODO: Make 10ms configurable.
+            return scheduled_time() <= std::chrono::milliseconds(10);
+        }
+
+        bool is_terminate_task() const {
+            return _timestamp == SteadyTime{};
+        }
+
+    private:
+        void _update(const std::shared_ptr<RedMutexImpl> &mtx) {
+            assert(mtx);
+
+            _timestamp = std::chrono::steady_clock::now() + mtx->ttl() / 2;
+        }
+
+        std::weak_ptr<RedMutexImpl> _mtx;
+
+        SteadyTime _timestamp;
+    };
+
+    void _run();
+
+    void _keep(Task task);
+
+    std::vector<Task> _fetch_tasks();
+
+    std::chrono::milliseconds _next_schedule_time();
+
+    std::vector<Task> _ready_tasks();
+
+    // @return Tasks to be rescheduled.
+    Optional<std::vector<Task>> _run_tasks(std::vector<Task> ready_tasks);
+
+    void _reschedule_tasks(std::vector<Task> &tasks);
+
+    std::thread _keeper_thread;
+
+    std::priority_queue<Task> _tasks;
+
+    std::mutex _mtx;
+
+    std::condition_variable _cv;
 };
 
 }

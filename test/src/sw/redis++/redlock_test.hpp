@@ -168,10 +168,10 @@ void RedLockTest<Redis>::run() {
     start = std::chrono::system_clock::now();
     // Test if we can obtain a n locks with a n RedMutex instances.
     {
-        std::queue<RedMutex*> mutex_list;
+        std::queue<RedMutexTx*> mutex_list;
         for (int i=0; i<n; i++) {
             const std::chrono::time_point<std::chrono::system_clock> tp = std::chrono::system_clock::now() + multi_lock_ttl;
-            mutex_list.push(new RedMutex(std::ref(_redis), RedLockUtils::lock_id()));
+            mutex_list.push(new RedMutexTx(std::ref(_redis), RedLockUtils::lock_id()));
             if (mutex_list.back()->try_lock(random_string, tp) < std::chrono::milliseconds(0)) {
                 REDIS_ASSERT(0, "unable to obtain a lock");
             }
