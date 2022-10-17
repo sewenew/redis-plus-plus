@@ -20,13 +20,16 @@ namespace sw {
 
 namespace redis {
 
-RedMutexTx::RedMutexTx(Redis &master, const std::string &resource) : _resource(resource) {
-    _masters.push_back(std::ref(master));
+RedMutexTx::RedMutexTx(std::shared_ptr<Redis> master, const std::string &resource) : _resource(resource) {
+    _masters.push_back(std::move(master));
+    _sanity_check();
 }
 
-RedMutexTx::RedMutexTx(std::initializer_list<std::reference_wrapper<Redis>> masters,
+RedMutexTx::RedMutexTx(std::initializer_list<std::shared_ptr<Redis>> masters,
                     const std::string &resource)
-                        : _masters(masters.begin(), masters.end()), _resource(resource) {}
+                        : _masters(masters.begin(), masters.end()), _resource(resource) {
+    _sanity_check();
+}
 
 std::chrono::milliseconds RedMutexTx::try_lock(const std::string &val,
         const std::chrono::milliseconds &ttl) {
@@ -63,7 +66,7 @@ std::chrono::milliseconds RedMutexTx::extend_lock(const std::string &val,
 
     auto lock_cnt = 0U;
     for (auto &master : _masters) {
-        if (_extend_lock_master(master.get(), val, ttl)) {
+        if (_extend_lock_master(*master, val, ttl)) {
             ++lock_cnt;
         }
     }
@@ -86,6 +89,14 @@ std::chrono::milliseconds RedMutexTx::extend_lock(const std::string &val,
     }
 
     return time_left;
+}
+
+void RedMutexTx::_sanity_check() {
+    for (auto &master : _masters) {
+        if (!master) {
+            throw Error("cannot construct RedMutexTx with null Redis");
+        }
+    }
 }
 
 std::chrono::milliseconds RedMutexTx::extend_lock(const std::string &val,
@@ -119,7 +130,7 @@ bool RedMutexTx::_extend_lock_master(Redis &master,
 void RedMutexTx::unlock(const std::string &val) {
     for (auto &master : _masters) {
         try {
-            _unlock_master(master.get(), val);
+            _unlock_master(*master, val);
         } catch (const Error &err) {
             // Ignore errors, and continue to unlock other maters.
         }
@@ -147,7 +158,7 @@ void RedMutexTx::_unlock_master(Redis &master, const std::string &val) {
 bool RedMutexTx::_try_lock(const std::string &val, const std::chrono::milliseconds &ttl) {
     std::size_t lock_cnt = 0U;
     for (auto &master : _masters) {
-        if (_try_lock_master(master.get(), val, ttl)) {
+        if (_try_lock_master(*master, val, ttl)) {
             ++lock_cnt;
         }
     }
@@ -194,14 +205,24 @@ std::string RedLockUtils::lock_id() {
     return id;
 }
 
-RedLockMutexVessel::RedLockMutexVessel(Redis& instance) :
+RedLockMutexVessel::RedLockMutexVessel(std::shared_ptr<Redis> instance) :
     RedLockMutexVessel({{instance}})
 {
+    _sanity_check();
 }
 
-RedLockMutexVessel::RedLockMutexVessel(std::initializer_list<std::reference_wrapper<Redis>> instances) :
+RedLockMutexVessel::RedLockMutexVessel(std::initializer_list<std::shared_ptr<Redis>> instances) :
     _instances(instances.begin(), instances.end())
 {
+    _sanity_check();
+}
+
+void RedLockMutexVessel::_sanity_check() {
+    for (auto &instance : _instances) {
+        if (!instance) {
+            throw Error("cannot construct RedLockMutexVessel with null Redis");
+        }
+    }
 }
 
 bool RedLockMutexVessel::_extend_lock_instance(Redis& instance,
@@ -255,7 +276,7 @@ RedLockMutexVessel::LockInfo RedLockMutexVessel::lock(const std::string& resourc
     for (int i=0; i<retry_count; i++) {
         int num_locked = 0;
         for (auto& instance : _instances) {
-            if (_lock_instance(instance, lock_info.resource, lock_info.random_string, ttl)) {
+            if (_lock_instance(*instance, lock_info.resource, lock_info.random_string, ttl)) {
                 num_locked++;
             }
         }
@@ -295,7 +316,7 @@ RedLockMutexVessel::LockInfo RedLockMutexVessel::extend_lock(const RedLockMutexV
         if (time_remaining.count() > 0) {
             int num_locked = 0;
             for (auto& instance : _instances) {
-                if (_extend_lock_instance(instance, lock_info.resource, lock_info.random_string, ttl)) {
+                if (_extend_lock_instance(*instance, lock_info.resource, lock_info.random_string, ttl)) {
                     num_locked++;
                 }
             }
@@ -320,7 +341,7 @@ RedLockMutexVessel::LockInfo RedLockMutexVessel::extend_lock(const RedLockMutexV
 void RedLockMutexVessel::unlock(const LockInfo& lock_info)
 {
     for (auto& instance : _instances) {
-        _unlock_instance(instance, lock_info.resource, lock_info.random_string);
+        _unlock_instance(*instance, lock_info.resource, lock_info.random_string);
     }
 }
 

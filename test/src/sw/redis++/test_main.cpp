@@ -381,7 +381,7 @@ void run_test(const sw::redis::ConnectionOptions &opts, const TestOptions &test_
 
     std::cout << "Pass connection commands tests" << std::endl;
 
-    sw::redis::test::RedLockTest<RedisInstance> redlock_test(instance);
+    sw::redis::test::RedLockTest<RedisInstance> redlock_test(std::make_shared<RedisInstance>(opts));
     redlock_test.run();
 
     std::cout << "Pass redlock tests" << std::endl;

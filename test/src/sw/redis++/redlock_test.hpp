@@ -99,7 +99,7 @@ void RedLockTest<Redis>::run() {
     std::srand(std::time(nullptr));
     RandomBuffer<> random_buffer;
 
-    RedLockMutexVessel redlock(std::ref(_redis));
+    RedLockMutexVessel redlock(_redis);
 
     const auto resource = test_key(RedLockUtils::lock_id());
     const auto random_string = random_buffer.get_updated_string();

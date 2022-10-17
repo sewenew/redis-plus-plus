@@ -18,6 +18,7 @@
 #define REDISPLUSPLUS_TEST_REDLOCK_TEST_H
 
 #include <sw/redis++/redis++.h>
+#include <memory>
 
 namespace sw {
 
@@ -28,12 +29,12 @@ namespace test {
 template <typename RedisInstance>
 class RedLockTest {
 public:
-    explicit RedLockTest(RedisInstance &instance) : _redis(instance) {}
+    explicit RedLockTest(std::shared_ptr<RedisInstance> instance) : _redis(std::move(instance)) {}
 
     void run();
 
 private:
-    RedisInstance &_redis;
+    std::shared_ptr<RedisInstance> _redis;
 };
 
 } // namespace test

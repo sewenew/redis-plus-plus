@@ -46,15 +46,17 @@ public:
 class RedMutexTx {
 public:
     // Lock with a single Redis master.
-    RedMutexTx(Redis &master, const std::string &resource);
+    RedMutexTx(std::shared_ptr<Redis> master, const std::string &resource);
 
     // Distributed version, i.e. lock with a list of Redis masters.
     // Only successfully acquire the lock if we can lock on more than half masters.
-    RedMutexTx(std::initializer_list<std::reference_wrapper<Redis>> masters,
+    RedMutexTx(std::initializer_list<std::shared_ptr<Redis>> masters,
                 const std::string &resource);
 
     template <typename Input>
-    RedMutexTx(Input first, Input last, const std::string &resource) : _masters(first, last), _resource(resource) {}
+    RedMutexTx(Input first, Input last, const std::string &resource) : _masters(first, last), _resource(resource) {
+        _sanity_check();
+    }
 
     RedMutexTx(const RedMutexTx &) = delete;
     RedMutexTx& operator=(const RedMutexTx &) = delete;
@@ -79,6 +81,8 @@ public:
     void unlock(const std::string &val);
 
 private:
+    void _sanity_check();
+
     void _unlock_master(Redis &master, const std::string &val);
 
     bool _try_lock(const std::string &val, const std::chrono::milliseconds &ttl);
@@ -95,9 +99,7 @@ private:
         return _masters.size() / 2 + 1;
     }
 
-    using RedisRef = std::reference_wrapper<Redis>;
-
-    std::vector<RedisRef> _masters;
+    std::vector<std::shared_ptr<Redis>> _masters;
 
     std::string _resource;
 };
@@ -189,11 +191,13 @@ public:
     // More than one resource can thus be locked and tracked with a single
     // instantiation of this class.
 
-    explicit RedLockMutexVessel(Redis& instance);
-    explicit RedLockMutexVessel(std::initializer_list<std::reference_wrapper<Redis>> instances);
+    explicit RedLockMutexVessel(std::shared_ptr<Redis> instance);
+    explicit RedLockMutexVessel(std::initializer_list<std::shared_ptr<Redis>> instances);
 
     template <typename Input>
-    RedLockMutexVessel(Input first, Input last) : _instances(first, last) {}
+    RedLockMutexVessel(Input first, Input last) : _instances(first, last) {
+        _sanity_check();
+    }
 
     RedLockMutexVessel(const RedLockMutexVessel &) = delete;
     RedLockMutexVessel& operator=(const RedLockMutexVessel &) = delete;
@@ -238,6 +242,7 @@ public:
     void unlock(const LockInfo& lock_info);
 
 private:
+    void _sanity_check();
 
     bool _lock_instance(Redis& instance,
                         const std::string& resource,
@@ -257,16 +262,16 @@ private:
         return _instances.size() / 2 + 1;
     }
 
-    std::vector<std::reference_wrapper<Redis>> _instances;
+    std::vector<std::shared_ptr<Redis>> _instances;
 };
 
 class RedLockMutex
 {
 public:
-    explicit RedLockMutex(Redis& instance, const std::string& resource) :
+    explicit RedLockMutex(std::shared_ptr<Redis> instance, const std::string& resource) :
         _redlock_mutex(instance), _resource(resource) {}
 
-    explicit RedLockMutex(std::initializer_list<std::reference_wrapper<Redis>> instances,
+    explicit RedLockMutex(std::initializer_list<std::shared_ptr<Redis>> instances,
                     const std::string &resource) :
         _redlock_mutex(instances), _resource(resource) {}
 
@@ -452,15 +457,15 @@ private:
 
 class RedMutex {
 public:
-    RedMutex(Redis &master,
+    RedMutex(std::shared_ptr<Redis> master,
             const std::string &resource,
             std::function<void (std::exception_ptr)> auto_extend_err_callback = nullptr,
             const RedMutexOptions &opts = {},
             const std::shared_ptr<LockWatcher> &watcher = nullptr) :
-        RedMutex(std::initializer_list<std::reference_wrapper<Redis>>{master},
+        RedMutex(std::initializer_list<std::shared_ptr<Redis>>{master},
                 resource, std::move(auto_extend_err_callback), opts, watcher) {}
 
-    RedMutex(std::initializer_list<std::reference_wrapper<Redis>> masters,
+    RedMutex(std::initializer_list<std::shared_ptr<Redis>> masters,
             const std::string &resource,
             std::function<void (std::exception_ptr)> auto_extend_err_callback = nullptr,
             const RedMutexOptions &opts = {},
