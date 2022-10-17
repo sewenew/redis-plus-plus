@@ -15,7 +15,6 @@
  *************************************************************************/
 
 #include "redlock.h"
-#include <cassert>
 
 namespace sw {
 
@@ -338,9 +337,9 @@ void RedMutexImpl::lock() {
 
     _lock(lock_id, _ttl);
 
-    _lock_id.swap(lock_id);
+    _watcher->watch(shared_from_this());
 
-    _keeper->keep(shared_from_this());
+    _lock_id.swap(lock_id);
 }
 
 void RedMutexImpl::unlock() {
@@ -369,8 +368,8 @@ bool RedMutexImpl::try_lock() {
 
     auto lock_id = RedLockUtils::lock_id();
     if (_try_lock(lock_id, _ttl)) {
+        _watcher->watch(shared_from_this());
         _lock_id.swap(lock_id);
-        _keeper->keep(shared_from_this());
     }
 
     return _locked();
@@ -414,7 +413,7 @@ bool RedMutexImpl::locked() {
     return _locked();
 }
 
-bool LockKeeper::Task::run() {
+bool LockWatcher::Task::run() {
     auto mtx = _mtx.lock();
     if (!mtx) {
         // RedMutex already destroyed.
@@ -436,28 +435,28 @@ bool LockKeeper::Task::run() {
     return true;
 }
 
-LockKeeper::LockKeeper() : _keeper_thread([this]() { this->_run(); }) {}
+LockWatcher::LockWatcher() : _watcher_thread([this]() { this->_run(); }) {}
 
-LockKeeper::~LockKeeper() {
-    // A default constructed `Task` will end `_keeper_thread`.
-    _keep(Task{});
+LockWatcher::~LockWatcher() {
+    // A default constructed `Task` will end `_watcher_thread`.
+    _watch(Task{});
 
     _cv.notify_one();
 
-    if (_keeper_thread.joinable()) {
-        _keeper_thread.join();
+    if (_watcher_thread.joinable()) {
+        _watcher_thread.join();
     }
 }
 
-void LockKeeper::keep(const std::shared_ptr<RedMutexImpl> &mtx) {
+void LockWatcher::watch(const std::shared_ptr<RedMutexImpl> &mtx) {
     if (!mtx) {
-        throw Error("null RedMutex to keep");
+        throw Error("null RedMutex to watch");
     }
 
-    _keep(Task{mtx});
+    _watch(Task{mtx});
 }
 
-void LockKeeper::_keep(Task task) {
+void LockWatcher::_watch(Task task) {
     {
         std::lock_guard<std::mutex> lock(_mtx);
 
@@ -467,7 +466,7 @@ void LockKeeper::_keep(Task task) {
     _cv.notify_one();
 }
 
-void LockKeeper::_run() {
+void LockWatcher::_run() {
     while (true) {
         auto ready_tasks = _fetch_tasks();
 
@@ -481,7 +480,7 @@ void LockKeeper::_run() {
     }
 }
 
-std::chrono::milliseconds LockKeeper::_next_schedule_time() {
+std::chrono::milliseconds LockWatcher::_next_schedule_time() {
     if (_tasks.empty()) {
         return std::chrono::seconds(3);
     }
@@ -490,7 +489,7 @@ std::chrono::milliseconds LockKeeper::_next_schedule_time() {
     return task.scheduled_time();
 }
 
-auto LockKeeper::_ready_tasks() -> std::vector<Task> {
+auto LockWatcher::_ready_tasks() -> std::vector<Task> {
     std::vector<Task> tasks;
     while (!_tasks.empty()) {
         const auto &task = _tasks.top();
@@ -505,7 +504,7 @@ auto LockKeeper::_ready_tasks() -> std::vector<Task> {
     return tasks;
 }
 
-auto LockKeeper::_fetch_tasks() -> std::vector<Task> {
+auto LockWatcher::_fetch_tasks() -> std::vector<Task> {
     std::unique_lock<std::mutex> lock(_mtx);
 
     auto timeout = _next_schedule_time();
@@ -517,7 +516,7 @@ auto LockKeeper::_fetch_tasks() -> std::vector<Task> {
     return _ready_tasks();
 }
 
-auto LockKeeper::_run_tasks(std::vector<Task> ready_tasks) -> Optional<std::vector<Task>> {
+auto LockWatcher::_run_tasks(std::vector<Task> ready_tasks) -> Optional<std::vector<Task>> {
     std::vector<Task> rescheduled_tasks;
     rescheduled_tasks.reserve(ready_tasks.size());
     for (auto &task : ready_tasks) {
@@ -534,14 +533,14 @@ auto LockKeeper::_run_tasks(std::vector<Task> ready_tasks) -> Optional<std::vect
                 rescheduled_tasks.push_back(std::move(task));
             }
         } catch (...) {
-            // If something bad happens, no longer keep it.
+            // If something bad happens, no longer watch it.
         }
     }
 
     return rescheduled_tasks;
 }
 
-void LockKeeper::_reschedule_tasks(std::vector<Task> &tasks) {
+void LockWatcher::_reschedule_tasks(std::vector<Task> &tasks) {
     std::lock_guard<std::mutex> lock(_mtx);
 
     for (auto &task : tasks) {

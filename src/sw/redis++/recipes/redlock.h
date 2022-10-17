@@ -17,6 +17,7 @@
 #ifndef SEWENEW_REDISPLUSPLUS_RECIPES_REDLOCK_H
 #define SEWENEW_REDISPLUSPLUS_RECIPES_REDLOCK_H
 
+#include <cassert>
 #include <random>
 #include <chrono>
 #include <condition_variable>
@@ -336,19 +337,18 @@ struct RedMutexOptions {
     bool scripting = true;
 };
 
-class LockKeeper;
+class LockWatcher;
 
 class RedMutexImpl : public std::enable_shared_from_this<RedMutexImpl> {
 public:
-    template <typename ErrCallback>
     RedMutexImpl(const std::chrono::milliseconds &ttl,
-            const std::shared_ptr<LockKeeper> &keeper,
-            ErrCallback &&auto_extend_err_callback) :
+            const std::shared_ptr<LockWatcher> &watcher,
+            std::function<void (std::exception_ptr)> auto_extend_err_callback) :
         _ttl(ttl),
-        _keeper(keeper),
-        _auto_extend_err_callback(std::forward<ErrCallback>(auto_extend_err_callback)) {
-        if (!_keeper) {
-            _keeper = std::make_shared<LockKeeper>();
+        _watcher(watcher),
+        _auto_extend_err_callback(std::move(auto_extend_err_callback)) {
+        if (!_watcher) {
+            _watcher = std::make_shared<LockWatcher>();
         }
     }
 
@@ -394,8 +394,6 @@ private:
         return !_lock_id.empty();
     }
 
-    friend class LockKeeper;
-
     std::mutex _mtx;
 
     const std::chrono::milliseconds _ttl{};
@@ -404,7 +402,7 @@ private:
 
     bool _valid = true;
 
-    std::shared_ptr<LockKeeper> _keeper;
+    std::shared_ptr<LockWatcher> _watcher;
 
     std::function<void (std::exception_ptr)> _auto_extend_err_callback;
 };
@@ -412,13 +410,13 @@ private:
 template <typename Mutex>
 class RedMutexImplTpl : public RedMutexImpl {
 public:
-    template <typename Input, typename ErrCallback>
+    template <typename Input>
     RedMutexImplTpl(Input first, Input last,
             const std::string &resource,
-            ErrCallback &&auto_extend_err_callback,
+            std::function<void (std::exception_ptr)> auto_extend_err_callback,
             const RedMutexOptions &opts,
-            const std::shared_ptr<LockKeeper> &keeper) :
-        RedMutexImpl(opts.ttl, keeper, std::forward<ErrCallback>(auto_extend_err_callback)),
+            const std::shared_ptr<LockWatcher> &watcher) :
+        RedMutexImpl(opts.ttl, watcher, std::move(auto_extend_err_callback)),
         _mtx(first, last, resource),
         _opts(opts) {}
 
@@ -454,82 +452,82 @@ private:
 
 class RedMutex {
 public:
-    template <typename ErrCallback>
     RedMutex(Redis &master,
             const std::string &resource,
-            ErrCallback &&auto_extend_err_callback = nullptr,
+            std::function<void (std::exception_ptr)> auto_extend_err_callback = nullptr,
             const RedMutexOptions &opts = {},
-            const std::shared_ptr<LockKeeper> &keeper = nullptr) :
+            const std::shared_ptr<LockWatcher> &watcher = nullptr) :
         RedMutex(std::initializer_list<std::reference_wrapper<Redis>>{master},
-                resource, std::forward<ErrCallback>(auto_extend_err_callback), opts, keeper) {}
+                resource, std::move(auto_extend_err_callback), opts, watcher) {}
 
-    template <typename ErrCallback>
     RedMutex(std::initializer_list<std::reference_wrapper<Redis>> masters,
             const std::string &resource,
-            ErrCallback &&auto_extend_err_callback = nullptr,
+            std::function<void (std::exception_ptr)> auto_extend_err_callback = nullptr,
             const RedMutexOptions &opts = {},
-            const std::shared_ptr<LockKeeper> &keeper = nullptr) :
+            const std::shared_ptr<LockWatcher> &watcher = nullptr) :
         RedMutex(masters.begin(), masters.end(),
-                resource, std::forward<ErrCallback>(auto_extend_err_callback), opts, keeper) {}
+                resource, std::move(auto_extend_err_callback), opts, watcher) {}
 
-    template <typename Input, typename ErrCallback>
+    template <typename Input>
     RedMutex(Input first, Input last,
             const std::string &resource,
-            ErrCallback &&auto_extend_err_callback = nullptr,
+            std::function<void (std::exception_ptr)> auto_extend_err_callback = nullptr,
             const RedMutexOptions &opts = {},
-            const std::shared_ptr<LockKeeper> &keeper = nullptr) {
+            const std::shared_ptr<LockWatcher> &watcher = nullptr) {
         if (opts.scripting) {
             _mtx = std::make_shared<RedMutexImplTpl<RedLockMutex>>(first, last, resource,
-                    std::forward<ErrCallback>(auto_extend_err_callback), opts, keeper);
+                    std::move(auto_extend_err_callback), opts, watcher);
         } else {
             _mtx = std::make_shared<RedMutexImplTpl<RedMutexTx>>(first, last, resource,
-                    std::forward<ErrCallback>(auto_extend_err_callback), opts, keeper);
+                    std::move(auto_extend_err_callback), opts, watcher);
         }
     }
 
+    RedMutex(const RedMutex &) = delete;
+    RedMutex& operator=(const RedMutex &) = delete;
+
+    RedMutex(RedMutex &&) = delete;
+    RedMutex& operator=(RedMutex &&) = delete;
+
     void lock() {
-        _sanity_check();
+        assert(_mtx);
 
         _mtx->lock();
     }
 
     void unlock() {
-        _sanity_check();
+        assert(_mtx);
 
         _mtx->unlock();
     }
 
     bool try_lock() {
-        _sanity_check();
+        assert(_mtx);
 
         return _mtx->try_lock();
     }
 
 private:
-    void _sanity_check() const {
-        if (!_mtx) {
-            throw Error("null RedMutex");
-        }
-    }
-
     std::shared_ptr<RedMutexImpl> _mtx;
 };
 
-class LockKeeper {
+class LockWatcher {
 public:
-    LockKeeper();
+    LockWatcher();
 
-    LockKeeper(const LockKeeper &) = delete;
-    LockKeeper& operator=(const LockKeeper &) = delete;
+    LockWatcher(const LockWatcher &) = delete;
+    LockWatcher& operator=(const LockWatcher &) = delete;
 
-    LockKeeper(LockKeeper &&) = delete;
-    LockKeeper& operator=(LockKeeper &&) = delete;
+    LockWatcher(LockWatcher &&) = delete;
+    LockWatcher& operator=(LockWatcher &&) = delete;
 
-    ~LockKeeper();
-
-    void keep(const std::shared_ptr<RedMutexImpl> &mtx);
+    ~LockWatcher();
 
 private:
+    friend class RedMutexImpl;
+
+    void watch(const std::shared_ptr<RedMutexImpl> &mtx);
+
     using SteadyTime = std::chrono::time_point<std::chrono::steady_clock>;
 
     class Task {
@@ -576,7 +574,7 @@ private:
 
     void _run();
 
-    void _keep(Task task);
+    void _watch(Task task);
 
     std::vector<Task> _fetch_tasks();
 
@@ -589,7 +587,7 @@ private:
 
     void _reschedule_tasks(std::vector<Task> &tasks);
 
-    std::thread _keeper_thread;
+    std::thread _watcher_thread;
 
     std::priority_queue<Task> _tasks;
 
