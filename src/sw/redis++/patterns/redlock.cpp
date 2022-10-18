@@ -348,8 +348,6 @@ void RedLockMutexVessel::unlock(const LockInfo& lock_info)
 void RedMutexImpl::lock() {
     std::lock_guard<std::mutex> lock(_mtx);
 
-    _sanity_check();
-
     if (_locked()) {
         throw Error("RedMutex is not reentrant");
     }
@@ -366,22 +364,22 @@ void RedMutexImpl::lock() {
 void RedMutexImpl::unlock() {
     std::lock_guard<std::mutex> lock(_mtx);
 
-    _sanity_check();
-
     if (!_locked()) {
         throw Error("RedMutex is not locked");
     }
 
-    // TODO: what if unlock fail?
-    _unlock(_lock_id);
+    try {
+        _unlock(_lock_id);
+    } catch (...) {
+        _reset();
+        throw;
+    }
 
-    _lock_id.clear();
+    _reset();
 }
 
 bool RedMutexImpl::try_lock() {
     std::lock_guard<std::mutex> lock(_mtx);
-
-    _sanity_check();
 
     if (_locked()) {
         throw Error("RedMutex is not reentrant");
@@ -398,8 +396,6 @@ bool RedMutexImpl::try_lock() {
 
 bool RedMutexImpl::extend_lock() {
     std::lock_guard<std::mutex> lock(_mtx);
-
-    _sanity_check();
 
     if (!_locked()) {
         throw Error("cannot extend an unlocked RedMutex");
@@ -418,7 +414,7 @@ bool RedMutexImpl::extend_lock() {
             }
         }
 
-        _valid = false;
+        _reset();
 
         return false;
     }
@@ -428,8 +424,6 @@ bool RedMutexImpl::extend_lock() {
 
 bool RedMutexImpl::locked() {
     std::lock_guard<std::mutex> lock(_mtx);
-
-    _sanity_check();
 
     return _locked();
 }

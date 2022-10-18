@@ -389,10 +389,8 @@ private:
 
     virtual bool _try_lock(const std::string &lock_id, const std::chrono::milliseconds &ttl) = 0;
 
-    void _sanity_check() const {
-        if (!_valid) {
-            throw Error("RedMutex is invalid");
-        }
+    void _reset() {
+        _lock_id.clear();
     }
 
     bool _locked() const {
@@ -404,8 +402,6 @@ private:
     const std::chrono::milliseconds _ttl{};
 
     std::string _lock_id;
-
-    bool _valid = true;
 
     std::shared_ptr<LockWatcher> _watcher;
 

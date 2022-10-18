@@ -18,6 +18,7 @@
 #define REDISPLUSPLUS_TEST_REDLOCK_TEST_H
 
 #include <sw/redis++/redis++.h>
+#include <sw/redis++/patterns/redlock.h>
 #include <memory>
 
 namespace sw {
