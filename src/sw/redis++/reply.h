@@ -227,6 +227,11 @@ void to_array(redisReply &reply, Output output) {
             throw ProtoError("Null array element reply");
         }
 
+        if (is_array(*sub_reply)) {
+            reply::to_array(*sub_reply, output);
+            continue;
+        }
+
         *output = parse<typename IterType<Output>::type>(*sub_reply);
 
         ++output;
