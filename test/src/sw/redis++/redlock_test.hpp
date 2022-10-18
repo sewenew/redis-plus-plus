@@ -148,7 +148,7 @@ void RedLockTest<Redis>::run() {
     {
         std::queue<RedLockMutex*> mutex_list;
         for (int i=0; i<n; i++) {
-            mutex_list.push(new RedLockMutex(std::ref(_redis), RedLockUtils::lock_id()));
+            mutex_list.push(new RedLockMutex(_redis, RedLockUtils::lock_id()));
             const std::chrono::time_point<std::chrono::system_clock> tp = std::chrono::system_clock::now() + multi_lock_ttl;
             if (mutex_list.back()->try_lock(random_string, tp) < std::chrono::milliseconds(0)) {
                 std::cout << "Num locks = " << i << std::endl;;
@@ -171,7 +171,7 @@ void RedLockTest<Redis>::run() {
         std::queue<RedMutexTx*> mutex_list;
         for (int i=0; i<n; i++) {
             const std::chrono::time_point<std::chrono::system_clock> tp = std::chrono::system_clock::now() + multi_lock_ttl;
-            mutex_list.push(new RedMutexTx(std::ref(_redis), RedLockUtils::lock_id()));
+            mutex_list.push(new RedMutexTx(_redis, RedLockUtils::lock_id()));
             if (mutex_list.back()->try_lock(random_string, tp) < std::chrono::milliseconds(0)) {
                 REDIS_ASSERT(0, "unable to obtain a lock");
             }
@@ -284,7 +284,7 @@ void RedLockTest<Redis>::run() {
     // Locking should fail, on duplicate instances.
     {
         // We now use the same instance twice, which is expected to fail on locking.
-        RedLockMutexVessel redlock_2_identical_instances({std::ref(_redis), std::ref(_redis)});
+        RedLockMutexVessel redlock_2_identical_instances({_redis, _redis});
         const auto lock_info = redlock_2_identical_instances.lock(resource, random_string, ttl);
         if (lock_info.locked) {
             redlock_2_identical_instances.unlock(lock_info);
