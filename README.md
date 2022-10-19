@@ -27,7 +27,7 @@
     - [Redis Modules](#redis-modules)
     - [Async Interface](#async-interface)
     - [Coroutine Interface](#coroutine-interface)
-- [Redis Recipes](#redis-recipes)
+- [Redis Patterns](#redis-patterns)
     - [Redlock](#redlock)
 - [Author](#author)
 
@@ -2815,23 +2815,146 @@ cppcoro::sync_wait([&co_redis]() -> cppcoro::task<> {
 
 The coroutine support for sentinel is similar with the sync one, except that you need to create an `CoSentinel` object instead of a `Sentinel` object. Check [Redis Sentinel](#redis-sentinel) for more details on `SentinelOptions`, `ConnectionOptions` and `Role`.
 
-## Redis Recipes
+## Redis Patterns
 
-We can create many interesting data structures and algorithms based on Redis, such as [Redlock](https://redis.io/topics/distlock). We call these data structures and algorithms as **Redis Recipes**. *redis-plus-plus* will support some of these recipes.
+We can create many interesting data structures and algorithms based on Redis, such as [Redlock](https://redis.io/topics/distlock). We call these data structures and algorithms as **Redis Patterns**. *redis-plus-plus* will support some of these patterns.
 
-**NOTE**: These recipes will be first implemented on the [recipes branch](https://github.com/sewenew/redis-plus-plus/tree/recipes). I'd like to hear your feedback on the API of these recipes, and when these APIs become stable, I'll merge the code into the master branch. So APIs on the *recipes* branch are NOT stable, and might be changed in the future.
+**NOTE**: These patterns will be first implemented on the [patterns branch](https://github.com/sewenew/redis-plus-plus/tree/patterns). I'd like to hear your feedback on the API of these patterns, and when these APIs become stable, I'll merge the code into the master branch. So APIs on the *patterns* branch are NOT stable, and might be changed in the future.
 
 ### Redlock
 
 [Redlock](https://redis.io/topics/distlock) is a distributed lock based on Redis. Thanks to @wingunder's [suggestion](https://github.com/sewenew/redis-plus-plus/issues/24), *redis-plus-plus* supports Redlock now. @wingunder and I made two different implementation of Redlock: one based on Lua script, and the other based on transaction. The Lua script version should be faster, and also it has many other parameters to control the behavior. However, if you are not allowed to, or don't want to run Lua scripts inside Redis, you could try using the transaction version.
 
-#### Examples
+Also there's a high level API, which works like `std::mutex`. With this high level API, you don't need to manually extend the lock, instead, the lock will be automatically extened by redis-plus-plus.
+
+#### Redlock 101
+
+The basic idea of acquiring a Redlock is setting a key in Redis if the key does not exist. Since Redis operation is atomic, when mutiple clients acquire the same lock, i.e. setting the same key if it does not exist, only one client wins, and others will find the key has already been set. So only one client can acquire the lock, and others have to wait and try again.
+
+When setting the key, we also need to set a TTL/expireation for the key. Otherwise, if the winning client crashes, the lock cannot be acquired by others forever. However, it also brings a new problem. Since the key has a TTL, once you acquire the lock, you must ensure all code in critical section must be finished before the key expires. Otherwise, other clients might acquire the lock successfully when you are still running critical section code (i.e. more than one clients acquire the lock successfully). So when you run critical section code, you have to check if the key is going to be expired and extend the lock (i.e. extending the TTL) before key expires, from time to time.
+
+Also, in order to make the algorithm more robust, normally we need to set key on multiple independent stand-alone Redis (not Redis Cluster).
+
+There're still more details on the mechanism of Redlock. Please read [Redlock's doc](https://redis.io/topics/distlock) for more info, before using it.
+
+#### High Level API
+
+The high level API is quite simple. It works like a `std::mutex`, and can be used with `std::lock_guard` and `std::unique_lock`. Also it can automatically extend the lock before the key expires. So that user code doesn't need to extend the lock manually. In order to use Redlock, you can create a `RedMutex` object with the following parameters:
+
+- One or more `Redis` instances: There're two versions of Redlock, i.e. single instance version and multiple instances version. The multiple instances version is more robust.
+- Resource id: Redlock key in Redis. In order to make it work, two or more `RedMutex` should be created with the same resource id.
+- Auto extention error callback (optional): If failing to automatically extend the lock, this error callback will be called. Check below for more detail.
+- `RedMutexOptions` (optional): Some options to control the behavior of `RedMutex`. If not specified, default options will be used. Check below for more detail.
+- `LockWatcher` (optional): A watcher which will automatically extend the lock before it expires. So that you don't need to manually check if the lock has been expired. If no watcher is specified (the default behavior), *redis-plus-plus* will create a one for this Redlock. Check below for more detail.
+
+```
+class RedMutex {
+public:
+    RedMutex(std::initializer_list<std::shared_ptr<Redis>> masters,
+            const std::string &resource,
+            std::function<void (std::exception_ptr)> auto_extend_err_callback = nullptr,
+            const RedMutexOptions &opts = {},
+            const std::shared_ptr<LockWatcher> &watcher = nullptr);
+
+    void lock();
+
+    bool try_lock();
+
+    void unlock();
+};
+```
+
+##### Atuo Extention Error Callback
+
+As we mentioned the high level API can automatically extend the lock. However, we might fail to extend the lock, e.g. connection to Redis is broken. In that case, the `auto_extend_err_callback` will be called, so that the application can be notified that the lock might no longer be locked, and stop running code in critical section.
+
+The following is the prototype of error callback.
+
+```
+void (std::exception_ptr err);
+```
+
+If error callback is not set (the default behavior), the error will be ignored. And you're on risk of running critical section code with multiple clients.
+
+##### RedMutexOptions
+
+```
+struct RedMutexOptions {
+    std::chrono::milliseconds ttl;
+    std::chrono::milliseconds retry_delay;
+    bool scripting = true;
+};
+```
+
+- *ttl*: Expiration of the key. 3 seconds by default. If you set this value too large, and the client crashes, other clients need to wait a long time before they can acquire the lock. However, if your network performance is poor, you need a larger `ttl`, otherwise, you might fail to lock or fail to extend the lock., otherwise, you might fail to lock or fail to extend the lock., otherwise, you might fail to lock or fail to extend the lock., otherwise, you might fail to lock or fail to extend the lock.
+- *retry_delay*: `RedMutex::lock` repeat trying to lock until it acquires the lock. If it fails, it wait `retry_delay` before the next retrying. 100 milliseconds by default.
+- *scripting*: True (default behavior), if using Lua scripting to implement Redlock algorithm. otherwise, use Redis transaction to implement it. It's recommended to use Lua scripting version, which should be much faster than transaction version.
+
+##### LockWatcher
+
+`LockWatcher` *watches* `RedMutex`, and try to extend the lock from time to time. You can construct `RedMutex` with a `std::shared_ptr<LockWatcher>`, so that it will watch the corresponding Redlock. `LockWatcher` does the work in a background thread. So creating a `LockWatcher` object also creates a `std::thread`. If you want to avoid creating multiple threads, you can construct multiple `RedMutex` with the same `std::shared_ptr<LockWatcher>`.
+
+If you don't specify `LockWatcher`, `RedMutex` will create one (the default behavior), and start a thread. Although it's expensive to create thread, it's still quite cheap compared to acquiring a distributed lock.
+
+##### Examples
 
 ```c++
-auto redis1 = Redis("tcp://127.0.0.1:7000");
-auto redis2 = Redis("tcp://127.0.0.1:7001");
-auto redis3 = Redis("tcp://127.0.0.1:7002");
+#include <memory>
+#include <sw/redis++/redis++.h>
+#include <sw/redis++/patterns/redlock.h>
 
+auto redis = std::make_shared<Redis>("tcp://127.0.0.1");
+
+auto redis1 = std::make_shared<Redis>("tcp://127.0.0.1:7000");
+auto redis2 = std::make_shared<Redis>("tcp://127.0.0.1:7001");
+auto redis3 = std::make_shared<Redis>("tcp://127.0.0.1:7002");
+
+try {
+    {
+        // Create a `RedMutex` with a single stand-alone Redis and default settings.
+        RedMutex mtx(redis, "resource");
+        std::lock_guard<RedMutex> lock(mtx);
+    }
+
+    {
+        // Create a `RedMutex` with multiple stand-alone Redis and default settings.
+        RedMutex mtx({redis1, redis2, redis3}, "resource");
+        std::lock_guard<RedMutex> lock(mtx);
+    }
+
+    {
+        RedMutexOptions opts;
+        opts.ttl = std::chrono::seconds(5);
+
+        auto watcher = std::make_shared<LockWatcher>();
+
+        // Create a `RedMutex` with auto_extend_err_callback and other options.
+        RedMutex mtx({redis1, redis2, redis3}, "resource",
+                [](std::exception_ptr err) {
+                    try {
+                        std::rethrow_exception(err);
+                    } catch (const Error &e) {
+                        // Notify application code that the lock might no longer be locked.
+                    }
+                },
+                opts, watcher);
+
+        std::unique_lock<RedMutex> lock(mtx);
+
+        lock.lock();
+
+        lock.unlock();
+
+        lock.try_lock();
+    }
+} catch (const Error &err) {
+    // handle error.
+}
+```
+
+#### Low Level API
+
+```
 // Lua script version:
 {
     RedLockMutex mtx({redis1, redis2, redis3}, "resource");
@@ -2865,8 +2988,8 @@ auto redis3 = Redis("tcp://127.0.0.1:7002");
 }
 ```
 
-Please refer to the [code](https://github.com/sewenew/redis-plus-plus/blob/recipes/src/sw/redis%2B%2B/recipes/redlock.h) for detail. I'll enhance the doc in the future.
-
 ## Author
 
 *redis-plus-plus* is written by sewenew, who is also active on [StackOverflow](https://stackoverflow.com/users/5384363/for-stack).
+
+Many thanks to all contributors of *redis-plus-plus*, especially @wingunder.
