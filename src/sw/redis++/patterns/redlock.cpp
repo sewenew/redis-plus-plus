@@ -552,7 +552,7 @@ auto LockWatcher::_run_tasks(std::vector<Task> ready_tasks) -> Optional<std::vec
         }
     }
 
-    return rescheduled_tasks;
+    return Optional<std::vector<Task>>(std::move(rescheduled_tasks));
 }
 
 void LockWatcher::_reschedule_tasks(std::vector<Task> &tasks) {
