@@ -40,6 +40,8 @@ using SubscribeEventUPtr = std::unique_ptr<SubscribeEvent>;
 
 class AsyncSubscriber {
 public:
+    AsyncSubscriber() = default;
+
     AsyncSubscriber(const AsyncSubscriber &) = delete;
     AsyncSubscriber& operator=(const AsyncSubscriber &) = delete;
 

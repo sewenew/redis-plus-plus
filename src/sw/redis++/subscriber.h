@@ -62,6 +62,8 @@ namespace redis {
 // receive the message, and ignore it, i.e. no callback will be called.
 class Subscriber {
 public:
+    Subscriber() = default;
+
     Subscriber(const Subscriber &) = delete;
     Subscriber& operator=(const Subscriber &) = delete;
 
