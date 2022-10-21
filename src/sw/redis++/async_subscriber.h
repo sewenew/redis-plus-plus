@@ -40,13 +40,13 @@ using SubscribeEventUPtr = std::unique_ptr<SubscribeEvent>;
 
 class AsyncSubscriber {
 public:
-    AsyncSubscriber() = default;
+    AsyncSubscriber() noexcept = default;
 
     AsyncSubscriber(const AsyncSubscriber &) = delete;
     AsyncSubscriber& operator=(const AsyncSubscriber &) = delete;
 
-    AsyncSubscriber(AsyncSubscriber &&) = default;
-    AsyncSubscriber& operator=(AsyncSubscriber &&) = default;
+    AsyncSubscriber(AsyncSubscriber &&) noexcept = default;
+    AsyncSubscriber& operator=(AsyncSubscriber &&) noexcept = default;
 
     ~AsyncSubscriber();
 
