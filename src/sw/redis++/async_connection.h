@@ -283,9 +283,9 @@ public:
     }
 
 protected:
-    using Callback = void (*)(redisAsyncContext *, void *, void *);
+    using HiredisAsyncCallback = void (*)(redisAsyncContext *, void *, void *);
 
-    void _handle(redisAsyncContext &ctx, Callback callback) {
+    void _handle(redisAsyncContext &ctx, HiredisAsyncCallback callback) {
         if (redisAsyncFormattedCommand(&ctx,
                     callback, this, _cmd.data(), _cmd.size()) != REDIS_OK) {
             throw_error(ctx.c, "failed to send command");
