@@ -3586,7 +3586,17 @@ public:
                     long long count,
                     Output output);
 
-    long long xtrim(const StringView &key, long long count, bool approx = true);
+    long long xtrim(const StringView &key, long long threshold, bool approx = true,
+            XtrimStrategy strategy = XtrimStrategy::MAXLEN);
+
+    long long xtrim(const StringView &key, long long threshold,
+            XtrimStrategy strategy, long long limit);
+
+    long long xtrim(const StringView &key, const StringView &threshold, bool approx = true,
+            XtrimStrategy strategy = XtrimStrategy::MAXLEN);
+
+    long long xtrim(const StringView &key, const StringView &threshold,
+            XtrimStrategy strategy, long long limit);
 
 private:
     template <typename Impl>

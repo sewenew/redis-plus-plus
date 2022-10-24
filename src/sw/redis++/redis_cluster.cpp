@@ -787,8 +787,30 @@ long long RedisCluster::xlen(const StringView &key) {
     return reply::parse<long long>(*reply);
 }
 
-long long RedisCluster::xtrim(const StringView &key, long long count, bool approx) {
-    auto reply = command(cmd::xtrim, key, count, approx);
+long long RedisCluster::xtrim(const StringView &key, long long threshold, bool approx,
+        XtrimStrategy strategy) {
+    auto reply = command(cmd::xtrim, key, threshold, approx, strategy);
+
+    return reply::parse<long long>(*reply);
+}
+
+long long RedisCluster::xtrim(const StringView &key, long long threshold,
+        XtrimStrategy strategy, long long limit) {
+    auto reply = command(cmd::xtrim_limit, key, threshold, strategy, limit);
+
+    return reply::parse<long long>(*reply);
+}
+
+long long RedisCluster::xtrim(const StringView &key, const StringView &threshold, bool approx,
+        XtrimStrategy strategy) {
+    auto reply = command(cmd::xtrim_string_threshold, key, threshold, approx, strategy);
+
+    return reply::parse<long long>(*reply);
+}
+
+long long RedisCluster::xtrim(const StringView &key, const StringView &threshold,
+        XtrimStrategy strategy, long long limit) {
+    auto reply = command(cmd::xtrim_string_threshold_limit, key, threshold, strategy, limit);
 
     return reply::parse<long long>(*reply);
 }

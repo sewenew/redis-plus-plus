@@ -226,15 +226,36 @@ void georadiusbymember_store(Connection &connection,
 
 // Stream commands.
 
-void xtrim(Connection &connection, const StringView &key, long long count, bool approx) {
+void xtrim(Connection &connection, const StringView &key,
+        long long threshold, bool approx, XtrimStrategy strategy) {
+    auto string_threshold = std::to_string(threshold);
+
+    xtrim_string_threshold(connection, key, string_threshold, approx, strategy);
+}
+
+void xtrim_limit(Connection &connection, const StringView &key,
+        long long threshold, XtrimStrategy strategy, long long limit) {
+    auto string_threshold = std::to_string(threshold);
+
+    xtrim_string_threshold_limit(connection, key, string_threshold, strategy, limit);
+}
+
+void xtrim_string_threshold(Connection &connection, const StringView &key,
+        const StringView &threshold, bool approx, XtrimStrategy strategy) {
     CmdArgs args;
-    args << "XTRIM" << key << "MAXLEN";
+    args << "XTRIM" << key;
 
-    if (approx) {
-        args << "~";
-    }
+    detail::set_xtrim_parameters(args, strategy, approx, threshold);
 
-    args << count;
+    connection.send(args);
+}
+
+void xtrim_string_threshold_limit(Connection &connection, const StringView &key,
+        const StringView &threshold, XtrimStrategy strategy, long long limit) {
+    CmdArgs args;
+    args << "XTRIM" << key;
+
+    detail::set_xtrim_parameters(args, strategy, true, threshold, limit);
 
     connection.send(args);
 }
@@ -382,6 +403,40 @@ void set_georadius_parameters(CmdArgs &args,
     } else {
         args << "DESC";
     }
+}
+
+void set_xtrim_parameters(CmdArgs &args,
+        XtrimStrategy strategy,
+        bool approx,
+        const StringView &threshold) {
+    switch (strategy) {
+    case XtrimStrategy::MAXLEN:
+        args << "MAXLEN";
+        break;
+
+    case XtrimStrategy::MINID:
+        args << "MINID";
+        break;
+
+    default:
+        throw Error("unknown stream trim strategy");
+    }
+
+    if (approx) {
+        args << "~";
+    }
+
+    args << threshold;
+}
+
+void set_xtrim_parameters(CmdArgs &args,
+        XtrimStrategy strategy,
+        bool approx,
+        const StringView &threshold,
+        long long limit) {
+    set_xtrim_parameters(args, strategy, approx, threshold);
+
+    args << "LIMIT" << limit;
 }
 
 }

@@ -195,6 +195,11 @@ enum class GeoUnit {
     FT
 };
 
+enum class XtrimStrategy {
+    MAXLEN,
+    MINID
+};
+
 template <typename T>
 struct WithCoord : TupleWithType<std::pair<double, double>, T> {};
 
