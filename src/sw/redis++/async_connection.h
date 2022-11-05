@@ -356,8 +356,6 @@ public:
 
 private:
     void _run_callback() {
-        assert(_cb);
-
         try {
             _cb(CommandEvent<Result, ResultParser>::get_future());
         } catch (...) {
@@ -365,7 +363,7 @@ private:
         }
     }
 
-    std::function<void (Future<Result> &&)> _cb;
+    Callback _cb;
 };
 
 template <typename Result, typename ResultParser, typename Callback>
@@ -563,8 +561,6 @@ public:
 
 private:
     void _run_callback() {
-        assert(_cb);
-
         try {
             _cb(CommandEvent<Result, ResultParser>::get_future());
         } catch (...) {
@@ -572,7 +568,7 @@ private:
         }
     }
 
-    std::function<void (Future<Result> &&)> _cb;
+    Callback _cb;
 };
 
 template <typename Result, typename ResultParser, typename Callback>
