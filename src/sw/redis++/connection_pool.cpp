@@ -80,12 +80,24 @@ Connection ConnectionPool::fetch() {
         if (_used_connections == _pool_opts.size) {
             _wait_for_connection(lock);
         } else {
-            // Lazily create a new connection.
-            auto connection = _create();
-
             ++_used_connections;
 
-            return connection;
+            lock.unlock();
+
+            try {
+                // Lazily create a new connection.
+                return _create();
+            } catch (...) {
+                lock.lock();
+
+                --_used_connections;
+
+                lock.unlock();
+
+                _cv.notify_one();
+
+                throw;
+            }
         }
     }
 
