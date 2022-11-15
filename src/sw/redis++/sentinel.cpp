@@ -296,7 +296,12 @@ Role Sentinel::_get_role(Connection &connection) {
     if (start == std::string::npos) {
         throw ProtoError("Invalid INFO REPLICATION reply");
     }
-    start += 5;
+    if (std::string::npos - start > 5) {
+        start += 5;
+    }
+    else {
+        throw Error("size_t overflow");
+    }
     auto stop = info.find("\r\n", start);
     if (stop == std::string::npos) {
         throw ProtoError("Invalid INFO REPLICATION reply");

@@ -169,7 +169,14 @@ auto ConnectionOptions::_split_uri(const std::string &uri) const
 
     auto scheme = uri.substr(0, pos);
 
-    auto start = pos + 3;
+    auto start = pos;
+    if (std::string::npos - start > 3) {
+        start += 3;
+    }
+    else {
+        throw Error("size_t overflow");
+    }
+
     pos = uri.find("@", start);
     if (pos == std::string::npos) {
         // No auth info.
