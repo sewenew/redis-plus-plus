@@ -292,11 +292,12 @@ Role Sentinel::_get_role(Connection &connection) {
     assert(reply);
     auto info = reply::parse<std::string>(*reply);
 
-    auto start = info.find("role:");
+    const std::string ROLE_PREFIX = "role:";
+    auto start = info.find(ROLE_PREFIX);
     if (start == std::string::npos) {
         throw ProtoError("Invalid INFO REPLICATION reply");
     }
-    start += 5;
+    start += ROLE_PREFIX.size();
     auto stop = info.find("\r\n", start);
     if (stop == std::string::npos) {
         throw ProtoError("Invalid INFO REPLICATION reply");
