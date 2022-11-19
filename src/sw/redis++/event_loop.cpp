@@ -98,7 +98,7 @@ void EventLoop::_connect_callback(const redisAsyncContext *ctx, int status) {
     if (status != REDIS_OK) {
         try {
             throw_error(ctx->c, "failed to connect to server");
-        } catch (const Error &e) {
+        } catch (const Error &) {
             err = std::current_exception();
         }
     }
@@ -121,7 +121,7 @@ void EventLoop::_disconnect_callback(const redisAsyncContext *ctx, int status) {
     if (status != REDIS_OK) {
         try {
             throw_error(ctx->c, "failed to disconnect from server");
-        } catch (const Error &e) {
+        } catch (const Error &) {
             err = std::current_exception();
         }
     }

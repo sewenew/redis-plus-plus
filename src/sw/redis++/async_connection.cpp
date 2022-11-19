@@ -430,7 +430,7 @@ void AsyncConnection::_connect_with_sentinel() {
         _state = State::NOT_CONNECTED;
 
         _connect();
-    } catch (const Error &err) {
+    } catch (const Error &) {
         _fail_events(std::current_exception());
     }
 }
@@ -461,7 +461,7 @@ void AsyncConnection::_connect() {
 #endif
 
         _state = State::CONNECTING;
-    } catch (const Error &err) {
+    } catch (const Error &) {
         _fail_events(std::current_exception());
     }
 }

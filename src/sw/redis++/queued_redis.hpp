@@ -42,7 +42,7 @@ template <typename Impl>
 QueuedRedis<Impl>::~QueuedRedis() {
     try {
         _clean_up();
-    } catch (const Error &e) {
+    } catch (const Error &) {
         // Ensure the destructor does not throw
     }
 }
@@ -67,7 +67,7 @@ auto QueuedRedis<Impl>::command(Cmd cmd, Args &&...args)
         _impl.command(_connection(), cmd, std::forward<Args>(args)...);
 
         ++_cmd_num;
-    } catch (const Error &e) {
+    } catch (const Error &) {
         _invalidate();
         throw;
     }
@@ -122,12 +122,12 @@ QueuedReplies QueuedRedis<Impl>::exec() {
         _reset();
 
         return QueuedReplies(std::move(replies), std::move(set_cmd_indexes));
-    } catch (const WatchError &e) {
+    } catch (const WatchError &) {
         // In this case, we only clear some states and keep the connection,
         // so that user can retry the transaction.
         _reset(false);
         throw;
-    } catch (const Error &e) {
+    } catch (const Error &) {
         _invalidate();
         throw;
     }
@@ -141,7 +141,7 @@ void QueuedRedis<Impl>::discard() {
         _impl.discard(_connection(), _cmd_num);
 
         _reset();
-    } catch (const Error &e) {
+    } catch (const Error &) {
         _invalidate();
         throw;
     }

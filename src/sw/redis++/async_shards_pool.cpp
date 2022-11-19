@@ -303,7 +303,7 @@ void AsyncShardsPool::_update_shards() {
 
             // Update successfully.
             return;
-        } catch (const Error &e) {
+        } catch (const Error &) {
             // continue;
         }
     }

@@ -105,7 +105,7 @@ Connection ConnectionPool::fetch() {
         if (role_changed || _need_reconnect(connection, connection_lifetime, connection_idle_time)) {
             try {
                 connection = _create(sentinel, opts, false);
-            } catch (const Error &e) {
+            } catch (const Error &) {
                 // Failed to reconnect, return it to the pool, and retry latter.
                 release(std::move(connection));
                 throw;
@@ -120,7 +120,7 @@ Connection ConnectionPool::fetch() {
     if (_need_reconnect(connection, connection_lifetime, connection_idle_time)) {
         try {
             connection.reconnect();
-        } catch (const Error &e) {
+        } catch (const Error &) {
             // Failed to reconnect, return it to the pool, and retry latter.
             release(std::move(connection));
             throw;
@@ -218,7 +218,7 @@ Connection ConnectionPool::_create(SimpleSentinel &sentinel,
         }
 
         return connection;
-    } catch (const StopIterError &e) {
+    } catch (const StopIterError &) {
         throw Error("Failed to create connection with sentinel");
     }
 }
