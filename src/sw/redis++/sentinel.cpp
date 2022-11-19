@@ -83,7 +83,7 @@ Connection& Sentinel::Iterator::next() {
             _broken_sentinels.pop_front();
 
             return _healthy_sentinels.back();
-        } catch (const Error &e) {
+        } catch (const Error &) {
             // Failed to connect to sentinel.
             _broken_sentinels.splice(_broken_sentinels.end(),
                                         _broken_sentinels,
@@ -139,9 +139,9 @@ Connection Sentinel::master(const std::string &master_name, const ConnectionOpti
             }
 
             return connection;
-        } catch (const StopIterError &e) {
+        } catch (const StopIterError &) {
             throw;
-        } catch (const Error &e) {
+        } catch (const Error &) {
             continue;
         }
     }
@@ -189,14 +189,14 @@ Connection Sentinel::slave(const std::string &master_name, const ConnectionOptio
                     }
 
                     return connection;
-                } catch (const Error &e) {
+                } catch (const Error &) {
                     // Try the next slave.
                     continue;
                 }
             }
-        } catch (const StopIterError &e) {
+        } catch (const StopIterError &) {
             throw;
-        } catch (const Error &e) {
+        } catch (const Error &) {
             continue;
         }
     }
@@ -240,7 +240,7 @@ std::vector<Node> Sentinel::_get_slave_addr_by_name(Connection &connection,
         std::shuffle(slaves.begin(), slaves.end(), gen);
 
         return slaves;
-    } catch (const ReplyError &e) {
+    } catch (const ReplyError &) {
         // Unknown master name.
         return {};
     }

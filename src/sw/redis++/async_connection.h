@@ -304,7 +304,7 @@ protected:
             } else if (reply::is_error(*reply)) {
                 try {
                     throw_error(*reply);
-                } catch (const Error &e) {
+                } catch (const Error &) {
                     event->set_exception(std::current_exception());
                 }
             } else {
@@ -414,7 +414,7 @@ private:
             } else if (reply::is_error(*reply)) {
                 try {
                     throw_error(*reply);
-                } catch (const Error &e) {
+                } catch (const Error &) {
                     event->set_exception(std::current_exception());
                 }
             } else {
@@ -486,13 +486,13 @@ private:
             } else if (reply::is_error(*reply)) {
                 try {
                     throw_error(*reply);
-                } catch (const IoError &err) {
+                } catch (const IoError &) {
                     event->_pool->update(event->_key, AsyncEventUPtr(event));
                     return;
-                } catch (const ClosedError &err) {
+                } catch (const ClosedError &) {
                     event->_pool->update(event->_key, AsyncEventUPtr(event));
                     return;
-                } catch (const MovedError &err) {
+                } catch (const MovedError &) {
                     switch (event->_state) {
                     case State::MOVED:
                         throw Error("too many moved error");
@@ -516,7 +516,7 @@ private:
                     GuardedAsyncConnection connection(pool);
                     connection.connection().send(AsyncEventUPtr(new AskingEvent(event)));
                     return;
-                } catch (const Error &e) {
+                } catch (const Error &) {
                     event->set_exception(std::current_exception());
                 }
             } else {

@@ -159,7 +159,7 @@ AsyncConnectionSPtr AsyncConnectionPool::fetch() {
                 // Release expired connection.
                 // TODO: If `unwatch` throw, we will leak the connection.
                 _loop->unwatch(std::move(tmp_connection));
-            } catch (const Error &e) {
+            } catch (const Error &) {
                 // Failed to reconnect, return it to the pool, and retry latter.
                 release(std::move(connection));
                 throw;
@@ -182,7 +182,7 @@ AsyncConnectionSPtr AsyncConnectionPool::fetch() {
             // Release expired connection.
             // TODO: If `unwatch` throw, we will leak the connection.
             _loop->unwatch(std::move(tmp_connection));
-        } catch (const Error &e) {
+        } catch (const Error &) {
             // Failed, return it to the pool, and retry latter.
             release(std::move(connection));
             throw;

@@ -154,7 +154,7 @@ public:
         try {
             _mut.unlock(_lock_val);
             _release_tp = std::chrono::time_point<std::chrono::steady_clock>{};
-        } catch (const Error &err) {
+        } catch (const Error &) {
             _release_tp = std::chrono::time_point<std::chrono::steady_clock>{};
             throw;
         }

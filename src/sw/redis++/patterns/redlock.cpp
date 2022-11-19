@@ -119,7 +119,7 @@ bool RedMutexTx::_extend_lock_master(Redis &master,
                 return false;
             }
         }
-    } catch (const Error &err) {
+    } catch (const Error &) {
         // key has been modified or other error happens, failed to extend the lock.
         return false;
     }
@@ -131,7 +131,7 @@ void RedMutexTx::unlock(const std::string &val) {
     for (auto &master : _masters) {
         try {
             _unlock_master(*master, val);
-        } catch (const Error &err) {
+        } catch (const Error &) {
             // Ignore errors, and continue to unlock other maters.
         }
     }
@@ -150,7 +150,7 @@ void RedMutexTx::_unlock_master(Redis &master, const std::string &val) {
                 throw Error("Redis internal error: WATCH " + _resource + "failed");
             }
         }
-    } catch (const WatchError &err) {
+    } catch (const WatchError &) {
         // key has been modified. Do nothing, just let it go.
     }
 }
