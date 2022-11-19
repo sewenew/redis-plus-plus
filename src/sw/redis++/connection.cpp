@@ -162,14 +162,15 @@ std::vector<std::string> ConnectionOptions::_split(const std::string &str,
 
 auto ConnectionOptions::_split_uri(const std::string &uri) const
     -> std::tuple<std::string, std::string, std::string> {
-    auto pos = uri.find("://");
+    const std::string SCHEME_DELIMITER = "://";
+    auto pos = uri.find(SCHEME_DELIMITER);
     if (pos == std::string::npos) {
         throw Error("invalid URI: no scheme");
     }
 
     auto scheme = uri.substr(0, pos);
 
-    auto start = pos + 3;
+    auto start = pos + SCHEME_DELIMITER.size();
     pos = uri.find("@", start);
     if (pos == std::string::npos) {
         // No auth info.
