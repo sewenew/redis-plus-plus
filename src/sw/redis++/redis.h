@@ -453,7 +453,7 @@ public:
     /// @param val Value obtained by `Redis::dump`.
     /// @param ttl Timeout of the created key in milliseconds. If `ttl` is 0, set no timeout.
     /// @param replace Whether to overwrite an existing key.
-    ///                If `replace` is `true` and key already exists, throw an exception.
+    ///                If `replace` is `false` and key already exists, throw an exception.
     /// @see https://redis.io/commands/restore
     void restore(const StringView &key,
                     const StringView &val,
@@ -465,7 +465,7 @@ public:
     /// @param val Value obtained by `Redis::dump`.
     /// @param ttl Timeout of the created key in milliseconds. If `ttl` is 0, set no timeout.
     /// @param replace Whether to overwrite an existing key.
-    ///                If `replace` is `true` and key already exists, throw an exception.
+    ///                If `replace` is `false` and key already exists, throw an exception.
     /// @see https://redis.io/commands/restore
     void restore(const StringView &key,
                     const StringView &val,
