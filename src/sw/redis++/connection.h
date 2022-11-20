@@ -17,6 +17,7 @@
 #ifndef SEWENEW_REDISPLUSPLUS_CONNECTION_H
 #define SEWENEW_REDISPLUSPLUS_CONNECTION_H
 
+#include <cassert>
 #include <cerrno>
 #include <cstring>
 #include <memory>
@@ -127,14 +128,16 @@ public:
     // before sending some command to the connection. If it's broken,
     // client needs to reconnect it.
     bool broken() const noexcept {
-        return _ctx->err != REDIS_OK;
+        return !_ctx || _ctx->err != REDIS_OK;
     }
 
     void reset() noexcept {
+        assert(_ctx);
         _ctx->err = 0;
     }
 
     void invalidate() noexcept {
+        assert(_ctx);
         _ctx->err = REDIS_ERR;
     }
 
@@ -170,6 +173,12 @@ public:
 #endif
 
 private:
+    struct Dummy {};
+
+    Connection(const ConnectionOptions &opts, Dummy) : _opts(opts) {}
+
+    friend class ConnectionPool;
+
     class Connector;
 
     struct ContextDeleter {

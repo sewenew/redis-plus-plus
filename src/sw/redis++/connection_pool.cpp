@@ -76,21 +76,7 @@ ConnectionPool& ConnectionPool::operator=(ConnectionPool &&that) {
 Connection ConnectionPool::fetch() {
     std::unique_lock<std::mutex> lock(_mutex);
 
-    if (_pool.empty()) {
-        if (_used_connections == _pool_opts.size) {
-            _wait_for_connection(lock);
-        } else {
-            // Lazily create a new connection.
-            auto connection = _create();
-
-            ++_used_connections;
-
-            return connection;
-        }
-    }
-
-    // _pool is NOT empty.
-    auto connection = _fetch();
+    auto connection = _fetch(lock);
 
     auto connection_lifetime = _pool_opts.connection_lifetime;
     auto connection_idle_time = _pool_opts.connection_idle_time;
@@ -104,7 +90,7 @@ Connection ConnectionPool::fetch() {
 
         if (role_changed || _need_reconnect(connection, connection_lifetime, connection_idle_time)) {
             try {
-                connection = _create(sentinel, opts, false);
+                connection = _create(sentinel, opts);
             } catch (const Error &) {
                 // Failed to reconnect, return it to the pool, and retry latter.
                 release(std::move(connection));
@@ -156,7 +142,7 @@ Connection ConnectionPool::create() {
 
         lock.unlock();
 
-        return _create(sentinel, opts, false);
+        return _create(sentinel, opts);
     } else {
         lock.unlock();
 
@@ -191,25 +177,12 @@ void ConnectionPool::_move(ConnectionPool &&that) {
     _sentinel = std::move(that._sentinel);
 }
 
-Connection ConnectionPool::_create() {
-    if (_sentinel) {
-        // Get Redis host and port info from sentinel.
-        return _create(_sentinel, _opts, true);
-    }
-
-    return Connection(_opts);
-}
-
 Connection ConnectionPool::_create(SimpleSentinel &sentinel,
-                                    const ConnectionOptions &opts,
-                                    bool locked) {
+                                    const ConnectionOptions &opts) {
     try {
         auto connection = sentinel.create(opts);
 
-        std::unique_lock<std::mutex> lock(_mutex, std::defer_lock);
-        if (!locked) {
-            lock.lock();
-        }
+        std::lock_guard<std::mutex> lock(_mutex);
 
         const auto &connection_opts = connection.options();
         if (_role_changed(connection_opts)) {
@@ -221,6 +194,22 @@ Connection ConnectionPool::_create(SimpleSentinel &sentinel,
     } catch (const StopIterError &) {
         throw Error("Failed to create connection with sentinel");
     }
+}
+
+Connection ConnectionPool::_fetch(std::unique_lock<std::mutex> &lock) {
+    if (_pool.empty()) {
+        if (_used_connections == _pool_opts.size) {
+            _wait_for_connection(lock);
+        } else {
+            ++_used_connections;
+
+            // Lazily create a new (broken) connection to avoid connecting with lock.
+            return Connection(_opts, Connection::Dummy{});
+        }
+    }
+
+    // _pool is NOT empty.
+    return _fetch();
 }
 
 Connection ConnectionPool::_fetch() {
