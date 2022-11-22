@@ -32,14 +32,16 @@ using CoSentinel = AsyncSentinel;
 class CoRedis {
 public:
     CoRedis(const ConnectionOptions &opts,
-            const ConnectionPoolOptions &pool_opts = {}) : _async_redis(opts, pool_opts) {}
+            const ConnectionPoolOptions &pool_opts = {},
+            const EventLoopSPtr &loop = nullptr) : _async_redis(opts, pool_opts, loop) {}
 
     CoRedis(const std::shared_ptr<CoSentinel> &sentinel,
             const std::string &master_name,
             Role role,
             const ConnectionOptions &connection_opts,
-            const ConnectionPoolOptions &pool_opts = {}) :
-        _async_redis(sentinel, master_name, role, connection_opts, pool_opts) {}
+            const ConnectionPoolOptions &pool_opts = {},
+            const EventLoopSPtr &loop = nullptr) :
+        _async_redis(sentinel, master_name, role, connection_opts, pool_opts, loop) {}
 
     CoRedis(const CoRedis &) = delete;
     CoRedis& operator=(const CoRedis &) = delete;

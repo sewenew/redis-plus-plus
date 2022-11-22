@@ -29,7 +29,8 @@ namespace redis {
 class CoRedisCluster {
 public:
     CoRedisCluster(const ConnectionOptions &opts,
-            const ConnectionPoolOptions &pool_opts = {}) : _async_redis(opts, pool_opts) {}
+            const ConnectionPoolOptions &pool_opts = {},
+            const EventLoopSPtr &loop = nullptr) : _async_redis(opts, pool_opts, loop) {}
 
     CoRedisCluster(const CoRedisCluster &) = delete;
     CoRedisCluster& operator=(const CoRedisCluster &) = delete;
