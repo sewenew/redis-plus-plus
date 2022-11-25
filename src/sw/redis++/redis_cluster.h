@@ -204,6 +204,14 @@ public:
         return bitop(op, destination, il.begin(), il.end());
     }
 
+    template <typename Input, typename Output>
+    void bitfield(const StringView &key, Input first, Input last, Output output);
+
+    template <typename T, typename Output>
+    void bitfield(const StringView &key, std::initializer_list<T> il, Output output) {
+        bitfield(key, il.begin(), il.end(), output);
+    }
+
     long long bitpos(const StringView &key,
                         long long bit,
                         long long start = 0,

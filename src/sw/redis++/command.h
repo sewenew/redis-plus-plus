@@ -319,6 +319,19 @@ inline void bitpos(Connection &connection,
                     end);
 }
 
+template <typename Input>
+inline void bitfield(Connection &connection,
+                    const StringView &key,
+                    Input first,
+                    Input last) {
+    assert(first != last);
+
+    CmdArgs args;
+    args << "BITFIELD" << key << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
 inline void decr(Connection &connection, const StringView &key) {
     connection.send("DECR %b", key.data(), key.size());
 }

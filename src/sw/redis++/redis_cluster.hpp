@@ -193,6 +193,15 @@ long long RedisCluster::bitop(BitOp op, const StringView &destination, Input fir
 }
 
 template <typename Input, typename Output>
+inline void RedisCluster::bitfield(const StringView &key, Input first, Input last, Output output) {
+    range_check("BITFIELD", first, last);
+
+    auto reply = command(cmd::bitfield<Input>, key, first, last);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Input, typename Output>
 void RedisCluster::mget(Input first, Input last, Output output) {
     range_check("MGET", first, last);
 
