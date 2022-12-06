@@ -34,6 +34,8 @@ namespace redis {
 struct SentinelOptions {
     std::vector<std::pair<std::string, int>> nodes;
 
+    std::string user = "default";
+
     std::string password;
 
     bool keep_alive = true;
