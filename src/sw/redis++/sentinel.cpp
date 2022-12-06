@@ -319,6 +319,7 @@ std::list<ConnectionOptions> Sentinel::_parse_options(const SentinelOptions &opt
         ConnectionOptions opt;
         opt.host = node.first;
         opt.port = node.second;
+        opt.user = opts.user;
         opt.password = opts.password;
         opt.keep_alive = opts.keep_alive;
         opt.connect_timeout = opts.connect_timeout;
