@@ -73,11 +73,11 @@ private:
 
     std::shared_ptr<Sentinel> _sentinel;
 
-    std::thread _worker;
-
     std::mutex _mutex;
 
     std::condition_variable _cv;
+
+    std::thread _worker;
 };
 
 using AsyncSentinelSPtr = std::shared_ptr<AsyncSentinel>;
