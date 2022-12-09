@@ -61,6 +61,25 @@ public:
     virtual void set_value(redisReply & /*reply*/) {}
 };
 
+// This event is used for updating node-slot mapping.
+// Since it does not send any data, `handle` returns false,
+// and `set_value` should never be called.
+class UpdateShardsEvent : public AsyncEvent {
+public:
+    virtual bool handle(redisAsyncContext &) override {
+        return false;
+    }
+
+    virtual void set_exception(std::exception_ptr) override {
+        // Do nothing.
+    }
+
+    virtual void set_value(redisReply &) override {
+        // Should never reach here.
+        assert(false);
+    }
+};
+
 using AsyncEventUPtr = std::unique_ptr<AsyncEvent>;
 
 enum class AsyncConnectionMode {
@@ -467,6 +486,22 @@ public:
         return true;
     }
 
+    virtual void set_exception(std::exception_ptr err) override {
+        // If connection is closed, or we fail to connect to Redis Cluster,
+        // i.e. ClosedError or IoError, we need to update node-slot mapping.
+        try {
+            std::rethrow_exception(err);
+        } catch (const IoError &) {
+            this->_pool->update(_key, AsyncEventUPtr(new UpdateShardsEvent));
+        } catch (const ClosedError &) {
+            this->_pool->update(_key, AsyncEventUPtr(new UpdateShardsEvent));
+        } catch (...) {
+            // Ignore other exceptions.
+        }
+
+        CommandEvent<Result, ResultParser>::set_exception(err);
+    }
+
 private:
     enum class State {
         NORMAL = 0,
@@ -486,6 +521,7 @@ private:
             } else if (reply::is_error(*reply)) {
                 try {
                     throw_error(*reply);
+                    // TODO: we might not need to catch IoError and ClosedError here.
                 } catch (const IoError &) {
                     event->_pool->update(event->_key, AsyncEventUPtr(event));
                     return;

@@ -1375,7 +1375,8 @@ ReplyUPtr RedisCluster::_command(Cmd cmd, const StringView &key, Args &&...args)
     // 1. Source node has already run 'CLUSTER SETSLOT xxx NODE xxx',
     //    while the destination node has NOT run it.
     //    In this case, client will be redirected by both nodes with MovedError.
-    // 2. Other failures...
+    // 2. Node is down, e.g. master is down, and new master has not been elected yet.
+    // 3. Other failures...
     throw Error("Failed to send command with key: " + std::string(key.data(), key.size()));
 }
 
