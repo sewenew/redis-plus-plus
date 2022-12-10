@@ -470,6 +470,16 @@ private:
     std::shared_ptr<AsyncConnection> _connection;
 };
 
+namespace detail {
+
+// We seperate this function from ClusterEvent to avoid
+// incomplete type problem.
+void update_shards(const std::string &key,
+        std::shared_ptr<AsyncShardsPool> &pool,
+        AsyncEventUPtr event);
+
+}
+
 template <typename Result, typename ResultParser>
 class ClusterEvent : public CommandEvent<Result, ResultParser> {
 public:
@@ -492,9 +502,9 @@ public:
         try {
             std::rethrow_exception(err);
         } catch (const IoError &) {
-            this->_pool->update(_key, AsyncEventUPtr(new UpdateShardsEvent));
+            detail::update_shards(_key, _pool, AsyncEventUPtr(new UpdateShardsEvent));
         } catch (const ClosedError &) {
-            this->_pool->update(_key, AsyncEventUPtr(new UpdateShardsEvent));
+            detail::update_shards(_key, _pool, AsyncEventUPtr(new UpdateShardsEvent));
         } catch (...) {
             // Ignore other exceptions.
         }
@@ -523,10 +533,10 @@ private:
                     throw_error(*reply);
                     // TODO: we might not need to catch IoError and ClosedError here.
                 } catch (const IoError &) {
-                    event->_pool->update(event->_key, AsyncEventUPtr(event));
+                    detail::update_shards(event->_key, event->_pool, AsyncEventUPtr(event));
                     return;
                 } catch (const ClosedError &) {
-                    event->_pool->update(event->_key, AsyncEventUPtr(event));
+                    detail::update_shards(event->_key, event->_pool, AsyncEventUPtr(event));
                     return;
                 } catch (const MovedError &) {
                     switch (event->_state) {
@@ -543,7 +553,7 @@ private:
                     }
 
                     event->_state = State::MOVED;
-                    event->_pool->update(event->_key, AsyncEventUPtr(event));
+                    detail::update_shards(event->_key, event->_pool, AsyncEventUPtr(event));
                     return;
                 } catch (const AskError &err) {
                     event->_state = State::ASKING;

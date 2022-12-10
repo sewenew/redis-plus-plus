@@ -557,6 +557,16 @@ AsyncConnection& GuardedAsyncConnection::connection() {
     return *_connection;
 }
 
+namespace detail {
+
+void update_shards(const std::string &key,
+        std::shared_ptr<AsyncShardsPool> &pool,
+        AsyncEventUPtr event) {
+    pool->update(key, std::move(event));
+}
+
+}
+
 }
 
 }
