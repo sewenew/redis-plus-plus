@@ -16,6 +16,8 @@
 
 #include "async_shards_pool.h"
 #include <cassert>
+#include <chrono>
+#include <thread>
 #include "errors.h"
 
 namespace sw {
@@ -38,12 +40,17 @@ AsyncShardsPool::AsyncShardsPool(const EventLoopSPtr &loop,
         throw Error("Only support TCP connection for Redis Cluster");
     }
 
+    // Initialize local node-slot mapping with all slots to the given node.
+    // We'll update it later.
     auto node = Node{_connection_opts.host, _connection_opts.port};
     _shards.emplace(SlotRange{0U, SHARDS}, node);
     _pools.emplace(node,
             std::make_shared<AsyncConnectionPool>(_loop, _pool_opts, _connection_opts));
 
     _worker = std::thread([this]() { this->_run(); });
+
+    // Update node-slot mapping asynchrounously.
+    update("", AsyncEventUPtr(new UpdateShardsEvent));
 }
 
 AsyncShardsPool::AsyncShardsPool(AsyncShardsPool &&that) {
@@ -213,6 +220,11 @@ void AsyncShardsPool::_run() {
             if (_fail_events(events, std::current_exception())) {
                 break;
             }
+
+            // Failed to update shards, retry later.
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+
+            update("", AsyncEventUPtr(new UpdateShardsEvent));
         }
     }
 }
