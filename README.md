@@ -641,6 +641,38 @@ connection_options.socket_timeout = std::chrono::milliseconds(200);
 // Connect to Redis server with a single connection.
 Redis redis1(connection_options);
 
+// ... Other codes.
+// We can use custom connect policy as follows.
+// First, we define a function which can connect to redis server.
+redisContext* customConnect(void *arg) {
+    if (!arg) {
+        // It is not necessary to throw an exception.
+        // Because you do not need any parameters to obtain.
+        throw Error("myConnectTCP parameter is invalid");
+    }
+
+    // If you need a parameter, type conversion is necessary when you know it's not nullptr.
+    CustomConfType someConf = *(reinterpret_cast<CustomConfType*>(arg));
+    
+    // Do something as you need.
+    // For example, obtain the real IP address through service discovery.
+    doSomething();
+	
+    // Create a redisContext instance and return it's address.
+    // Maybe you can refer to the following function.
+    return redisConnect(hostIP.c_str(), hostPort); 
+
+}
+// ... Other codes.
+// Parameter to be passed to the custom function.
+CustomConfType myConf;
+connection_options.type = ConnectionType::CUSTOM;  // It's required if you want to use custom connect policy.
+connection_options.customConnect = customConnect;  // It's required if you want to use custom connect policy.
+connection_options.customConnectArg = &(myConf);  // Optional. The default is nullptr.
+
+// Connect to Redis server with a single connection and customize connect policy.
+Redis redis2(connection_options);
+
 ConnectionPoolOptions pool_options;
 pool_options.size = 3;  // Pool size, i.e. max number of connections.
 
@@ -654,7 +686,7 @@ pool_options.wait_timeout = std::chrono::milliseconds(100);
 pool_options.connection_lifetime = std::chrono::minutes(10);
 
 // Connect to Redis server with a connection pool.
-Redis redis2(connection_options, pool_options);
+Redis redis3(connection_options, pool_options);
 ```
 
 **NOTE**: if you set `ConnectionOptions::socket_timeout`, and try to call blocking commands, e.g. `Redis::brpop`, `Redis::blpop`, `Redis::bzpopmax`, `Redis::bzpopmin`, you must ensure that `ConnectionOptions::socket_timeout` is larger than the timeout specified with these blocking commands. Otherwise, you might get `TimeoutError`, and lose messages.

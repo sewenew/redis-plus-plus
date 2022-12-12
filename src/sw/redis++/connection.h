@@ -37,7 +37,8 @@ namespace redis {
 
 enum class ConnectionType {
     TCP = 0,
-    UNIX
+    UNIX,
+    CUSTOM
 };
 
 struct ConnectionOptions {
@@ -82,6 +83,15 @@ public:
 
     // RESP version.
     int resp = 2;
+
+    // if specify the `type` is ConnectionType::CUSTOM, it will use the customConnectFn create a 
+    // connection to redis server. This allows users to implement their own connection logic.
+    // After all, in many cases, the domain name or IP address is not given directly.
+    // For example, in the scenario of deploying some Redis instances with a microservice mode, a service name is given
+    redisContext* (*customConnectFn)(void *arg) = nullptr;
+
+    // parameter of custom functions
+    void *customConnectArg = nullptr;
 
 private:
     ConnectionOptions _parse_uri(const std::string &uri) const;

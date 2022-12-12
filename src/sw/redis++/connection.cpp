@@ -293,7 +293,13 @@ Connection::ContextUPtr Connection::Connector::_connect() const {
     case ConnectionType::UNIX:
         context = _connect_unix();
         break;
-
+    case ConnectionType::CUSTOM:
+        if (_opts.customConnectFn != nullptr) {
+            context = _opts.customConnectFn(_opts.customConnectArg);
+        } else {
+            throw Error("Function customConnectFn is invalid");
+        }
+        break;
     default:
         // Never goes here.
         throw Error("Unknown connection type");
