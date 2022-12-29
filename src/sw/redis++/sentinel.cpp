@@ -125,7 +125,7 @@ Connection& Sentinel::Iterator::next() {
                                         _broken_sentinels,
                                         _broken_sentinels.begin());
 
-            err_msgs.push_back(report_error(node_info(_broken_sentinels.back()), {}, err.what()));
+            err_msgs.push_back(report_error(node_info(_broken_sentinels.back()), {"", 0}, err.what()));
         }
     }
 
@@ -239,7 +239,7 @@ Connection Sentinel::slave(const std::string &master_name, const ConnectionOptio
                     return connection;
                 } catch (const Error &err) {
                     err_msgs.push_back(report_error(sentinel_node, slave_node, err.what()));
-                    slave_node = Node{};
+                    slave_node = Node{"", 0};
 
                     // Try the next slave.
                     continue;
