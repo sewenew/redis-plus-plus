@@ -611,8 +611,8 @@ template <typename Interval>
 FormattedCommand zcount(const StringView &key, const Interval &interval) {
     return format_cmd("ZCOUNT %b %s %s",
             key.data(), key.size(),
-            interval.min().c_str(),
-            interval.max().c_str());
+            interval.lower().c_str(),
+            interval.upper().c_str());
 }
 
 inline FormattedCommand zincrby(const StringView &key,
@@ -627,8 +627,8 @@ inline FormattedCommand zincrby(const StringView &key,
 template <typename Interval>
 FormattedCommand zlexcount(const StringView &key,
         const Interval &interval) {
-    const auto &min = interval.min();
-    const auto &max = interval.max();
+    const auto &min = interval.lower();
+    const auto &max = interval.upper();
 
     return format_cmd("ZLEXCOUNT %b %b %b",
                     key.data(), key.size(),
@@ -660,8 +660,8 @@ template <typename Interval>
 FormattedCommand zrangebylex(const StringView &key,
         const Interval &interval,
         const LimitOptions &opts) {
-    const auto &min = interval.min();
-    const auto &max = interval.max();
+    const auto &min = interval.lower();
+    const auto &max = interval.upper();
 
     return format_cmd("ZRANGEBYLEX %b %b %b LIMIT %lld %lld",
                     key.data(), key.size(),
@@ -675,8 +675,8 @@ template <typename Interval>
 FormattedCommand zrangebyscore(const StringView &key,
         const Interval &interval,
         const LimitOptions &opts) {
-    const auto &min = interval.min();
-    const auto &max = interval.max();
+    const auto &min = interval.lower();
+    const auto &max = interval.upper();
 
     return format_cmd("ZRANGEBYSCORE %b %b %b LIMIT %lld %lld",
                     key.data(), key.size(),
@@ -706,8 +706,8 @@ FormattedCommand zrem_range(const StringView &key, Input first, Input last) {
 
 template <typename Interval>
 FormattedCommand zremrangebylex(const StringView &key, const Interval &interval) {
-    const auto &min = interval.min();
-    const auto &max = interval.max();
+    const auto &min = interval.lower();
+    const auto &max = interval.upper();
 
     return format_cmd("ZREMRANGEBYLEX %b %b %b",
                     key.data(), key.size(),
@@ -722,8 +722,8 @@ inline FormattedCommand zremrangebyrank(const StringView &key, long long start, 
 template <typename Interval>
 FormattedCommand zremrangebyscore(const StringView &key,
         const Interval &interval) {
-    const auto &min = interval.min();
-    const auto &max = interval.max();
+    const auto &min = interval.lower();
+    const auto &max = interval.upper();
 
     return format_cmd("ZREMRANGEBYSCORE %b %b %b",
                     key.data(), key.size(),
@@ -735,8 +735,8 @@ template <typename Interval>
 FormattedCommand zrevrangebylex(const StringView &key,
         const Interval &interval,
         const LimitOptions &opts) {
-    const auto &min = interval.min();
-    const auto &max = interval.max();
+    const auto &min = interval.lower();
+    const auto &max = interval.upper();
 
     return format_cmd("ZREVRANGEBYLEX %b %b %b LIMIT %lld %lld",
                     key.data(), key.size(),

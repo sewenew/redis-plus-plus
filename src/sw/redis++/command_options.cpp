@@ -35,11 +35,11 @@ namespace sw {
 
 namespace redis {
 
-const std::string& UnboundedInterval<double>::min() const {
+const std::string& UnboundedInterval<double>::lower() const {
     return NEGATIVE_INFINITY_NUMERIC;
 }
 
-const std::string& UnboundedInterval<double>::max() const {
+const std::string& UnboundedInterval<double>::upper() const {
     return POSITIVE_INFINITY_NUMERIC;
 }
 
@@ -85,7 +85,7 @@ LeftBoundedInterval<double>::LeftBoundedInterval(double min, BoundType type) :
     }
 }
 
-const std::string& LeftBoundedInterval<double>::max() const {
+const std::string& LeftBoundedInterval<double>::upper() const {
     return POSITIVE_INFINITY_NUMERIC;
 }
 
@@ -105,15 +105,15 @@ RightBoundedInterval<double>::RightBoundedInterval(double max, BoundType type) :
     }
 }
 
-const std::string& RightBoundedInterval<double>::min() const {
+const std::string& RightBoundedInterval<double>::lower() const {
     return NEGATIVE_INFINITY_NUMERIC;
 }
 
-const std::string& UnboundedInterval<std::string>::min() const {
+const std::string& UnboundedInterval<std::string>::lower() const {
     return NEGATIVE_INFINITY_STRING;
 }
 
-const std::string& UnboundedInterval<std::string>::max() const {
+const std::string& UnboundedInterval<std::string>::upper() const {
     return POSITIVE_INFINITY_STRING;
 }
 
@@ -161,7 +161,7 @@ LeftBoundedInterval<std::string>::LeftBoundedInterval(const std::string &min, Bo
     }
 }
 
-const std::string& LeftBoundedInterval<std::string>::max() const {
+const std::string& LeftBoundedInterval<std::string>::upper() const {
     return POSITIVE_INFINITY_STRING;
 }
 
@@ -180,7 +180,7 @@ RightBoundedInterval<std::string>::RightBoundedInterval(const std::string &max, 
     }
 }
 
-const std::string& RightBoundedInterval<std::string>::min() const {
+const std::string& RightBoundedInterval<std::string>::lower() const {
     return NEGATIVE_INFINITY_STRING;
 }
 

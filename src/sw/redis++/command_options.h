@@ -61,9 +61,9 @@ class RightBoundedInterval;
 template <>
 class UnboundedInterval<double> {
 public:
-    const std::string& min() const;
+    const std::string& lower() const;
 
-    const std::string& max() const;
+    const std::string& upper() const;
 };
 
 template <>
@@ -71,11 +71,11 @@ class BoundedInterval<double> {
 public:
     BoundedInterval(double min, double max, BoundType type);
 
-    const std::string& min() const {
+    const std::string& lower() const {
         return _min;
     }
 
-    const std::string& max() const {
+    const std::string& upper() const {
         return _max;
     }
 
@@ -89,11 +89,11 @@ class LeftBoundedInterval<double> {
 public:
     LeftBoundedInterval(double min, BoundType type);
 
-    const std::string& min() const {
+    const std::string& lower() const {
         return _min;
     }
 
-    const std::string& max() const;
+    const std::string& upper() const;
 
 private:
     std::string _min;
@@ -104,9 +104,9 @@ class RightBoundedInterval<double> {
 public:
     RightBoundedInterval(double max, BoundType type);
 
-    const std::string& min() const;
+    const std::string& lower() const;
 
-    const std::string& max() const {
+    const std::string& upper() const {
         return _max;
     }
 
@@ -117,9 +117,9 @@ private:
 template <>
 class UnboundedInterval<std::string> {
 public:
-    const std::string& min() const;
+    const std::string& lower() const;
 
-    const std::string& max() const;
+    const std::string& upper() const;
 };
 
 template <>
@@ -127,11 +127,11 @@ class BoundedInterval<std::string> {
 public:
     BoundedInterval(const std::string &min, const std::string &max, BoundType type);
 
-    const std::string& min() const {
+    const std::string& lower() const {
         return _min;
     }
 
-    const std::string& max() const {
+    const std::string& upper() const {
         return _max;
     }
 
@@ -145,11 +145,11 @@ class LeftBoundedInterval<std::string> {
 public:
     LeftBoundedInterval(const std::string &min, BoundType type);
 
-    const std::string& min() const {
+    const std::string& lower() const {
         return _min;
     }
 
-    const std::string& max() const;
+    const std::string& upper() const;
 
 private:
     std::string _min;
@@ -160,9 +160,9 @@ class RightBoundedInterval<std::string> {
 public:
     RightBoundedInterval(const std::string &max, BoundType type);
 
-    const std::string& min() const;
+    const std::string& lower() const;
 
-    const std::string& max() const {
+    const std::string& upper() const {
         return _max;
     }
 
