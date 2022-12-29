@@ -2714,6 +2714,8 @@ fut.get();
 
 *redis-plus-plus* also supports coroutine interface, however, coroutine support for Subscriber and Transaction is still on the way.
 
+**NOTE**: Coroutine support is still experimental, and the interface might be changed in the future.
+
 #### Installation
 
 The coroutine interface depends on async interface, which depends on third-party event library. So you need to install *libuv* first, and *hiredis* v1.0.0 or later. Check [async interface](#async-interface) for detail.
