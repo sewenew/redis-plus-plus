@@ -84,9 +84,6 @@ void AsyncSentinel::_run_task(AsyncSentinelTask &task) {
 
         const auto &opts = sync_connection.options();
         pool->update_node_info(opts.host, opts.port, connection);
-    } catch (const StopIterError &) {
-        pool->update_node_info(connection,
-                std::make_exception_ptr(Error("Failed to create connection with sentinel")));
     } catch (const Error &) {
         pool->update_node_info(connection, std::current_exception());
     }
