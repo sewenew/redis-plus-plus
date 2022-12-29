@@ -179,21 +179,17 @@ void ConnectionPool::_move(ConnectionPool &&that) {
 
 Connection ConnectionPool::_create(SimpleSentinel &sentinel,
                                     const ConnectionOptions &opts) {
-    try {
-        auto connection = sentinel.create(opts);
+    auto connection = sentinel.create(opts);
 
-        std::lock_guard<std::mutex> lock(_mutex);
+    std::lock_guard<std::mutex> lock(_mutex);
 
-        const auto &connection_opts = connection.options();
-        if (_role_changed(connection_opts)) {
-            // Master/Slave has been changed, reconnect all connections.
-            _update_connection_opts(connection_opts.host, connection_opts.port);
-        }
-
-        return connection;
-    } catch (const StopIterError &) {
-        throw Error("Failed to create connection with sentinel");
+    const auto &connection_opts = connection.options();
+    if (_role_changed(connection_opts)) {
+        // Master/Slave has been changed, reconnect all connections.
+        _update_connection_opts(connection_opts.host, connection_opts.port);
     }
+
+    return connection;
 }
 
 Connection ConnectionPool::_fetch(std::unique_lock<std::mutex> &lock) {

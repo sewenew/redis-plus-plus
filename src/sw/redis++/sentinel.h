@@ -74,7 +74,7 @@ private:
 
     std::list<ConnectionOptions> _parse_options(const SentinelOptions &opts) const;
 
-    Optional<Node> _get_master_addr_by_name(Connection &connection, const StringView &name);
+    Node _get_master_addr_by_name(Connection &connection, const StringView &name);
 
     std::vector<Node> _get_slave_addr_by_name(Connection &connection, const StringView &name);
 
@@ -125,7 +125,7 @@ private:
 
 class StopIterError : public Error {
 public:
-    StopIterError() : Error("StopIterError") {}
+    explicit StopIterError(const std::vector<std::string> &errs) : Error(_to_msg(errs)) {}
 
     StopIterError(const StopIterError &) = default;
     StopIterError& operator=(const StopIterError &) = default;
@@ -134,6 +134,9 @@ public:
     StopIterError& operator=(StopIterError &&) = default;
 
     virtual ~StopIterError() override = default;
+
+private:
+    std::string _to_msg(const std::vector<std::string> &errs) const;
 };
 
 }

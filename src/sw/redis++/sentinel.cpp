@@ -22,6 +22,41 @@
 #include "redis.h"
 #include "errors.h"
 
+namespace {
+
+sw::redis::Node node_info(const sw::redis::ConnectionOptions &opts) {
+    return {opts.host, opts.port};
+}
+
+std::string node_info(const sw::redis::Node &node) {
+    if (node.host.empty()) {
+        return {};
+    }
+
+    return node.host + ":" + std::to_string(node.port);
+}
+
+std::string report_error(const sw::redis::Node &sentinel_node,
+        const sw::redis::Node &node,
+        const std::string &msg) {
+    std::string err_msg;
+    auto sentinel_info = node_info(sentinel_node);
+    if (!sentinel_info.empty()) {
+        err_msg += "sentinel: " + sentinel_info;
+    }
+
+    auto instance_info = node_info(node);
+    if (!instance_info.empty()) {
+        err_msg += "node: " + instance_info;
+    }
+
+    err_msg += "err: " + msg;
+
+    return err_msg;
+}
+
+}
+
 namespace sw {
 
 namespace redis {
@@ -70,6 +105,7 @@ Connection& Sentinel::Iterator::next() {
         }
     }
 
+    std::vector<std::string> err_msgs;
     while (_broken_size > 0) {
         assert(_broken_sentinels.size() >= _broken_size);
 
@@ -83,15 +119,21 @@ Connection& Sentinel::Iterator::next() {
             _broken_sentinels.pop_front();
 
             return _healthy_sentinels.back();
-        } catch (const Error &) {
+        } catch (const Error &err) {
             // Failed to connect to sentinel.
             _broken_sentinels.splice(_broken_sentinels.end(),
                                         _broken_sentinels,
                                         _broken_sentinels.begin());
+
+            err_msgs.push_back(report_error(node_info(_broken_sentinels.back()), {}, err.what()));
         }
     }
 
-    throw StopIterError();
+    if (err_msgs.empty()) {
+        err_msgs.push_back("already tried all sentinel nodes");
+    }
+
+    throw StopIterError(err_msgs);
 }
 
 void Sentinel::Iterator::reset() {
@@ -113,22 +155,22 @@ Connection Sentinel::master(const std::string &master_name, const ConnectionOpti
 
     Iterator iter(_healthy_sentinels, _broken_sentinels);
     std::size_t retries = 0;
+    std::vector<std::string> err_msgs;
     while (true) {
+        Node sentinel_node;
+        Node master;
         try {
             auto &sentinel = iter.next();
+            sentinel_node = node_info(sentinel.options());
 
-            auto master = _get_master_addr_by_name(sentinel, master_name);
-            if (!master) {
-                // Try the next sentinel.
-                continue;
-            }
+            master = _get_master_addr_by_name(sentinel, master_name);
 
-            auto connection = _connect_redis(*master, opts);
+            auto connection = _connect_redis(master, opts);
             if (_get_role(connection) != Role::MASTER) {
                 // Retry the whole process at most SentinelOptions::max_retry times.
                 ++retries;
                 if (retries > _sentinel_opts.max_retry) {
-                    throw Error("Failed to get master from sentinel");
+                    throw Error("reach max retry number");
                 }
 
                 std::this_thread::sleep_for(_sentinel_opts.retry_interval);
@@ -139,9 +181,11 @@ Connection Sentinel::master(const std::string &master_name, const ConnectionOpti
             }
 
             return connection;
-        } catch (const StopIterError &) {
-            throw;
-        } catch (const Error &) {
+        } catch (const StopIterError &err) {
+            err_msgs.push_back(report_error(sentinel_node, master, err.what()));
+            throw StopIterError(err_msgs);
+        } catch (const Error &err) {
+            err_msgs.push_back(report_error(sentinel_node, master, err.what()));
             continue;
         }
     }
@@ -152,14 +196,17 @@ Connection Sentinel::slave(const std::string &master_name, const ConnectionOptio
 
     Iterator iter(_healthy_sentinels, _broken_sentinels);
     std::size_t retries = 0;
+    std::vector<std::string> err_msgs;
+    Node sentinel_node;
+    Node slave_node;
     while (true) {
         try {
             auto &sentinel = iter.next();
+            sentinel_node = node_info(sentinel.options());
 
             auto slaves = _get_slave_addr_by_name(sentinel, master_name);
             if (slaves.empty()) {
-                // Try the next sentinel.
-                continue;
+                throw Error("no replica for " + master_name);
             }
 
             // Normally slaves list is NOT very large, so there won't be a performance problem.
@@ -173,12 +220,13 @@ Connection Sentinel::slave(const std::string &master_name, const ConnectionOptio
 
             for (const auto &slave : slaves) {
                 try {
+                    slave_node = slave;
                     auto connection = _connect_redis(slave, opts);
                     if (_get_role(connection) != Role::SLAVE) {
                         // Retry the whole process at most SentinelOptions::max_retry times.
                         ++retries;
                         if (retries > _sentinel_opts.max_retry) {
-                            throw Error("Failed to get slave from sentinel");
+                            throw Error("reach max retry number");
                         }
 
                         std::this_thread::sleep_for(_sentinel_opts.retry_interval);
@@ -189,20 +237,25 @@ Connection Sentinel::slave(const std::string &master_name, const ConnectionOptio
                     }
 
                     return connection;
-                } catch (const Error &) {
+                } catch (const Error &err) {
+                    err_msgs.push_back(report_error(sentinel_node, slave_node, err.what()));
+                    slave_node = Node{};
+
                     // Try the next slave.
                     continue;
                 }
             }
-        } catch (const StopIterError &) {
-            throw;
-        } catch (const Error &) {
+        } catch (const StopIterError &err) {
+            err_msgs.push_back(report_error(sentinel_node, slave_node, err.what()));
+            throw StopIterError(err_msgs);;
+        } catch (const Error &err) {
+            err_msgs.push_back(report_error(sentinel_node, slave_node, err.what()));
             continue;
         }
     }
 }
 
-Optional<Node> Sentinel::_get_master_addr_by_name(Connection &connection, const StringView &name) {
+Node Sentinel::_get_master_addr_by_name(Connection &connection, const StringView &name) {
     connection.send("SENTINEL GET-MASTER-ADDR-BY-NAME %b", name.data(), name.size());
 
     auto reply = connection.recv();
@@ -211,7 +264,7 @@ Optional<Node> Sentinel::_get_master_addr_by_name(Connection &connection, const 
 
     auto master = reply::parse<Optional<std::pair<std::string, std::string>>>(*reply);
     if (!master) {
-        return {};
+        throw Error(std::string("no master named ") + name.data());
     }
 
     int port = 0;
@@ -221,29 +274,24 @@ Optional<Node> Sentinel::_get_master_addr_by_name(Connection &connection, const 
         throw ProtoError("Master port is invalid: " + master->second);
     }
 
-    return Optional<Node>{Node{master->first, port}};
+    return Node{master->first, port};
 }
 
 std::vector<Node> Sentinel::_get_slave_addr_by_name(Connection &connection,
                                                     const StringView &name) {
-    try {
-        connection.send("SENTINEL SLAVES %b", name.data(), name.size());
+    connection.send("SENTINEL SLAVES %b", name.data(), name.size());
 
-        auto reply = connection.recv();
+    auto reply = connection.recv();
 
-        assert(reply);
+    assert(reply);
 
-        auto slaves = _parse_slave_info(*reply);
+    auto slaves = _parse_slave_info(*reply);
 
-        // Make slave list random.
-        std::mt19937 gen(std::random_device{}());
-        std::shuffle(slaves.begin(), slaves.end(), gen);
+    // Make slave list random.
+    thread_local std::mt19937 gen(std::random_device{}());
+    std::shuffle(slaves.begin(), slaves.end(), gen);
 
-        return slaves;
-    } catch (const ReplyError &) {
-        // Unknown master name.
-        return {};
-    }
+    return slaves;
 }
 
 std::vector<Node> Sentinel::_parse_slave_info(redisReply &reply) const {
@@ -357,6 +405,18 @@ Connection SimpleSentinel::create(const ConnectionOptions &opts) {
     assert(_role == Role::SLAVE);
 
     return _sentinel->slave(_master_name, opts);
+}
+
+std::string StopIterError::_to_msg(const std::vector<std::string> &errs) const {
+    std::string msg;
+    for (const auto &err : errs) {
+        if (!msg.empty()) {
+            msg += "|";
+        }
+        msg += err;
+    }
+
+    return msg;
 }
 
 }
