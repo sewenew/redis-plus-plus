@@ -27,6 +27,7 @@
 #include "command_args.h"
 #include "command_options.h"
 #include "cmd_formatter.h"
+#include "redis_uri.h"
 
 namespace sw {
 
@@ -34,9 +35,11 @@ namespace redis {
 
 class AsyncRedis {
 public:
-    AsyncRedis(const ConnectionOptions &opts,
+    explicit AsyncRedis(const ConnectionOptions &opts,
             const ConnectionPoolOptions &pool_opts = {},
             const EventLoopSPtr &loop = nullptr);
+
+    explicit AsyncRedis(const std::string &uri) : AsyncRedis(Uri(uri)) {}
 
     AsyncRedis(const std::shared_ptr<AsyncSentinel> &sentinel,
                 const std::string &master_name,
@@ -1014,6 +1017,8 @@ public:
     }
 
 private:
+    explicit AsyncRedis(const Uri &uri);
+
     template <typename Result, typename Formatter, typename ...Args>
     Future<Result> _command(Formatter formatter, Args &&...args) {
         return _command_with_parser<Result, DefaultResultParser<Result>>(

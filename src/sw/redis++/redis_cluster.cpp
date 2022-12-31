@@ -19,12 +19,14 @@
 #include "command.h"
 #include "errors.h"
 #include "queued_redis.h"
+#include "redis_uri.h"
 
 namespace sw {
 
 namespace redis {
 
-RedisCluster::RedisCluster(const std::string &uri) : RedisCluster(ConnectionOptions(uri)) {}
+RedisCluster::RedisCluster(const Uri &uri) :
+    RedisCluster(uri.connection_options(), uri.connection_pool_options()) {}
 
 Redis RedisCluster::redis(const StringView &hash_tag, bool new_connection) {
     auto pool = _pool.fetch(hash_tag);

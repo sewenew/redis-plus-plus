@@ -21,6 +21,7 @@
 #include "async_redis_cluster.h"
 #include "cxx_utils.h"
 #include "cmd_formatter.h"
+#include "redis_uri.h"
 
 namespace sw {
 
@@ -28,8 +29,10 @@ namespace redis {
 
 class CoRedisCluster {
 public:
-    CoRedisCluster(const ConnectionOptions &opts,
+    explicit CoRedisCluster(const ConnectionOptions &opts,
             const ConnectionPoolOptions &pool_opts = {}) : _async_redis(opts, pool_opts) {}
+
+    explicit CoRedisCluster(const std::string &uri) : CoRedisCluster(Uri(uri)) {}
 
     CoRedisCluster(const CoRedisCluster &) = delete;
     CoRedisCluster& operator=(const CoRedisCluster &) = delete;
@@ -271,6 +274,9 @@ public:
     }
 
 private:
+    explicit CoRedisCluster(const Uri &uri) :
+        CoRedisCluster(uri.connection_options(), uri.connection_pool_options()) {}
+
     template <typename Result, typename Formatter, typename Key, typename ...Args>
     Awaiter<Result> _command(Formatter &&formatter, Key &&key, Args &&...args) {
         return _generic_command<Result>(std::forward<Formatter>(formatter),

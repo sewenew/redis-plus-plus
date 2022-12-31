@@ -22,6 +22,7 @@
 #include "cxx_utils.h"
 #include "cmd_formatter.h"
 #include "async_sentinel.h"
+#include "redis_uri.h"
 
 namespace sw {
 
@@ -31,8 +32,10 @@ using CoSentinel = AsyncSentinel;
 
 class CoRedis {
 public:
-    CoRedis(const ConnectionOptions &opts,
+    explicit CoRedis(const ConnectionOptions &opts,
             const ConnectionPoolOptions &pool_opts = {}) : _async_redis(opts, pool_opts) {}
+
+    explicit CoRedis(const std::string &uri) : CoRedis(Uri(uri)) {}
 
     CoRedis(const std::shared_ptr<CoSentinel> &sentinel,
             const std::string &master_name,
@@ -266,6 +269,9 @@ public:
     }
 
 private:
+    explicit CoRedis(const Uri &uri) :
+        CoRedis(uri.connection_options(), uri.connection_pool_options()) {}
+
     template <typename Result, typename Formatter, typename ...Args>
     Awaiter<Result> _command(Formatter &&formatter, Args &&...args) {
         return _command_with_parser<Result, DefaultResultParser<Result>>(std::forward<Formatter>(formatter),

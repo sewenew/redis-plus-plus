@@ -21,6 +21,9 @@ namespace sw {
 
 namespace redis {
 
+AsyncRedis::AsyncRedis(const Uri &uri) :
+    AsyncRedis(uri.connection_options(), uri.connection_pool_options()) {}
+
 AsyncRedis::AsyncRedis(const ConnectionOptions &opts,
         const ConnectionPoolOptions &pool_opts,
         const EventLoopSPtr &loop) : _loop(loop) {

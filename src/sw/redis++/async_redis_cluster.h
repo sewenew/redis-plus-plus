@@ -25,6 +25,7 @@
 #include "async_subscriber.h"
 #include "event_loop.h"
 #include "cmd_formatter.h"
+#include "redis_uri.h"
 
 namespace sw {
 
@@ -32,10 +33,12 @@ namespace redis {
 
 class AsyncRedisCluster {
 public:
-    AsyncRedisCluster(const ConnectionOptions &opts,
+    explicit AsyncRedisCluster(const ConnectionOptions &opts,
             const ConnectionPoolOptions &pool_opts = {},
             Role role = Role::MASTER,
             const EventLoopSPtr &loop = nullptr);
+
+    explicit AsyncRedisCluster(const std::string &uri) : AsyncRedisCluster(Uri(uri)) {}
 
     AsyncRedisCluster(const AsyncRedisCluster &) = delete;
     AsyncRedisCluster& operator=(const AsyncRedisCluster &) = delete;
@@ -1018,6 +1021,8 @@ public:
     }
 
 private:
+    explicit AsyncRedisCluster(const Uri &uri);
+
     template <typename Result, typename ResultParser,
              typename Formatter, typename ...Args>
     Future<Result> _command_with_parser(Formatter formatter,

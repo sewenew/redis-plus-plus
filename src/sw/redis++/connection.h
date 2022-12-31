@@ -41,10 +41,7 @@ enum class ConnectionType {
 };
 
 struct ConnectionOptions {
-public:
     ConnectionOptions() = default;
-
-    explicit ConnectionOptions(const std::string &uri);
 
     ConnectionOptions(const ConnectionOptions &) = default;
     ConnectionOptions& operator=(const ConnectionOptions &) = default;
@@ -82,32 +79,6 @@ public:
 
     // RESP version.
     int resp = 2;
-
-private:
-    ConnectionOptions _parse_uri(const std::string &uri) const;
-
-    auto _split_uri(const std::string &uri) const
-        -> std::tuple<std::string, std::string, std::string>;
-
-    auto _split_path(const std::string &path) const
-        -> std::tuple<std::string, int, std::string>;
-
-    void _parse_parameters(const std::string &parameter_string,
-                            ConnectionOptions &opts) const;
-
-    void _set_option(const std::string &key, const std::string &val, ConnectionOptions &opts) const;
-
-    bool _parse_bool_option(const std::string &str) const;
-
-    std::chrono::milliseconds _parse_timeout_option(const std::string &str) const;
-
-    std::vector<std::string> _split(const std::string &str, const std::string &delimiter) const;
-
-    void _set_auth_opts(const std::string &auth, ConnectionOptions &opts) const;
-
-    void _set_tcp_opts(const std::string &path, ConnectionOptions &opts) const;
-
-    void _set_unix_opts(const std::string &path, ConnectionOptions &opts) const;
 };
 
 class CmdArgs;

@@ -61,6 +61,7 @@ set(REDIS_PLUS_PLUS_SOURCES
         "${REDIS_PLUS_PLUS_SOURCE_DIR}/pipeline.cpp"
         "${REDIS_PLUS_PLUS_SOURCE_DIR}/redis.cpp"
         "${REDIS_PLUS_PLUS_SOURCE_DIR}/redis_cluster.cpp"
+        "${REDIS_PLUS_PLUS_SOURCE_DIR}/redis_uri.cpp"
         "${REDIS_PLUS_PLUS_SOURCE_DIR}/reply.cpp"
         "${REDIS_PLUS_PLUS_SOURCE_DIR}/sentinel.cpp"
         "${REDIS_PLUS_PLUS_SOURCE_DIR}/shards.cpp"

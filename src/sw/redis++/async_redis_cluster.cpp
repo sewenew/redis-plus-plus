@@ -21,6 +21,9 @@ namespace sw {
 
 namespace redis {
 
+AsyncRedisCluster::AsyncRedisCluster(const Uri &uri) :
+    AsyncRedisCluster(uri.connection_options(), uri.connection_pool_options()) {}
+
 AsyncRedisCluster::AsyncRedisCluster(const ConnectionOptions &opts,
         const ConnectionPoolOptions &pool_opts,
         Role role,
