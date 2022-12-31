@@ -24,7 +24,8 @@ namespace sw {
 
 namespace redis {
 
-Redis::Redis(const std::string &uri) : Redis(ConnectionOptions(uri)) {}
+Redis::Redis(const Uri &uri) :
+    Redis(uri.connection_options(), uri.connection_pool_options()) {}
 
 Redis::Redis(const GuardedConnectionSPtr &connection) : _connection(connection) {
     assert(_connection);

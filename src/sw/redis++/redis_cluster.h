@@ -29,6 +29,7 @@
 #include "pipeline.h"
 #include "transaction.h"
 #include "redis.h"
+#include "redis_uri.h"
 #include "connection.h"
 
 namespace sw {
@@ -44,14 +45,14 @@ using Pipeline = QueuedRedis<PipelineImpl>;
 
 class RedisCluster {
 public:
-    RedisCluster(const ConnectionOptions &connection_opts,
+    explicit RedisCluster(const ConnectionOptions &connection_opts,
                     const ConnectionPoolOptions &pool_opts = {},
                     Role role = Role::MASTER) : _pool(pool_opts, connection_opts, role) {}
 
     // Construct RedisCluster with URI:
     // "tcp://127.0.0.1" or "tcp://127.0.0.1:6379"
     // Only need to specify one URI.
-    explicit RedisCluster(const std::string &uri);
+    explicit RedisCluster(const std::string &uri) : RedisCluster(Uri(uri)) {}
 
     RedisCluster(const RedisCluster &) = delete;
     RedisCluster& operator=(const RedisCluster &) = delete;
@@ -1383,6 +1384,8 @@ public:
             XtrimStrategy strategy, long long limit);
 
 private:
+    explicit RedisCluster(const Uri &uri);
+
     class Command {
     public:
         explicit Command(const StringView &cmd_name) : _cmd_name(cmd_name) {}

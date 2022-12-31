@@ -700,15 +700,26 @@ The *scheme* and *host* parts are required, and others are optional. If you're c
 
 **NOTE**: [Redis 6.0 supports ACL](https://redis.io/topics/acl), and you can specify a username for the connection. However, before Redis 6.0, you cannot do that.
 
-Also, the following connection options can be specified with the query string of URI, e.g. *tcp://127.0.0.1?keep_alive=true&socket_timeout=100ms&connect_timeout=100ms*:
+Also, the following connection options and connection pool options can be specified with the query string of URI, e.g. *tcp://127.0.0.1?keep_alive=true&socket_timeout=100ms&connect_timeout=100ms*:
 
-- `ConnectionOptions::keep_alive`: *false* by default.
-- `ConnectionOptions::socket_timeout`: *0ms* by default.
-- `ConnectionOptions::connect_timeout`: *0ms* by default.
+| Option | Parameter | Default |
+| :---------: | :---------: | :---------: |
+| `ConnectionOptions::user` | *user* | *default* |
+| `ConnectionOptions::password` | *password* | empty string, i.e. no password |
+| `ConnectionOptions::db` | *db* | 0 |
+| `ConnectionOptions::keep_alive` | *keep_alive* | false |
+| `ConnectionOptions::connect_timeout` | *connect_timeout* | 0ms |
+| `ConnectionOptions::socket_timeout` | *socket_timeout* | 0ms |
+| `ConnectionOptions::resp` | *resp* | 2 |
+| `ConnectionPoolOptions::size` | *pool_size* | 1 |
+| `ConnectionPoolOptions::wait_timeout` | *pool_wait_timeout* | 0ms |
+| `ConnectionPoolOptions::connection_lifetime` | *pool_connection_lifetime* | 0ms |
+| `ConnectionPoolOptions::connection_idle_time` | *pool_connection_idle_time* | 0ms |
 
-**NOTE**: Options specified in query string are case-sensitive, i.e. all key-value pairs must be in lowercase.
+**NOTE**:
 
-So far, you cannot specify connection pool options with URI, e.g. `ConnectionPoolOptions::size`.
+- Options specified in query string are case-sensitive, i.e. all key-value pairs must be in lowercase.
+- Options specified in query string, e.g. *user*, *password*, *db*, overwrites the one specified in URI. For example, *redis://127.0.0.1/1?db=3* means that all reads/writes run on the 3rd database, instead of the 1st one.
 
 ```C++
 // Single connection to the given host and port.

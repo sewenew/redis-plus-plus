@@ -30,6 +30,7 @@
 #include "pipeline.h"
 #include "transaction.h"
 #include "sentinel.h"
+#include "redis_uri.h"
 
 namespace sw {
 
@@ -60,7 +61,7 @@ public:
     ///            unix://[[username:]password@]path-to-unix-domain-socket[/db]
     /// @see https://github.com/sewenew/redis-plus-plus/issues/37
     /// @see https://github.com/sewenew/redis-plus-plus#connection
-    explicit Redis(const std::string &uri);
+    explicit Redis(const std::string &uri) : Redis(Uri(uri)) {}
 
     /// @brief Construct `Redis` instance with Redis sentinel, i.e. get node info from sentinel.
     /// @param sentinel `Sentinel` instance.
@@ -3606,6 +3607,8 @@ private:
 
     // For internal use.
     explicit Redis(const GuardedConnectionSPtr &connection);
+
+    explicit Redis(const Uri &uri);
 
     template <std::size_t ...Is, typename ...Args>
     ReplyUPtr _command(const StringView &cmd_name, const IndexSequence<Is...> &, Args &&...args) {
