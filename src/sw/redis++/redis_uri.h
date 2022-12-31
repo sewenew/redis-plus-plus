@@ -19,6 +19,7 @@
 
 #include <chrono>
 #include <string>
+#include <vector>
 #include <unordered_map>
 #include "connection.h"
 #include "connection_pool.h"

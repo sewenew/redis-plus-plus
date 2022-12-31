@@ -15,6 +15,7 @@
  *************************************************************************/
 
 #include "redis_uri.h"
+#include <algorithm>
 #include "errors.h"
 
 namespace sw {
