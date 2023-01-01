@@ -49,6 +49,8 @@ struct SentinelOptions {
     std::size_t max_retry = 2;
 
     tls::TlsOptions tls;
+
+    int resp = 2;
 };
 
 class Sentinel {
