@@ -189,12 +189,12 @@ void AsyncConnection::connect_callback(std::exception_ptr err) {
             _connecting_callback();
             break;
 
-        case State::SET_RESP:
-            _set_resp_callback();
-            break;
-
         case State::AUTHING:
             _authing_callback();
+            break;
+
+        case State::SET_RESP:
+            _set_resp_callback();
             break;
 
         case State::SELECTING_DB:
@@ -316,10 +316,10 @@ void AsyncConnection::_fail_events(std::exception_ptr err) {
 }
 
 void AsyncConnection::_connecting_callback() {
-    if (_need_set_resp()) {
-        _set_resp();
-    } else if (_need_auth()) {
+    if (_need_auth()) {
         _auth();
+    } else if (_need_set_resp()) {
+        _set_resp();
     } else if (_need_select_db()) {
         _select_db();
     } else if (_need_enable_readonly()) {
@@ -330,9 +330,7 @@ void AsyncConnection::_connecting_callback() {
 }
 
 void AsyncConnection::_set_resp_callback() {
-    if (_need_auth()) {
-        _auth();
-    } else if (_need_select_db()) {
+    if (_need_select_db()) {
         _select_db();
     } else if (_need_enable_readonly()) {
         _enable_readonly();
@@ -342,7 +340,9 @@ void AsyncConnection::_set_resp_callback() {
 }
 
 void AsyncConnection::_authing_callback() {
-    if (_need_select_db()) {
+    if (_need_set_resp()) {
+        _set_resp();
+    } else if (_need_select_db()) {
         _select_db();
     } else if (_need_enable_readonly()) {
         _enable_readonly();

@@ -235,11 +235,11 @@ void Connection::set_push_callback(redisPushFn *push_func) {
 #endif
 
 void Connection::_set_options() {
+    _auth();
+
     if (_opts.resp > 2) {
         _set_resp_version();
     }
-
-    _auth();
 
     _select_db();
 
