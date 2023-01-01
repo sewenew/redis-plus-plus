@@ -373,6 +373,7 @@ std::list<ConnectionOptions> Sentinel::_parse_options(const SentinelOptions &opt
         opt.connect_timeout = opts.connect_timeout;
         opt.socket_timeout = opts.socket_timeout;
         opt.tls = opts.tls;
+        opt.resp = opts.resp;
 
         options.push_back(opt);
     }
