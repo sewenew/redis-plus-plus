@@ -54,7 +54,7 @@ public:
     AsyncRedis(AsyncRedis &&) = default;
     AsyncRedis& operator=(AsyncRedis &&) = default;
 
-    ~AsyncRedis();
+    ~AsyncRedis() = default;
 
     AsyncSubscriber subscriber();
 
@@ -1073,8 +1073,6 @@ private:
     }
 
     EventLoopSPtr _loop;
-
-    bool _own_loop{false};
 
     AsyncConnectionPoolSPtr _pool;
 };
