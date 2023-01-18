@@ -62,7 +62,7 @@ Connection::ContextUPtr Connection::Connector::connect() const {
     assert(ctx);
 
     if (ctx->err != REDIS_OK) {
-        throw_error(*ctx, "Failed to connect to Redis");
+        throw_error(*ctx, "failed to connect to Redis (" + _opts._server_info() + ")");
     }
 
     _set_socket_timeout(*ctx);
@@ -143,6 +143,26 @@ timeval Connection::Connector::_to_timeval(const std::chrono::milliseconds &dur)
     t.tv_sec = sec.count();
     t.tv_usec = msec.count();
     return t;
+}
+
+std::string ConnectionOptions::_server_info() const {
+    std::string info;
+    switch (type) {
+    case ConnectionType::TCP:
+        info = host + ":" + std::to_string(port);
+        break;
+
+    case ConnectionType::UNIX:
+        info = path;
+        break;
+
+    default:
+        // Never goes here.
+        throw Error("unknown connection type");
+        break;
+    }
+
+    return info;
 }
 
 void swap(Connection &lhs, Connection &rhs) noexcept {
