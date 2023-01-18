@@ -97,7 +97,7 @@ void EventLoop::_connect_callback(const redisAsyncContext *ctx, int status) {
     std::exception_ptr err;
     if (status != REDIS_OK) {
         try {
-            throw_error(ctx->c, "failed to connect to server");
+            throw_error(ctx->c, "failed to connect to Redis (" + connection->options()._server_info() + ")");
         } catch (const Error &) {
             err = std::current_exception();
         }

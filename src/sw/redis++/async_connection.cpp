@@ -530,7 +530,7 @@ AsyncConnection::AsyncContextUPtr AsyncConnection::_connect(const ConnectionOpti
 
     auto ctx = AsyncContextUPtr(context);
     if (ctx->err != REDIS_OK) {
-        throw_error(ctx->c, "failed to connect to server");
+        throw_error(ctx->c, "failed to connect to Redis (" + opts._server_info() + ")");
     }
 
     ctx->data = new AsyncContext(shared_from_this());
