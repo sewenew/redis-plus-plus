@@ -22,9 +22,9 @@
 #include <string>
 #include <random>
 #include <memory>
-#include "reply.h"
-#include "connection_pool.h"
-#include "shards.h"
+#include "sw/redis++/reply.h"
+#include "sw/redis++/connection_pool.h"
+#include "sw/redis++/shards.h"
 
 namespace sw {
 

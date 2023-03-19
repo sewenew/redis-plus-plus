@@ -18,11 +18,11 @@
 #define SEWENEW_REDISPLUSPLUS_REDIS_CLUSTER_HPP
 
 #include <utility>
-#include "command.h"
-#include "reply.h"
-#include "utils.h"
-#include "errors.h"
-#include "shards_pool.h"
+#include "sw/redis++/command.h"
+#include "sw/redis++/reply.h"
+#include "sw/redis++/utils.h"
+#include "sw/redis++/errors.h"
+#include "sw/redis++/shards_pool.h"
 
 namespace sw {
 

@@ -14,7 +14,7 @@
    limitations under the License.
  *************************************************************************/
 
-#include "pipeline.h"
+#include "sw/redis++/pipeline.h"
 
 namespace sw {
 

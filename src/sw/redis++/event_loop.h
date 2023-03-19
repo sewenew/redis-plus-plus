@@ -24,7 +24,7 @@
 #include <mutex>
 #include <thread>
 #include <uv.h>
-#include "connection.h"
+#include "sw/redis++/connection.h"
 
 namespace sw {
 

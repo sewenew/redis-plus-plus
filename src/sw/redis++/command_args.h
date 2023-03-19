@@ -21,7 +21,7 @@
 #include <list>
 #include <string>
 #include <tuple>
-#include "utils.h"
+#include "sw/redis++/utils.h"
 
 namespace sw {
 

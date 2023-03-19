@@ -18,10 +18,10 @@
 #define SEWENEW_REDISPLUSPLUS_CO_REDIS_CLUSTER_H
 
 #include <coroutine>
-#include "async_redis_cluster.h"
-#include "cxx_utils.h"
-#include "cmd_formatter.h"
-#include "redis_uri.h"
+#include "sw/redis++/async_redis_cluster.h"
+#include "sw/redis++/cxx_utils.h"
+#include "sw/redis++/cmd_formatter.h"
+#include "sw/redis++/redis_uri.h"
 
 namespace sw {
 

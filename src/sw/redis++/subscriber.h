@@ -20,10 +20,10 @@
 #include <unordered_map>
 #include <string>
 #include <functional>
-#include "connection.h"
-#include "reply.h"
-#include "command.h"
-#include "utils.h"
+#include "sw/redis++/connection.h"
+#include "sw/redis++/reply.h"
+#include "sw/redis++/command.h"
+#include "sw/redis++/utils.h"
 
 namespace sw {
 

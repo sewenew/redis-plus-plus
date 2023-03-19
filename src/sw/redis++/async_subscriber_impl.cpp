@@ -14,7 +14,7 @@
    limitations under the License.
  *************************************************************************/
 
-#include "async_subscriber_impl.h"
+#include "sw/redis++/async_subscriber_impl.h"
 
 namespace sw {
 

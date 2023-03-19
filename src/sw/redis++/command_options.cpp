@@ -14,8 +14,8 @@
    limitations under the License.
  *************************************************************************/
 
-#include "command_options.h"
-#include "errors.h"
+#include "sw/redis++/command_options.h"
+#include "sw/redis++/errors.h"
 
 namespace {
 

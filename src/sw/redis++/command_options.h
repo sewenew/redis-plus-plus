@@ -18,7 +18,7 @@
 #define SEWENEW_REDISPLUSPLUS_COMMAND_OPTIONS_H
 
 #include <string>
-#include "utils.h"
+#include "sw/redis++/utils.h"
 
 namespace sw {
 

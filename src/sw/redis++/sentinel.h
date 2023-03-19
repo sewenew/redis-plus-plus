@@ -22,10 +22,10 @@
 #include <vector>
 #include <memory>
 #include <mutex>
-#include "connection.h"
-#include "shards.h"
-#include "reply.h"
-#include "tls.h"
+#include "sw/redis++/connection.h"
+#include "sw/redis++/shards.h"
+#include "sw/redis++/reply.h"
+#include "sw/redis++/tls.h"
 
 namespace sw {
 

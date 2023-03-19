@@ -14,7 +14,7 @@
    limitations under the License.
  *************************************************************************/
 
-#include "redlock.h"
+#include "sw/redis++/patterns/redlock.h"
 
 namespace sw {
 

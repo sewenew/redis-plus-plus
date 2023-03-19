@@ -14,9 +14,9 @@
    limitations under the License.
  *************************************************************************/
 
-#include "connection_pool.h"
+#include "sw/redis++/connection_pool.h"
 #include <cassert>
-#include "errors.h"
+#include "sw/redis++/errors.h"
 
 namespace sw {
 

@@ -21,8 +21,8 @@
 #include <memory>
 #include <queue>
 #include <condition_variable>
-#include "sentinel.h"
-#include "async_connection.h"
+#include "sw/redis++/sentinel.h"
+#include "sw/redis++/async_connection.h"
 
 namespace sw {
 

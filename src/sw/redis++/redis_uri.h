@@ -21,8 +21,8 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
-#include "connection.h"
-#include "connection_pool.h"
+#include "sw/redis++/connection.h"
+#include "sw/redis++/connection_pool.h"
 
 namespace sw {
 

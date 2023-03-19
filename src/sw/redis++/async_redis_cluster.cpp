@@ -14,7 +14,7 @@
    limitations under the License.
  *************************************************************************/
 
-#include "async_redis_cluster.h"
+#include "sw/redis++/async_redis_cluster.h"
 #include <cassert>
 
 namespace sw {

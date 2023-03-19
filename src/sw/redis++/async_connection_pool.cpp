@@ -14,10 +14,10 @@
    limitations under the License.
  *************************************************************************/
 
-#include "async_connection_pool.h"
+#include "sw/redis++/async_connection_pool.h"
 #include <cassert>
 #include <utility>
-#include "errors.h"
+#include "sw/redis++/errors.h"
 
 namespace sw {
 

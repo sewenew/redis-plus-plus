@@ -14,12 +14,12 @@
    limitations under the License.
  *************************************************************************/
 
-#include "errors.h"
+#include "sw/redis++/errors.h"
 #include <cassert>
 #include <cerrno>
 #include <unordered_map>
 #include <tuple>
-#include "shards.h"
+#include "sw/redis++/shards.h"
 
 namespace {
 

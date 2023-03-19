@@ -19,7 +19,7 @@
 
 #include <cassert>
 #include <vector>
-#include "connection.h"
+#include "sw/redis++/connection.h"
 
 namespace sw {
 

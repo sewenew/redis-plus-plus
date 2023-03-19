@@ -18,11 +18,11 @@
 #define SEWENEW_REDISPLUSPLUS_CO_REDIS_H
 
 #include <coroutine>
-#include "async_redis.h"
-#include "cxx_utils.h"
-#include "cmd_formatter.h"
-#include "async_sentinel.h"
-#include "redis_uri.h"
+#include "sw/redis++/async_redis.h"
+#include "sw/redis++/cxx_utils.h"
+#include "sw/redis++/cmd_formatter.h"
+#include "sw/redis++/async_sentinel.h"
+#include "sw/redis++/redis_uri.h"
 
 namespace sw {
 

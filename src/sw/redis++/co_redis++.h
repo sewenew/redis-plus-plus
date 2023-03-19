@@ -17,7 +17,7 @@
 #ifndef SEWENEW_REDISPLUSPLUS_CO_REDISPLUSPLUS_H
 #define SEWENEW_REDISPLUSPLUS_CO_REDISPLUSPLUS_H
 
-#include "co_redis.h"
-#include "co_redis_cluster.h"
+#include "sw/redis++/co_redis.h"
+#include "sw/redis++/co_redis_cluster.h"
 
 #endif // end SEWENEW_REDISPLUSPLUS_CO_REDISPLUSPLUS_H

@@ -14,13 +14,13 @@
    limitations under the License.
  *************************************************************************/
 
-#include "connection.h"
+#include "sw/redis++/connection.h"
 #include <cassert>
 #include <tuple>
 #include <algorithm>
-#include "reply.h"
-#include "command.h"
-#include "command_args.h"
+#include "sw/redis++/reply.h"
+#include "sw/redis++/command.h"
+#include "sw/redis++/command_args.h"
 
 #ifdef _MSC_VER
 

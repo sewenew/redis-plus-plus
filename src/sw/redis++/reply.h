@@ -24,8 +24,8 @@
 #include <functional>
 #include <tuple>
 #include <hiredis/hiredis.h>
-#include "errors.h"
-#include "utils.h"
+#include "sw/redis++/errors.h"
+#include "sw/redis++/utils.h"
 
 #ifdef REDIS_REPLY_MAP
 

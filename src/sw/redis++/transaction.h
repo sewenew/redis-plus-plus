@@ -19,8 +19,8 @@
 
 #include <cassert>
 #include <vector>
-#include "connection.h"
-#include "errors.h"
+#include "sw/redis++/connection.h"
+#include "sw/redis++/errors.h"
 
 namespace sw {
 
