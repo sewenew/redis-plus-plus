@@ -14,7 +14,7 @@
    limitations under the License.
  *************************************************************************/
 
-#include "subscriber.h"
+#include "sw/redis++/subscriber.h"
 #include <cassert>
 
 namespace sw {

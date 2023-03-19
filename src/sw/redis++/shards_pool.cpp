@@ -14,9 +14,9 @@
    limitations under the License.
  *************************************************************************/
 
-#include "shards_pool.h"
+#include "sw/redis++/shards_pool.h"
 #include <unordered_set>
-#include "errors.h"
+#include "sw/redis++/errors.h"
 
 namespace sw {
 

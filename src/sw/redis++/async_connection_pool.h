@@ -25,10 +25,10 @@
 #include <exception>
 #include <condition_variable>
 #include <deque>
-#include "connection.h"
-#include "connection_pool.h"
-#include "async_connection.h"
-#include "async_sentinel.h"
+#include "sw/redis++/connection.h"
+#include "sw/redis++/connection_pool.h"
+#include "sw/redis++/async_connection.h"
+#include "sw/redis++/async_sentinel.h"
 
 namespace sw {
 

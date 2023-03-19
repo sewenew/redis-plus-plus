@@ -22,15 +22,15 @@
 #include <memory>
 #include <initializer_list>
 #include <tuple>
-#include "connection_pool.h"
-#include "reply.h"
-#include "command_options.h"
-#include "utils.h"
-#include "subscriber.h"
-#include "pipeline.h"
-#include "transaction.h"
-#include "sentinel.h"
-#include "redis_uri.h"
+#include "sw/redis++/connection_pool.h"
+#include "sw/redis++/reply.h"
+#include "sw/redis++/command_options.h"
+#include "sw/redis++/utils.h"
+#include "sw/redis++/subscriber.h"
+#include "sw/redis++/pipeline.h"
+#include "sw/redis++/transaction.h"
+#include "sw/redis++/sentinel.h"
+#include "sw/redis++/redis_uri.h"
 
 namespace sw {
 
@@ -3643,6 +3643,6 @@ private:
 
 }
 
-#include "redis.hpp"
+#include "sw/redis++/redis.hpp"
 
 #endif // end SEWENEW_REDISPLUSPLUS_REDIS_H

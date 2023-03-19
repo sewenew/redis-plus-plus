@@ -14,7 +14,7 @@
    limitations under the License.
  *************************************************************************/
 
-#include "command.h"
+#include "sw/redis++/command.h"
 #include <cassert>
 
 namespace sw {

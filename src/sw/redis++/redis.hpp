@@ -17,10 +17,10 @@
 #ifndef SEWENEW_REDISPLUSPLUS_REDIS_HPP
 #define SEWENEW_REDISPLUSPLUS_REDIS_HPP
 
-#include "command.h"
-#include "reply.h"
-#include "utils.h"
-#include "errors.h"
+#include "sw/redis++/command.h"
+#include "sw/redis++/reply.h"
+#include "sw/redis++/utils.h"
+#include "sw/redis++/errors.h"
 
 namespace sw {
 

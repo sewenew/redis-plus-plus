@@ -14,10 +14,10 @@
    limitations under the License.
  *************************************************************************/
 
-#include "event_loop.h"
+#include "sw/redis++/event_loop.h"
 #include <cassert>
 #include <hiredis/adapters/libuv.h>
-#include "async_connection.h"
+#include "sw/redis++/async_connection.h"
 
 namespace sw {
 

@@ -14,8 +14,8 @@
    limitations under the License.
  *************************************************************************/
 
-#include "async_redis.h"
-#include "reply.h"
+#include "sw/redis++/async_redis.h"
+#include "sw/redis++/reply.h"
 
 namespace sw {
 

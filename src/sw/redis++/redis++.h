@@ -17,9 +17,9 @@
 #ifndef SEWENEW_REDISPLUSPLUS_REDISPLUSPLUS_H
 #define SEWENEW_REDISPLUSPLUS_REDISPLUSPLUS_H
 
-#include "redis.h"
-#include "redis_cluster.h"
-#include "queued_redis.h"
-#include "sentinel.h"
+#include "sw/redis++/redis.h"
+#include "sw/redis++/redis_cluster.h"
+#include "sw/redis++/queued_redis.h"
+#include "sw/redis++/sentinel.h"
 
 #endif // end SEWENEW_REDISPLUSPLUS_REDISPLUSPLUS_H

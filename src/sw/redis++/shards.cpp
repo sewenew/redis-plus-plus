@@ -14,7 +14,7 @@
    limitations under the License.
  *************************************************************************/
 
-#include "shards.h"
+#include "sw/redis++/shards.h"
 
 namespace sw {
 

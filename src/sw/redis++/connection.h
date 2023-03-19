@@ -26,10 +26,10 @@
 #include <sstream>
 #include <chrono>
 #include <hiredis/hiredis.h>
-#include "errors.h"
-#include "reply.h"
-#include "utils.h"
-#include "tls.h"
+#include "sw/redis++/errors.h"
+#include "sw/redis++/reply.h"
+#include "sw/redis++/utils.h"
+#include "sw/redis++/tls.h"
 
 namespace sw {
 

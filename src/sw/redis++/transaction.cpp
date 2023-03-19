@@ -14,8 +14,8 @@
    limitations under the License.
  *************************************************************************/
 
-#include "transaction.h"
-#include "command.h"
+#include "sw/redis++/transaction.h"
+#include "sw/redis++/command.h"
 
 namespace sw {
 

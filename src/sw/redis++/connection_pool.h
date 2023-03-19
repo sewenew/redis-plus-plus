@@ -23,8 +23,8 @@
 #include <memory>
 #include <condition_variable>
 #include <deque>
-#include "connection.h"
-#include "sentinel.h"
+#include "sw/redis++/connection.h"
+#include "sw/redis++/sentinel.h"
 
 namespace sw {
 

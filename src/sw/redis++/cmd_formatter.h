@@ -18,10 +18,10 @@
 #define SEWENEW_REDISPLUSPLUS_CMD_FORMATTER_H
 
 #include <hiredis/hiredis.h>
-#include "command_options.h"
-#include "command_args.h"
-#include "command.h"
-#include "errors.h"
+#include "sw/redis++/command_options.h"
+#include "sw/redis++/command_args.h"
+#include "sw/redis++/command.h"
+#include "sw/redis++/errors.h"
 
 namespace sw {
 

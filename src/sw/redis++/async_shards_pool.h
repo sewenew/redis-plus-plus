@@ -23,8 +23,8 @@
 #include <thread>
 #include <queue>
 #include <memory>
-#include "shards_pool.h"
-#include "async_connection_pool.h"
+#include "sw/redis++/shards_pool.h"
+#include "sw/redis++/async_connection_pool.h"
 
 namespace sw {
 

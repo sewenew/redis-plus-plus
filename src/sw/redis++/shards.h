@@ -19,7 +19,7 @@
 
 #include <string>
 #include <map>
-#include "errors.h"
+#include "sw/redis++/errors.h"
 
 namespace sw {
 

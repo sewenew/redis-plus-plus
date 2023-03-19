@@ -23,13 +23,13 @@
 #include <initializer_list>
 #include <vector>
 #include <unordered_set>
-#include "connection.h"
-#include "connection_pool.h"
-#include "utils.h"
-#include "reply.h"
-#include "command.h"
-#include "redis.h"
-#include "errors.h"
+#include "sw/redis++/connection.h"
+#include "sw/redis++/connection_pool.h"
+#include "sw/redis++/utils.h"
+#include "sw/redis++/reply.h"
+#include "sw/redis++/command.h"
+#include "sw/redis++/redis.h"
+#include "sw/redis++/errors.h"
 
 namespace sw {
 
@@ -2039,6 +2039,6 @@ private:
 
 }
 
-#include "queued_redis.hpp"
+#include "sw/redis++/queued_redis.hpp"
 
 #endif // end SEWENEW_REDISPLUSPLUS_QUEUED_REDIS_H

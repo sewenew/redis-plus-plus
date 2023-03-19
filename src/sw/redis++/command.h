@@ -21,10 +21,10 @@
 #include <ctime>
 #include <string>
 #include <chrono>
-#include "connection.h"
-#include "command_options.h"
-#include "command_args.h"
-#include "utils.h"
+#include "sw/redis++/connection.h"
+#include "sw/redis++/command_options.h"
+#include "sw/redis++/command_args.h"
+#include "sw/redis++/utils.h"
 
 namespace sw {
 

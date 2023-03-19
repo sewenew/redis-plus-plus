@@ -28,7 +28,7 @@
 #include <thread>
 #include <vector>
 #include <functional>
-#include "../redis++.h"
+#include "sw/redis++/redis++.h"
 
 namespace sw {
 

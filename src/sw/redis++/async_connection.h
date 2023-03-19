@@ -24,15 +24,15 @@
 #include <exception>
 #include <vector>
 #include <hiredis/async.h>
-#include "connection.h"
-#include "command_args.h"
-#include "event_loop.h"
-#include "async_utils.h"
-#include "tls.h"
-#include "shards.h"
-#include "cmd_formatter.h"
-#include "async_subscriber_impl.h"
-#include "async_connection.h"
+#include "sw/redis++/connection.h"
+#include "sw/redis++/command_args.h"
+#include "sw/redis++/event_loop.h"
+#include "sw/redis++/async_utils.h"
+#include "sw/redis++/tls.h"
+#include "sw/redis++/shards.h"
+#include "sw/redis++/cmd_formatter.h"
+#include "sw/redis++/async_subscriber_impl.h"
+#include "sw/redis++/async_connection.h"
 
 namespace sw {
 

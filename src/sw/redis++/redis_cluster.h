@@ -21,16 +21,16 @@
 #include <chrono>
 #include <initializer_list>
 #include <tuple>
-#include "shards_pool.h"
-#include "reply.h"
-#include "command_options.h"
-#include "utils.h"
-#include "subscriber.h"
-#include "pipeline.h"
-#include "transaction.h"
-#include "redis.h"
-#include "redis_uri.h"
-#include "connection.h"
+#include "sw/redis++/shards_pool.h"
+#include "sw/redis++/reply.h"
+#include "sw/redis++/command_options.h"
+#include "sw/redis++/utils.h"
+#include "sw/redis++/subscriber.h"
+#include "sw/redis++/pipeline.h"
+#include "sw/redis++/transaction.h"
+#include "sw/redis++/redis.h"
+#include "sw/redis++/redis_uri.h"
+#include "sw/redis++/connection.h"
 
 namespace sw {
 
@@ -1452,6 +1452,6 @@ private:
 
 }
 
-#include "redis_cluster.hpp"
+#include "sw/redis++/redis_cluster.hpp"
 
 #endif // end SEWENEW_REDISPLUSPLUS_REDIS_CLUSTER_H

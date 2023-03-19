@@ -18,8 +18,8 @@
 #define SEWENEW_REDISPLUSPLUS_ASYNC_SUBSCRIBER_IMPL_H
 
 #include <memory>
-#include "reply.h"
-#include "subscriber.h"
+#include "sw/redis++/reply.h"
+#include "sw/redis++/subscriber.h"
 
 namespace sw {
 

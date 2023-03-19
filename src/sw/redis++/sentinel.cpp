@@ -14,13 +14,13 @@
    limitations under the License.
  *************************************************************************/
 
-#include "sentinel.h"
+#include "sw/redis++/sentinel.h"
 #include <cassert>
 #include <thread>
 #include <random>
 #include <algorithm>
-#include "redis.h"
-#include "errors.h"
+#include "sw/redis++/redis.h"
+#include "sw/redis++/errors.h"
 
 namespace {
 

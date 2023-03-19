@@ -14,12 +14,12 @@
    limitations under the License.
  *************************************************************************/
 
-#include "redis_cluster.h"
+#include "sw/redis++/redis_cluster.h"
 #include <hiredis/hiredis.h>
-#include "command.h"
-#include "errors.h"
-#include "queued_redis.h"
-#include "redis_uri.h"
+#include "sw/redis++/command.h"
+#include "sw/redis++/errors.h"
+#include "sw/redis++/queued_redis.h"
+#include "sw/redis++/redis_uri.h"
 
 namespace sw {
 

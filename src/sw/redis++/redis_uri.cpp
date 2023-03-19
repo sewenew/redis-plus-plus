@@ -14,9 +14,9 @@
    limitations under the License.
  *************************************************************************/
 
-#include "redis_uri.h"
+#include "sw/redis++/redis_uri.h"
 #include <algorithm>
-#include "errors.h"
+#include "sw/redis++/errors.h"
 
 namespace sw {
 

@@ -14,11 +14,11 @@
    limitations under the License.
  *************************************************************************/
 
-#include "async_shards_pool.h"
+#include "sw/redis++/async_shards_pool.h"
 #include <cassert>
 #include <chrono>
 #include <thread>
-#include "errors.h"
+#include "sw/redis++/errors.h"
 
 namespace sw {
 

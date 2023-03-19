@@ -14,7 +14,7 @@
    limitations under the License.
  *************************************************************************/
 
-#include "reply.h"
+#include "sw/redis++/reply.h"
 #include <cstdlib>
 #include <stdexcept>
 

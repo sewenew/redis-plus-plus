@@ -14,11 +14,11 @@
    limitations under the License.
  *************************************************************************/
 
-#include "async_connection.h"
+#include "sw/redis++/async_connection.h"
 #include <hiredis/async.h>
-#include "errors.h"
-#include "async_shards_pool.h"
-#include "cmd_formatter.h"
+#include "sw/redis++/errors.h"
+#include "sw/redis++/async_shards_pool.h"
+#include "sw/redis++/cmd_formatter.h"
 
 #ifdef _MSC_VER
 

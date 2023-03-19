@@ -14,8 +14,8 @@
    limitations under the License.
  *************************************************************************/
 
-#include "tls.h"
-#include "errors.h"
+#include "sw/redis++/tls.h"
+#include "sw/redis++/errors.h"
 
 namespace sw {
 
