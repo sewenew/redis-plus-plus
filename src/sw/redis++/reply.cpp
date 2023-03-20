@@ -148,12 +148,14 @@ void parse(ParseTag<void>, redisReply &reply) {
     }
 
     static const std::string OK = "OK";
+    static const std::string BGSAVEOK = "Background saving started";
 
     // Old version hiredis' *redisReply::len* is of type int.
     // So we have to cast it to an unsigned int.
-    if (static_cast<std::size_t>(reply.len) != OK.size()
-            || OK.compare(0, OK.size(), reply.str, reply.len) != 0) {
-        throw ProtoError("NOT ok status reply: " + reply::to_status(reply));
+    if(BGSAVEOK.compare(0, BGSAVEOK.size(), reply.str, reply.len) != 0)
+        if (static_cast<std::size_t>(reply.len) != OK.size()
+                || OK.compare(0, OK.size(), reply.str, reply.len) != 0) {
+            throw ProtoError("NOT ok status reply: " + reply::to_status(reply));
     }
 }
 
