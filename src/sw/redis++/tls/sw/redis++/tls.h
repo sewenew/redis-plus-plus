@@ -28,6 +28,10 @@ namespace redis {
 
 namespace tls {
 
+#ifdef REDIS_SSL_VERIFY_PEER
+#define REDIS_PLUS_PLUS_TLS_VERIFY_MODE
+#endif // end REDIS_SSL_VERIFY_PEER
+
 // Disable auto initializing OpenSSL.
 // You should call it only once and call it before any sw::redis::Redis operation.
 // Otherwise, the behavior is undefined.
@@ -50,6 +54,10 @@ struct TlsOptions {
     std::string key;
 
     std::string sni;
+
+#ifdef REDIS_PLUS_PLUS_TLS_VERIFY_MODE
+    int verify_mode = REDIS_SSL_VERIFY_PEER;
+#endif // end REDIS_PLUS_PLUS_TLS_VERIFY_MODE
 };
 
 inline bool enabled(const TlsOptions &opts) {
