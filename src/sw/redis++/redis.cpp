@@ -102,10 +102,10 @@ void Redis::bgrewriteaof() {
     reply::parse<void>(*reply);
 }
 
-void Redis::bgsave() {
-    auto reply = command(cmd::bgsave);
+std::string Redis::bgsave() {
+    auto reply = command<void (*)(Connection &)>(cmd::bgsave);
 
-    reply::parse<void>(*reply);
+    return reply::to_status(*reply);
 }
 
 long long Redis::dbsize() {
