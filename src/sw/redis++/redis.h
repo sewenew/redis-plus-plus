@@ -222,8 +222,9 @@ public:
     void bgrewriteaof();
 
     /// @brief Save database in the background.
+    /// @return *Background saving started* if BGSAVE started correctly.
     /// @see https://redis.io/commands/bgsave
-    void bgsave();
+    std::string bgsave();
 
     /// @brief Get the size of the currently selected database.
     /// @return Number of keys in currently selected database.
