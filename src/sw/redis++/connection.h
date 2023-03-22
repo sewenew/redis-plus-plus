@@ -67,6 +67,12 @@ struct ConnectionOptions {
 
     bool keep_alive = false;
 
+#ifdef REDIS_PLUS_PLUS_HAS_redisEnableKeepAliveWithInterval
+
+    std::chrono::seconds keep_alive_s = std::chrono::seconds{0};
+
+#endif // end REDIS_PLUS_PLUS_HAS_redisEnableKeepAliveWithInterval
+
     std::chrono::milliseconds connect_timeout{0};
 
     std::chrono::milliseconds socket_timeout{0};
