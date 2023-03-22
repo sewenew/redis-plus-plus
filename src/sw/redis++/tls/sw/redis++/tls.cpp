@@ -15,6 +15,7 @@
  *************************************************************************/
 
 #include "sw/redis++/tls.h"
+#include <cstring>
 #include "sw/redis++/errors.h"
 
 namespace sw {
@@ -47,12 +48,26 @@ TlsContextUPtr secure_connection(redisContext &ctx, const TlsOptions &opts) {
     };
 
     redisSSLContextError err;
+#ifdef REDIS_PLUS_PLUS_TLS_VERIFY_MODE
+    redisSSLOptions redis_ssl_opts;
+    std::memset(&redis_ssl_opts, 0, sizeof(redis_ssl_opts));
+    redis_ssl_opts.cacert_filename = c_str(opts.cacert);
+    redis_ssl_opts.capath = c_str(opts.cacertdir);
+    redis_ssl_opts.cert_filename = c_str(opts.cert);
+    redis_ssl_opts.private_key_filename = c_str(opts.key);
+    redis_ssl_opts.server_name = c_str(opts.sni);
+    redis_ssl_opts.verify_mode = opts.verify_mode;
+
+    auto tls_ctx = TlsContextUPtr(redisCreateSSLContextWithOptions(&redis_ssl_opts, &err));
+#else
     auto tls_ctx = TlsContextUPtr(redisCreateSSLContext(c_str(opts.cacert),
                                                         c_str(opts.cacertdir),
                                                         c_str(opts.cert),
                                                         c_str(opts.key),
                                                         c_str(opts.sni),
                                                         &err));
+#endif // end REDIS_PLUS_PLUS_TLS_VERIFY_MODE
+
     if (!tls_ctx) {
         throw Error(std::string("failed to create TLS context: ")
                     + redisSSLContextGetError(err));

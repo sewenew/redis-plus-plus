@@ -839,6 +839,10 @@ Then you can use this `ConnectionOptions` to create a `Redis` object to connect 
 
 By default, *redis-plus-plus* automatically initializes OpenSSL library, i.e. calls `SSL_library_init` and initializes locks if needed. However, your application code might already initialize OpenSSL library. In this case, you can call `tls::disable_auto_init()` to disable the initialization. You should call this function only once and call it before any other *redis-plus-plus* operation. Otherwise, the behavior is undefined.
 
+##### Skip Certificate Verification
+
+Since hiredis v1.1.0, it supports [skipping certificate verification](https://github.com/redis/hiredis/pull/1085). If you want to use this feature with *redis-plus-plus*, you can check [this issue](https://github.com/sewenew/redis-plus-plus/issues/183) for an example.
+
 ### Send Command to Redis Server
 
 You can send [Redis commands](https://redis.io/commands) through `Redis` object. `Redis` has one or more (overloaded) methods for each Redis command. The method has the same (lowercased) name as the corresponding command. For example, we have 3 overload methods for the `DEL key [key ...]` command:
