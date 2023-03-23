@@ -30,6 +30,7 @@
 #include "sw/redis++/reply.h"
 #include "sw/redis++/utils.h"
 #include "sw/redis++/tls.h"
+#include "sw/redis++/hiredis_features.h"
 
 namespace sw {
 
