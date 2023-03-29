@@ -1687,7 +1687,7 @@ pipe.set("key", "val").incr("num");
 auto replies = pipe.exec();
 
 // The same as:
-replies = pipe.set("key", "val").incr("num).exec();
+replies = pipe.set("key", "val").incr("num").exec();
 ```
 
 In fact, these commands won't be sent to Redis, until you call `Pipeline::exec`. So `Pipeline::exec` does 2 work in order: send all piped commands, then get all replies from Redis.
