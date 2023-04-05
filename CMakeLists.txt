@@ -151,6 +151,28 @@ else()
     endif()
 endif()
 
+# Check hiredis features
+message(STATUS "redis-plus-plus check hiredis features")
+if(hiredis_FOUND)
+    set(HIREDIS_FEATURE_TEST_INCLUDE ${hiredis_INCLUDE_DIRS})
+    set(HIREDIS_FEATURE_TEST_LIB ${REDIS_PLUS_PLUS_HIREDIS_LIBS})
+else()
+    set(HIREDIS_FEATURE_TEST_INCLUDE ${HIREDIS_HEADER})
+    set(HIREDIS_FEATURE_TEST_LIB ${HIREDIS_LIB})
+endif()
+set(HIREDIS_FEATURE_TEST_HEADER "${HIREDIS_FEATURE_TEST_INCLUDE}/hiredis/hiredis.h")
+
+include(CheckSymbolExists)
+set(CMAKE_REQUIRED_LIBRARIES_BACK ${CMAKE_REQUIRED_LIBRARIES})
+set(CMAKE_REQUIRED_LIBRARIES ${HIREDIS_FEATURE_TEST_LIB})
+
+CHECK_SYMBOL_EXISTS(redisEnableKeepAliveWithInterval ${HIREDIS_FEATURE_TEST_HEADER} REDIS_PLUS_PLUS_HAS_redisEnableKeepAliveWithInterval)
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/hiredis_features.h.in ${CMAKE_CURRENT_SOURCE_DIR}/${REDIS_PLUS_PLUS_SOURCE_DIR}/hiredis_features.h)
+
+# Restore CMAKE_REQUIRED_LIBRARIES
+set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES_BACK})
+
 # Build static library
 option(REDIS_PLUS_PLUS_BUILD_STATIC "Build static library" ON)
 message(STATUS "redis-plus-plus build static library: ${REDIS_PLUS_PLUS_BUILD_STATIC}")

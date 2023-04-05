@@ -30,6 +30,7 @@
 #include "sw/redis++/reply.h"
 #include "sw/redis++/utils.h"
 #include "sw/redis++/tls.h"
+#include "sw/redis++/hiredis_features.h"
 
 namespace sw {
 
@@ -66,6 +67,12 @@ struct ConnectionOptions {
     int db = 0;
 
     bool keep_alive = false;
+
+#ifdef REDIS_PLUS_PLUS_HAS_redisEnableKeepAliveWithInterval
+
+    std::chrono::seconds keep_alive_s = std::chrono::seconds{0};
+
+#endif // end REDIS_PLUS_PLUS_HAS_redisEnableKeepAliveWithInterval
 
     std::chrono::milliseconds connect_timeout{0};
 
