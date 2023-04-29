@@ -2597,7 +2597,14 @@ auto mget_res = async_cluster.mget<std::vector<OptionalString>>({"{hashtag}key1"
 
 unordered_map<string, string> m = {{"a", "b"}, {"c", "d"}};
 Future<void> hmset_res = async_redis.hmset("hash", m.begin(), m.end());
+
+// Create an AsyncRedis object with hash-tag, so that we can send commands that has no key.
+// It connects to Redis instance that holds the given key, i.e. hash-tag.
+auto r = async_cluster.redis("hash-tag");
+Future<string> ping_res = r.command<string>("ping");
 ```
+
+**NOTE**: By default, when you use `AsyncRedisCluster::redis(const StringView &hash_tag, bool new_connection = true)` to create an `AsyncRedis` object, instead of picking a connection from the underlying connection pool, it creates a new connection to the corresponding Redis server. So this is NOT a cheap operation, and you should try to reuse this newly created `AsyncRedis` object as much as possible. If you pass `false` as the second parameter, you can create a `AsyncRedis` object without creating a new connection. However, in this case, you should be very careful, otherwise, you might get bad performance or even dead lock. Please carefully check the related [pipeline section](#very-important-notes) before using this feature. Also the returned `AsyncRedis` object is NOT thread-safe, and if it throws exception, you need to destroy it, and create a new one with the `AsyncRedisCluster::redis` method.
 
 #### Async Subscriber
 

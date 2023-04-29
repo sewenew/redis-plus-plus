@@ -470,6 +470,8 @@ private:
     std::shared_ptr<AsyncConnection> _connection;
 };
 
+using GuardedAsyncConnectionSPtr = std::shared_ptr<GuardedAsyncConnection>;
+
 namespace detail {
 
 // We seperate this function from ClusterEvent to avoid
