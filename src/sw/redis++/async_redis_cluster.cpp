@@ -35,6 +35,18 @@ AsyncRedisCluster::AsyncRedisCluster(const ConnectionOptions &opts,
     _pool = std::make_shared<AsyncShardsPool>(_loop, pool_opts, opts, role);
 }
 
+AsyncRedis AsyncRedisCluster::redis(const StringView &hash_tag, bool new_connection) {
+    assert(_pool);
+
+    auto pool = _pool->fetch(hash_tag);
+    if (new_connection) {
+        // Create a new pool.
+        pool = std::make_shared<AsyncConnectionPool>(pool->clone());
+    }
+
+    return AsyncRedis(std::make_shared<GuardedAsyncConnection>(pool));
+}
+
 AsyncSubscriber AsyncRedisCluster::subscriber() {
     assert(_pool);
 

@@ -110,7 +110,10 @@ AsyncConnectionPool& AsyncConnectionPool::operator=(AsyncConnectionPool &&that) 
 }
 
 AsyncConnectionPool::~AsyncConnectionPool() {
-    assert(_loop);
+    if (!_loop) {
+        // This pool has been moved.
+        return;
+    }
 
     // TODO: what if the connection has been borrowed but not returned?
     // Or we dont' need to worry about that, since it's destructing and

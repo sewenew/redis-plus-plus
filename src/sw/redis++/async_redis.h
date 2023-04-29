@@ -1017,6 +1017,10 @@ public:
     }
 
 private:
+    friend class AsyncRedisCluster;
+
+    explicit AsyncRedis(const GuardedAsyncConnectionSPtr &connection);
+
     explicit AsyncRedis(const Uri &uri);
 
     template <typename Result, typename Formatter, typename ...Args>
@@ -1029,10 +1033,20 @@ private:
     Future<Result> _command_with_parser(Formatter formatter, Args &&...args) {
         auto formatted_cmd = formatter(std::forward<Args>(args)...);
 
-        assert(_pool);
-        SafeAsyncConnection connection(*_pool);
+        if (_connection) {
+            // Single connection mode.
+            auto &connection = _connection->connection();
+            if (connection.broken()) {
+                throw Error("connection is broken");
+            }
 
-        return connection.connection().send<Result, ResultParser>(std::move(formatted_cmd));
+            return connection.send<Result, ResultParser>(std::move(formatted_cmd));
+        } else {
+            assert(_pool);
+            SafeAsyncConnection connection(*_pool);
+
+            return connection.connection().send<Result, ResultParser>(std::move(formatted_cmd));
+        }
     }
 
     template <typename Result, typename Callback, std::size_t ...Is, typename ...Args>
@@ -1065,16 +1079,29 @@ private:
     void _callback_command_with_parser(Callback &&cb, Formatter formatter, Args &&...args) {
         auto formatted_cmd = formatter(std::forward<Args>(args)...);
 
-        assert(_pool);
-        SafeAsyncConnection connection(*_pool);
+        if (_connection) {
+            // Single connection mode.
+            auto &connection = _connection->connection();
+            if (connection.broken()) {
+                throw Error("connection is broken");
+            }
 
-        connection.connection().send<Result, ResultParser, Callback>(
-                std::move(formatted_cmd), std::forward<Callback>(cb));
+            connection.send<Result, ResultParser, Callback>(
+                    std::move(formatted_cmd), std::forward<Callback>(cb));
+        } else {
+            assert(_pool);
+            SafeAsyncConnection connection(*_pool);
+
+            connection.connection().send<Result, ResultParser, Callback>(
+                    std::move(formatted_cmd), std::forward<Callback>(cb));
+        }
     }
 
     EventLoopSPtr _loop;
 
     AsyncConnectionPoolSPtr _pool;
+
+    GuardedAsyncConnectionSPtr _connection;
 };
 
 }

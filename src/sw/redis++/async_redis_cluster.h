@@ -21,6 +21,7 @@
 #include "sw/redis++/utils.h"
 #include "sw/redis++/async_connection.h"
 #include "sw/redis++/async_connection_pool.h"
+#include "sw/redis++/async_redis.h"
 #include "sw/redis++/async_shards_pool.h"
 #include "sw/redis++/async_subscriber.h"
 #include "sw/redis++/event_loop.h"
@@ -47,6 +48,8 @@ public:
     AsyncRedisCluster& operator=(AsyncRedisCluster &&) = default;
 
     ~AsyncRedisCluster() = default;
+
+    AsyncRedis redis(const StringView &hash_tag, bool new_connection = true);
 
     AsyncSubscriber subscriber();
 

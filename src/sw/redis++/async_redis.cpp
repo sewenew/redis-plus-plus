@@ -50,6 +50,10 @@ AsyncRedis::AsyncRedis(const std::shared_ptr<AsyncSentinel> &sentinel,
                                                     opts);
 }
 
+AsyncRedis::AsyncRedis(const GuardedAsyncConnectionSPtr &connection) : _connection(connection) {
+    assert(_connection);
+}
+
 AsyncSubscriber AsyncRedis::subscriber() {
     // TODO: maybe we don't need to check this,
     // since there's no Transaction or Pipeline for AsyncRedis
