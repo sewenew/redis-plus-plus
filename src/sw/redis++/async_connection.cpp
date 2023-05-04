@@ -201,6 +201,11 @@ void AsyncConnection::connect_callback(std::exception_ptr err) {
             _select_db_callback();
             break;
 
+        case State::BROKEN:
+            // Connection is closing or has been closed,
+            // and events of this connection have been processed.
+            break;
+
         default:
             assert(_state == State::ENABLE_READONLY);
 
