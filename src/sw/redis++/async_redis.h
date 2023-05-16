@@ -512,10 +512,17 @@ public:
 
     template <typename Callback>
     auto blpop(const StringView &key,
-               Callback &&cb,
-               const std::chrono::seconds &timeout = std::chrono::seconds{0})
+               const std::chrono::seconds &timeout,
+               Callback &&cb)
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalStringPair> &&>::value, void>::type {
         _callback_fmt_command<OptionalStringPair>(std::forward<Callback>(cb), fmt::blpop, key, timeout);
+    }
+
+    template <typename Callback>
+    auto blpop(const StringView &key,
+               Callback &&cb)
+    -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalStringPair> &&>::value, void>::type {
+        return blpop(key, std::chrono::seconds{0}, std::forward<Callback>(cb));
     }
 
     template <typename Input>
@@ -530,12 +537,20 @@ public:
     template <typename Input, typename Callback>
     auto blpop(Input first,
                Input last,
-               Callback &&cb,
-               const std::chrono::seconds &timeout = std::chrono::seconds{0})
+               const std::chrono::seconds &timeout,
+               Callback &&cb)
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalStringPair> &&>::value, void>::type {
         range_check("BLPOP", first, last);
 
         _callback_fmt_command<OptionalStringPair>(std::forward<Callback>(cb), fmt::blpop_range<Input>, first, last, timeout);
+    }
+
+    template <typename Input, typename Callback>
+    auto blpop(Input first,
+               Input last,
+               Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalStringPair> &&>::value, void>::type {
+        return blpop(first, last, std::chrono::seconds{0}, std::forward<Callback>(cb));
     }
 
     template <typename T>
@@ -546,10 +561,17 @@ public:
 
     template <typename T, typename Callback>
     auto blpop(std::initializer_list<T> il,
-               Callback &&cb,
-               const std::chrono::seconds &timeout = std::chrono::seconds{0})
+               const std::chrono::seconds &timeout,
+               Callback &&cb)
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalStringPair> &&>::value, void>::type {
-        return blpop(il.begin(), il.end(), std::forward<Callback>(cb), timeout);
+        return blpop(il.begin(), il.end(), timeout, std::forward<Callback>(cb));
+    }
+
+    template <typename T, typename Callback>
+    auto blpop(std::initializer_list<T> il,
+               Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalStringPair> &&>::value, void>::type {
+        return blpop(il, std::chrono::seconds{0}, std::forward<Callback>(cb));
     }
 
     Future<OptionalStringPair> brpop(const StringView &key,
@@ -559,10 +581,17 @@ public:
 
     template <typename Callback>
     auto brpop(const StringView &key,
-               Callback &&cb,
-               const std::chrono::seconds &timeout = std::chrono::seconds{0})
+               const std::chrono::seconds &timeout,
+               Callback &&cb)
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalStringPair> &&>::value, void>::type {
         _callback_fmt_command<OptionalStringPair>(std::forward<Callback>(cb), fmt::brpop, key, timeout);
+    }
+
+    template <typename Callback>
+    auto brpop(const StringView &key,
+               Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalStringPair> &&>::value, void>::type {
+        return brpop(key, std::chrono::seconds{0}, std::forward<Callback>(cb));
     }
 
     template <typename Input>
@@ -577,12 +606,20 @@ public:
     template <typename Input, typename Callback>
     auto brpop(Input first,
                Input last,
-               Callback &&cb,
-               const std::chrono::seconds &timeout = std::chrono::seconds{0})
+               const std::chrono::seconds &timeout,
+               Callback &&cb)
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalStringPair> &&>::value, void>::type {
         range_check("BRPOP", first, last);
 
         _callback_fmt_command<OptionalStringPair>(std::forward<Callback>(cb), fmt::brpop_range<Input>, first, last, timeout);
+    }
+
+    template <typename Input, typename Callback>
+    auto brpop(Input first,
+               Input last,
+               Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalStringPair> &&>::value, void>::type {
+        return brpop(first, last, std::chrono::seconds{0}, std::forward<Callback>(cb));
     }
 
     template <typename T>
@@ -593,10 +630,17 @@ public:
 
     template <typename T, typename Callback>
     auto brpop(std::initializer_list<T> il,
-               Callback &&cb,
-               const std::chrono::seconds &timeout = std::chrono::seconds{0})
+               const std::chrono::seconds &timeout,
+               Callback &&cb)
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalStringPair> &&>::value, void>::type {
-        return brpop(il.begin(), il.end(), std::forward<Callback>(cb), timeout);
+        return brpop(il.begin(), il.end(), timeout, std::forward<Callback>(cb));
+    }
+
+    template <typename T, typename Callback>
+    auto brpop(std::initializer_list<T> il,
+               Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalStringPair> &&>::value, void>::type {
+        return brpop(il, std::chrono::seconds{0}, std::forward<Callback>(cb));
     }
 
     Future<OptionalString> brpoplpush(const StringView &source,
@@ -608,10 +652,18 @@ public:
     template <typename Callback>
     auto brpoplpush(const StringView &source,
                     const StringView &destination,
-                    Callback &&cb,
-                    const std::chrono::seconds &timeout = std::chrono::seconds{0})
+                    const std::chrono::seconds &timeout,
+                    Callback &&cb)
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalString> &&>::value, void>::type {
         _callback_fmt_command<OptionalString>(std::forward<Callback>(cb), fmt::brpoplpush, source, destination, timeout);
+    }
+
+    template <typename Callback>
+    auto brpoplpush(const StringView &source,
+                    const StringView &destination,
+                    Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalString> &&>::value, void>::type {
+        return brpoplpush(source, destination, std::chrono::seconds{0}, std::forward<Callback>(cb));
     }
 
     Future<long long> llen(const StringView &key) {
@@ -1142,11 +1194,20 @@ public:
     auto zadd(const StringView &key,
               const StringView &member,
               double score,
-              Callback &&cb,
-              UpdateType type = UpdateType::ALWAYS,
-              bool changed = false)
+              UpdateType type,
+              bool changed,
+              Callback &&cb)
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<long long> &&>::value, void>::type {
         _callback_fmt_command<long long>(std::forward<Callback>(cb), fmt::zadd, key, member, score, type, changed);
+    }
+
+    template <typename Callback>
+    auto zadd(const StringView &key,
+              const StringView &member,
+              double score,
+              Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<long long> &&>::value, void>::type {
+        return zadd(key, member, score, UpdateType::ALWAYS, false, std::forward<Callback>(cb));
     }
 
     template <typename Input>
@@ -1169,13 +1230,22 @@ public:
     auto zadd(const StringView &key,
               Input first,
               Input last,
-              Callback &&cb,
-              UpdateType type = UpdateType::ALWAYS,
-              bool changed = false)
+              UpdateType type,
+              bool changed,
+              Callback &&cb)
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<long long> &&>::value, void>::type {
         range_check("ZADD", first, last);
 
         _callback_fmt_command<long long>(std::forward<Callback>(cb), fmt::zadd_range<Input>, key, first, last, type, changed);
+    }
+
+    template <typename Input, typename Callback>
+    auto zadd(const StringView &key,
+              Input first,
+              Input last,
+              Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<long long> &&>::value, void>::type {
+        return zadd(key, first, last, UpdateType::ALWAYS, false, std::forward<Callback>(cb));
     }
 
     template <typename T>
@@ -1189,11 +1259,19 @@ public:
     template <typename T, typename Callback>
     auto zadd(const StringView &key,
               std::initializer_list<T> il,
-              Callback &&cb,
-              UpdateType type = UpdateType::ALWAYS,
-              bool changed = false)
+              UpdateType type,
+              bool changed,
+              Callback &&cb)
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<long long> &&>::value, void>::type {
         return zadd<decltype(il.begin()), Callback>(key, il.begin(), il.end(), std::forward<Callback>(cb), type, changed);
+    }
+
+    template <typename T, typename Callback>
+    auto zadd(const StringView &key,
+              std::initializer_list<T> il,
+              Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<long long> &&>::value, void>::type {
+        return zadd<T, Callback>(key, il, UpdateType::ALWAYS, false, std::forward<Callback>(cb));
     }
 
     Future<long long> zcard(const StringView &key) {
@@ -1484,7 +1562,7 @@ public:
               std::initializer_list<StringView> args,
               Callback &&cb)
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Result> &&>::value, void>::type {
-        return eval(script, keys.begin(), keys.end(), args.begin(), args.end(), std::forward<Callback>(cb));
+        return eval<Result>(script, keys.begin(), keys.end(), args.begin(), args.end(), std::forward<Callback>(cb));
     }
 
     template <typename Result, typename Keys, typename Args>
@@ -1524,7 +1602,7 @@ public:
                  std::initializer_list<StringView> args,
                  Callback &&cb)
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Result> &&>::value, void>::type {
-        return evalsha(script, keys.begin(), keys.end(), args.begin(), args.end(), std::forward<Callback>(cb));
+        return evalsha<Result>(script, keys.begin(), keys.end(), args.begin(), args.end(), std::forward<Callback>(cb));
     }
 
     // PUBSUB commands.
