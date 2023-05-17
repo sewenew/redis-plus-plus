@@ -1263,7 +1263,7 @@ public:
               bool changed,
               Callback &&cb)
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<long long> &&>::value, void>::type {
-        return zadd<decltype(il.begin()), Callback>(key, il.begin(), il.end(), std::forward<Callback>(cb), type, changed);
+        return zadd<decltype(il.begin()), Callback>(key, il.begin(), il.end(), type, changed, std::forward<Callback>(cb));
     }
 
     template <typename T, typename Callback>
