@@ -17,7 +17,19 @@
 #ifndef SEWENEW_REDISPLUSPLUS_CO_REDIS_CLUSTER_H
 #define SEWENEW_REDISPLUSPLUS_CO_REDIS_CLUSTER_H
 
-#include <coroutine>
+#if __has_include(<coroutine>)
+# include <coroutine>
+#elif __has_include(<experimental/coroutine>)
+# include <experimental/coroutine>
+# ifndef coroutine_handle
+#  define coroutine_handle experimental::coroutine_handle
+# endif
+# ifndef suspend_never
+#  define suspend_never experimental::suspend_never
+# endif
+#else
+# error "<coroutine> not found."
+#endif
 #include "sw/redis++/async_redis_cluster.h"
 #include "sw/redis++/cxx_utils.h"
 #include "sw/redis++/cmd_formatter.h"
