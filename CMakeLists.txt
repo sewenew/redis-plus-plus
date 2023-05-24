@@ -190,7 +190,7 @@ if(REDIS_PLUS_PLUS_BUILD_STATIC)
 
     if (TARGET hiredis::hiredis_ssl_static)
       # If SSL is not enabled, this line will have no effect
-      string(REPLACE "hiredis::hiredis_ssl" "hiredis::hiredis_ssl_static" REDIS_PLUS_PLUS_HIREDIS_LIBS_STATIC
+      string(REPLACE "hiredis::hiredis_static_ssl" "hiredis::hiredis_ssl_static" REDIS_PLUS_PLUS_HIREDIS_LIBS_STATIC
         "${REDIS_PLUS_PLUS_HIREDIS_LIBS_STATIC}")
     endif()
 
