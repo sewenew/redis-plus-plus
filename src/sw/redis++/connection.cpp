@@ -73,14 +73,21 @@ Connection::ContextUPtr Connection::Connector::connect() const {
 }
 
 Connection::ContextUPtr Connection::Connector::_connect() const {
+    const std::string failed_alloc_message = "Failed to allocate memory for connection.";
     redisContext *context = nullptr;
     switch (_opts.type) {
     case ConnectionType::TCP:
         context = _connect_tcp();
+        if (context == nullptr) {
+            throw Error(failed_alloc_message);
+        }
         break;
 
     case ConnectionType::UNIX:
         context = _connect_unix();
+        if (context == nullptr) {
+            throw Error(failed_alloc_message);
+        }
         break;
 
     default:
@@ -88,11 +95,9 @@ Connection::ContextUPtr Connection::Connector::_connect() const {
         throw Error("Unknown connection type");
     }
 
-    if (context == nullptr) {
-        throw Error("Failed to allocate memory for connection.");
-    }
-
     return ContextUPtr(context);
+
+
 }
 
 redisContext* Connection::Connector::_connect_tcp() const {
@@ -169,7 +174,6 @@ std::string ConnectionOptions::_server_info() const {
     default:
         // Never goes here.
         throw Error("unknown connection type");
-        break;
     }
 
     return info;

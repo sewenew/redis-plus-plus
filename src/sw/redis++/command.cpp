@@ -347,7 +347,6 @@ void set_geo_unit(CmdArgs &args, GeoUnit unit) {
 
     default:
         throw Error("Unknown geo unit type");
-        break;
     }
 }
 

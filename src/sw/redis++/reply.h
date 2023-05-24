@@ -422,19 +422,21 @@ Variant<Args...> parse(ParseTag<Variant<Args...>>, redisReply &reply) {
 template <typename T, typename std::enable_if<IsSequenceContainer<T>::value, int>::type>
 T parse(ParseTag<T>, redisReply &reply) {
 #ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
-    if (!is_array(reply) && !is_set(reply)) {
-        throw ParseError("ARRAY or SET", reply);
+    if (is_array(reply) || is_set(reply)) {
 #else
-    if (!is_array(reply)) {
+    if (is_array(reply)) {
 #endif
-        throw ParseError("ARRAY", reply);
+        T container;
+        to_array(reply, std::back_inserter(container));
+        return container;
     }
+#ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
+    throw ParseError("ARRAY or SET", reply);
+#else
+    throw ParseError("ARRAY", reply);
+#endif
 
-    T container;
 
-    to_array(reply, std::back_inserter(container));
-
-    return container;
 }
 
 template <typename T, typename std::enable_if<IsAssociativeContainer<T>::value, int>::type>

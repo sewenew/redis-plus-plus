@@ -54,28 +54,22 @@ void throw_error(const redisContext &context, const std::string &err_info) {
         } else {
             throw IoError(err_msg);
         }
-        break;
 
     case REDIS_ERR_EOF:
         throw ClosedError(err_msg);
-        break;
 
     case REDIS_ERR_PROTOCOL:
         throw ProtoError(err_msg);
-        break;
 
     case REDIS_ERR_OOM:
         throw OomError(err_msg);
-        break;
 
     case REDIS_ERR_OTHER:
         throw Error(err_msg);
-        break;
 
 #ifdef REDIS_ERR_TIMEOUT
     case REDIS_ERR_TIMEOUT:
         throw TimeoutError(err_msg);
-        break;
 #endif
 
     default:
@@ -99,15 +93,12 @@ void throw_error(const redisReply &reply) {
     switch (err_type) {
     case ReplyErrorType::MOVED:
         throw MovedError(err_msg);
-        break;
 
     case ReplyErrorType::ASK:
         throw AskError(err_msg);
-        break;
 
     default:
         throw ReplyError(err_str);
-        break;
     }
 }
 

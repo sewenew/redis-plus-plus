@@ -138,7 +138,6 @@ Subscriber::MsgType Subscriber::_msg_type(std::string const& type) const
     }
 
     throw ProtoError("Invalid message type.");
-    return MsgType::MESSAGE; // Silence "no return" warnings.
 }
 
 void Subscriber::_check_connection() {
