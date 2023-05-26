@@ -951,8 +951,8 @@ public:
 
     template <typename Callback>
     auto hset(const StringView &key, const StringView &field, const StringView &val, Callback &&cb)
-        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<long long> &&>::value, void>::type {
-        _callback_fmt_command<long long>(std::forward<Callback>(cb), fmt::hset, key, field, val);
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<bool> &&>::value, void>::type {
+        _callback_fmt_command<bool>(std::forward<Callback>(cb), fmt::hset, key, field, val);
     }
 
     Future<bool> hset(const StringView &key, const std::pair<StringView, StringView> &item) {
@@ -961,7 +961,7 @@ public:
 
     template <typename Callback>
     auto hset(const StringView &key, const std::pair<StringView, StringView> &item, Callback &&cb)
-        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<long long> &&>::value, void>::type {
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<bool> &&>::value, void>::type {
         hset<Callback>(key, item.first, item.second, std::forward<Callback>(cb));
     }
 
