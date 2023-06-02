@@ -652,8 +652,12 @@ inline FormattedCommand zpopmin_count(const StringView &key, long long count) {
     return format_cmd("ZPOPMIN %b %lld", key.data(), key.size(), count);
 }
 
-inline FormattedCommand zrange(const StringView &key, long long start, long long stop) {
-    return format_cmd("ZRANGE %b %lld %lld", key.data(), key.size(), start, stop);
+inline FormattedCommand zrange(const StringView &key, long long start, long long stop, bool withscores) {
+    if (withscores) {
+        return format_cmd("ZRANGE %b %lld %lld WITHSCORES", key.data(), key.size(), start, stop);
+    } else {
+        return format_cmd("ZRANGE %b %lld %lld", key.data(), key.size(), start, stop);
+    }
 }
 
 template <typename Interval>

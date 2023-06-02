@@ -1339,14 +1339,20 @@ public:
     }
 
     template <typename Output>
-    Future<Output> zrange(const StringView &key, long long start, long long stop) {
-        return _command<Output>(fmt::zrange, key, start, stop);
+    Future<Output> zrange(const StringView &key, long long start, long long stop, bool withscores = true) {
+        return _command<Output>(fmt::zrange, key, start, stop, withscores);
     }
 
     template <typename Output, typename Callback>
     auto zrange(const StringView &key, long long start, long long stop, Callback &&cb)
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Output> &&>::value, void>::type {
-        _callback_fmt_command<Output>(std::forward<Callback>(cb), fmt::zrange, key, start, stop);
+        _callback_fmt_command<Output>(std::forward<Callback>(cb), fmt::zrange, key, start, stop, true);
+    }
+
+    template <typename Output, typename Callback>
+    auto zrange(const StringView &key, long long start, long long stop, bool withscores, Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Output> &&>::value, void>::type {
+        _callback_fmt_command<Output>(std::forward<Callback>(cb), fmt::zrange, key, start, stop, withscores);
     }
 
     template <typename Output, typename Interval>
