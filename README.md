@@ -2963,7 +2963,7 @@ try {
                 },
                 opts, watcher);
 
-        std::unique_lock<RedMutex> lock(mtx);
+        std::unique_lock<RedMutex> lock(mtx, std::defer_lock);
 
         lock.lock();
 
