@@ -29,6 +29,7 @@
     - [Coroutine Interface](#coroutine-interface)
 - [Redis Patterns](#redis-patterns)
     - [Redlock](#redlock)
+- [Breaking Changes](#breaking-changes)
 - [Author](#author)
 
 ## Overview
@@ -3011,6 +3012,10 @@ try {
     lock.unlock();
 }
 ```
+
+## Breaking Changes
+
+- Since redis-plus-plus 1.3.9, all `hset` related methods return `long long` instead of `bool`.
 
 ## Author
 

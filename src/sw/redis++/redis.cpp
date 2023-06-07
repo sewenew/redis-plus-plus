@@ -551,13 +551,13 @@ long long Redis::hlen(const StringView &key) {
     return reply::parse<long long>(*reply);
 }
 
-bool Redis::hset(const StringView &key, const StringView &field, const StringView &val) {
+long long Redis::hset(const StringView &key, const StringView &field, const StringView &val) {
     auto reply = command(cmd::hset, key, field, val);
 
-    return reply::parse<bool>(*reply);
+    return reply::parse<long long>(*reply);
 }
 
-bool Redis::hset(const StringView &key, const std::pair<StringView, StringView> &item) {
+long long Redis::hset(const StringView &key, const std::pair<StringView, StringView> &item) {
     return hset(key, item.first, item.second);
 }
 

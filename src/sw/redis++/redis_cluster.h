@@ -458,9 +458,9 @@ public:
                     long long cursor,
                     Output output);
 
-    bool hset(const StringView &key, const StringView &field, const StringView &val);
+    long long hset(const StringView &key, const StringView &field, const StringView &val);
 
-    bool hset(const StringView &key, const std::pair<StringView, StringView> &item);
+    long long hset(const StringView &key, const std::pair<StringView, StringView> &item);
 
     template <typename Input>
     auto hset(const StringView &key, Input first, Input last)

@@ -579,8 +579,8 @@ public:
         return hmset(key, il.begin(), il.end());
     }
 
-    Future<bool> hset(const StringView &key, const StringView &field, const StringView &val) {
-        return _command<bool>(fmt::hset, key, field, val);
+    Future<long long> hset(const StringView &key, const StringView &field, const StringView &val) {
+        return _command<long long>(fmt::hset, key, field, val);
     }
 
     template <typename Callback>
@@ -589,7 +589,7 @@ public:
         _callback_fmt_command<long long>(std::forward<Callback>(cb), fmt::hset, key, field, val);
     }
 
-    Future<bool> hset(const StringView &key, const std::pair<StringView, StringView> &item) {
+    Future<long long> hset(const StringView &key, const std::pair<StringView, StringView> &item) {
         return hset(key, item.first, item.second);
     }
 

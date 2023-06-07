@@ -1555,27 +1555,19 @@ public:
     /// @param field Field.
     /// @param val Value.
     /// @return Whether the given field is a new field.
-    /// @retval true If the given field didn't exist, and a new field has been added.
-    /// @retval false If the given field already exists, and its value has been overwritten.
-    /// @note When `hset` returns false, it does not mean that the method failed to set the field.
-    ///       Instead, it means that the field already exists, and we've overwritten its value.
-    ///       If `hset` fails, it will throw an exception of `Exception` type.
-    /// @see https://github.com/sewenew/redis-plus-plus/issues/9
+    /// @retval 1 If the given field didn't exist, and a new field has been added.
+    /// @retval 0 If the given field already exists, and its value has been overwritten.
     /// @see https://redis.io/commands/hset
-    bool hset(const StringView &key, const StringView &field, const StringView &val);
+    long long hset(const StringView &key, const StringView &field, const StringView &val);
 
     /// @brief Set hash field to value.
     /// @param key Key where the hash is stored.
     /// @param item The field-value pair to be set.
     /// @return Whether the given field is a new field.
-    /// @retval true If the given field didn't exist, and a new field has been added.
-    /// @retval false If the given field already exists, and its value has been overwritten.
-    /// @note When `hset` returns false, it does not mean that the method failed to set the field.
-    ///       Instead, it means that the field already exists, and we've overwritten its value.
-    ///       If `hset` fails, it will throw an exception of `Exception` type.
-    /// @see https://github.com/sewenew/redis-plus-plus/issues/9
+    /// @retval 1 If the given field didn't exist, and a new field has been added.
+    /// @retval 0 If the given field already exists, and its value has been overwritten.
     /// @see https://redis.io/commands/hset
-    bool hset(const StringView &key, const std::pair<StringView, StringView> &item);
+    long long hset(const StringView &key, const std::pair<StringView, StringView> &item);
 
     /// @brief Set multiple fields of the given hash.
     ///

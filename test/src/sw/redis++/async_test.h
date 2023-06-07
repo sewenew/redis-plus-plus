@@ -143,7 +143,7 @@ void AsyncTest<RedisInstance>::_test_hash() {
 
     auto f1 = std::string("f1");
     auto v1 = std::string("v1");
-    REDIS_ASSERT(_redis.hset(key, f1, v1).get(), "failed to test async hset");
+    REDIS_ASSERT(_redis.hset(key, f1, v1).get() == 1, "failed to test async hset");
 
     set_ready(false);
     _redis.hset(key, f1, v1, [this](Future<long long> &&fut) {
