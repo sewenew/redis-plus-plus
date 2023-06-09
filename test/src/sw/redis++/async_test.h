@@ -51,6 +51,8 @@ private:
 
     void _test_set();
 
+    void _test_zset();
+
     void _test_generic();
 
     void _wait();
@@ -74,6 +76,8 @@ void AsyncTest<RedisInstance>::run() {
     _test_hash();
 
     _test_set();
+
+    _test_zset();
 
     _test_generic();
 }
@@ -239,6 +243,54 @@ void AsyncTest<RedisInstance>::_test_set() {
     set_ready(false);
     _redis.srem(key, "1", [this](Future<long long> &&fut) {
                 REDIS_ASSERT(fut.get() == 1, "failed to test asycn srem");
+                this->set_ready();
+            });
+    _wait();
+}
+
+template <typename RedisInstance>
+void AsyncTest<RedisInstance>::_test_zset() {
+    auto key = test_key("zset");
+
+    KeyDeleter<RedisInstance> deleter(_redis, key);
+
+    REDIS_ASSERT(_redis.zadd(key, "a", 10).get() == 1, "failed to test async zadd");
+
+    std::unordered_map<std::string, double> mems = {std::make_pair("b", 10), std::make_pair("c", 10)};
+    REDIS_ASSERT(_redis.zadd(key, mems.begin(), mems.end()).get() == 2, "failed to test async zadd");
+
+    auto vec = _redis.template zrange<std::vector<std::string>>(key, 0, -1).get();
+    REDIS_ASSERT(vec.size() == 3, "failed to test async zrange");
+
+    auto m = _redis.template zrange<std::unordered_map<std::string, double>>(key, 0, -1).get();
+    REDIS_ASSERT(m.size() == 3, "failed to test async zrange");
+
+    set_ready(false);
+    _redis.zadd(key, "a", 10, [this](Future<long long> &&fut) {
+                REDIS_ASSERT(fut.get() == 0, "failed to test async zadd");
+                this->set_ready();
+            });
+    _wait();
+
+    set_ready(false);
+    _redis.zadd(key, mems.begin(), mems.end(), [this](Future<long long> &&fut) {
+                REDIS_ASSERT(fut.get() == 0, "failed to test async zadd");
+                this->set_ready();
+            });
+    _wait();
+
+    set_ready(false);
+    _redis.template zrange<std::vector<std::string>>(key, 0, -1, [this](Future<std::vector<std::string>> &&fut) {
+                auto vec = fut.get();
+                REDIS_ASSERT(vec.size() == 3, "failed to test async zrange");
+                this->set_ready();
+            });
+    _wait();
+
+    set_ready(false);
+    _redis.template zrange<std::unordered_map<std::string, double>>(key, 0, -1, [this](Future<std::unordered_map<std::string, double>> &&fut) {
+                auto m = fut.get();
+                REDIS_ASSERT(m.size() == 3 && m.count("a") == 1, "failed to test async zrange");
                 this->set_ready();
             });
     _wait();

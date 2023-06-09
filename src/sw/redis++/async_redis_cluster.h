@@ -799,6 +799,27 @@ public:
         return _command<long long>(fmt::zadd, key, member, score, type, changed);
     }
 
+    template <typename Callback>
+    auto zadd(const StringView &key,
+                    const StringView &member,
+                    double score,
+                    UpdateType type,
+                    bool changed,
+                    Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<long long> &&>::value, void>::type {
+        _callback_fmt_command<long long>(std::forward<Callback>(cb),
+                fmt::zadd, key, member, score, type, changed);
+    }
+
+    template <typename Callback>
+    auto zadd(const StringView &key,
+                    const StringView &member,
+                    double score,
+                    Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<long long> &&>::value, void>::type {
+        zadd(key, member, score, UpdateType::ALWAYS, false, std::forward<Callback>(cb));
+    }
+
     template <typename Input>
     Future<long long> zadd(const StringView &key,
                     Input first,
@@ -810,12 +831,53 @@ public:
         return _command<long long>(fmt::zadd_range<Input>, key, first, last, type, changed);
     }
 
+    template <typename Input, typename Callback>
+    auto zadd(const StringView &key,
+                    Input first,
+                    Input last,
+                    UpdateType type,
+                    bool changed,
+                    Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<long long> &&>::value, void>::type {
+        range_check("ZADD", first, last);
+
+        _callback_fmt_command<long long>(std::forward<Callback>(cb),
+                fmt::zadd_range<Input>, key, first, last, type, changed);
+    }
+
+    template <typename Input, typename Callback>
+    auto zadd(const StringView &key,
+                    Input first,
+                    Input last,
+                    Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<long long> &&>::value, void>::type {
+        zadd(key, first, last, UpdateType::ALWAYS, false, std::forward<Callback>(cb));
+    }
+
     template <typename T>
     Future<long long> zadd(const StringView &key,
                     std::initializer_list<T> il,
                     UpdateType type = UpdateType::ALWAYS,
                     bool changed = false) {
         return zadd(key, il.begin(), il.end(), type, changed);
+    }
+
+    template <typename T, typename Callback>
+    auto zadd(const StringView &key,
+                    std::initializer_list<T> il,
+                    UpdateType type,
+                    bool changed,
+                    Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<long long> &&>::value, void>::type {
+        zadd(key, il.begin(), il.end(), type, changed, std::forward<Callback>(cb));
+    }
+
+    template <typename T, typename Callback>
+    auto zadd(const StringView &key,
+                    std::initializer_list<T> il,
+                    Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<long long> &&>::value, void>::type {
+        zadd(key, il.begin(), il.end(), UpdateType::ALWAYS, false, std::forward<Callback>(cb));
     }
 
     Future<long long> zcard(const StringView &key) {
@@ -860,7 +922,13 @@ public:
 
     template <typename Output>
     Future<Output> zrange(const StringView &key, long long start, long long stop) {
-        return _command<Output>(fmt::zrange, key, start, stop);
+        return _score_command<Output>(fmt::zrange, key, start, stop);
+    }
+
+    template <typename Output, typename Callback>
+    auto zrange(const StringView &key, long long start, long long stop, Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Output> &&>::value, void>::type {
+        _callback_score_command<Output>(std::forward<Callback>(cb), fmt::zrange, key, start, stop);
     }
 
     template <typename Output, typename Interval>
@@ -1166,6 +1234,38 @@ private:
             Input &&input, Args &&...args) {
         _callback_generic_command<Result>(std::forward<Callback>(cb), formatter, std::get<0>(*input),
                 std::forward<Input>(input), std::forward<Args>(args)...);
+    }
+
+    template <typename Result, typename Formatter, typename Key, typename ...Args>
+    Future<Result> _score_command(std::true_type, Formatter formatter, Key &&key, Args &&...args) {
+        return _command<Result>(formatter, std::forward<Key>(key), std::forward<Args>(args)..., true);
+    }
+
+    template <typename Result, typename Formatter, typename Key, typename ...Args>
+    Future<Result> _score_command(std::false_type, Formatter formatter, Key &&key, Args &&...args) {
+        return _command<Result>(formatter, std::forward<Key>(key), std::forward<Args>(args)..., false);
+    }
+
+    template <typename Result, typename Formatter, typename Key, typename ...Args>
+    Future<Result> _score_command(Formatter formatter, Key &&key, Args &&...args) {
+        return _score_command<Result>(typename IsKvPair<typename Result::value_type>::type(),
+                formatter, std::forward<Key>(key), std::forward<Args>(args)...);
+    }
+
+    template <typename Result, typename Callback, typename Formatter, typename Key, typename ...Args>
+    void _callback_score_command(std::true_type, Callback &&cb, Formatter formatter, Key &&key, Args &&...args) {
+        _callback_fmt_command<Result>(std::forward<Callback>(cb), formatter, std::forward<Key>(key), std::forward<Args>(args)..., true);
+    }
+
+    template <typename Result, typename Callback, typename Formatter, typename Key, typename ...Args>
+    void _callback_score_command(std::false_type, Callback &&cb, Formatter formatter, Key &&key, Args &&...args) {
+        _callback_fmt_command<Result>(std::forward<Callback>(cb), formatter, std::forward<Key>(key), std::forward<Args>(args)..., false);
+    }
+
+    template <typename Result, typename Callback, typename Formatter, typename Key, typename ...Args>
+    void _callback_score_command(Callback &&cb, Formatter formatter, Key &&key, Args &&...args) {
+        _callback_score_command<Result>(typename IsKvPair<typename Result::value_type>::type(),
+                std::forward<Callback>(cb), formatter, std::forward<Key>(key), std::forward<Args>(args)...);
     }
 
     EventLoopSPtr _loop;

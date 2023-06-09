@@ -1340,13 +1340,13 @@ public:
 
     template <typename Output>
     Future<Output> zrange(const StringView &key, long long start, long long stop) {
-        return _command<Output>(fmt::zrange, key, start, stop);
+        return _score_command<Output>(fmt::zrange, key, start, stop);
     }
 
     template <typename Output, typename Callback>
     auto zrange(const StringView &key, long long start, long long stop, Callback &&cb)
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Output> &&>::value, void>::type {
-        _callback_fmt_command<Output>(std::forward<Callback>(cb), fmt::zrange, key, start, stop);
+        _callback_score_command<Output>(std::forward<Callback>(cb), fmt::zrange, key, start, stop);
     }
 
     template <typename Output, typename Interval>
@@ -1712,6 +1712,37 @@ private:
             connection.connection().send<Result, ResultParser, Callback>(
                     std::move(formatted_cmd), std::forward<Callback>(cb));
         }
+    }
+
+    template <typename Result, typename Formatter, typename ...Args>
+    Future<Result> _score_command(std::true_type, Formatter formatter, Args &&...args) {
+        return _command<Result>(formatter, std::forward<Args>(args)..., true);
+    }
+
+    template <typename Result, typename Formatter, typename ...Args>
+    Future<Result> _score_command(std::false_type, Formatter formatter, Args &&...args) {
+        return _command<Result>(formatter, std::forward<Args>(args)..., false);
+    }
+
+    template <typename Result, typename Formatter, typename ...Args>
+    Future<Result> _score_command(Formatter formatter, Args &&...args) {
+        return _score_command<Result>(typename IsKvPair<typename Result::value_type>::type(),
+                formatter, std::forward<Args>(args)...);
+    }
+
+    template <typename Result, typename Callback, typename Formatter, typename ...Args>
+    void _callback_score_command(std::true_type, Callback &&cb, Formatter formatter, Args &&...args) {
+        _callback_fmt_command<Result>(std::forward<Callback>(cb), formatter, std::forward<Args>(args)..., true);
+    }
+
+    template <typename Result, typename Callback, typename Formatter, typename ...Args>
+    void _callback_score_command(std::false_type, Callback &&cb, Formatter formatter, Args &&...args) {
+        _callback_fmt_command<Result>(std::forward<Callback>(cb), formatter, std::forward<Args>(args)..., false);
+    }
+
+    template <typename Result, typename Callback, typename Formatter, typename ...Args>
+    void _callback_score_command(Callback &&cb, Formatter formatter, Args &&...args) {
+        _callback_score_command<Result>(typename IsKvPair<typename Result::value_type>::type(), std::forward<Callback>(cb), formatter, std::forward<Args>(args)...);
     }
 
     EventLoopSPtr _loop;
