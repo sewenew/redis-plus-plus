@@ -426,8 +426,8 @@ T parse(ParseTag<T>, redisReply &reply) {
         throw ParseError("ARRAY or SET", reply);
 #else
     if (!is_array(reply)) {
-#endif
         throw ParseError("ARRAY", reply);
+#endif
     }
 
     T container;

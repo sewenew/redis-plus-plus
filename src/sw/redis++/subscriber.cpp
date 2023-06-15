@@ -109,7 +109,9 @@ void Subscriber::consume() {
         break;
 
     default:
-        assert(false);
+        assert(type == MsgType::UNKNOWN);
+
+        throw ProtoError("unknown message type.");
     }
 }
 
@@ -135,10 +137,9 @@ Subscriber::MsgType Subscriber::_msg_type(std::string const& type) const
         return MsgType::PSUBSCRIBE;
     } else if ("punsubscribe" == type) {
         return MsgType::PUNSUBSCRIBE;
+    } else {
+        return MsgType::UNKNOWN;
     }
-
-    throw ProtoError("Invalid message type.");
-    return MsgType::MESSAGE; // Silence "no return" warnings.
 }
 
 void Subscriber::_check_connection() {

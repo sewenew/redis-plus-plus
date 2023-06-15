@@ -544,11 +544,9 @@ private:
                     switch (event->_state) {
                     case State::MOVED:
                         throw Error("too many moved error");
-                        break;
 
                     case State::ASKING:
                         throw Error("Slot migrating...");
-                        break;
 
                     default:
                         break;

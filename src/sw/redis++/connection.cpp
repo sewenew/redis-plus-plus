@@ -169,7 +169,6 @@ std::string ConnectionOptions::_server_info() const {
     default:
         // Never goes here.
         throw Error("unknown connection type");
-        break;
     }
 
     return info;

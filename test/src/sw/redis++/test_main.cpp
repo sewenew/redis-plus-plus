@@ -321,7 +321,6 @@ auto parse_options(int argc, char **argv)
 
             default:
                 throw sw::redis::Error("Unknown command line option");
-                break;
             }
         } catch (const sw::redis::Error &e) {
             print_help();

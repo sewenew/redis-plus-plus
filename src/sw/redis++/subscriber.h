@@ -76,7 +76,8 @@ public:
         PSUBSCRIBE,
         PUNSUBSCRIBE,
         MESSAGE,
-        PMESSAGE
+        PMESSAGE,
+        UNKNOWN
     };
 
     template <typename MsgCb>

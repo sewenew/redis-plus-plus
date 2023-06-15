@@ -132,7 +132,6 @@ AsyncConnection::AsyncConnection(const ConnectionOptions &opts,
 
     default:
         throw Error("not supporeted async connection mode");
-        break;
     }
 }
 
