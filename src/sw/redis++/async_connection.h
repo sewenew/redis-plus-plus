@@ -214,6 +214,8 @@ private:
 
     void _connect();
 
+    void _secure_connection();
+
     void _disable_disconnect_callback();
 
     void _send();

@@ -320,6 +320,7 @@ void AsyncConnection::_fail_events(std::exception_ptr err) {
 }
 
 void AsyncConnection::_connecting_callback() {
+    _secure_connection();
     if (_need_auth()) {
         _auth();
     } else if (_need_set_resp()) {
@@ -447,15 +448,8 @@ void AsyncConnection::_connect() {
 
         assert(ctx && ctx->err == REDIS_OK);
 
-        const auto &tls_opts = opts.tls;
-        tls::TlsContextUPtr tls_ctx;
-        if (tls::enabled(tls_opts)) {
-            tls_ctx = tls::secure_connection(ctx->c, tls_opts);
-        }
-
         _loop->watch(*ctx);
 
-        _tls_ctx = std::move(tls_ctx);
         _ctx = ctx.release();
 
 #ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
@@ -468,6 +462,17 @@ void AsyncConnection::_connect() {
     } catch (const Error &) {
         _fail_events(std::current_exception());
     }
+}
+
+void AsyncConnection::_secure_connection() {
+    auto opts = options();
+    const auto& tls_opts = opts.tls;
+
+    if (!tls::enabled(tls_opts)) {
+        return;
+    }
+
+    _tls_ctx = tls::secure_connection(_ctx->c, tls_opts);
 }
 
 bool AsyncConnection::_need_set_resp() const {
