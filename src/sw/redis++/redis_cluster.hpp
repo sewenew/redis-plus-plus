@@ -1330,7 +1330,7 @@ ReplyUPtr RedisCluster::_command(Cmd cmd, Connection &connection, Args &&...args
 
 template <typename Cmd, typename ...Args>
 ReplyUPtr RedisCluster::_command(Cmd cmd, const StringView &key, Args &&...args) {
-    for (auto idx = 0; idx < 2; ++idx) {
+    for (auto idx = 0; idx < command_retry() + 1; ++idx) {
         try {
             auto pool = _pool.fetch(key);
             assert(pool);

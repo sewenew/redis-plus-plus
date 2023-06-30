@@ -89,10 +89,11 @@ ConnectionPoolSPtr ShardsPool::fetch(const Node &node) {
 void ShardsPool::update() {
     // My might send command to a removed node.
     // Try at most 3 times from the current shard masters and finally with the user given connection options.
-    for (auto idx = 0; idx < 4; ++idx) {
+    auto retry = shards_update_retry();
+    for (auto idx = 0; idx < retry + 1; ++idx) {
         try {
             Shards shards;
-            if (idx < 3) {
+            if (idx < retry) {
                 // Randomly pick a connection.
                 auto pool = fetch();
                 assert(pool);

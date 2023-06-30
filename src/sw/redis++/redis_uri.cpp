@@ -85,6 +85,12 @@ void Uri::_set_option(const std::string &key, const std::string &val) {
         _opts.socket_timeout = _parse_timeout_option(val);
     } else if (key == "resp") {
         _opts.resp = _parse_int_option(val);
+    } else if (key == "command_retry") {
+        auto retry = _parse_int_option(val);
+        _opts.command_retry = retry >= 0 ? retry : 1;
+    } else if (key == "shards_update_retry") {
+        auto retry = _parse_int_option(val);
+        _opts.shards_update_retry = retry >= 0 ? retry : 3;
     } else if (key == "pool_size") {
         _pool_opts.size = _parse_int_option(val);
     } else if (key == "pool_wait_timeout") {
