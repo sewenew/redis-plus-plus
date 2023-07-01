@@ -78,6 +78,10 @@ struct ConnectionOptions {
 
     std::chrono::milliseconds socket_timeout{0};
 
+    int command_retry = 1;
+
+    int shards_update_retry = 3;
+
     tls::TlsOptions tls;
 
     // `readonly` is only used for reading from a slave node in Redis Cluster mode.
