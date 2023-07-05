@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/sewenew/redis-plus-plus.svg?branch=master)](https://travis-ci.org/sewenew/redis-plus-plus)
 
-[中文交流群](http://github.com/sewenew/redis-plus-plus/blob/master/Chinese.md)
+[中文交流群](https://github.com/sewenew/redis-plus-plus/blob/master/Chinese.md)
 
 - [Overview](#overview)
     - [Features](#features)
@@ -883,7 +883,7 @@ Most of these methods have the same parameters as the corresponding commands. Th
 
 ##### StringView
 
-[std::string_view](http://en.cppreference.com/w/cpp/string/basic_string_view) is a good choice for read-only string parameter types. `std::string_view` was however only introduced in the C++ 17 standard, so if you build *redis-plus-plus* with the `-std=c++11` (i.e. by specifying `-DREDIS_PLUS_PLUS_CXX_STANDARD=11` with cmake command) or the `-std=c++14` standard, a [simple implementation](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/cxx11/cxx_utils.h) of `std::string_view`, called `StringView`, is available. You could build *redis-plus-plus* with the `-std=c++17` standard (i.e. the default behavior), which will supply `std::string_view` natively. The `StringView` implementation will then be disregarded by aliasing it to `std::string_view`. This is done inside the *redis-plus-plus* library with: `using StringView = std::string_view`.
+[std::string_view](https://en.cppreference.com/w/cpp/string/basic_string_view) is a good choice for read-only string parameter types. `std::string_view` was however only introduced in the C++ 17 standard, so if you build *redis-plus-plus* with the `-std=c++11` (i.e. by specifying `-DREDIS_PLUS_PLUS_CXX_STANDARD=11` with cmake command) or the `-std=c++14` standard, a [simple implementation](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/cxx11/cxx_utils.h) of `std::string_view`, called `StringView`, is available. You could build *redis-plus-plus* with the `-std=c++17` standard (i.e. the default behavior), which will supply `std::string_view` natively. The `StringView` implementation will then be disregarded by aliasing it to `std::string_view`. This is done inside the *redis-plus-plus* library with: `using StringView = std::string_view`.
 
 Since there are conversions from `std::string` and c-style string to `StringView`, you can just pass `std::string` or c-style string to methods that need a `StringView` parameter.
 
@@ -933,7 +933,7 @@ As we mentioned above, replies are parsed into return values of these methods. T
 ##### Boolean Return Value
 
 The return type of some methods, e.g. `EXPIRE`, `HSET`, is `bool`. If the method returns `false`, it DOES NOT mean that `Redis` failed to send the command to Redis server. Instead, it means that Redis server returns an *Integer Reply*, and the value of the reply is `0`. Accordingly, if the method returns `true`, it means that Redis server returns an *Integer Reply*, and the value of the reply is `1`. You can 
-check [Redis commands manual](http://redis.io/commands) for what do `0` and `1` stand for.
+check [Redis commands manual](https://redis.io/commands) for what do `0` and `1` stand for.
 
 For example, when we send `EXPIRE` command to Redis server, it returns `1` if the timeout was set, and it returns `0` if the key doesn't exist. Accordingly, if the timeout was set, `Redis::expire` returns `true`, and if the key doesn't exist, `Redis::expire` returns `false`.
 
@@ -941,7 +941,7 @@ So, never use the return value to check if the command has been successfully sen
 
 ##### Optional
 
-[std::optional](http://en.cppreference.com/w/cpp/utility/optional) is a good option for return type, if Redis might return *NULL REPLY*. However, `std::optional` is introduced in C++ 17 standard, and if you build *redis-plus-plus* with `-std=c++11` standard (i.e. by specifying `-DREDIS_PLUS_PLUS_CXX_STANDARD=11` with cmake command), we implement our own [simple version](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/cxx11/cxx_utils.h), i.e. `template Optional<T>`. Instead, if you build *redis-plus-plus* with `-std=c++17` standard (i.e. the default behavior), you can use `std::optional`, and we have an alias for it: `template <typename T> using Optional = std::optional<T>`.
+[std::optional](https://en.cppreference.com/w/cpp/utility/optional) is a good option for return type, if Redis might return *NULL REPLY*. However, `std::optional` is introduced in C++ 17 standard, and if you build *redis-plus-plus* with `-std=c++11` standard (i.e. by specifying `-DREDIS_PLUS_PLUS_CXX_STANDARD=11` with cmake command), we implement our own [simple version](https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/cxx11/cxx_utils.h), i.e. `template Optional<T>`. Instead, if you build *redis-plus-plus* with `-std=c++17` standard (i.e. the default behavior), you can use `std::optional`, and we have an alias for it: `template <typename T> using Optional = std::optional<T>`.
 
 Take the [GET](https://redis.io/commands/get) and [MGET](https://redis.io/commands/mget) commands for example:
 
