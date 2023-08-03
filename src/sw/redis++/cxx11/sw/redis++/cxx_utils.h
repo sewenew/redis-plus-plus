@@ -17,6 +17,7 @@
 #ifndef SEWENEW_REDISPLUSPLUS_CXX_UTILS_H
 #define SEWENEW_REDISPLUSPLUS_CXX_UTILS_H
 
+#include <cstring>
 #include <string>
 #include <functional>
 #include <type_traits>
