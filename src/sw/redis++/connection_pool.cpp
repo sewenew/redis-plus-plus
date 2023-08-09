@@ -30,6 +30,12 @@ ConnectionPool::ConnectionPool(const ConnectionPoolOptions &pool_opts,
         throw Error("CANNOT create an empty pool");
     }
 
+#ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
+    if (_opts.client_tracking && _pool_opts.size > 1) {
+        throw Error("CANNOT enable client tracking with pool size greater than 1");
+    }
+#endif
+
     // Lazily create connections.
 }
 

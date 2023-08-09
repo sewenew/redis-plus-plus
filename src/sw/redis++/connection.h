@@ -87,6 +87,18 @@ struct ConnectionOptions {
     // RESP version.
     int resp = 2;
 
+#ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
+    // https://redis.io/docs/manual/client-side-caching/
+    bool client_tracking = false;
+
+    // Optional user defined data/destructor
+    void *privdata = nullptr;
+    void (*privdata_dtor)(void *) = nullptr;
+
+    // A user defined PUSH message callback
+    redisPushFn *push_cb = nullptr;
+#endif
+
     // For internal use, and might be removed in the future. DO NOT use it in client code.
     std::string _server_info() const;
 };
@@ -181,6 +193,8 @@ private:
     void _enable_readonly();
 
     void _set_resp_version();
+
+    void _set_client_tracking(bool);
 
     redisContext* _context();
 
