@@ -2402,6 +2402,24 @@ If you have any problem on sending stream commands to Redis, please feel free to
 
 [Redis Modules](https://redis.io/modules) enrich Redis. However, *redis-plus-plus* does not have built-in support/method for these modules, although you can use the [generic interface](#generic-command-interface) to send commands related to these modules.
 
+The generic command interface uses the second argument as the key for hashing. If your custom command places the key at a different argument (i.e.: `module-name create key1 arg1 arg2`), and you are using the `RedisCluster` client, then it will fail to send the command to the correct Redis instance. In this case you could use the following work-around:
+
+```c++
+auto redis_cluster = RedisCluster("tcp://127.0.0.1:6379");
+
+std::vector<std::string> raw_cmd;
+raw_cmd.push_back("module-name");
+raw_cmd.push_back("create");
+raw_cmd.push_back("key1");
+raw_cmd.push_back("arg1");
+raw_cmd.push_back("arg2");
+
+// create it with a connection from the underlying connection pool
+auto redis = redis_cluster.redis("key1", false);
+
+redis.command<void>(raw_cmd.begin(), raw_cmd.end());
+```
+
 Fortunately, [@wingunder](https://github.com/wingunder) did a great job to make the work easier. He wrote [redis-plus-plus-modules](https://github.com/wingunder/redis-plus-plus-modules), which is a header only project that has built-in support for some popular modules. If you need to work with Redis Modules, you should have a try.
 
 @wingunder also contributes a lot to *redis-plus-plus*. Many thanks to @wingunder!
