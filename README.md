@@ -207,6 +207,64 @@ Then you can build it the instructions (links) mentioned above. If you're buildi
 - Since 1.3.0, *redis-puls-plus* is built with C++17 by default, and you should also set your application code to be built with C++17. If you still want to build the *redis-plus-plus* with C++11, you can set the `REDIS_PLUS_PLUS_CXX_STANDARD` cmake option to 11.
 - TLS/SSL support has not been tested on Windows yet.
 
+##### Build with Visual Studio
+
+If you want to build the project with Visual Studio and have questions about it, please follow the steps below. The following is tested on Visual Studio 2022 Community. 
+
+```powershell
+# download two projects into this folder
+mkdir redis++
+
+cd redis++
+# make sure you create a hiredis first to work as a library
+mkdir hiredis-lib
+cd hiredis-lib
+mkdir lib
+
+git clone https://github.com/redis/hiredis.git
+cd hiredis
+```
+
+So far it should be fine with each step. Then open `CMakeLists.txt` file. Modify the following line and comment it out
+```txt
+...
+# SET(CMAKE_DEBUG_POSTFIX d)
+...
+```
+
+Then go back to hiredis project folder
+```powershell
+mkdir build
+cd build
+# convert project into visual studio 2022, if necessary choose you version e.g 19 2019 etc.
+cmake -G "Visual Studio 17 2022" ..
+./hiredis.sln
+```
+
+Set `hiredis` as Startup Project then click `Build Solution` in Debug Mode
+
+After successfull build, copy all the files under `Debug` into `hiredis-lib/lib` folder
+
+Here the work for hiredis should be finished.
+
+Then go back to `redis++` folder. Open Terminal here
+
+```powershell
+git clone https://github.com/sewenew/redis-plus-plus.git
+cd redis-plus-plus
+mkdir build
+cd build
+```
+
+Now you should always have openssl on your PC, otherwise can use chocolatey to install it. For Visual Studio 2022 please install pthread separately using `vpckg`, following this [link](https://github.com/microsoft/vcpkg)
+
+After all preparation. If you want to convert all projects then 
+```powershell
+cmake -DCMAKE_PREFIX_PATH="$(ABSOLUTE_PATH)\hiredis-lib" -G "Visual Studio 17 2022" ..
+```
+
+So far build has been successfully finished!
+
 ##### The Order of Header Files
 
 On Windows platform, if your application code also needs to include *windows.h*. You must ensure that *sw/redis++/redis++.h* is included before *windows.h*. Check [this issue](https://github.com/sewenew/redis-plus-plus/issues/194) for detail.
