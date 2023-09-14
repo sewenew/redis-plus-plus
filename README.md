@@ -261,7 +261,10 @@ Now you should always have openssl on your PC, otherwise can use chocolatey to i
 After all preparation. If you want to convert all projects then 
 ```powershell
 cmake -DCMAKE_PREFIX_PATH="$(ABSOLUTE_PATH)\hiredis-lib" -G "Visual Studio 17 2022" ..
+cd build
+./redis++.sln
 ```
+set `redis++_static` as Startup Project then click `Build Solution`
 
 So far build has been successfully finished!
 
