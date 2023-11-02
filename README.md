@@ -1,8 +1,8 @@
 # redis-plus-plus
 
-[![Build Status](https://travis-ci.org/sewenew/redis-plus-plus.svg?branch=master)](https://travis-ci.org/sewenew/redis-plus-plus)
-
 [中文交流群](https://github.com/sewenew/redis-plus-plus/blob/master/Chinese.md)
+
+I create a Redis module, named [redis-llm](https://github.com/sewenew/redis-llm), which integrates LLMs (Large Language Models) with Redis. You can [learn redis-plus-plus by asking questions with it](https://github.com/sewenew/redis-llm/tree/main/examples/search-application).
 
 - [Overview](#overview)
     - [Features](#features)
@@ -2990,7 +2990,7 @@ struct RedMutexOptions {
 };
 ```
 
-- *ttl*: Expiration of the key. 3 seconds by default. If you set this value too large, and the client crashes, other clients need to wait a long time before they can acquire the lock. However, if your network performance is poor, you need a larger `ttl`, otherwise, you might fail to lock or fail to extend the lock., otherwise, you might fail to lock or fail to extend the lock., otherwise, you might fail to lock or fail to extend the lock., otherwise, you might fail to lock or fail to extend the lock.
+- *ttl*: Expiration of the key. 3 seconds by default. If you set this value too large, and the client crashes, other clients need to wait a long time before they can acquire the lock. However, if your network performance is poor, you need a larger `ttl`, otherwise, you might fail to lock or fail to extend the lock.
 - *retry_delay*: `RedMutex::lock` repeat trying to lock until it acquires the lock. If it fails, it wait `retry_delay` before the next retrying. 100 milliseconds by default.
 - *scripting*: True (default behavior), if using Lua scripting to implement Redlock algorithm. otherwise, use Redis transaction to implement it. It's recommended to use Lua scripting version, which should be much faster than transaction version.
 
