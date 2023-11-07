@@ -3000,6 +3000,11 @@ struct RedMutexOptions {
 
 If you don't specify `LockWatcher`, `RedMutex` will create one (the default behavior), and start a thread. Although it's expensive to create thread, it's still quite cheap compared to acquiring a distributed lock.
 
+##### Undefined Behaviors
+
+- `RedMutex` is NOT reentrant. If you try to lock a mutex which has already been locked by the current thread, the behavior is undefined.
+- If you try to unlock a mutex which has not been locked by the current thread, the behavior is undefined.
+
 ##### Examples
 
 ```c++

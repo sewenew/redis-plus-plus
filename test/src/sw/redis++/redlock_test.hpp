@@ -35,49 +35,6 @@ public:
     virtual std::string get_updated_string() = 0;
 };
 
-#ifdef USE_OPENSSL
-#include <openssl/rc4.h>
-
-template <int N = 20>
-class RandomBuffer : public RandomBufferInterface
-{
-public:
-    RandomBuffer() :
-        _in_idx(0),
-        _out_idx(1)
-    {
-        int random_num = std::rand();
-        const auto rn_size = sizeof(random_num);
-        for (size_t i=0; i<N; i+=rn_size) {
-            memcpy(&_data[_in_idx][i], &random_num, (N - i >= rn_size) ? rn_size : N - i);
-            random_num = std::rand();
-        }
-        RC4_set_key(&_key, N, _data[0]);
-    }
-
-    std::string get_updated_string() {
-        RC4(&_key, N, _data[_in_idx], _data[_out_idx]);
-        // Swap the in and out buffers.
-        if (_in_idx == 0) {
-            _in_idx = 1;
-            _out_idx = 0;
-        }
-        else {
-            _in_idx = 0;
-            _out_idx = 1;
-        }
-        return std::string((char*)(_data[_in_idx]), N);
-    }
-
-private:
-    uint8_t _in_idx;
-    uint8_t _out_idx;
-    uint8_t _data[2][N];
-    RC4_KEY _key;
-};
-
-#else // !USE_OPENSSL
-
 template <int N = 20>
 class RandomBuffer : public RandomBufferInterface
 {
@@ -86,8 +43,6 @@ public:
         return RedLockUtils::lock_id();
     }
 };
-
-#endif // USE_OPENSSL
 
 template <>
 void RedLockTest<RedisCluster>::run() {

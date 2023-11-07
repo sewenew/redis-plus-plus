@@ -183,8 +183,7 @@ std::chrono::milliseconds RedLockUtils::ttl(const SysTime &tp) {
 }
 
 std::string RedLockUtils::lock_id() {
-    std::random_device dev;
-    std::mt19937 random_gen(dev());
+    thread_local std::mt19937 random_gen(std::random_device{}());
     int range = 10 + 26 + 26 - 1;
     std::uniform_int_distribution<> dist(0, range);
     std::string id;
@@ -346,19 +345,12 @@ void RedLockMutexVessel::unlock(const LockInfo& lock_info)
 }
 
 void RedMutexImpl::lock() {
-    std::lock_guard<std::mutex> lock(_mtx);
-
-    if (_locked()) {
-        throw Error("RedMutex is not reentrant");
-    }
-
-    auto lock_id = RedLockUtils::lock_id();
-
-    _lock(lock_id, _ttl);
-
-    _watcher->watch(shared_from_this());
-
-    _lock_id.swap(lock_id);
+    do {
+        // Sleep a while to mitigate lock contention.
+        thread_local std::mt19937 random_gen(std::random_device{}());
+        std::uniform_int_distribution<> dist(0, 5);
+        std::this_thread::sleep_for(std::chrono::milliseconds(dist(random_gen)));
+    } while (!try_lock());
 }
 
 void RedMutexImpl::unlock() {
@@ -381,17 +373,14 @@ void RedMutexImpl::unlock() {
 bool RedMutexImpl::try_lock() {
     std::lock_guard<std::mutex> lock(_mtx);
 
-    if (_locked()) {
-        throw Error("RedMutex is not reentrant");
-    }
-
     auto lock_id = RedLockUtils::lock_id();
     if (_try_lock(lock_id, _ttl)) {
         _watcher->watch(shared_from_this());
         _lock_id.swap(lock_id);
+        return true;
     }
 
-    return _locked();
+    return false;
 }
 
 bool RedMutexImpl::extend_lock() {
