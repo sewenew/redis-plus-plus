@@ -63,6 +63,8 @@ public:
 
     Shards shards();
 
+    int command_retry() { return _connection_opts.command_retry; }
+
 private:
     void _move(ShardsPool &&that);
 
@@ -98,6 +100,8 @@ private:
     using NodeMap = std::unordered_map<Node, ConnectionPoolSPtr, NodeHash>;
 
     NodeMap::iterator _add_node(const Node &node);
+
+    int shards_update_retry() { return _connection_opts.shards_update_retry; }
 
     ConnectionPoolOptions _pool_opts;
 
