@@ -68,6 +68,16 @@ public:
 
     Subscriber subscriber();
 
+    /// @brief Run the given callback with each node in the cluster.
+    /// The following is the prototype of the callback: void (Redis &r);
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// cluster.for_each([](Redis &r) { r.ping(); });
+    /// @endcode
+    template <typename Callback>
+    void for_each(Callback &&cb);
+
     template <typename Cmd, typename Key, typename ...Args>
     auto command(Cmd cmd, Key &&key, Args &&...args)
         -> typename std::enable_if<!std::is_convertible<Cmd, StringView>::value, ReplyUPtr>::type;

@@ -28,6 +28,20 @@ namespace sw {
 
 namespace redis {
 
+template <typename Callback>
+void RedisCluster::for_each(Callback &&cb) {
+    // Update the underlying slot-node mapping to ensure we get the latest one.
+    _pool.update();
+
+    auto pools = _pool.pools();
+    for (auto &pool : pools) {
+        auto connection = std::make_shared<GuardedConnection>(pool);
+        auto r = Redis(connection);
+
+        cb(r);
+    }
+}
+
 template <typename Cmd, typename Key, typename ...Args>
 auto RedisCluster::command(Cmd cmd, Key &&key, Args &&...args)
     -> typename std::enable_if<!std::is_convertible<Cmd, StringView>::value, ReplyUPtr>::type {

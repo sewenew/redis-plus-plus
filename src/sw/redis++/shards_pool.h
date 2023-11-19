@@ -22,6 +22,7 @@
 #include <string>
 #include <random>
 #include <memory>
+#include <vector>
 #include "sw/redis++/reply.h"
 #include "sw/redis++/connection_pool.h"
 #include "sw/redis++/shards.h"
@@ -62,6 +63,8 @@ public:
     ConnectionOptions connection_options();
 
     Shards shards();
+
+    std::vector<ConnectionPoolSPtr> pools();
 
 private:
     void _move(ShardsPool &&that);

@@ -162,6 +162,18 @@ Shards ShardsPool::shards() {
     return _shards;
 }
 
+std::vector<ConnectionPoolSPtr> ShardsPool::pools() {
+    std::lock_guard<std::mutex> lock(_mutex);
+
+    std::vector<ConnectionPoolSPtr> nodes;
+    nodes.reserve(_pools.size());
+    for (const auto &pool : _pools) {
+        nodes.push_back(pool.second);
+    }
+
+    return nodes;
+}
+
 void ShardsPool::_move(ShardsPool &&that) {
     _pool_opts = that._pool_opts;
     _connection_opts = that._connection_opts;
