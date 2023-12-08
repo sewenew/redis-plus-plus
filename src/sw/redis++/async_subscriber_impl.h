@@ -32,22 +32,22 @@ public:
 
     template <typename MsgCb>
     void on_message(MsgCb &&msg_callback) {
-        _msg_callback = std::move(msg_callback);
+        _msg_callback = std::forward<MsgCb>(msg_callback);
     }
 
     template <typename PMsgCb>
     void on_pmessage(PMsgCb &&pmsg_callback) {
-        _pmsg_callback = std::move(pmsg_callback);
+        _pmsg_callback = std::forward<PMsgCb>(pmsg_callback);
     }
 
     template <typename MetaCb>
     void on_meta(MetaCb &&meta_callback) {
-        _meta_callback = std::move(meta_callback);
+        _meta_callback = std::forward<MetaCb>(meta_callback);
     }
 
     template <typename ErrCb>
     void on_error(ErrCb &&err_callback) {
-        _err_callback = std::move(err_callback);
+        _err_callback = std::forward<ErrCb>(err_callback);
     }
 
 private:
