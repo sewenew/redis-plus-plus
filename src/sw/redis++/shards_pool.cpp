@@ -39,24 +39,20 @@ ShardsPool::ShardsPool(const ConnectionPoolOptions &pool_opts,
     _shards = _cluster_slots(connection);
 
     _init_pool(_shards);
+
+    _worker = std::thread([this]() { this->_run(); });
 }
 
-ShardsPool::ShardsPool(ShardsPool &&that) {
-    std::lock_guard<std::mutex> lock(that._mutex);
+ShardsPool::~ShardsPool() {
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
 
-    _move(std::move(that));
-}
-
-ShardsPool& ShardsPool::operator=(ShardsPool &&that) {
-    if (this != &that) {
-        std::lock(_mutex, that._mutex);
-        std::lock_guard<std::mutex> lock_this(_mutex, std::adopt_lock);
-        std::lock_guard<std::mutex> lock_that(that._mutex, std::adopt_lock);
-
-        _move(std::move(that));
+        _update_status = UpdateStatus::STOP;
     }
 
-    return *this;
+    if (_worker.joinable()) {
+        _worker.join();
+    }
 }
 
 ConnectionPoolSPtr ShardsPool::fetch(const StringView &key) {
@@ -174,12 +170,20 @@ std::vector<ConnectionPoolSPtr> ShardsPool::pools() {
     return nodes;
 }
 
-void ShardsPool::_move(ShardsPool &&that) {
-    _pool_opts = that._pool_opts;
-    _connection_opts = that._connection_opts;
-    _shards = std::move(that._shards);
-    _pools = std::move(that._pools);
-    _role = that._role;
+void ShardsPool::async_update() {
+    bool should_update = false;
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+
+        if (_update_status == UpdateStatus::UPDATED) {
+            should_update = true;
+            _update_status = UpdateStatus::STALE;
+        }
+    }
+
+    if (should_update) {
+        _cv.notify_one();
+    }
 }
 
 void ShardsPool::_init_pool(const Shards &shards) {
@@ -374,6 +378,40 @@ auto ShardsPool::_add_node(const Node &node) -> NodeMap::iterator {
     }
 
     return _pools.emplace(node, std::make_shared<ConnectionPool>(_pool_opts, opts)).first;
+}
+
+void ShardsPool::_run() {
+    while (true) {
+        std::unique_lock<std::mutex> lock(_mutex);
+        if (_update_status == UpdateStatus::UPDATED) {
+            _cv.wait(lock, [this]() { return this->_update_status != UpdateStatus::UPDATED; });
+        }
+
+        if (_update_status == UpdateStatus::STOP) {
+            break;
+        } else if (_update_status == UpdateStatus::STALE) {
+            lock.unlock();
+
+            _do_async_update();
+        } else {
+            assert("invalid UpdateStatus");
+        }
+    }
+}
+
+void ShardsPool::_do_async_update() {
+    try {
+        update();
+
+        std::lock_guard<std::mutex> lock(_mutex);
+
+        if (_update_status != UpdateStatus::STOP) {
+            _update_status = UpdateStatus::UPDATED;
+        }
+    } catch (...) {
+        // Ignore exceptions.
+        // TODO: should we sleep a while?
+    }
 }
 
 }
