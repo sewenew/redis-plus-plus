@@ -50,6 +50,8 @@ ShardsPool::~ShardsPool() {
         _update_status = UpdateStatus::STOP;
     }
 
+    _cv.notify_one();
+
     if (_worker.joinable()) {
         _worker.join();
     }
