@@ -53,24 +53,6 @@ AsyncShardsPool::AsyncShardsPool(const EventLoopSPtr &loop,
     update("", AsyncEventUPtr(new UpdateShardsEvent));
 }
 
-AsyncShardsPool::AsyncShardsPool(AsyncShardsPool &&that) {
-    std::lock_guard<std::mutex> lock(that._mutex);
-
-    _move(std::move(that));
-}
-
-AsyncShardsPool& AsyncShardsPool::operator=(AsyncShardsPool &&that) {
-    if (this != &that) {
-        std::lock(_mutex, that._mutex);
-        std::lock_guard<std::mutex> lock_this(_mutex, std::adopt_lock);
-        std::lock_guard<std::mutex> lock_that(that._mutex, std::adopt_lock);
-
-        _move(std::move(that));
-    }
-
-    return *this;
-}
-
 AsyncShardsPool::~AsyncShardsPool() {
     update({}, nullptr);
 
@@ -126,17 +108,6 @@ ConnectionOptions AsyncShardsPool::connection_options() {
     auto slot = _slot();
 
     return _connection_options(slot);
-}
-
-void AsyncShardsPool::_move(AsyncShardsPool &&that) {
-    _pool_opts = that._pool_opts;
-    _connection_opts = that._connection_opts;
-    _role = that._role;
-    _shards = std::move(that._shards);
-    _pools = std::move(that._pools);
-    _loop = std::move(that._loop);
-    _worker = std::move(that._worker);
-    _events = std::move(that._events);
 }
 
 ConnectionOptions AsyncShardsPool::_connection_options(Slot slot) {

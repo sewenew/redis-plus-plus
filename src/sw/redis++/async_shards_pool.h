@@ -35,8 +35,8 @@ public:
     AsyncShardsPool(const AsyncShardsPool &) = delete;
     AsyncShardsPool& operator=(const AsyncShardsPool &) = delete;
 
-    AsyncShardsPool(AsyncShardsPool &&that);
-    AsyncShardsPool& operator=(AsyncShardsPool &&that);
+    AsyncShardsPool(AsyncShardsPool &&that) = delete;
+    AsyncShardsPool& operator=(AsyncShardsPool &&that) = delete;
 
     ~AsyncShardsPool();
 
@@ -64,8 +64,6 @@ private:
     };
 
     void _run();
-
-    void _move(AsyncShardsPool &&that);
 
     Slot _slot(const StringView &key) const;
 
