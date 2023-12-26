@@ -439,13 +439,13 @@ bool LockWatcher::Task::run() {
     return true;
 }
 
-LockWatcher::LockWatcher() : _watcher_thread([this]() { this->_run(); }) {}
+LockWatcher::LockWatcher() {
+    _watcher_thread = std::thread([this]() { this->_run(); });
+}
 
 LockWatcher::~LockWatcher() {
     // A default constructed `Task` will end `_watcher_thread`.
     _watch(Task{});
-
-    _cv.notify_one();
 
     if (_watcher_thread.joinable()) {
         _watcher_thread.join();
