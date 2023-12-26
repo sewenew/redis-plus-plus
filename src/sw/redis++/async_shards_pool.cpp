@@ -50,7 +50,7 @@ AsyncShardsPool::AsyncShardsPool(const EventLoopSPtr &loop,
     _worker = std::thread([this]() { this->_run(); });
 
     // Update node-slot mapping asynchrounously.
-    update("", AsyncEventUPtr(new UpdateShardsEvent));
+    update();
 }
 
 AsyncShardsPool::~AsyncShardsPool() {
@@ -96,6 +96,10 @@ void AsyncShardsPool::update(const std::string &key, AsyncEventUPtr event) {
     }
 
     _cv.notify_one();
+}
+
+void AsyncShardsPool::update() {
+    update({}, AsyncEventUPtr(new UpdateShardsEvent));
 }
 
 ConnectionOptions AsyncShardsPool::connection_options(const StringView &key) {
@@ -195,7 +199,7 @@ void AsyncShardsPool::_run() {
             // Failed to update shards, retry later.
             std::this_thread::sleep_for(std::chrono::seconds(1));
 
-            update("", AsyncEventUPtr(new UpdateShardsEvent));
+            update();
         }
     }
 }

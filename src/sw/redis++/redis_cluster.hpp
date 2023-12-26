@@ -31,9 +31,9 @@ namespace redis {
 template <typename Callback>
 void RedisCluster::for_each(Callback &&cb) {
     // Update the underlying slot-node mapping to ensure we get the latest one.
-    _pool.update();
+    _pool->update();
 
-    auto pools = _pool.pools();
+    auto pools = _pool->pools();
     for (auto &pool : pools) {
         auto connection = std::make_shared<GuardedConnection>(pool);
         auto r = Redis(connection);
@@ -1346,7 +1346,7 @@ template <typename Cmd, typename ...Args>
 ReplyUPtr RedisCluster::_command(Cmd cmd, const StringView &key, Args &&...args) {
     for (auto idx = 0; idx < 2; ++idx) {
         try {
-            auto pool = _pool.fetch(key);
+            auto pool = _pool->fetch(key);
             assert(pool);
             SafeConnection safe_connection(*pool);
 
@@ -1355,20 +1355,20 @@ ReplyUPtr RedisCluster::_command(Cmd cmd, const StringView &key, Args &&...args)
             // When master is down, one of its replicas will be promoted to be the new master.
             // If we try to send command to the old master, we'll get an *IoError*.
             // In this case, we need to update the slots mapping.
-            _pool.update();
+            _pool->update();
         } catch (const ClosedError &) {
             // Node might be removed.
             // 1. Get up-to-date slot mapping to check if the node still exists.
-            _pool.update();
+            _pool->update();
 
             // TODO:
             // 2. If it's NOT exist, update slot mapping, and retry.
             // 3. If it's still exist, that means the node is down, NOT removed, throw exception.
         } catch (const MovedError &) {
             // Slot mapping has been changed, update it and try again.
-            _pool.update();
+            _pool->update();
         } catch (const AskError &err) {
-            auto pool = _pool.fetch(err.node());
+            auto pool = _pool->fetch(err.node());
             assert(pool);
             SafeConnection safe_connection(*pool);
             auto &connection = safe_connection.connection();

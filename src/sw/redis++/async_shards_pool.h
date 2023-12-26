@@ -53,6 +53,8 @@ public:
 
     void update(const std::string &key, AsyncEventUPtr event);
 
+    void update();
+
     ConnectionOptions connection_options(const StringView &key);
 
     ConnectionOptions connection_options();

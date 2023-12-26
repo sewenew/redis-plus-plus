@@ -38,6 +38,8 @@ AsyncRedisCluster::AsyncRedisCluster(const ConnectionOptions &opts,
 AsyncRedis AsyncRedisCluster::redis(const StringView &hash_tag, bool new_connection) {
     assert(_pool);
 
+    _pool->update();
+
     auto pool = _pool->fetch(hash_tag);
     if (new_connection) {
         // Create a new pool.
@@ -49,6 +51,8 @@ AsyncRedis AsyncRedisCluster::redis(const StringView &hash_tag, bool new_connect
 
 AsyncSubscriber AsyncRedisCluster::subscriber() {
     assert(_pool);
+
+    _pool->update();
 
     auto opts = _pool->connection_options();
 
