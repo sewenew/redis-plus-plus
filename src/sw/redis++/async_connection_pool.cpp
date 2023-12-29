@@ -54,7 +54,7 @@ AsyncConnectionSPtr SimpleAsyncSentinel::create(const ConnectionOptions &opts,
     return connection;
 }
 
-AsyncConnectionPool::AsyncConnectionPool(const EventLoopSPtr &loop,
+AsyncConnectionPool::AsyncConnectionPool(const EventLoopWPtr &loop,
         const ConnectionPoolOptions &pool_opts,
         const ConnectionOptions &connection_opts) :
             _loop(loop),
@@ -68,7 +68,7 @@ AsyncConnectionPool::AsyncConnectionPool(const EventLoopSPtr &loop,
 }
 
 AsyncConnectionPool::AsyncConnectionPool(SimpleAsyncSentinel sentinel,
-                                const EventLoopSPtr &loop,
+                                const EventLoopWPtr &loop,
                                 const ConnectionPoolOptions &pool_opts,
                                 const ConnectionOptions &connection_opts) :
                                     _loop(loop),
@@ -91,27 +91,9 @@ AsyncConnectionPool::AsyncConnectionPool(SimpleAsyncSentinel sentinel,
     assert(_sentinel);
 }
 
-AsyncConnectionPool::AsyncConnectionPool(AsyncConnectionPool &&that) {
-    std::lock_guard<std::mutex> lock(that._mutex);
-
-    _move(std::move(that));
-}
-
-AsyncConnectionPool& AsyncConnectionPool::operator=(AsyncConnectionPool &&that) {
-    if (this != &that) {
-        std::lock(_mutex, that._mutex);
-        std::lock_guard<std::mutex> lock_this(_mutex, std::adopt_lock);
-        std::lock_guard<std::mutex> lock_that(that._mutex, std::adopt_lock);
-
-        _move(std::move(that));
-    }
-
-    return *this;
-}
-
 AsyncConnectionPool::~AsyncConnectionPool() {
-    if (!_loop) {
-        // This pool has been moved.
+    if (_loop.expired()) {
+        // This should not happen.
         return;
     }
 
@@ -120,7 +102,10 @@ AsyncConnectionPool::~AsyncConnectionPool() {
     // all borrowed connections should have been returned.
     for (auto &connection : _pool) {
         // TODO: what if some connection has never been watched? Is it possible?
-        _loop->unwatch(std::move(connection));
+        auto loop = _loop.lock();
+        if (loop) {
+            loop->unwatch(std::move(connection));
+        } // else EventLoop has been destroyed. Do nothing.
     }
 }
 
@@ -155,13 +140,14 @@ AsyncConnectionSPtr AsyncConnectionPool::fetch() {
 
         if (role_changed || _need_reconnect(*connection, connection_lifetime, connection_idle_time)) {
             try {
-                auto tmp_connection = sentinel.create(opts, shared_from_this(), _loop.get());
+                auto loop = _get_loop();
+                auto tmp_connection = sentinel.create(opts, shared_from_this(), loop.get());
 
                 std::swap(tmp_connection, connection);
 
                 // Release expired connection.
                 // TODO: If `unwatch` throw, we will leak the connection.
-                _loop->unwatch(std::move(tmp_connection));
+                loop->unwatch(std::move(tmp_connection));
             } catch (const Error &) {
                 // Failed to reconnect, return it to the pool, and retry latter.
                 release(std::move(connection));
@@ -184,7 +170,8 @@ AsyncConnectionSPtr AsyncConnectionPool::fetch() {
 
             // Release expired connection.
             // TODO: If `unwatch` throw, we will leak the connection.
-            _loop->unwatch(std::move(tmp_connection));
+            auto loop = _get_loop();
+            loop->unwatch(std::move(tmp_connection));
         } catch (const Error &) {
             // Failed, return it to the pool, and retry latter.
             release(std::move(connection));
@@ -216,6 +203,8 @@ AsyncConnectionSPtr AsyncConnectionPool::create() {
 
     auto opts = _opts;
 
+    auto loop = _get_loop();
+
     if (_sentinel) {
         // TODO: it seems that we don't need to copy sentinel,
         // since it's thread-safe.
@@ -223,30 +212,31 @@ AsyncConnectionSPtr AsyncConnectionPool::create() {
 
         lock.unlock();
 
-        return sentinel.create(opts, shared_from_this(), _loop.get());
+        return sentinel.create(opts, shared_from_this(), loop.get());
     } else {
         lock.unlock();
 
-        return std::make_shared<AsyncConnection>(opts, _loop.get());
+        return std::make_shared<AsyncConnection>(opts, loop.get());
     }
 }
 
-AsyncConnectionPool AsyncConnectionPool::clone() {
+AsyncConnectionPoolSPtr AsyncConnectionPool::clone() {
     std::unique_lock<std::mutex> lock(_mutex);
 
     auto opts = _opts;
     auto pool_opts = _pool_opts;
+    auto loop = _get_loop();
 
     if (_sentinel) {
         auto sentinel = _sentinel;
 
         lock.unlock();
 
-        return AsyncConnectionPool(sentinel, _loop, pool_opts, opts);
+        return std::make_shared<AsyncConnectionPool>(sentinel, loop, pool_opts, opts);
     } else {
         lock.unlock();
 
-        return AsyncConnectionPool(_loop, pool_opts, opts);
+        return std::make_shared<AsyncConnectionPool>(loop, pool_opts, opts);
     }
 }
 
@@ -261,31 +251,26 @@ void AsyncConnectionPool::update_node_info(const std::string &host,
 
     connection->update_node_info(host, port);
 
-    _loop->add(connection);
+    auto loop = _get_loop();
+    loop->add(connection);
 }
 
 void AsyncConnectionPool::update_node_info(AsyncConnectionSPtr &connection,
         std::exception_ptr err) {
-    _loop->unwatch(connection, err);
-}
-
-void AsyncConnectionPool::_move(AsyncConnectionPool &&that) {
-    _loop = std::move(that._loop);
-    _opts = std::move(that._opts);
-    _pool_opts = std::move(that._pool_opts);
-    _pool = std::move(that._pool);
-    _used_connections = that._used_connections;
-    _sentinel = std::move(that._sentinel);
+    auto loop = _get_loop();
+    loop->unwatch(connection, err);
 }
 
 AsyncConnectionSPtr AsyncConnectionPool::_create() {
+    auto loop = _get_loop();
+
     if (_sentinel) {
         // Get Redis host and port info from sentinel.
         // In this case, the mutex has been locked.
-        return _sentinel.create(_opts, shared_from_this(), _loop.get());
+        return _sentinel.create(_opts, shared_from_this(), loop.get());
     }
 
-    return std::make_shared<AsyncConnection>(_opts, _loop.get());
+    return std::make_shared<AsyncConnection>(_opts, loop.get());
 }
 
 AsyncConnectionSPtr AsyncConnectionPool::_fetch() {
@@ -343,6 +328,15 @@ bool AsyncConnectionPool::_role_changed(const ConnectionOptions &opts) const {
     }
 
     return opts.port != _opts.port || opts.host != _opts.host;
+}
+
+EventLoopSPtr AsyncConnectionPool::_get_loop() {
+    auto loop = _loop.lock();
+    if (!loop) {
+        throw Error("EventLoop has been destroyed");
+    }
+
+    return loop;
 }
 
 }

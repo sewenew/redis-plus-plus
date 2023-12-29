@@ -114,6 +114,7 @@ private:
 };
 
 using EventLoopSPtr = std::shared_ptr<EventLoop>;
+using EventLoopWPtr = std::weak_ptr<EventLoop>;
 
 }
 

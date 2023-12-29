@@ -34,7 +34,7 @@ AsyncShardsPool::AsyncShardsPool(const EventLoopSPtr &loop,
             _connection_opts(connection_opts),
             _role(role),
             _loop(loop) {
-    assert(_loop);
+    assert(loop);
 
     if (_connection_opts.type != ConnectionType::TCP) {
         throw Error("Only support TCP connection for Redis Cluster");

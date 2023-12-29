@@ -1268,9 +1268,9 @@ private:
                 std::forward<Callback>(cb), formatter, std::forward<Key>(key), std::forward<Args>(args)...);
     }
 
-    EventLoopSPtr _loop;
-
     AsyncShardsPoolSPtr _pool;
+
+    EventLoopSPtr _loop;
 };
 
 }
