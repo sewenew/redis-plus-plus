@@ -105,7 +105,7 @@ private:
 
     NodeMap _pools;
 
-    EventLoopSPtr _loop;
+    EventLoopWPtr _loop;
 
     std::thread _worker;
 

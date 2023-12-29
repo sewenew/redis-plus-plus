@@ -43,7 +43,7 @@ AsyncRedis AsyncRedisCluster::redis(const StringView &hash_tag, bool new_connect
     auto pool = _pool->fetch(hash_tag);
     if (new_connection) {
         // Create a new pool.
-        pool = std::make_shared<AsyncConnectionPool>(pool->clone());
+        pool = pool->clone();
     }
 
     return AsyncRedis(std::make_shared<GuardedAsyncConnection>(pool));
