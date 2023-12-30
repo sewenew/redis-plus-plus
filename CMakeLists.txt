@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 
-set(REDIS_PLUS_PLUS_VERSION "1.3.10")
+set(REDIS_PLUS_PLUS_VERSION "1.3.11")
 message(STATUS "redis-plus-plus version: ${REDIS_PLUS_PLUS_VERSION}")
 
 project(redis++ LANGUAGES CXX VERSION ${REDIS_PLUS_PLUS_VERSION})
