@@ -47,6 +47,14 @@ inline void hello(Connection &connection, long long version) {
     connection.send("HELLO %lld", version);
 }
 
+inline void client_tracking(Connection &connection, bool on) {
+  if (on) {
+    connection.send("CLIENT TRACKING ON");
+  } else {
+    connection.send("CLIENT TRACKING OFF");
+  }
+}
+
 inline void echo(Connection &connection, const StringView &msg) {
     connection.send("ECHO %b", msg.data(), msg.size());
 }

@@ -275,6 +275,15 @@ void Connection::_set_options() {
     if (_opts.readonly) {
         _enable_readonly();
     }
+
+#ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
+    if (_opts.resp > 2 && _opts.client_tracking && _opts.push_cb) {
+      _context()->privdata = _opts.privdata;
+      _context()->free_privdata = _opts.privdata_dtor;
+      set_push_callback(_opts.push_cb);
+      _set_client_tracking(true);
+    }
+#endif
 }
 
 void Connection::_enable_readonly() {
@@ -295,6 +304,16 @@ void Connection::_set_resp_version() {
     assert(reply);
 
     // TODO: parse hello reply.
+}
+
+void Connection::_set_client_tracking(bool on) {
+    cmd::client_tracking(*this, on);
+
+    auto reply = recv();
+
+    assert(reply);
+
+    // TODO: parse reply.
 }
 
 void Connection::_auth() {
