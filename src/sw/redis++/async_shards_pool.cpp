@@ -169,7 +169,7 @@ AsyncConnectionPoolSPtr& AsyncShardsPool::_get_pool(Slot slot) {
 
     auto node_iter = _pools.find(node);
     if (node_iter == _pools.end()) {
-        throw Error("Slot is NOT covered: " + std::to_string(slot));
+        throw SlotUncoveredError(slot);
     }
 
     return node_iter->second;
@@ -228,7 +228,7 @@ std::size_t AsyncShardsPool::_random(std::size_t min, std::size_t max) const {
 const Node& AsyncShardsPool::_get_node(Slot slot) const {
     auto shards_iter = _shards.lower_bound(SlotRange{slot, slot});
     if (shards_iter == _shards.end() || slot < shards_iter->first.min) {
-        throw Error("Slot is out of range: " + std::to_string(slot));
+        throw SlotUncoveredError(slot);
     }
 
     return shards_iter->second;
