@@ -43,6 +43,10 @@ inline void auth(Connection &connection, const StringView &user, const StringVie
                     password.data(), password.size());
 }
 
+inline void client_setname(Connection &connection, const StringView &name) {
+    connection.send("CLIENT SETNAME %b", name.data(), name.size());
+}
+
 inline void hello(Connection &connection, long long version) {
     connection.send("HELLO %lld", version);
 }

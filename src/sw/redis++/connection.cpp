@@ -270,6 +270,8 @@ void Connection::_set_options() {
         _set_resp_version();
     }
 
+    _set_name();
+
     _select_db();
 
     if (_opts.readonly) {
@@ -310,6 +312,20 @@ void Connection::_auth() {
         // Redis 6.0 or latter
         cmd::auth(*this, _opts.user, _opts.password);
     }
+
+    auto reply = recv();
+
+    assert(reply);
+
+    reply::parse<void>(*reply);
+}
+
+void Connection::_set_name() {
+    if (_opts.name.empty()) {
+        return;
+    }
+
+    cmd::client_setname(*this, _opts.name);
 
     auto reply = recv();
 

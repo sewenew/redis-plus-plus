@@ -196,6 +196,10 @@ void AsyncConnection::connect_callback(std::exception_ptr err) {
             _set_resp_callback();
             break;
 
+        case State::SET_NAME:
+            _set_name_callback();
+            break;
+
         case State::SELECTING_DB:
             _select_db_callback();
             break;
@@ -325,6 +329,8 @@ void AsyncConnection::_connecting_callback() {
         _auth();
     } else if (_need_set_resp()) {
         _set_resp();
+    } else if (_need_set_name()) {
+        _set_name();
     } else if (_need_select_db()) {
         _select_db();
     } else if (_need_enable_readonly()) {
@@ -335,7 +341,9 @@ void AsyncConnection::_connecting_callback() {
 }
 
 void AsyncConnection::_set_resp_callback() {
-    if (_need_select_db()) {
+    if (_need_set_name()) {
+        _set_name();
+    } else if (_need_select_db()) {
         _select_db();
     } else if (_need_enable_readonly()) {
         _enable_readonly();
@@ -347,6 +355,8 @@ void AsyncConnection::_set_resp_callback() {
 void AsyncConnection::_authing_callback() {
     if (_need_set_resp()) {
         _set_resp();
+    } else if (_need_set_name()) {
+        _set_name();
     } else if (_need_select_db()) {
         _select_db();
     } else if (_need_enable_readonly()) {
@@ -356,6 +366,15 @@ void AsyncConnection::_authing_callback() {
     }
 }
 
+void AsyncConnection::_set_name_callback() {
+    if (_need_select_db()) {
+        _select_db();
+    } else if (_need_enable_readonly()) {
+        _enable_readonly();
+    } else {
+        _set_ready();
+    }
+}
 void AsyncConnection::_select_db_callback() {
     if (_need_enable_readonly()) {
         _enable_readonly();
@@ -393,6 +412,17 @@ void AsyncConnection::_auth() {
     }
 
     _state = State::AUTHING;
+}
+
+void AsyncConnection::_set_name() {
+    assert(!broken());
+
+    if (redisAsyncCommand(_ctx, set_options_callback, nullptr, "CLIENT SETNAME %b",
+            _opts.name.data(), _opts.name.size()) != REDIS_OK) {
+        throw Error("failed to send client setname command");
+    }
+
+    _state = State::SET_NAME;
 }
 
 void AsyncConnection::_select_db() {
@@ -481,6 +511,10 @@ bool AsyncConnection::_need_set_resp() const {
 
 bool AsyncConnection::_need_auth() const {
     return !_opts.password.empty() || _opts.user != "default";
+}
+
+bool AsyncConnection::_need_set_name() const {
+    return !_opts.name.empty();
 }
 
 bool AsyncConnection::_need_select_db() const {

@@ -173,7 +173,8 @@ private:
         READY,
         WAIT_SENTINEL,
         ENABLE_READONLY,
-        SET_RESP
+        SET_RESP,
+        SET_NAME
     };
 
     redisAsyncContext& _context() {
@@ -190,6 +191,8 @@ private:
 
     void _authing_callback();
 
+    void _set_name_callback();
+
     void _select_db_callback();
 
     bool _need_set_resp() const;
@@ -199,6 +202,10 @@ private:
     bool _need_auth() const;
 
     void _auth();
+
+    bool _need_set_name() const;
+
+    void _set_name();
 
     bool _need_select_db() const;
 
