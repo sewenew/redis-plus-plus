@@ -80,6 +80,15 @@ Subscriber RedisCluster::subscriber() {
     return Subscriber(Connection(opts));
 }
 
+Subscriber RedisCluster::subscriber(const StringView &hash_tag) {
+    assert(_pool);
+
+    _pool->async_update();
+
+    auto opts = _pool->connection_options(hash_tag);
+    return Subscriber(Connection(opts));
+}
+
 // KEY commands.
 
 long long RedisCluster::del(const StringView &key) {
@@ -751,6 +760,12 @@ OptionalLongLong RedisCluster::georadiusbymember(const StringView &key,
 
 long long RedisCluster::publish(const StringView &channel, const StringView &message) {
     auto reply = command(cmd::publish, channel, message);
+
+    return reply::parse<long long>(*reply);
+}
+
+long long RedisCluster::spublish(const StringView &channel, const StringView &message) {
+    auto reply = command(cmd::spublish, channel, message);
 
     return reply::parse<long long>(*reply);
 }

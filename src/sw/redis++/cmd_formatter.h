@@ -813,6 +813,12 @@ inline FormattedCommand publish(const StringView &channel, const StringView &mes
                     message.data(), message.size());
 }
 
+inline FormattedCommand spublish(const StringView &channel, const StringView &message) {
+    return format_cmd("SPUBLISH %b %b",
+                    channel.data(), channel.size(),
+                    message.data(), message.size());
+}
+
 inline FormattedCommand punsubscribe() {
     return format_cmd("PUNSUBSCRIBE");
 }
@@ -859,6 +865,38 @@ inline FormattedCommand unsubscribe_range(Input first, Input last) {
 
     CmdArgs args;
     args << "UNSUBSCRIBE" << std::make_pair(first, last);
+
+    return format_cmd(args);
+}
+
+inline FormattedCommand ssubscribe(const StringView &channel) {
+    return format_cmd("SSUBSCRIBE %b", channel.data(), channel.size());
+}
+
+template <typename Input>
+inline FormattedCommand ssubscribe_range(Input first, Input last) {
+    assert(first != last);
+
+    CmdArgs args;
+    args << "SSUBSCRIBE" << std::make_pair(first, last);
+
+    return format_cmd(args);
+}
+
+inline FormattedCommand sunsubscribe() {
+    return format_cmd("SUNSUBSCRIBE");
+}
+
+inline FormattedCommand sunsubscribe(const StringView &channel) {
+    return format_cmd("SUNSUBSCRIBE %b", channel.data(), channel.size());
+}
+
+template <typename Input>
+inline FormattedCommand sunsubscribe_range(Input first, Input last) {
+    assert(first != last);
+
+    CmdArgs args;
+    args << "SUNSUBSCRIBE" << std::make_pair(first, last);
 
     return format_cmd(args);
 }

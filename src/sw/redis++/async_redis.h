@@ -1616,6 +1616,15 @@ public:
         _callback_fmt_command<long long>(std::forward<Callback>(cb), fmt::publish, channel, message);
     }
 
+    Future<long long> spublish(const StringView &channel, const StringView &message) {
+        return _command<long long>(fmt::spublish, channel, message);
+    }
+
+    template <typename Callback>
+    void spublish(const StringView &channel, const StringView &message, Callback &&cb) {
+        _callback_fmt_command<long long>(std::forward<Callback>(cb), fmt::spublish, channel, message);
+    }
+
     // co_command* are used internally. DO NOT use them.
 
     template <typename Result, typename Callback>

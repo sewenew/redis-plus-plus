@@ -68,6 +68,8 @@ public:
 
     Subscriber subscriber();
 
+    Subscriber subscriber(const StringView &hash_tag);
+
     /// @brief Run the given callback with each node in the cluster.
     /// The following is the prototype of the callback: void (Redis &r);
     ///
@@ -1065,6 +1067,8 @@ public:
     // PUBSUB commands.
 
     long long publish(const StringView &channel, const StringView &message);
+
+    long long spublish(const StringView &channel, const StringView &message);
 
     // Stream commands.
 

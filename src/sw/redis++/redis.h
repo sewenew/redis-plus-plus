@@ -3252,6 +3252,8 @@ public:
 
     long long publish(const StringView &channel, const StringView &message);
 
+    long long spublish(const StringView &channel, const StringView &message);
+
     // Transaction commands.
     void watch(const StringView &key);
 

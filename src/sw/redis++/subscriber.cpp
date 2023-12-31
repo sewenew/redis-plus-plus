@@ -40,6 +40,12 @@ void Subscriber::subscribe(const StringView &channel) {
     cmd::subscribe(_connection, channel);
 }
 
+void Subscriber::ssubscribe(const StringView &channel) {
+    _check_connection();
+
+    cmd::ssubscribe(_connection, channel);
+}
+
 void Subscriber::unsubscribe() {
     _check_connection();
 
@@ -101,10 +107,16 @@ void Subscriber::consume() {
         _handle_pmessage(*reply);
         break;
 
+    case MsgType::SMESSAGE:
+        _handle_smessage(*reply);
+        break;
+
     case MsgType::SUBSCRIBE:
     case MsgType::UNSUBSCRIBE:
     case MsgType::PSUBSCRIBE:
     case MsgType::PUNSUBSCRIBE:
+    case MsgType::SSUBSCRIBE:
+    case MsgType::SUNSUBSCRIBE:
         _handle_meta(type, *reply);
         break;
 
@@ -129,6 +141,8 @@ Subscriber::MsgType Subscriber::_msg_type(std::string const& type) const
         return MsgType::MESSAGE;
     } else if ("pmessage" == type) {
         return MsgType::PMESSAGE;
+    } else if ("smessage" == type) {
+        return MsgType::SMESSAGE;
     } else if ("subscribe" == type) {
         return MsgType::SUBSCRIBE;
     } else if ("unsubscribe" == type) {
@@ -137,6 +151,10 @@ Subscriber::MsgType Subscriber::_msg_type(std::string const& type) const
         return MsgType::PSUBSCRIBE;
     } else if ("punsubscribe" == type) {
         return MsgType::PUNSUBSCRIBE;
+    } else if ("ssubscribe" == type) {
+        return MsgType::SSUBSCRIBE;
+    } else if ("sunsubscribe" == type) {
+        return MsgType::SUNSUBSCRIBE;
     } else {
         return MsgType::UNKNOWN;
     }
@@ -172,6 +190,32 @@ void Subscriber::_handle_message(redisReply &reply) {
     auto msg = reply::parse<std::string>(*msg_reply);
 
     _msg_callback(std::move(channel), std::move(msg));
+}
+
+void Subscriber::_handle_smessage(redisReply &reply) {
+    if (_smsg_callback == nullptr) {
+        return;
+    }
+
+    if (reply.elements != 3) {
+        throw ProtoError("Expect 3 sub replies");
+    }
+
+    assert(reply.element != nullptr);
+
+    auto *channel_reply = reply.element[1];
+    if (channel_reply == nullptr) {
+        throw ProtoError("Null channel reply");
+    }
+    auto channel = reply::parse<std::string>(*channel_reply);
+
+    auto *msg_reply = reply.element[2];
+    if (msg_reply == nullptr) {
+        throw ProtoError("Null message reply");
+    }
+    auto msg = reply::parse<std::string>(*msg_reply);
+
+    _smsg_callback(std::move(channel), std::move(msg));
 }
 
 void Subscriber::_handle_pmessage(redisReply &reply) {

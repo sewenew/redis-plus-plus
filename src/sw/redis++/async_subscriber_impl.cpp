@@ -66,10 +66,16 @@ void AsyncSubscriberImpl::_run_callback(redisReply &reply) {
         _handle_pmessage(reply);
         break;
 
+    case Subscriber::MsgType::SMESSAGE:
+        _handle_smessage(reply);
+        break;
+
     case Subscriber::MsgType::SUBSCRIBE:
     case Subscriber::MsgType::UNSUBSCRIBE:
     case Subscriber::MsgType::PSUBSCRIBE:
     case Subscriber::MsgType::PUNSUBSCRIBE:
+    case Subscriber::MsgType::SSUBSCRIBE:
+    case Subscriber::MsgType::SUNSUBSCRIBE:
         _handle_meta(type, reply);
         break;
 
@@ -93,6 +99,8 @@ Subscriber::MsgType AsyncSubscriberImpl::_msg_type(const std::string &type) cons
         return Subscriber::MsgType::MESSAGE;
     } else if ("pmessage" == type) {
         return Subscriber::MsgType::PMESSAGE;
+    } else if ("smessage" == type) {
+        return Subscriber::MsgType::SMESSAGE;
     } else if ("subscribe" == type) {
         return Subscriber::MsgType::SUBSCRIBE;
     } else if ("unsubscribe" == type) {
@@ -101,6 +109,10 @@ Subscriber::MsgType AsyncSubscriberImpl::_msg_type(const std::string &type) cons
         return Subscriber::MsgType::PSUBSCRIBE;
     } else if ("punsubscribe" == type) {
         return Subscriber::MsgType::PUNSUBSCRIBE;
+    } else if ("ssubscribe" == type) {
+        return Subscriber::MsgType::SSUBSCRIBE;
+    } else if ("sunsubscribe" == type) {
+        return Subscriber::MsgType::SUNSUBSCRIBE;
     } else {
         return Subscriber::MsgType::UNKNOWN;
     }
@@ -162,6 +174,32 @@ void AsyncSubscriberImpl::_handle_pmessage(redisReply &reply) {
     auto msg = reply::parse<std::string>(*msg_reply);
 
     _pmsg_callback(std::move(pattern), std::move(channel), std::move(msg));
+}
+
+void AsyncSubscriberImpl::_handle_smessage(redisReply &reply) {
+    if (_smsg_callback == nullptr) {
+        return;
+    }
+
+    if (reply.elements != 3) {
+        throw ProtoError("Expect 3 sub replies");
+    }
+
+    assert(reply.element != nullptr);
+
+    auto *channel_reply = reply.element[1];
+    if (channel_reply == nullptr) {
+        throw ProtoError("Null channel reply");
+    }
+    auto channel = reply::parse<std::string>(*channel_reply);
+
+    auto *msg_reply = reply.element[2];
+    if (msg_reply == nullptr) {
+        throw ProtoError("Null message reply");
+    }
+    auto msg = reply::parse<std::string>(*msg_reply);
+
+    _smsg_callback(std::move(channel), std::move(msg));
 }
 
 void AsyncSubscriberImpl::_handle_meta(Subscriber::MsgType type, redisReply &reply) {

@@ -91,6 +91,24 @@ Future<void> AsyncSubscriber::punsubscribe(const StringView &channel) {
     return _send(SubscribeEventUPtr(new SubscribeEvent(fmt::punsubscribe(channel))));
 }
 
+Future<void> AsyncSubscriber::ssubscribe(const StringView &channel) {
+    _check_connection();
+
+    return _send(SubscribeEventUPtr(new SubscribeEvent(fmt::ssubscribe(channel))));
+}
+
+Future<void> AsyncSubscriber::sunsubscribe() {
+    _check_connection();
+
+    return _send(SubscribeEventUPtr(new SubscribeEvent(fmt::sunsubscribe())));
+}
+
+Future<void> AsyncSubscriber::sunsubscribe(const StringView &channel) {
+    _check_connection();
+
+    return _send(SubscribeEventUPtr(new SubscribeEvent(fmt::sunsubscribe(channel))));
+}
+
 void AsyncSubscriber::_check_connection() {
     if (!_connection || _connection->broken()) {
         throw Error("Connection is broken");

@@ -40,6 +40,11 @@ public:
         _pmsg_callback = std::forward<PMsgCb>(pmsg_callback);
     }
 
+    template <typename SMsgCb>
+    void on_smessage(SMsgCb &&smsg_callback) {
+        _smsg_callback = std::forward<SMsgCb>(smsg_callback);
+    }
+
     template <typename MetaCb>
     void on_meta(MetaCb &&meta_callback) {
         _meta_callback = std::forward<MetaCb>(meta_callback);
@@ -63,12 +68,16 @@ private:
 
     void _handle_pmessage(redisReply &reply);
 
+    void _handle_smessage(redisReply &reply);
+
     void _handle_meta(Subscriber::MsgType type, redisReply &reply);
 
     std::function<void (std::string channel, std::string msg)> _msg_callback;
 
     std::function<void (std::string pattern, std::string channel,
             std::string msg)> _pmsg_callback;
+
+    std::function<void (std::string channel, std::string msg)> _smsg_callback;
 
     std::function<void (Subscriber::MsgType type, OptionalString channel,
             long long num)> _meta_callback;

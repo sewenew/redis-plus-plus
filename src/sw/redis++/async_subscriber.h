@@ -54,6 +54,9 @@ public:
     template <typename PMsgCb>
     void on_pmessage(PMsgCb &&pmsg_callback);
 
+    template <typename SMsgCb>
+    void on_smessage(SMsgCb &&smsg_callback);
+
     template <typename MetaCb>
     void on_meta(MetaCb &&meta_callback);
 
@@ -104,6 +107,28 @@ public:
         return punsubscribe(channels.begin(), channels.end());
     }
 
+    Future<void> ssubscribe(const StringView &channel);
+
+    template <typename Input>
+    Future<void> ssubscribe(Input first, Input last);
+
+    template <typename T>
+    Future<void> ssubscribe(std::initializer_list<T> channels) {
+        return ssubscribe(channels.begin(), channels.end());
+    }
+
+    Future<void> sunsubscribe();
+
+    Future<void> sunsubscribe(const StringView &channel);
+
+    template <typename Input>
+    Future<void> sunsubscribe(Input first, Input last);
+
+    template <typename T>
+    Future<void> sunsubscribe(std::initializer_list<T> channels) {
+        return sunsubscribe(channels.begin(), channels.end());
+    }
+
 private:
     friend class AsyncRedis;
 
@@ -132,6 +157,13 @@ void AsyncSubscriber::on_pmessage(PMsgCb &&pmsg_callback) {
     _check_connection();
 
     _connection->subscriber().on_pmessage(std::forward<PMsgCb>(pmsg_callback));
+}
+
+template <typename SMsgCb>
+void AsyncSubscriber::on_smessage(SMsgCb &&smsg_callback) {
+    _check_connection();
+
+    _connection->subscriber().on_smessage(std::forward<SMsgCb>(smsg_callback));
 }
 
 template <typename MetaCb>
@@ -182,6 +214,24 @@ Future<void> AsyncSubscriber::punsubscribe(Input first, Input last) {
     _check_connection();
 
     return _send(SubscribeEventUPtr(new SubscribeEvent(fmt::punsubscribe_range(first, last))));
+}
+
+template <typename Input>
+Future<void> AsyncSubscriber::ssubscribe(Input first, Input last) {
+    range_check("ssubscribe", first, last);
+
+    _check_connection();
+
+    return _send(SubscribeEventUPtr(new SubscribeEvent(fmt::ssubscribe_range(first, last))));
+}
+
+template <typename Input>
+Future<void> AsyncSubscriber::sunsubscribe(Input first, Input last) {
+    range_check("sunsubscribe", first, last);
+
+    _check_connection();
+
+    return _send(SubscribeEventUPtr(new SubscribeEvent(fmt::sunsubscribe_range(first, last))));
 }
 
 }
