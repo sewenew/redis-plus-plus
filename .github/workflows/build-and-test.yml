@@ -1,4 +1,4 @@
-name: Build redis-plus-plus
+name: build and test
 
 on:
   push:
@@ -40,8 +40,8 @@ jobs:
     - name: redis-dep
       run: |
         wget -L https://github.com/redis/redis/archive/refs/tags/7.2.3.zip -O redis-7.2.3.zip && unzip redis-7.2.3.zip
-        cd redis-7.2.3 && make -j2 && ./src/redis-server &>/dev/null & && cd ..
-        
+        cd redis-7.2.3 && make -j2 && ./src/redis-server &>/dev/null &
+
     - name: hiredis-dep
       run: |
         wget -L https://github.com/redis/hiredis/archive/master.zip -O hiredis-master.zip && unzip hiredis-master.zip && mkdir -p ${{ github.workspace }}/install
