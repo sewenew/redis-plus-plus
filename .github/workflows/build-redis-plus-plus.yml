@@ -1,6 +1,4 @@
-# This starter workflow is for a CMake project running on multiple platforms. There is a different starter workflow if you just want a single platform.
-# See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-single-platform.yml
-name: CMake on multiple platforms
+name: Build redis-plus-plus
 
 on:
   push:
@@ -13,8 +11,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     strategy:
-      # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
-      fail-fast: false
+      fail-fast: true
 
       # Set up a matrix to run the following 3 configurations:
       # 1. <Windows, Release, latest MSVC compiler toolchain on the default runner image, default generator>
@@ -43,7 +40,7 @@ jobs:
     - name: redis-dep
       run: |
         wget -L https://github.com/redis/redis/archive/refs/tags/7.2.3.zip -O redis-7.2.3.zip && unzip redis-7.2.3.zip
-        cd redis-7.2.3 && make -j2 && ./src/redis-server &>/dev/null && cd ..
+        cd redis-7.2.3 && make -j2 && ./src/redis-server &>/dev/null & && cd ..
         
     - name: hiredis-dep
       run: |
