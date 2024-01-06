@@ -1,5 +1,7 @@
 # redis-plus-plus
 
+[![Build Status](https://github.com/sewenew/redis-plus-plus/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/sewenew/redis-plus-plus/actions/workflows/build-and-test.yml)
+
 [中文交流群](https://github.com/sewenew/redis-plus-plus/blob/master/Chinese.md)
 
 I create a Redis module, named [redis-llm](https://github.com/sewenew/redis-llm), which integrates LLMs (Large Language Models) with Redis. You can [learn redis-plus-plus by asking questions with it](https://github.com/sewenew/redis-llm/tree/main/examples/search-application).
