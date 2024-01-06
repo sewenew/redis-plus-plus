@@ -40,7 +40,7 @@ jobs:
     - name: redis-dep
       run: |
         wget -L https://github.com/redis/redis/archive/refs/tags/7.2.3.zip -O redis-7.2.3.zip && unzip redis-7.2.3.zip
-        cd redis-7.2.3 && make -j2 && ./src/redis-server &>/dev/null &
+        cd redis-7.2.3 && make -j2 && sh ./utils/create-cluster/create-cluster start && sh ./utils/create-cluster/create-cluster create -f && ./src/redis-server &>/dev/null &
 
     - name: hiredis-dep
       run: |
@@ -72,4 +72,4 @@ jobs:
 
     - name: Test
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
-      run: ./test/test_redis++ -h 127.0.0.1 -p 6379
+      run: ./test/test_redis++ -h 127.0.0.1 -p 6379 -n 127.0.0.1 -c 30001
