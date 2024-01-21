@@ -128,7 +128,13 @@ else()
 endif()
 
 # hiredis dependency
-find_package(hiredis QUIET)
+if(NOT TARGET hiredis::hiredis)
+    find_package(hiredis QUIET)
+    set(HIREDIS_INTERNAL_TARGET OFF)
+else()
+    set(HIREDIS_INTERNAL_TARGET ON)
+endif()
+
 if(hiredis_FOUND)
     list(APPEND REDIS_PLUS_PLUS_HIREDIS_LIBS hiredis::hiredis)
 
@@ -166,7 +172,9 @@ include(CheckSymbolExists)
 set(CMAKE_REQUIRED_LIBRARIES_BACK ${CMAKE_REQUIRED_LIBRARIES})
 set(CMAKE_REQUIRED_LIBRARIES ${HIREDIS_FEATURE_TEST_LIB})
 
-CHECK_SYMBOL_EXISTS(redisEnableKeepAliveWithInterval ${HIREDIS_FEATURE_TEST_HEADER} REDIS_PLUS_PLUS_HAS_redisEnableKeepAliveWithInterval)
+if(NOT HIREDIS_INTERNAL_TARGET)
+    CHECK_SYMBOL_EXISTS(redisEnableKeepAliveWithInterval ${HIREDIS_FEATURE_TEST_HEADER} REDIS_PLUS_PLUS_HAS_redisEnableKeepAliveWithInterval)
+endif()
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/hiredis_features.h.in ${CMAKE_CURRENT_SOURCE_DIR}/${REDIS_PLUS_PLUS_SOURCE_DIR}/hiredis_features.h)
 
