@@ -320,15 +320,15 @@ protected:
         }
     }
 
-    static void _reply_callback(redisAsyncContext * /*ctx*/, void *r, void *privdata) {
+    static void _reply_callback(redisAsyncContext *ctx, void *r, void *privdata) {
         auto event = static_cast<CommandEvent<Result, ResultParser> *>(privdata);
 
-        assert(event != nullptr);
+        assert(event != nullptr && ctx != nullptr);
 
         try {
             redisReply *reply = static_cast<redisReply *>(r);
             if (reply == nullptr) {
-                event->set_exception(std::make_exception_ptr(Error("connection has been closed")));
+                throw_error(ctx->c, "null reply");
             } else if (reply::is_error(*reply)) {
                 try {
                     throw_error(*reply);
@@ -428,17 +428,17 @@ public:
     }
 
 private:
-    static void _asking_callback(redisAsyncContext * /*ctx*/, void *r, void *privdata) {
+    static void _asking_callback(redisAsyncContext *ctx, void *r, void *privdata) {
         auto event = static_cast<AskingEvent *>(privdata);
 
-        assert(event != nullptr);
+        assert(event != nullptr && ctx != nullptr);
 
         // TODO: No need to check the reply. It seems that we can simply ignore the reply,
         // and delete the event.
         try {
             redisReply *reply = static_cast<redisReply *>(r);
             if (reply == nullptr) {
-                event->set_exception(std::make_exception_ptr(Error("connection has been closed")));
+                throw_error(ctx->c, "null reply");
             } else if (reply::is_error(*reply)) {
                 try {
                     throw_error(*reply);
@@ -532,15 +532,15 @@ private:
         ASKING
     };
 
-    static void _cluster_reply_callback(redisAsyncContext * /*ctx*/, void *r, void *privdata) {
+    static void _cluster_reply_callback(redisAsyncContext *ctx, void *r, void *privdata) {
         auto event = static_cast<ClusterEvent<Result, ResultParser> *>(privdata);
 
-        assert(event != nullptr);
+        assert(event != nullptr && ctx != nullptr);
 
         try {
             redisReply *reply = static_cast<redisReply *>(r);
             if (reply == nullptr) {
-                event->set_exception(std::make_exception_ptr(Error("connection has been closed")));
+                throw_error(ctx->c, "null reply");
             } else if (reply::is_error(*reply)) {
                 try {
                     throw_error(*reply);
