@@ -25,7 +25,7 @@ namespace sw {
 
 namespace redis {
 
-class PipelineImpl {
+    class PipelineImpl {
 public:
     template <typename Cmd, typename ...Args>
     void command(Connection &connection, Cmd cmd, Args &&...args) {

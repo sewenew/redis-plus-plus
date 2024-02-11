@@ -15,6 +15,7 @@
  *************************************************************************/
 
 #include "sw/redis++/pipeline.h"
+#include "shards.h"
 
 namespace sw {
 
@@ -22,8 +23,17 @@ namespace redis {
 
 std::vector<ReplyUPtr> PipelineImpl::exec(Connection &connection, std::size_t cmd_num) {
     std::vector<ReplyUPtr> replies;
+    size_t total_cmd = cmd_num;
     while (cmd_num > 0) {
-        replies.push_back(connection.recv(false));
+        try {
+            replies.push_back(connection.recv(false));
+        } catch (const MovedError & e){
+            throw PipelineMovedError(e, total_cmd - cmd_num);
+        } catch (const AskError & e){
+            throw PipelineAskError(e, total_cmd - cmd_num);
+        } catch (const SlotUncoveredError & e){
+            throw PipelineSlotUncoveredError(e, total_cmd - cmd_num);
+        }
         --cmd_num;
     }
 

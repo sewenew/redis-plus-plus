@@ -95,6 +95,21 @@ public:
     virtual ~MovedError() override = default;
 };
 
+class PipelineMovedError : public MovedError {
+public:
+    explicit PipelineMovedError(const MovedError &e, size_t which_cmd) : MovedError(e),which_cmd(which_cmd) {}
+
+    PipelineMovedError(const PipelineMovedError &) = default;
+    PipelineMovedError& operator=(const PipelineMovedError &) = default;
+
+    PipelineMovedError(PipelineMovedError &&) = default;
+    PipelineMovedError& operator=(PipelineMovedError &&) = default;
+
+    virtual ~PipelineMovedError() override = default;
+
+    size_t which_cmd;
+};
+
 class AskError : public RedirectionError {
 public:
     explicit AskError(const std::string &msg) : RedirectionError(msg) {}
@@ -108,6 +123,23 @@ public:
     virtual ~AskError() override = default;
 };
 
+
+class PipelineAskError : public AskError {
+public:
+    explicit PipelineAskError(const AskError &e, size_t which_cmd) : AskError(e),which_cmd(which_cmd) {}
+
+    PipelineAskError(const PipelineAskError &) = default;
+    PipelineAskError& operator=(const PipelineAskError &) = default;
+
+    PipelineAskError(PipelineAskError &&) = default;
+    PipelineAskError& operator=(PipelineAskError &&) = default;
+
+    virtual ~PipelineAskError() override = default;
+
+    size_t which_cmd;
+};
+
+
 class SlotUncoveredError : public Error {
 public:
     explicit SlotUncoveredError(Slot slot) :
@@ -120,6 +152,22 @@ public:
     SlotUncoveredError& operator=(SlotUncoveredError &&) = default;
 
     virtual ~SlotUncoveredError() override = default;
+};
+
+class PipelineSlotUncoveredError : public SlotUncoveredError {
+public:
+    explicit PipelineSlotUncoveredError(const SlotUncoveredError & e, size_t which_cmd) :
+            SlotUncoveredError(e), which_cmd(which_cmd){}
+
+    PipelineSlotUncoveredError(const PipelineSlotUncoveredError &) = default;
+    PipelineSlotUncoveredError& operator=(const PipelineSlotUncoveredError &) = default;
+
+    PipelineSlotUncoveredError(PipelineSlotUncoveredError &&) = default;
+    PipelineSlotUncoveredError& operator=(PipelineSlotUncoveredError &&) = default;
+
+    virtual ~PipelineSlotUncoveredError() override = default;
+
+    size_t which_cmd;
 };
 
 }
