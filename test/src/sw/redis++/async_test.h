@@ -199,6 +199,13 @@ void AsyncTest<RedisInstance>::_test_hash() {
                 this->set_ready();
             });
     _wait();
+
+    set_ready(false);
+    std::map<std::string, std::string> mkeys = {{test_key("str")+"1", "val1"}, {test_key("str")+"2", "val2"}};
+    _redis.mset(mkeys.begin(), mkeys.end(), [this](Future<void> &&fut) {
+                this->set_ready();
+            });
+    _wait();
 }
 
 template <typename RedisInstance>

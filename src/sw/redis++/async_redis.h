@@ -407,6 +407,14 @@ public:
     Future<void> mset(std::initializer_list<T> il) {
         return mset(il.begin(), il.end());
     }
+    
+    template <typename Input, typename Callback>
+    auto mset(Input first, Input last, Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<void> &&>::value, void>::type {
+        range_check("MSET", first, last);
+
+        _callback_fmt_command<void>(std::forward<Callback>(cb), fmt::mset<Input>, first, last);
+    }
 
     template <typename Input>
     Future<bool> msetnx(Input first, Input last) {
