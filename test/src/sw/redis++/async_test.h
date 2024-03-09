@@ -86,7 +86,10 @@ template <typename RedisInstance>
 void AsyncTest<RedisInstance>::_test_str() {
     auto key = test_key("str");
 
-    KeyDeleter<RedisInstance> deleter(_redis, key);
+    auto key1 = test_key("key1");
+    auto key2 = test_key("key2");
+
+    KeyDeleter<RedisInstance> deleter(_redis, {key, key1, key2});
 
     std::string val("value");
     REDIS_ASSERT(_redis.set(key, val, std::chrono::hours(1)).get(),
@@ -134,6 +137,14 @@ void AsyncTest<RedisInstance>::_test_str() {
     set_ready(false);
     _redis.del(key, [this](Future<long long> &&fut) {
                 REDIS_ASSERT(fut.get() == 1, "failed to test async del");
+                this->set_ready();
+            });
+    _wait();
+
+    set_ready(false);
+    std::unordered_map<std::string, std::string> kvs = {{key1, "val1"}, {key2, "val2"}};
+    _redis.mset(kvs.begin(), kvs.end(), [this](Future<void> &&fut) {
+                fut.get();
                 this->set_ready();
             });
     _wait();
@@ -196,13 +207,6 @@ void AsyncTest<RedisInstance>::_test_hash() {
     _redis.template hgetall<std::unordered_map<std::string, std::string>>(key,
             [this, &m](Future<std::unordered_map<std::string, std::string>> &&fut) {
                 REDIS_ASSERT(fut.get() == m, "failed to test async hgetall");
-                this->set_ready();
-            });
-    _wait();
-
-    set_ready(false);
-    std::map<std::string, std::string> mkeys = {{test_key("str")+"1", "val1"}, {test_key("str")+"2", "val2"}};
-    _redis.mset(mkeys.begin(), mkeys.end(), [this](Future<void> &&fut) {
                 this->set_ready();
             });
     _wait();
