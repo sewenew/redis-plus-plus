@@ -30,7 +30,20 @@ template <typename T>
 using Future = boost::future<T>;
 
 template <typename T>
-using Promise = boost::promise<T>;
+class Promise : public boost::promise<T> {
+  using boost::promise<T>::promise;
+
+public:
+  using boost::promise<T>::set_exception;
+
+  void set_exception(std::exception_ptr p) {
+    try {
+      std::rethrow_exception(p);
+    } catch (...) {
+      set_exception(boost::current_exception());
+    }
+  }
+};
 
 }
 
