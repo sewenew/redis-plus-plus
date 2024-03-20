@@ -149,6 +149,26 @@ void StringCmdTest<RedisInstance>::_test_bit() {
     // dest_key -> 11101111
     v = _redis.get(dest_key);
     REDIS_ASSERT(v && *v == std::string(1, '\xEF'), "failed to test bitop");
+
+
+    auto bitfield_key = test_key("bitfield_src");
+    // bitfield_key -> 01000010
+    std::vector<std::string> ops = {"SET", "u1", "1", "1","SET", "u1", "3", "0","SET", "u1", "6", "1"};
+    std::vector<long long> vals;
+    _redis.bitfield(bitfield_key, ops.begin(), ops.end(), std::back_inserter(vals));
+    REDIS_ASSERT(_redis.getbit(bitfield_key, 1) == 1, "failed to test bitfield");
+    REDIS_ASSERT(_redis.getbit(bitfield_key, 3) == 0, "failed to test bitfield");
+    REDIS_ASSERT(_redis.getbit(bitfield_key, 6) == 1, "failed to test bitfield");
+    REDIS_ASSERT(_redis.bitcount(bitfield_key) == 2, "failed to test bitfield");
+    
+    // bitfield_key -> 10011001
+    vals.clear();
+    _redis.bitfield(bitfield_key, {"SET", "u1", "0", "1","SET", "u1", "1", "0","SET", "u1", "4", "1", "SET", "u1", "7", "1"},
+                 std::back_inserter(vals));
+    REDIS_ASSERT(_redis.getbit(bitfield_key, 0) == 1, "failed to test bitfield");
+    REDIS_ASSERT(_redis.getbit(bitfield_key, 4) == 1, "failed to test bitfield");
+    REDIS_ASSERT(_redis.getbit(bitfield_key, 7) == 1, "failed to test bitfield");
+    REDIS_ASSERT(_redis.bitcount(bitfield_key) == 4, "failed to test bitfield");
 }
 
 template <typename RedisInstance>
