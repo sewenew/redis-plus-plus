@@ -85,6 +85,8 @@ long long parse(ParseTag<long long>, redisReply &reply);
 
 double parse(ParseTag<double>, redisReply &reply);
 
+redisReply* parse(ParseTag<redisReply*>, redisReply &reply);
+
 bool parse(ParseTag<bool>, redisReply &reply);
 
 template <typename T>
