@@ -114,6 +114,18 @@ ConnectionOptions AsyncShardsPool::connection_options() {
     return _connection_options(slot);
 }
 
+std::vector<AsyncConnectionPoolSPtr> AsyncShardsPool::pools() {
+    std::lock_guard<std::mutex> lock(_mutex);
+
+    std::vector<AsyncConnectionPoolSPtr> nodes;
+    nodes.reserve(_pools.size());
+    for (const auto &pool : _pools) {
+        nodes.push_back(pool.second);
+    }
+
+    return nodes;
+}
+
 ConnectionOptions AsyncShardsPool::_connection_options(Slot slot) {
     std::lock_guard<std::mutex> lock(_mutex);
 
