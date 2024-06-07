@@ -1336,7 +1336,7 @@ redis.smembers("s1", std::back_inserter(s_vec));
 ##### SCAN Commands
 
 ```C++
-auto cursor = 0LL;
+sw::redis::Cursor cursor = 0;
 auto pattern = "*pattern*";
 auto count = 5;
 std::unordered_set<std::string> keys;

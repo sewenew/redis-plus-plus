@@ -149,7 +149,7 @@ void HashCmdTest<RedisInstance>::_test_hscan() {
     _redis.hmset(key, items.begin(), items.end());
 
     std::unordered_map<std::string, std::string> item_map;
-    auto cursor = 0;
+    Cursor cursor = 0;
     while (true) {
         cursor = _redis.hscan(key, cursor, "f*", 2, std::inserter(item_map, item_map.end()));
         if (cursor == 0) {

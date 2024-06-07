@@ -480,7 +480,7 @@ public:
     ///
     /// Example:
     /// @code{.cpp}
-    /// auto cursor = 0LL;
+    /// sw::redis::Cursor cursor = 0;
     /// std::unordered_set<std::string> keys;
     /// while (true) {
     ///     cursor = redis.scan(cursor, "pattern:*", 10, std::inserter(keys, keys.begin()));
@@ -497,10 +497,10 @@ public:
     /// @see https://redis.io/commands/scan
     /// TODO: support the TYPE option for Redis 6.0.
     template <typename Output>
-    long long scan(long long cursor,
-                    const StringView &pattern,
-                    long long count,
-                    Output output);
+    Cursor scan(Cursor cursor,
+                 const StringView &pattern,
+                 long long count,
+                 Output output);
 
     /// @brief Scan all keys of the database.
     /// @param cursor Cursor.
@@ -508,8 +508,8 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/scan
     template <typename Output>
-    long long scan(long long cursor,
-                    Output output);
+    Cursor scan(Cursor cursor,
+                 Output output);
 
     /// @brief Scan keys of the database matching the given pattern.
     /// @param cursor Cursor.
@@ -518,9 +518,9 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/scan
     template <typename Output>
-    long long scan(long long cursor,
-                    const StringView &pattern,
-                    Output output);
+    Cursor scan(Cursor cursor,
+                 const StringView &pattern,
+                 Output output);
 
     /// @brief Scan keys of the database matching the given pattern.
     /// @param cursor Cursor.
@@ -529,9 +529,9 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/scan
     template <typename Output>
-    long long scan(long long cursor,
-                    long long count,
-                    Output output);
+    Cursor scan(Cursor cursor,
+                 long long count,
+                 Output output);
 
     /// @brief Update the last access time of the given key.
     /// @param key Key.
@@ -1490,7 +1490,7 @@ public:
     ///
     /// Example:
     /// @code{.cpp}
-    /// auto cursor = 0LL;
+    /// sw::redis::Cursor cursor = 0;
     /// std::unordered_map<std::string, std::string> kvs;
     /// while (true) {
     ///     cursor = redis.hscan("hash", cursor, "pattern:*", 10, std::inserter(kvs, kvs.begin()));
@@ -1507,11 +1507,11 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/hscan
     template <typename Output>
-    long long hscan(const StringView &key,
-                    long long cursor,
-                    const StringView &pattern,
-                    long long count,
-                    Output output);
+    Cursor hscan(const StringView &key,
+                 Cursor cursor,
+                 const StringView &pattern,
+                 long long count,
+                 Output output);
 
     /// @brief Scan fields of the given hash matching the given pattern.
     /// @param key Key where the hash is stored.
@@ -1521,10 +1521,10 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/hscan
     template <typename Output>
-    long long hscan(const StringView &key,
-                    long long cursor,
-                    const StringView &pattern,
-                    Output output);
+    Cursor hscan(const StringView &key,
+                 Cursor cursor,
+                 const StringView &pattern,
+                 Output output);
 
     /// @brief Scan all fields of the given hash.
     /// @param key Key where the hash is stored.
@@ -1534,10 +1534,10 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/hscan
     template <typename Output>
-    long long hscan(const StringView &key,
-                    long long cursor,
-                    long long count,
-                    Output output);
+    Cursor hscan(const StringView &key,
+                 Cursor cursor,
+                 long long count,
+                 Output output);
 
     /// @brief Scan all fields of the given hash.
     /// @param key Key where the hash is stored.
@@ -1546,9 +1546,9 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/hscan
     template <typename Output>
-    long long hscan(const StringView &key,
-                    long long cursor,
-                    Output output);
+    Cursor hscan(const StringView &key,
+                 Cursor cursor,
+                 Output output);
 
     /// @brief Set hash field to value.
     /// @param key Key where the hash is stored.
@@ -1875,7 +1875,7 @@ public:
     ///
     /// Example:
     /// @code{.cpp}
-    /// auto cursor = 0LL;
+    /// sw::redis::Cursor cursor = 0;
     /// std::unordered_set<std::string> members;
     /// while (true) {
     ///     cursor = redis.sscan("set", cursor, "pattern:*",
@@ -1893,11 +1893,11 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/sscan
     template <typename Output>
-    long long sscan(const StringView &key,
-                    long long cursor,
-                    const StringView &pattern,
-                    long long count,
-                    Output output);
+    Cursor sscan(const StringView &key,
+                 Cursor cursor,
+                 const StringView &pattern,
+                 long long count,
+                 Output output);
 
     /// @brief Scan members of the set matching the given pattern.
     /// @param key Key where the set is stored.
@@ -1907,10 +1907,10 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/sscan
     template <typename Output>
-    long long sscan(const StringView &key,
-                    long long cursor,
-                    const StringView &pattern,
-                    Output output);
+    Cursor sscan(const StringView &key,
+                 Cursor cursor,
+                 const StringView &pattern,
+                 Output output);
 
     /// @brief Scan all members of the given set.
     /// @param key Key where the set is stored.
@@ -1920,10 +1920,10 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/sscan
     template <typename Output>
-    long long sscan(const StringView &key,
-                    long long cursor,
-                    long long count,
-                    Output output);
+    Cursor sscan(const StringView &key,
+                 Cursor cursor,
+                 long long count,
+                 Output output);
 
     /// @brief Scan all members of the given set.
     /// @param key Key where the set is stored.
@@ -1932,9 +1932,9 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/sscan
     template <typename Output>
-    long long sscan(const StringView &key,
-                    long long cursor,
-                    Output output);
+    Cursor sscan(const StringView &key,
+                 Cursor cursor,
+                 Output output);
 
     /// @brief Get the union between the first set and all successive sets.
     /// @param first Iterator to the first set.
@@ -2811,7 +2811,7 @@ public:
     ///
     /// Example:
     /// @code{.cpp}
-    /// auto cursor = 0LL;
+    /// sw::redis::Cursor cursor = 0;
     /// std::vector<std::pair<std::string, double>> members;
     /// while (true) {
     ///     cursor = redis.zscan("zset", cursor, "pattern:*",
@@ -2829,11 +2829,11 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/zscan
     template <typename Output>
-    long long zscan(const StringView &key,
-                    long long cursor,
-                    const StringView &pattern,
-                    long long count,
-                    Output output);
+    Cursor zscan(const StringView &key,
+                 Cursor cursor,
+                 const StringView &pattern,
+                 long long count,
+                 Output output);
 
     /// @brief Scan members of the given sorted set matching the given pattern.
     /// @param key Key where the sorted set is stored.
@@ -2843,10 +2843,10 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/zscan
     template <typename Output>
-    long long zscan(const StringView &key,
-                    long long cursor,
-                    const StringView &pattern,
-                    Output output);
+    Cursor zscan(const StringView &key,
+                 Cursor cursor,
+                 const StringView &pattern,
+                 Output output);
 
     /// @brief Scan all members of the given sorted set.
     /// @param key Key where the sorted set is stored.
@@ -2856,10 +2856,10 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/zscan
     template <typename Output>
-    long long zscan(const StringView &key,
-                    long long cursor,
-                    long long count,
-                    Output output);
+    Cursor zscan(const StringView &key,
+                 Cursor cursor,
+                 long long count,
+                 Output output);
 
     /// @brief Scan all members of the given sorted set.
     /// @param key Key where the sorted set is stored.
@@ -2868,9 +2868,9 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/zscan
     template <typename Output>
-    long long zscan(const StringView &key,
-                    long long cursor,
-                    Output output);
+    Cursor zscan(const StringView &key,
+                 Cursor cursor,
+                 Output output);
 
     /// @brief Get the score of the given member.
     /// @param key Key where the sorted set is stored.

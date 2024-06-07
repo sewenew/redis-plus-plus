@@ -354,36 +354,36 @@ inline void RedisCluster::hmset(const StringView &key, Input first, Input last) 
 }
 
 template <typename Output>
-long long RedisCluster::hscan(const StringView &key,
-                        long long cursor,
-                        const StringView &pattern,
-                        long long count,
-                        Output output) {
+Cursor RedisCluster::hscan(const StringView &key,
+                     Cursor cursor,
+                     const StringView &pattern,
+                     long long count,
+                     Output output) {
     auto reply = command(cmd::hscan, key, cursor, pattern, count);
 
     return reply::parse_scan_reply(*reply, output);
 }
 
 template <typename Output>
-inline long long RedisCluster::hscan(const StringView &key,
-                                long long cursor,
-                                const StringView &pattern,
-                                Output output) {
+inline Cursor RedisCluster::hscan(const StringView &key,
+                             Cursor cursor,
+                             const StringView &pattern,
+                             Output output) {
     return hscan(key, cursor, pattern, 10, output);
 }
 
 template <typename Output>
-inline long long RedisCluster::hscan(const StringView &key,
-                                long long cursor,
-                                long long count,
-                                Output output) {
+inline Cursor RedisCluster::hscan(const StringView &key,
+                             Cursor cursor,
+                             long long count,
+                             Output output) {
     return hscan(key, cursor, "*", count, output);
 }
 
 template <typename Output>
-inline long long RedisCluster::hscan(const StringView &key,
-                                long long cursor,
-                                Output output) {
+inline Cursor RedisCluster::hscan(const StringView &key,
+                             Cursor cursor,
+                             Output output) {
     return hscan(key, cursor, "*", 10, output);
 }
 
@@ -487,36 +487,36 @@ long long RedisCluster::srem(const StringView &key, Input first, Input last) {
 }
 
 template <typename Output>
-long long RedisCluster::sscan(const StringView &key,
-                        long long cursor,
-                        const StringView &pattern,
-                        long long count,
-                        Output output) {
+Cursor RedisCluster::sscan(const StringView &key,
+                     Cursor cursor,
+                     const StringView &pattern,
+                     long long count,
+                     Output output) {
     auto reply = command(cmd::sscan, key, cursor, pattern, count);
 
     return reply::parse_scan_reply(*reply, output);
 }
 
 template <typename Output>
-inline long long RedisCluster::sscan(const StringView &key,
-                                long long cursor,
-                                const StringView &pattern,
-                                Output output) {
+inline Cursor RedisCluster::sscan(const StringView &key,
+                             Cursor cursor,
+                             const StringView &pattern,
+                             Output output) {
     return sscan(key, cursor, pattern, 10, output);
 }
 
 template <typename Output>
-inline long long RedisCluster::sscan(const StringView &key,
-                                long long cursor,
-                                long long count,
-                                Output output) {
+inline Cursor RedisCluster::sscan(const StringView &key,
+                             Cursor cursor,
+                             long long count,
+                             Output output) {
     return sscan(key, cursor, "*", count, output);
 }
 
 template <typename Output>
-inline long long RedisCluster::sscan(const StringView &key,
-                                long long cursor,
-                                Output output) {
+inline Cursor RedisCluster::sscan(const StringView &key,
+                             Cursor cursor,
+                             Output output) {
     return sscan(key, cursor, "*", 10, output);
 }
 
@@ -744,36 +744,36 @@ void RedisCluster::zrevrangebyscore(const StringView &key,
 }
 
 template <typename Output>
-long long RedisCluster::zscan(const StringView &key,
-                        long long cursor,
-                        const StringView &pattern,
-                        long long count,
-                        Output output) {
+Cursor RedisCluster::zscan(const StringView &key,
+                     Cursor cursor,
+                     const StringView &pattern,
+                     long long count,
+                     Output output) {
     auto reply = command(cmd::zscan, key, cursor, pattern, count);
 
     return reply::parse_scan_reply(*reply, output);
 }
 
 template <typename Output>
-inline long long RedisCluster::zscan(const StringView &key,
-                                long long cursor,
-                                const StringView &pattern,
-                                Output output) {
+inline Cursor RedisCluster::zscan(const StringView &key,
+                             Cursor cursor,
+                             const StringView &pattern,
+                             Output output) {
     return zscan(key, cursor, pattern, 10, output);
 }
 
 template <typename Output>
-inline long long RedisCluster::zscan(const StringView &key,
-                                long long cursor,
-                                long long count,
-                                Output output) {
+inline Cursor RedisCluster::zscan(const StringView &key,
+                             Cursor cursor,
+                             long long count,
+                             Output output) {
     return zscan(key, cursor, "*", count, output);
 }
 
 template <typename Output>
-inline long long RedisCluster::zscan(const StringView &key,
-                                long long cursor,
-                                Output output) {
+inline Cursor RedisCluster::zscan(const StringView &key,
+                             Cursor cursor,
+                             Output output) {
     return zscan(key, cursor, "*", 10, output);
 }
 
