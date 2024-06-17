@@ -185,6 +185,8 @@ struct IsAssociativeContainer
     : std::integral_constant<bool,
         HasInsert<T>::value && !HasPushBack<T>::value> {};
 
+using Cursor = unsigned long long;
+
 uint16_t crc16(const char *buf, int len);
 
 }

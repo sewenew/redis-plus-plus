@@ -43,8 +43,6 @@ using Monostate = std::monostate;
 template <typename F, typename ...Args>
 using IsInvocable = std::is_invocable<F, Args...>;
 
-using Cursor = unsigned long long;
-
 }
 
 }
