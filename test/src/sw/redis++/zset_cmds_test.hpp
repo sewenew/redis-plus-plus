@@ -103,7 +103,7 @@ void ZSetCmdTest<RedisInstance>::_test_zscan() {
     _redis.zadd(key, s.begin(), s.end());
 
     std::map<std::string, double> res;
-    auto cursor = 0;
+    Cursor cursor = 0;
     while (true) {
         cursor = _redis.zscan(key, cursor, "m*", 2, std::inserter(res, res.end()));
         if (cursor == 0) {

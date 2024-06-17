@@ -447,28 +447,28 @@ public:
     }
 
     template <typename Output>
-    long long hscan(const StringView &key,
-                    long long cursor,
-                    const StringView &pattern,
-                    long long count,
-                    Output output);
+    Cursor hscan(const StringView &key,
+                 Cursor cursor,
+                 const StringView &pattern,
+                 long long count,
+                 Output output);
 
     template <typename Output>
-    long long hscan(const StringView &key,
-                    long long cursor,
-                    const StringView &pattern,
-                    Output output);
+    Cursor hscan(const StringView &key,
+                 Cursor cursor,
+                 const StringView &pattern,
+                 Output output);
 
     template <typename Output>
-    long long hscan(const StringView &key,
-                    long long cursor,
-                    long long count,
-                    Output output);
+    Cursor hscan(const StringView &key,
+                 Cursor cursor,
+                 long long count,
+                 Output output);
 
     template <typename Output>
-    long long hscan(const StringView &key,
-                    long long cursor,
-                    Output output);
+    Cursor hscan(const StringView &key,
+                 Cursor cursor,
+                 Output output);
 
     long long hset(const StringView &key, const StringView &field, const StringView &val);
 
@@ -578,28 +578,28 @@ public:
     }
 
     template <typename Output>
-    long long sscan(const StringView &key,
-                    long long cursor,
-                    const StringView &pattern,
-                    long long count,
-                    Output output);
+    Cursor sscan(const StringView &key,
+                 Cursor cursor,
+                 const StringView &pattern,
+                 long long count,
+                 Output output);
 
     template <typename Output>
-    long long sscan(const StringView &key,
-                    long long cursor,
-                    const StringView &pattern,
-                    Output output);
+    Cursor sscan(const StringView &key,
+                 Cursor cursor,
+                 const StringView &pattern,
+                 Output output);
 
     template <typename Output>
-    long long sscan(const StringView &key,
-                    long long cursor,
-                    long long count,
-                    Output output);
+    Cursor sscan(const StringView &key,
+                 Cursor cursor,
+                 long long count,
+                 Output output);
 
     template <typename Output>
-    long long sscan(const StringView &key,
-                    long long cursor,
-                    Output output);
+    Cursor sscan(const StringView &key,
+                 Cursor cursor,
+                 Output output);
 
     template <typename Input, typename Output>
     void sunion(Input first, Input last, Output output);
@@ -825,28 +825,28 @@ public:
     OptionalLongLong zrevrank(const StringView &key, const StringView &member);
 
     template <typename Output>
-    long long zscan(const StringView &key,
-                    long long cursor,
-                    const StringView &pattern,
-                    long long count,
-                    Output output);
+    Cursor zscan(const StringView &key,
+                 Cursor cursor,
+                 const StringView &pattern,
+                 long long count,
+                 Output output);
 
     template <typename Output>
-    long long zscan(const StringView &key,
-                    long long cursor,
-                    const StringView &pattern,
-                    Output output);
+    Cursor zscan(const StringView &key,
+                 Cursor cursor,
+                 const StringView &pattern,
+                 Output output);
 
     template <typename Output>
-    long long zscan(const StringView &key,
-                    long long cursor,
-                    long long count,
-                    Output output);
+    Cursor zscan(const StringView &key,
+                 Cursor cursor,
+                 long long count,
+                 Output output);
 
     template <typename Output>
-    long long zscan(const StringView &key,
-                    long long cursor,
-                    Output output);
+    Cursor zscan(const StringView &key,
+                 Cursor cursor,
+                 Output output);
 
     OptionalDouble zscore(const StringView &key, const StringView &member);
 

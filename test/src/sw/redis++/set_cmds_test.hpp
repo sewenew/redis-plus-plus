@@ -153,7 +153,7 @@ void SetCmdTest<RedisInstance>::_test_sscan() {
     _redis.sadd(key, members.begin(), members.end());
 
     std::unordered_set<std::string> res;
-    long long cursor = 0;
+    Cursor cursor = 0;
     while (true) {
         cursor = _redis.sscan(key, cursor, "m*", 1, std::inserter(res, res.end()));
         if (cursor == 0) {

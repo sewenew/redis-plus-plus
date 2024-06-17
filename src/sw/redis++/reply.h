@@ -115,7 +115,7 @@ template <typename T, typename std::enable_if<IsAssociativeContainer<T>::value, 
 T parse(ParseTag<T>, redisReply &reply);
 
 template <typename Output>
-long long parse_scan_reply(redisReply &reply, Output output);
+Cursor parse_scan_reply(redisReply &reply, Output output);
 
 inline bool is_error(redisReply &reply) {
     return reply.type == REDIS_REPLY_ERROR;
@@ -455,7 +455,7 @@ T parse(ParseTag<T>, redisReply &reply) {
 }
 
 template <typename Output>
-long long parse_scan_reply(redisReply &reply, Output output) {
+Cursor parse_scan_reply(redisReply &reply, Output output) {
     if (reply.elements != 2 || reply.element == nullptr) {
         throw ProtoError("Invalid scan reply");
     }
@@ -467,9 +467,9 @@ long long parse_scan_reply(redisReply &reply, Output output) {
     }
 
     auto cursor_str = reply::parse<std::string>(*cursor_reply);
-    long long new_cursor = 0;
+    Cursor new_cursor = 0;
     try {
-        new_cursor = std::stoll(cursor_str);
+        new_cursor = std::stoull(cursor_str);
     } catch (const std::exception &e) {
         throw ProtoError("Invalid cursor reply: " + cursor_str);
     }

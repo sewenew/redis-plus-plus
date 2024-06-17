@@ -233,10 +233,10 @@ void restore(Connection &connection,
                 bool replace);
 
 inline void scan(Connection &connection,
-                    long long cursor,
+                    Cursor cursor,
                     const StringView &pattern,
                     long long count) {
-    connection.send("SCAN %lld MATCH %b COUNT %lld",
+    connection.send("SCAN %llu MATCH %b COUNT %lld",
                     cursor,
                     pattern.data(), pattern.size(),
                     count);
@@ -729,10 +729,10 @@ inline void hmset(Connection &connection,
 
 inline void hscan(Connection &connection,
                     const StringView &key,
-                    long long cursor,
+                    Cursor cursor,
                     const StringView &pattern,
                     long long count) {
-    connection.send("HSCAN %b %lld MATCH %b COUNT %lld",
+    connection.send("HSCAN %b %llu MATCH %b COUNT %lld",
                     key.data(), key.size(),
                     cursor,
                     pattern.data(), pattern.size(),
@@ -937,10 +937,10 @@ inline void srem_range(Connection &connection,
 
 inline void sscan(Connection &connection,
                     const StringView &key,
-                    long long cursor,
+                    Cursor cursor,
                     const StringView &pattern,
                     long long count) {
-    connection.send("SSCAN %b %lld MATCH %b COUNT %lld",
+    connection.send("SSCAN %b %llu MATCH %b COUNT %lld",
                     key.data(), key.size(),
                     cursor,
                     pattern.data(), pattern.size(),
@@ -1294,10 +1294,10 @@ inline void zrevrank(Connection &connection,
 
 inline void zscan(Connection &connection,
                     const StringView &key,
-                    long long cursor,
+                    Cursor cursor,
                     const StringView &pattern,
                     long long count) {
-    connection.send("ZSCAN %b %lld MATCH %b COUNT %lld",
+    connection.send("ZSCAN %b %llu MATCH %b COUNT %lld",
                     key.data(), key.size(),
                     cursor,
                     pattern.data(), pattern.size(),
