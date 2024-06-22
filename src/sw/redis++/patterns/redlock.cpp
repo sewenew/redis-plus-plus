@@ -357,14 +357,19 @@ void RedMutexImpl::unlock() {
     std::lock_guard<std::mutex> lock(_mtx);
 
     if (!_locked()) {
+        // If `lock` is not called yet, the behavior is undefined.
         throw Error("RedMutex is not locked");
     }
 
     try {
         _unlock(_lock_id);
     } catch (...) {
-        _reset();
-        throw;
+        // We cannot throw exception in `unlock`,
+        // because normally we call unlock in the destructor of `std::lock_guard` or `std::unique_lock`.
+        // If we throw exception, the application code terminates.
+        // Check issue #563 for detail.
+        //_reset();
+        //throw;
     }
 
     _reset();
