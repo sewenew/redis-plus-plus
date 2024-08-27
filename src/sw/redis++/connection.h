@@ -145,6 +145,8 @@ public:
 
     ReplyUPtr recv(bool handle_error_reply = true);
 
+    bool avail();
+
     const ConnectionOptions& options() const {
         return _opts;
     }

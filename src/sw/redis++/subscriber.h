@@ -163,6 +163,8 @@ public:
 
     void consume();
 
+    bool available();
+
 private:
     friend class Redis;
 

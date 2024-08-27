@@ -18,6 +18,7 @@
 #include <cassert>
 #include <tuple>
 #include <algorithm>
+#include <poll.h>
 #include "sw/redis++/reply.h"
 #include "sw/redis++/command.h"
 #include "sw/redis++/command_args.h"
@@ -251,6 +252,29 @@ ReplyUPtr Connection::recv(bool handle_error_reply) {
     }
 
     return reply;
+}
+
+bool Connection::avail() {
+    auto *ctx = _context();
+
+    assert(ctx != nullptr);
+
+    auto fd = ctx->fd;
+
+    struct pollfd pfd;
+    pfd.fd = fd;
+    pfd.events = POLLIN;  // Check for readability
+
+    int result = poll(&pfd, 1, 0);  // Timeout set to 0 milliseconds
+    if (result > 0 && (pfd.revents & POLLIN)) {
+        return true;
+    } else if (result == 0) {
+        return false;
+    } else {
+        // An error occurred
+        throw_error(*ctx, strerror(errno));
+        return -1;
+    }
 }
 
 #ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
