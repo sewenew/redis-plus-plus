@@ -273,7 +273,6 @@ bool Connection::avail() {
     } else {
         // An error occurred
         throw_error(*ctx, strerror(errno));
-        return -1;
     }
 }
 
