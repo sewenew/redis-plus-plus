@@ -309,7 +309,7 @@ template <typename T, typename ...Args>
 auto parse_variant(redisReply &reply) ->
     typename std::enable_if<sizeof...(Args) != 0, Variant<T, Args...>>::type {
     auto return_var = [](auto &&arg) {
-        return Variant<T, Args...>(std::move(arg));
+        return Variant<T, Args...>(std::forward<decltype(arg)>(arg));
     };
 
     try {
