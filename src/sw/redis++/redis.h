@@ -356,7 +356,7 @@ public:
     /// @see https://redis.io/commands/expireat
     bool expireat(const StringView &key,
                     const std::chrono::time_point<std::chrono::system_clock,
-                                                    std::chrono::seconds> &tp);
+                                                    std::chrono::seconds> &timestamp);
 
     /// @brief Get keys matching the given pattern.
     /// @param pattern Pattern.
@@ -421,7 +421,7 @@ public:
     /// @see https://redis.io/commands/pexpireat
     bool pexpireat(const StringView &key,
                     const std::chrono::time_point<std::chrono::system_clock,
-                                                    std::chrono::milliseconds> &tp);
+                                                    std::chrono::milliseconds> &timestamp);
 
     /// @brief Get the TTL of a key in milliseconds.
     /// @param key Key.
@@ -2202,8 +2202,7 @@ public:
     /// redis.zadd("zset", {std::make_pair("m1", 1.4), std::make_pair("m2", 2.3)});
     /// @endcode
     /// @param key Key where the sorted set is stored.
-    /// @param first Iterator to the first member-score pair.
-    /// @param last Off-the-end iterator to the member-score pairs range.
+    /// @param il Initializer list of member-score pairs.
     /// @param type Options for zadd command:
     ///             - UpdateType::EXIST: Add the member only if it already exists.
     ///             - UpdateType::NOT_EXIST: Add the member only if it does not exist.
