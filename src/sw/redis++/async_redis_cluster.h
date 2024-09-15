@@ -39,6 +39,12 @@ public:
             Role role = Role::MASTER,
             const EventLoopSPtr &loop = nullptr);
 
+    AsyncRedisCluster(const ConnectionOptions &opts,
+            const ConnectionPoolOptions &pool_opts,
+            Role role,
+            const ClusterOptions &cluster_opts,
+            const EventLoopSPtr &loop = nullptr);
+
     explicit AsyncRedisCluster(const std::string &uri) : AsyncRedisCluster(Uri(uri)) {}
 
     AsyncRedisCluster(const AsyncRedisCluster &) = delete;

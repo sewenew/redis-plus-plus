@@ -512,8 +512,6 @@ public:
         // i.e. ClosedError or IoError, we need to update node-slot mapping.
         try {
             std::rethrow_exception(err);
-        } catch (const SlotUncoveredError &) {
-            detail::update_shards(_key, _pool, AsyncEventUPtr(new UpdateShardsEvent));
         } catch (const IoError &) {
             detail::update_shards(_key, _pool, AsyncEventUPtr(new UpdateShardsEvent));
         } catch (const ClosedError &) {
