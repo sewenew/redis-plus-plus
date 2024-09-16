@@ -247,7 +247,7 @@ Connection Sentinel::slave(const std::string &master_name, const ConnectionOptio
             }
         } catch (const StopIterError &err) {
             err_msgs.push_back(report_error(sentinel_node, slave_node, err.what()));
-            throw StopIterError(err_msgs);;
+            throw StopIterError(err_msgs);
         } catch (const Error &err) {
             err_msgs.push_back(report_error(sentinel_node, slave_node, err.what()));
             continue;

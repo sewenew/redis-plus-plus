@@ -42,7 +42,7 @@ std::pair<Slot, Node> RedirectionError::_parse_error(const std::string &msg) con
         auto port = std::stoi(msg.substr(colon_pos + 1));
 
         return {slot, {host, port}};
-    } catch (const std::exception &e) {
+    } catch (const std::exception &) {
         throw ProtoError("Invalid ASK error message: " + msg);
     }
 }

@@ -42,6 +42,7 @@
  * Output for "123456789"     : 31C3
  */
 
+#include "utils.h"
 #include <cstdint>
 
 namespace sw {

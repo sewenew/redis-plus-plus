@@ -169,7 +169,7 @@ private:
             if (context != nullptr) {
                 redisFree(context);
             }
-        };
+        }
     };
 
     using ContextUPtr = std::unique_ptr<redisContext, ContextDeleter>;

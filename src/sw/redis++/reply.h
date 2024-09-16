@@ -470,7 +470,7 @@ Cursor parse_scan_reply(redisReply &reply, Output output) {
     Cursor new_cursor = 0;
     try {
         new_cursor = std::stoull(cursor_str);
-    } catch (const std::exception &e) {
+    } catch (const std::exception &) {
         throw ProtoError("Invalid cursor reply: " + cursor_str);
     }
 
