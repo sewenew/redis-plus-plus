@@ -191,11 +191,11 @@ std::string RedLockUtils::lock_id() {
     for (int i = 0; i != 20; ++i) {
         auto idx = dist(random_gen);
         if (idx < 10) {
-            id.push_back('0' + idx);
+            id.push_back(static_cast<char>('0' + idx));
         } else if (idx < 10 + 26) {
-            id.push_back('a' + idx - 10);
+            id.push_back(static_cast<char>('a' + idx - 10));
         } else if (idx < 10 + 26 + 26) {
-            id.push_back('A' + idx - 10 - 26);
+            id.push_back(static_cast<char>('A' + idx - 10 - 26));
         } else {
             assert(false && "Index out of range in RedLock::_lock_id()");
         }
@@ -280,7 +280,7 @@ RedLockMutexVessel::LockInfo RedLockMutexVessel::lock(const std::string& resourc
             }
         }
 
-        const auto drift = std::chrono::milliseconds(int(ttl.count() * clock_drift_factor) + 2);
+        const auto drift = std::chrono::duration<decltype(clock_drift_factor)>(ttl) * clock_drift_factor + std::chrono::milliseconds(2);
         lock_info.time_remaining = std::chrono::duration_cast<std::chrono::milliseconds>
             (lock_info.startTime + ttl - std::chrono::steady_clock::now() - drift);
 
@@ -319,7 +319,8 @@ RedLockMutexVessel::LockInfo RedLockMutexVessel::extend_lock(const RedLockMutexV
                     num_locked++;
                 }
             }
-            const auto drift = std::chrono::milliseconds(int(ttl.count() * clock_drift_factor) + 2);
+
+            const auto drift = std::chrono::duration<decltype(clock_drift_factor)>(ttl) * clock_drift_factor + std::chrono::milliseconds(2);
             extended_lock_info.time_remaining = std::chrono::duration_cast<std::chrono::milliseconds>
                 (extended_lock_info.startTime + ttl - std::chrono::steady_clock::now() - drift);
 

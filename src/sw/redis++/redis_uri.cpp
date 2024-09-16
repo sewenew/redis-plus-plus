@@ -86,7 +86,7 @@ void Uri::_set_option(const std::string &key, const std::string &val) {
     } else if (key == "resp") {
         _opts.resp = _parse_int_option(val);
     } else if (key == "pool_size") {
-        _pool_opts.size = _parse_int_option(val);
+        _pool_opts.size = static_cast<std::size_t>(_parse_int_option(val));
     } else if (key == "pool_wait_timeout") {
         _pool_opts.wait_timeout = _parse_timeout_option(val);
     } else if (key == "pool_connection_lifetime") {
