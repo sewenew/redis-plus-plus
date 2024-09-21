@@ -2299,6 +2299,8 @@ If master is down, the cluster will promote one of its replicas to be the new ma
 - When the master is down, *redis-plus-plus* losts connection to it. In this case, if you try to send commands to this master, *redis-plus-plus* will try to update slot-node mapping from other nodes. If the mapping remains unchanged, i.e. new master hasn't been elected yet, it fails to send command to Redis Cluster and throws exception.
 - When the new master has been elected, the slot-node mapping will be updated by the cluster. In this case, if you send commands to the cluster, *redis-plus-plus* can get an update-to-date mapping, and sends commands to the new master.
 
+Since redis-plus-plus 1.3.13, it also updates the slot-node mapping every `ClusterOptions::slot_map_refresh_interval` time interval (by default, it updates every 10 seconds).
+
 ### Redis Sentinel
 
 [Redis Sentinel provides high availability for Redis](https://redis.io/topics/sentinel). If Redis master is down, Redis Sentinels will elect a new master from slaves, i.e. failover. Besides, Redis Sentinel can also act like a configuration provider for clients, and clients can query master or slave address from Redis Sentinel. So that if a failover occurs, clients can ask the new master address from Redis Sentinel.
