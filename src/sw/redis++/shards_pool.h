@@ -18,6 +18,7 @@
 #define SEWENEW_REDISPLUSPLUS_SHARDS_POOL_H
 
 #include <cassert>
+#include <chrono>
 #include <condition_variable>
 #include <mutex>
 #include <thread>
@@ -34,10 +35,13 @@ namespace sw {
 
 namespace redis {
 
+struct ClusterOptions {
+    // Automatically update slot map every `slot_map_refresh_interval`.
+    std::chrono::milliseconds slot_map_refresh_interval = std::chrono::seconds(10);
+};
+
 class ShardsPool {
 public:
-    ShardsPool() = default;
-
     ShardsPool(const ShardsPool &that) = delete;
     ShardsPool& operator=(const ShardsPool &that) = delete;
 
@@ -48,7 +52,8 @@ public:
 
     ShardsPool(const ConnectionPoolOptions &pool_opts,
                 const ConnectionOptions &connection_opts,
-                Role role);
+                Role role,
+                const ClusterOptions &cluster_opts);
 
     // Fetch a connection by key.
     ConnectionPoolSPtr fetch(const StringView &key);
@@ -68,8 +73,6 @@ public:
     Shards shards();
 
     std::vector<ConnectionPoolSPtr> pools();
-
-    void async_update();
 
 private:
     void _init_pool(const Shards &shards);
@@ -117,12 +120,7 @@ private:
 
     NodeMap _pools;
 
-    enum class UpdateStatus {
-        STALE = 0,
-        UPDATED,
-        STOP
-    };
-    UpdateStatus _update_status = UpdateStatus::UPDATED;
+    bool _stop = false;
 
     std::thread _worker;
 
@@ -131,6 +129,8 @@ private:
     std::mutex _mutex;
 
     Role _role = Role::MASTER;
+
+    ClusterOptions _cluster_opts;
 
     static const std::size_t SHARDS = 16383;
 };

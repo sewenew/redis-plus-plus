@@ -43,7 +43,8 @@ public:
     AsyncShardsPool(const EventLoopSPtr &loop,
                 const ConnectionPoolOptions &pool_opts,
                 const ConnectionOptions &connection_opts,
-                Role role);
+                Role role,
+                const ClusterOptions &cluster_opts);
 
     AsyncConnectionPoolSPtr fetch(const StringView &key);
 
@@ -100,6 +101,8 @@ private:
     ConnectionOptions _connection_opts;
 
     Role _role = Role::MASTER;
+
+    ClusterOptions _cluster_opts;
 
     Shards _shards;
 

@@ -47,7 +47,8 @@ class RedisCluster {
 public:
     explicit RedisCluster(const ConnectionOptions &connection_opts,
                     const ConnectionPoolOptions &pool_opts = {},
-                    Role role = Role::MASTER) : _pool(new ShardsPool(pool_opts, connection_opts, role)) {}
+                    Role role = Role::MASTER,
+                    const ClusterOptions &cluster_opts = {}) : _pool(new ShardsPool(pool_opts, connection_opts, role, cluster_opts)) {}
 
     // Construct RedisCluster with URI:
     // "tcp://127.0.0.1" or "tcp://127.0.0.1:6379"

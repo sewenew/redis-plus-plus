@@ -29,10 +29,12 @@ const std::size_t AsyncShardsPool::SHARDS;
 AsyncShardsPool::AsyncShardsPool(const EventLoopSPtr &loop,
         const ConnectionPoolOptions &pool_opts,
         const ConnectionOptions &connection_opts,
-        Role role) :
+        Role role,
+        const ClusterOptions &cluster_opts) :
             _pool_opts(pool_opts),
             _connection_opts(connection_opts),
             _role(role),
+            _cluster_opts(cluster_opts),
             _loop(loop) {
     assert(loop);
 
@@ -208,8 +210,12 @@ auto AsyncShardsPool::_fetch_events() -> std::queue<RedeliverEvent> {
     std::queue<RedeliverEvent> events;
 
     std::unique_lock<std::mutex> lock(_mutex);
-    if (_events.empty()) {
-        _cv.wait(lock, [this]() { return !(this->_events).empty(); } );
+
+    if (!_cv.wait_for(lock,
+            _cluster_opts.slot_map_refresh_interval,
+            [this]() { return !(this->_events).empty(); })) {
+        // Reach timeout, but there's still no event, put an update event.
+        _events.push(RedeliverEvent{{}, AsyncEventUPtr(new UpdateShardsEvent)});
     }
 
     events.swap(_events);
@@ -238,7 +244,7 @@ Shards AsyncShardsPool::_get_shards(const std::string &host, int port) {
     auto opts = _connection_opts;
     opts.host = host;
     opts.port = port;
-    ShardsPool pool(_pool_opts, opts, _role);
+    ShardsPool pool(_pool_opts, opts, _role, _cluster_opts);
 
     return pool.shards();
 }

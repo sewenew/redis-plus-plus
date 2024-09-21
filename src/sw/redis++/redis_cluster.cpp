@@ -32,8 +32,6 @@ RedisCluster::RedisCluster(const Uri &uri) :
 Redis RedisCluster::redis(const StringView &hash_tag, bool new_connection) {
     assert(_pool);
 
-    _pool->async_update();
-
     auto pool = _pool->fetch(hash_tag);
     if (new_connection) {
         // Create a new pool
@@ -45,8 +43,6 @@ Redis RedisCluster::redis(const StringView &hash_tag, bool new_connection) {
 
 Pipeline RedisCluster::pipeline(const StringView &hash_tag, bool new_connection) {
     assert(_pool);
-
-    _pool->async_update();
 
     auto pool = _pool->fetch(hash_tag);
     if (new_connection) {
@@ -60,8 +56,6 @@ Pipeline RedisCluster::pipeline(const StringView &hash_tag, bool new_connection)
 Transaction RedisCluster::transaction(const StringView &hash_tag, bool piped, bool new_connection) {
     assert(_pool);
 
-    _pool->async_update();
-
     auto pool = _pool->fetch(hash_tag);
     if (new_connection) {
         // Create a new pool
@@ -74,16 +68,12 @@ Transaction RedisCluster::transaction(const StringView &hash_tag, bool piped, bo
 Subscriber RedisCluster::subscriber() {
     assert(_pool);
 
-    _pool->async_update();
-
     auto opts = _pool->connection_options();
     return Subscriber(Connection(opts));
 }
 
 Subscriber RedisCluster::subscriber(const StringView &hash_tag) {
     assert(_pool);
-
-    _pool->async_update();
 
     auto opts = _pool->connection_options(hash_tag);
     return Subscriber(Connection(opts));
