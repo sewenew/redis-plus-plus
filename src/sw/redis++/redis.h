@@ -3247,6 +3247,62 @@ public:
 
     std::string script_load(const StringView &script);
 
+    template <typename Result, typename Keys, typename Args>
+    Result fcall(const StringView &func,
+                Keys keys_first,
+                Keys keys_last,
+                Args args_first,
+                Args args_last);
+
+    template <typename Result>
+    Result fcall(const StringView &func,
+                std::initializer_list<StringView> keys,
+                std::initializer_list<StringView> args);
+
+    template <typename Keys, typename Args, typename Output>
+    void fcall(const StringView &func,
+                Keys keys_first,
+                Keys keys_last,
+                Args args_first,
+                Args args_last,
+                Output output);
+
+    template <typename Output>
+    void fcall(const StringView &func,
+                std::initializer_list<StringView> keys,
+                std::initializer_list<StringView> args,
+                Output output);
+
+    template <typename Result, typename Keys, typename Args>
+    Result fcall_ro(const StringView &func,
+                Keys keys_first,
+                Keys keys_last,
+                Args args_first,
+                Args args_last);
+
+    template <typename Result>
+    Result fcall_ro(const StringView &func,
+                std::initializer_list<StringView> keys,
+                std::initializer_list<StringView> args);
+
+    template <typename Keys, typename Args, typename Output>
+    void fcall_ro(const StringView &func,
+                Keys keys_first,
+                Keys keys_last,
+                Args args_first,
+                Args args_last,
+                Output output);
+
+    template <typename Output>
+    void fcall_ro(const StringView &func,
+                std::initializer_list<StringView> keys,
+                std::initializer_list<StringView> args,
+                Output output);
+
+    std::string function_load(const StringView &code, bool replace = false);
+
+    void function_delete(const StringView &lib_name);
+
     // PUBSUB commands.
 
     long long publish(const StringView &channel, const StringView &message);

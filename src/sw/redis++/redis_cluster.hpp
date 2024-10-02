@@ -1002,6 +1002,90 @@ void RedisCluster::evalsha(const StringView &script,
     evalsha(script, keys.begin(), keys.end(), args.begin(), args.end(), output);
 }
 
+template <typename Result, typename Keys, typename Args>
+Result RedisCluster::fcall(const StringView &func,
+                          Keys keys_first,
+                          Keys keys_last,
+                          Args args_first,
+                          Args args_last) {
+    if (keys_first == keys_last) {
+        throw Error("DO NOT support function without key");
+    }
+
+    auto reply = _command(cmd::fcall<Keys, Args>, *keys_first, func, keys_first, keys_last, args_first, args_last);
+
+    return reply::parse<Result>(*reply);
+}
+
+template <typename Result>
+Result RedisCluster::fcall(const StringView &func,
+                            std::initializer_list<StringView> keys,
+                            std::initializer_list<StringView> args) {
+    return fcall<Result>(func, keys.begin(), keys.end(), args.begin(), args.end());
+}
+
+template <typename Keys, typename Args, typename Output>
+void RedisCluster::fcall(const StringView &func,
+                          Keys keys_first,
+                          Keys keys_last,
+                          Args args_first,
+                          Args args_last,
+                          Output output) {
+    if (keys_first == keys_last) {
+        throw Error("DO NOT support function without key");
+    }
+
+    auto reply = _command(cmd::fcall<Keys, Args>,
+                            *keys_first,
+                            func,
+                            keys_first, keys_last,
+                            args_first, args_last);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Result, typename Keys, typename Args>
+Result RedisCluster::fcall_ro(const StringView &func,
+                          Keys keys_first,
+                          Keys keys_last,
+                          Args args_first,
+                          Args args_last) {
+    if (keys_first == keys_last) {
+        throw Error("DO NOT support function without key");
+    }
+
+    auto reply = _command(cmd::fcall_ro<Keys, Args>, *keys_first, func, keys_first, keys_last, args_first, args_last);
+
+    return reply::parse<Result>(*reply);
+}
+
+template <typename Result>
+Result RedisCluster::fcall_ro(const StringView &func,
+                            std::initializer_list<StringView> keys,
+                            std::initializer_list<StringView> args) {
+    return fcall_ro<Result>(func, keys.begin(), keys.end(), args.begin(), args.end());
+}
+
+template <typename Keys, typename Args, typename Output>
+void RedisCluster::fcall_ro(const StringView &func,
+                          Keys keys_first,
+                          Keys keys_last,
+                          Args args_first,
+                          Args args_last,
+                          Output output) {
+    if (keys_first == keys_last) {
+        throw Error("DO NOT support function without key");
+    }
+
+    auto reply = _command(cmd::fcall_ro<Keys, Args>,
+                            *keys_first,
+                            func,
+                            keys_first, keys_last,
+                            args_first, args_last);
+
+    reply::to_array(*reply, output);
+}
+
 // Stream commands.
 
 template <typename Input>

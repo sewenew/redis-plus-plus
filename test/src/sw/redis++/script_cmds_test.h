@@ -35,6 +35,8 @@ public:
 private:
     void _run(Redis &instance);
 
+    void _run_function_test(Redis &instance);
+
     RedisInstance &_redis;
 };
 

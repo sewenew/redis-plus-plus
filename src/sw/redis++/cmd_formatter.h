@@ -791,6 +791,56 @@ FormattedCommand evalsha(const StringView &script,
     return format_cmd(args);
 }
 
+template <typename Keys, typename Args>
+FormattedCommand fcall(const StringView &func,
+        Keys keys_first,
+        Keys keys_last,
+        Args args_first,
+        Args args_last) {
+    CmdArgs args;
+    auto keys_num = std::distance(keys_first, keys_last);
+
+    args << "FCALL" << func << keys_num
+            << std::make_pair(keys_first, keys_last)
+            << std::make_pair(args_first, args_last);
+
+    return format_cmd(args);
+}
+
+template <typename Keys, typename Args>
+FormattedCommand fcall_ro(const StringView &func,
+        Keys keys_first,
+        Keys keys_last,
+        Args args_first,
+        Args args_last) {
+    CmdArgs args;
+    auto keys_num = std::distance(keys_first, keys_last);
+
+    args << "FCALL_RO" << func << keys_num
+            << std::make_pair(keys_first, keys_last)
+            << std::make_pair(args_first, args_last);
+
+    return format_cmd(args);
+}
+
+inline FormattedCommand function_load(const StringView &code, bool replace) {
+    CmdArgs cmd_args;
+
+    cmd_args << "FUNCTION" << "LOAD";
+
+    if (replace) {
+        cmd_args << "REPLACE";
+    }
+
+    cmd_args << code;
+
+    return format_cmd(cmd_args);
+}
+
+inline FormattedCommand function_delete(const StringView &lib_name) {
+    return format_cmd("FUNCTION DELETE %b", lib_name.data(), lib_name.size());
+}
+
 // PUBSUB commands.
 
 inline FormattedCommand psubscribe(const StringView &pattern) {

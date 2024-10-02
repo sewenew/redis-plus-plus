@@ -1022,6 +1022,88 @@ void Redis::script_exists(Input first, Input last, Output output) {
     reply::to_array(*reply, output);
 }
 
+template <typename Result, typename Keys, typename Args>
+Result Redis::fcall(const StringView &func,
+            Keys keys_first,
+            Keys keys_last,
+            Args args_first,
+            Args args_last) {
+    auto reply = command(cmd::fcall<Keys, Args>, func, keys_first, keys_last, args_first, args_last);
+
+    return reply::parse<Result>(*reply);
+}
+
+template <typename Result>
+Result Redis::fcall(const StringView &func,
+            std::initializer_list<StringView> keys,
+            std::initializer_list<StringView> args) {
+    return fcall<Result>(func, keys.begin(), keys.end(), args.begin(), args.end());
+}
+
+template <typename Keys, typename Args, typename Output>
+void Redis::fcall(const StringView &func,
+            Keys keys_first,
+            Keys keys_last,
+            Args args_first,
+            Args args_last,
+            Output output) {
+    auto reply = command(cmd::fcall<Keys, Args>,
+                            func,
+                            keys_first, keys_last,
+                            args_first, args_last);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Output>
+void Redis::fcall(const StringView &func,
+            std::initializer_list<StringView> keys,
+            std::initializer_list<StringView> args,
+            Output output) {
+    fcall(func, keys.begin(), keys.end(), args.begin(), args.end(), output);
+}
+
+template <typename Result, typename Keys, typename Args>
+Result Redis::fcall_ro(const StringView &func,
+            Keys keys_first,
+            Keys keys_last,
+            Args args_first,
+            Args args_last) {
+    auto reply = command(cmd::fcall_ro<Keys, Args>, func, keys_first, keys_last, args_first, args_last);
+
+    return reply::parse<Result>(*reply);
+}
+
+template <typename Result>
+Result Redis::fcall_ro(const StringView &func,
+            std::initializer_list<StringView> keys,
+            std::initializer_list<StringView> args) {
+    return fcall_ro<Result>(func, keys.begin(), keys.end(), args.begin(), args.end());
+}
+
+template <typename Keys, typename Args, typename Output>
+void Redis::fcall_ro(const StringView &func,
+            Keys keys_first,
+            Keys keys_last,
+            Args args_first,
+            Args args_last,
+            Output output) {
+    auto reply = command(cmd::fcall_ro<Keys, Args>,
+                            func,
+                            keys_first, keys_last,
+                            args_first, args_last);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Output>
+void Redis::fcall_ro(const StringView &func,
+            std::initializer_list<StringView> keys,
+            std::initializer_list<StringView> args,
+            Output output) {
+    fcall_ro(func, keys.begin(), keys.end(), args.begin(), args.end(), output);
+}
+
 // Transaction commands.
 
 template <typename Input>

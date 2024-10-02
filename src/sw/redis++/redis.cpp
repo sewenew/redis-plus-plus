@@ -855,6 +855,18 @@ std::string Redis::script_load(const StringView &script) {
     return reply::parse<std::string>(*reply);
 }
 
+std::string Redis::function_load(const StringView &code, bool replace) {
+    auto reply = command(cmd::function_load, code, replace);
+
+    return reply::parse<std::string>(*reply);
+}
+
+void Redis::function_delete(const StringView &lib_name) {
+    auto reply = command(cmd::function_delete, lib_name);
+
+    reply::parse<void>(*reply);
+}
+
 // PUBSUB commands.
 
 long long Redis::publish(const StringView &channel, const StringView &message) {

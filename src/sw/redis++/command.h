@@ -1568,6 +1568,62 @@ inline void script_load(Connection &connection, const StringView &script) {
     connection.send("SCRIPT LOAD %b", script.data(), script.size());
 }
 
+template <typename Keys, typename Args>
+inline void fcall(Connection &connection,
+                       const StringView &func,
+                       Keys keys_first,
+                       Keys keys_last,
+                       Args args_first,
+                       Args args_last) {
+    CmdArgs cmd_args;
+
+    auto keys_num = std::distance(keys_first, keys_last);
+
+    cmd_args << "FCALL" << func << keys_num
+            << std::make_pair(keys_first, keys_last)
+            << std::make_pair(args_first, args_last);
+
+    connection.send(cmd_args);
+}
+
+template <typename Keys, typename Args>
+inline void fcall_ro(Connection &connection,
+                       const StringView &func,
+                       Keys keys_first,
+                       Keys keys_last,
+                       Args args_first,
+                       Args args_last) {
+    CmdArgs cmd_args;
+
+    auto keys_num = std::distance(keys_first, keys_last);
+
+    cmd_args << "FCALL_RO" << func << keys_num
+            << std::make_pair(keys_first, keys_last)
+            << std::make_pair(args_first, args_last);
+
+    connection.send(cmd_args);
+}
+
+inline void function_load(Connection &connection,
+                            const StringView &code,
+                            bool replace) {
+    CmdArgs cmd_args;
+
+    cmd_args << "FUNCTION" << "LOAD";
+
+    if (replace) {
+        cmd_args << "REPLACE";
+    }
+
+    cmd_args << code;
+
+    connection.send(cmd_args);
+}
+
+inline void function_delete(Connection &connection, const StringView &lib_name) {
+    connection.send("FUNCTION DELETE %b", lib_name.data(), lib_name.size());
+}
+
 // PUBSUB commands.
 
 inline void psubscribe(Connection &connection, const StringView &pattern) {

@@ -1075,6 +1075,54 @@ public:
                 args.begin(), args.end());
     }
 
+    template <typename Result, typename Keys, typename Args>
+    Future<Result> fcall(const StringView &func,
+                Keys keys_first,
+                Keys keys_last,
+                Args args_first,
+                Args args_last) {
+        if (keys_first == keys_last) {
+            throw Error("DO NOT support function without key");
+        }
+
+        return _generic_command<Result>(fmt::fcall<Keys, Args>, *keys_first, func,
+                keys_first, keys_last,
+                args_first, args_last);
+    }
+
+    template <typename Result>
+    Future<Result> fcall(const StringView &func,
+                std::initializer_list<StringView> keys,
+                std::initializer_list<StringView> args) {
+        return fcall<Result>(func,
+                keys.begin(), keys.end(),
+                args.begin(), args.end());
+    }
+
+    template <typename Result, typename Keys, typename Args>
+    Future<Result> fcall_ro(const StringView &func,
+                Keys keys_first,
+                Keys keys_last,
+                Args args_first,
+                Args args_last) {
+        if (keys_first == keys_last) {
+            throw Error("DO NOT support function without key");
+        }
+
+        return _generic_command<Result>(fmt::fcall_ro<Keys, Args>, *keys_first, func,
+                keys_first, keys_last,
+                args_first, args_last);
+    }
+
+    template <typename Result>
+    Future<Result> fcall_ro(const StringView &func,
+                std::initializer_list<StringView> keys,
+                std::initializer_list<StringView> args) {
+        return fcall_ro<Result>(func,
+                keys.begin(), keys.end(),
+                args.begin(), args.end());
+    }
+
     // PUBSUB commands.
 
     Future<long long> publish(const StringView &channel, const StringView &message) {
