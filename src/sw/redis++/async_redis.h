@@ -1613,6 +1613,94 @@ public:
         return evalsha<Result>(script, keys.begin(), keys.end(), args.begin(), args.end(), std::forward<Callback>(cb));
     }
 
+    template <typename Result, typename Keys, typename Args>
+    Future<Result> fcall(const StringView &func,
+                Keys keys_first,
+                Keys keys_last,
+                Args args_first,
+                Args args_last) {
+        return _command<Result>(fmt::fcall<Keys, Args>,
+                func, keys_first, keys_last, args_first, args_last);
+    }
+
+    template <typename Result, typename Keys, typename Args, typename Callback>
+    auto fcall(const StringView &func,
+              Keys keys_first,
+              Keys keys_last,
+              Args args_first,
+              Args args_last,
+              Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Result> &&>::value, void>::type {
+        _callback_fmt_command<Result>(std::forward<Callback>(cb), fmt::fcall<Keys, Args>,
+                                      func, keys_first, keys_last, args_first, args_last);
+    }
+
+    template <typename Result>
+    Future<Result> fcall(const StringView &func,
+                std::initializer_list<StringView> keys,
+                std::initializer_list<StringView> args) {
+        return fcall<Result>(func,
+                keys.begin(), keys.end(),
+                args.begin(), args.end());
+    }
+
+    template <typename Result, typename Callback>
+    auto fcall(const StringView &func,
+              std::initializer_list<StringView> keys,
+              std::initializer_list<StringView> args,
+              Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Result> &&>::value, void>::type {
+        return fcall<Result>(func, keys.begin(), keys.end(), args.begin(), args.end(), std::forward<Callback>(cb));
+    }
+
+    template <typename Result, typename Keys, typename Args>
+    Future<Result> fcall_ro(const StringView &func,
+                Keys keys_first,
+                Keys keys_last,
+                Args args_first,
+                Args args_last) {
+        return _command<Result>(fmt::fcall_ro<Keys, Args>,
+                func, keys_first, keys_last, args_first, args_last);
+    }
+
+    template <typename Result, typename Keys, typename Args, typename Callback>
+    auto fcall_ro(const StringView &func,
+              Keys keys_first,
+              Keys keys_last,
+              Args args_first,
+              Args args_last,
+              Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Result> &&>::value, void>::type {
+        _callback_fmt_command<Result>(std::forward<Callback>(cb), fmt::fcall_ro<Keys, Args>,
+                                      func, keys_first, keys_last, args_first, args_last);
+    }
+
+    template <typename Result>
+    Future<Result> fcall_ro(const StringView &func,
+                std::initializer_list<StringView> keys,
+                std::initializer_list<StringView> args) {
+        return fcall_ro<Result>(func,
+                keys.begin(), keys.end(),
+                args.begin(), args.end());
+    }
+
+    template <typename Result, typename Callback>
+    auto fcall_ro(const StringView &func,
+              std::initializer_list<StringView> keys,
+              std::initializer_list<StringView> args,
+              Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Result> &&>::value, void>::type {
+        return fcall_ro<Result>(func, keys.begin(), keys.end(), args.begin(), args.end(), std::forward<Callback>(cb));
+    }
+
+    Future<std::string> function_load(const StringView &code, bool replace = false) {
+        return _command<std::string>(fmt::function_load, code, replace);
+    }
+
+    Future<void> function_delete(const StringView &lib_name) {
+        return _command<void>(fmt::function_delete, lib_name);
+    }
+
     // PUBSUB commands.
 
     Future<long long> publish(const StringView &channel, const StringView &message) {

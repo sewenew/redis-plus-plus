@@ -32,6 +32,10 @@ void ScriptCmdTest<RedisInstance>::run() {
     cluster_specializing_test(*this,
             &ScriptCmdTest<RedisInstance>::_run,
             _redis);
+
+    cluster_specializing_test(*this,
+            &ScriptCmdTest<RedisInstance>::_run_function_test,
+            _redis);
 }
 
 template <typename RedisInstance>
@@ -115,6 +119,60 @@ void ScriptCmdTest<RedisInstance>::_run(Redis &instance) {
 
     REDIS_ASSERT(instance.script_exists(sha1), "failed to test script exists");
     REDIS_ASSERT(!instance.script_exists("not exist"), "failed to test script exists");
+}
+
+template <typename RedisInstance>
+void ScriptCmdTest<RedisInstance>::_run_function_test(Redis &instance) {
+    auto key1 = test_key("k1");
+    auto key2 = test_key("k2");
+
+    KeyDeleter<Redis> deleter(instance, {key1, key2});
+
+    try {
+        instance.function_delete("swredistestlib");
+    } catch (const Error &) {
+    }
+
+    std::string code = "#!lua name=swredistestlib\n"
+                    "redis.register_function('my_func', function(keys, args) "
+                    "redis.call('set', keys[1], 1);"
+                    "redis.call('set', keys[2], 2);"
+                    "local first = redis.call('get', keys[1]);"
+                    "local second = redis.call('get', keys[2]);"
+                    "return first + second\n"
+                    "end)";
+
+    auto lib_name = instance.function_load(code);
+    REDIS_ASSERT(lib_name == "swredistestlib", "failed to test function_load");
+
+    std::initializer_list<StringView> keys = {key1, key2};
+    std::initializer_list<StringView> empty_list = {};
+
+    auto num = instance.fcall<long long>("my_func", keys, empty_list);
+    REDIS_ASSERT(num == 3, "failed to test fcall");
+
+    num = instance.fcall<long long>("my_func", keys.begin(), keys.end(),
+            empty_list.begin(), empty_list.end());
+    REDIS_ASSERT(num == 3, "failed to test fcall");
+
+    auto is_readonly = false;
+    try {
+        instance.fcall_ro<std::string>("my_func", {}, {});
+    } catch (const Error &) {
+        is_readonly = true;
+    }
+    REDIS_ASSERT(is_readonly, "failed to test fcall_ro");
+
+    code = "#!lua name=swredistestlib\n"
+        "local function readonly_func(keys, args) return 'hello' end\n"
+        "redis.register_function{function_name='my_func', callback=readonly_func, flags={ 'no-writes' }}";
+    lib_name = instance.function_load(code, true);
+    REDIS_ASSERT(lib_name == "swredistestlib", "failed to test function_load");
+
+    auto res = instance.fcall_ro<std::string>("my_func", {}, {});
+    REDIS_ASSERT(res == "hello", "failed to test fcall_ro");
+
+    instance.function_delete("swredistestlib");
 }
 
 }
