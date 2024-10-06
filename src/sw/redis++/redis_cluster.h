@@ -403,6 +403,21 @@ public:
 
     long long rpushx(const StringView &key, const StringView &val);
 
+    template <typename Output, typename Input>
+    Optional<std::pair<std::string, Output>> lmpop(Input first, Input last, ListWhence whence, long long count = 1);
+
+    template <typename Output, typename T>
+    Optional<std::pair<std::string, Output>> lmpop(std::initializer_list<T> il, ListWhence whence, long long count = 1) {
+        return lmpop<Output>(il.begin(), il.end(), whence, count);
+    }
+
+    OptionalString lmove(const StringView &src, const StringView &dest,
+            ListWhence src_whence, ListWhence dest_whence);
+
+    OptionalString blmove(const StringView &src, const StringView &dest,
+            ListWhence src_whence, ListWhence dest_whence,
+            const std::chrono::seconds &timeout = std::chrono::seconds{0});
+
     // HASH commands.
 
     long long hdel(const StringView &key, const StringView &field);

@@ -318,9 +318,9 @@ Visual Studio 2019 (Win 10)
 
 If you build *redis-plus-plus* with `-DREDIS_PLUS_PLUS_BUILD_TEST=ON` (the default behavior, and you can disable building test with `-DREDIS_PLUS_PLUS_BUILD_TEST=OFF`), you'll get a test program in *build/test* directory: *build/test/test_redis++*.
 
-In order to run the tests, you need to set up a Redis instance, and a Redis Cluster. Since the test program will send most of Redis commands to the server and cluster, you need to set up Redis of the latest version (by now, it's 5.0). Otherwise, the tests might fail. For example, if you set up Redis 4.0 for testing, the test program will fail when it tries to send the `ZPOPMAX` command (a Redis 5.0 command) to the server. If you want to run the tests with other Redis versions, you have to comment out commands that haven't been supported by your Redis, from test source files in *redis-plus-plus/test/src/sw/redis++/* directory. Sorry for the inconvenience, and I'll fix this problem to make the test program work with any version of Redis in the future.
+In order to run the tests, you need to set up a Redis instance, and a Redis Cluster. Since the test program will send most of Redis commands to the server and cluster, you need to set up Redis of the latest version. Otherwise, the tests might fail. For example, if you set up Redis 4.0 for testing, the test program will fail when it tries to send the `ZPOPMAX` command (a Redis 5.0 command) to the server. If you want to run the tests with other Redis versions, you have to comment out commands that haven't been supported by your Redis, from test source files in *redis-plus-plus/test/src/sw/redis++/* directory. Sorry for the inconvenience, and I'll fix this problem to make the test program work with any version of Redis in the future.
 
-**NOTE**: The latest version of Redis is only a requirement for running the tests. In fact, you can use *redis-plus-plus* with Redis of any version, e.g. Redis 2.0, Redis 3.0, Redis 4.0, Redis 5.0.
+**NOTE**: The latest version of Redis is only a requirement for running the tests. In fact, you can use *redis-plus-plus* with Redis of any version, i.e. Redis 2.0 and above.
 
 **NEVER** run the test program in production envronment, since the keys, which the test program reads or writes, might conflict with your application.
 

@@ -426,6 +426,20 @@ long long RedisCluster::rpushx(const StringView &key, const StringView &val) {
     return reply::parse<long long>(*reply);
 }
 
+OptionalString RedisCluster::lmove(const StringView &src, const StringView &dest,
+        ListWhence src_whence, ListWhence dest_whence) {
+    auto reply = command(cmd::lmove, src, dest, src_whence, dest_whence);
+
+    return reply::parse<OptionalString>(*reply);
+}
+
+OptionalString RedisCluster::blmove(const StringView &src, const StringView &dest,
+        ListWhence src_whence, ListWhence dest_whence, const std::chrono::seconds &timeout) {
+    auto reply = command(cmd::blmove, src, dest, src_whence, dest_whence, timeout.count());
+
+    return reply::parse<OptionalString>(*reply);
+}
+
 long long RedisCluster::hdel(const StringView &key, const StringView &field) {
     auto reply = command(cmd::hdel, key, field);
 

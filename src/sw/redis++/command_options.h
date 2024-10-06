@@ -35,6 +35,11 @@ enum class InsertPosition {
     AFTER
 };
 
+enum class ListWhence {
+    LEFT,
+    RIGHT
+};
+
 enum class BoundType {
     CLOSED,
     OPEN,
@@ -208,6 +213,8 @@ struct WithDist : TupleWithType<double, T> {};
 
 template <typename T>
 struct WithHash : TupleWithType<long long, T> {};
+
+std::string to_string(ListWhence whence);
 
 }
 

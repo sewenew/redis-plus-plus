@@ -1314,6 +1314,81 @@ public:
     /// @see https://redis.io/commands/rpushx
     long long rpushx(const StringView &key, const StringView &val);
 
+    /// @brief Pop one or more elements from the first non-empty list.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// auto lists = {"l1", "l2"};
+    /// auto val = redis.lmpop<std::vector<std::string>>(lists.begin(), lists.end(), ListWhence::LEFT, 2);
+    /// if (val)
+    ///     std::cout << "list: " << val->first << ", size: " << val->second.size() << std::endl;
+    /// else
+    ///     std::cout << "all lists are empty" << std::endl;
+    /// @endcode
+    /// @param first Iterator to the first list.
+    /// @param last Off-the-end iterator to the given list range.
+    /// @param whence ListWhence::LEFT or ListWhence::RIGHT.
+    /// @param count Number of elements to be popped.
+    /// @return Elements popped from list.
+    /// @note If key does not exist, `lmpop` returns `Optional<std::pair<std::string, Output>>{}` (`std::nullopt`).
+    /// @see https://redis.io/commands/lmpop
+    template <typename Output, typename Input>
+    Optional<std::pair<std::string, Output>> lmpop(Input first, Input last, ListWhence whence, long long count = 1);
+
+    /// @brief Pop one or more elements from the first non-empty list.
+    /// @param il Initializer list of Redis lists.
+    /// @param pos ListWhence::LEFT or ListWhence::RIGHT.
+    /// @param count Number of elements to be popped.
+    /// @return Elements popped from list.
+    /// @note If key does not exist, `lmpop` returns `Optional<std::pair<std::string, Output>>{}` (`std::nullopt`).
+    /// @see https://redis.io/commands/lmpop
+    template <typename Output, typename T>
+    Optional<std::pair<std::string, Output>> lmpop(std::initializer_list<T> il, ListWhence pos, long long count = 1) {
+        return lmpop<Output>(il.begin(), il.end(), pos, count);
+    }
+
+    /// @brief Move element from src list to dest list.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// auto val = redis.lmove("src", "dest", ListWhence::LEFT, ListWhence::RIGHT);
+    /// if (val)
+    ///     std::cout << "moved " << *val << " from src to dest" << std::endl;
+    /// else
+    ///     std::cout << "src list does not exist" << std::endl;
+    /// @endcode
+    /// @param src Source list.
+    /// @param dest Destination list.
+    /// @param src_whence From where of the source list.
+    /// @param dest_whence To where of the dest list.
+    /// @return The moved element.
+    /// @note If source list does not exist, `lmove` returns `OptionalString{}` (`std::nullopt`).
+    /// @see https://redis.io/commands/lmove
+    OptionalString lmove(const StringView &src, const StringView &dest,
+            ListWhence src_whence, ListWhence dest_whence);
+
+    /// @brief The block version of lmove.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// auto val = redis.blmove("src", "dest", ListWhence::LEFT, ListWhence::RIGHT, std::chrono::seonds(2));
+    /// if (val)
+    ///     std::cout << "moved " << *val << " from src to dest" << std::endl;
+    /// else
+    ///     std::cout << "src list does not exist" << std::endl;
+    /// @endcode
+    /// @param src Source list.
+    /// @param dest Destination list.
+    /// @param src_whence From where of the source list.
+    /// @param dest_whence To where of the dest list.
+    /// @param timeout Timeout in seconds. 0 means block forever.
+    /// @return The moved element.
+    /// @note If source list does not exist, `blmove` returns `OptionalString{}` (`std::nullopt`).
+    /// @see https://redis.io/commands/blmove
+    OptionalString blmove(const StringView &src, const StringView &dest,
+            ListWhence src_whence, ListWhence dest_whence,
+            const std::chrono::seconds &timeout = std::chrono::seconds{0});
+
     // HASH commands.
 
     /// @brief Remove the given field from hash.

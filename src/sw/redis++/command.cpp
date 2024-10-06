@@ -107,7 +107,7 @@ void linsert(Connection &connection,
         break;
 
     default:
-        assert(false);
+        throw Error("unknown insert position");
     }
 
     connection.send("LINSERT %b %s %b %b",

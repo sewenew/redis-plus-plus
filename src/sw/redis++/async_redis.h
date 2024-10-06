@@ -811,6 +811,60 @@ public:
         return rpush(key, il.begin(), il.end(), std::forward<Callback>(cb));
     }
 
+    template <typename Output, typename Input>
+    Future<Optional<std::pair<std::string, Output>>> lmpop(Input first, Input last, ListWhence whence, long long count = 1) {
+        range_check("LMPOP", first, last);
+
+        return _command<Optional<std::pair<std::string, Output>>>(fmt::lmpop<Input>, first, last, whence, count);
+    }
+
+    template <typename Output, typename Input, typename Callback>
+    auto lmpop(Input first, Input last, ListWhence whence, long long count, Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Optional<std::pair<std::string, Output>>> &&>::value, void>::type {
+        range_check("LMPOP", first, last);
+
+        _callback_fmt_command<Optional<std::pair<std::string, Output>>>(std::forward<Callback>(cb),
+                fmt::lmpop<Input>, first, last, whence, count);
+    }
+
+    template <typename Output, typename Input, typename Callback>
+    auto lmpop(Input first, Input last, ListWhence whence, Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Optional<std::pair<std::string, Output>>> &&>::value, void>::type {
+        return lmpop<Output>(first, last, whence, 1, std::forward<Callback>(cb));
+    }
+
+    Future<OptionalString> lmove(const StringView &src, const StringView &dest,
+            ListWhence src_whence, ListWhence dest_whence) {
+        return _command<OptionalString>(fmt::lmove, src, dest, src_whence, dest_whence);
+    }
+
+    template <typename Callback>
+    void lmove(const StringView &src, const StringView &dest,
+            ListWhence src_whence, ListWhence dest_whence, Callback &&cb) {
+        _callback_fmt_command<OptionalString>(std::forward<Callback>(cb), fmt::lmove, src, dest, src_whence, dest_whence);
+    }
+
+    Future<OptionalString> blmove(const StringView &src, const StringView &dest,
+            ListWhence src_whence, ListWhence dest_whence,
+            const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+        return _command<OptionalString>(fmt::blmove, src, dest, src_whence, dest_whence, timeout.count());
+    }
+
+    template <typename Callback>
+    void blmove(const StringView &src, const StringView &dest,
+            ListWhence src_whence, ListWhence dest_whence,
+            const std::chrono::seconds &timeout, Callback &&cb) {
+        _callback_fmt_command<OptionalString>(std::forward<Callback>(cb), fmt::blmove, src, dest,
+                src_whence, dest_whence, timeout.count());
+    }
+
+    template <typename Callback>
+    auto blmove(const StringView &src, const StringView &dest,
+            ListWhence src_whence, ListWhence dest_whence, Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalString> &&>::value, void>::type {
+        blmove(src, dest, src_whence, dest_whence, std::chrono::seconds{0}, std::forward<Callback>(cb));
+    }
+
     // HASH commands.
 
     Future<long long> hdel(const StringView &key, const StringView &field) {
