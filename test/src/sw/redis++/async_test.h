@@ -33,6 +33,16 @@ namespace redis {
 
 namespace test {
 
+template <>
+inline void delete_keys<AsyncRedis>(AsyncRedis &r, const std::vector<std::string> &keys) {
+    r.del(keys.begin(), keys.end()).get();
+}
+
+template <>
+inline void delete_keys<AsyncRedisCluster>(AsyncRedisCluster &r, const std::vector<std::string> &keys) {
+    r.del(keys.begin(), keys.end()).get();
+}
+
 template <typename RedisInstance>
 class AsyncTest {
 public:
@@ -46,6 +56,8 @@ public:
 
 private:
     void _test_str();
+
+    void _test_list();
 
     void _test_hash();
 
@@ -72,6 +84,8 @@ void AsyncTest<RedisInstance>::_wait() {
 template <typename RedisInstance>
 void AsyncTest<RedisInstance>::run() {
     _test_str();
+
+    _test_list();
 
     _test_hash();
 
@@ -145,6 +159,57 @@ void AsyncTest<RedisInstance>::_test_str() {
     std::unordered_map<std::string, std::string> kvs = {{key1, "val1"}, {key2, "val2"}};
     _redis.mset(kvs.begin(), kvs.end(), [this](Future<void> &&fut) {
                 fut.get();
+                this->set_ready();
+            });
+    _wait();
+}
+
+template <typename RedisInstance>
+void AsyncTest<RedisInstance>::_test_list() {
+    auto src = test_key("src");
+    auto dest = test_key("dest");
+
+    KeyDeleter<RedisInstance> deleter(_redis, {src, dest});
+
+    auto num = _redis.lpush(src, {"a", "b", "c"}).get();
+    REDIS_ASSERT(num == 3, "failed to test async list: lpush");
+
+    num = _redis.lpush(dest, {"e", "f", "g"}).get();
+    REDIS_ASSERT(num == 3, "failed to test async list: lpush");
+
+    auto val = _redis.lmove(src, dest, ListWhence::LEFT, ListWhence::RIGHT).get();
+    REDIS_ASSERT(val && *val == "c", "failed to test async list: lmove");
+
+    set_ready(false);
+    _redis.blmove(src, dest, ListWhence::LEFT, ListWhence::RIGHT,
+            [this](Future<OptionalString> &&fut) {
+                auto val = fut.get();
+                REDIS_ASSERT(val && *val == "b", "failed to test async list: blmove");
+
+                this->set_ready();
+            });
+    _wait();
+
+    set_ready(false);
+    _redis.blmove(src, dest, ListWhence::LEFT, ListWhence::RIGHT, std::chrono::seconds{1},
+            [this](Future<OptionalString> &&fut) {
+                auto val = fut.get();
+                REDIS_ASSERT(val && *val == "a", "failed to test async list: blmove");
+
+                this->set_ready();
+            });
+    _wait();
+
+    auto keys = std::initializer_list<std::string>{src, dest};
+    auto lmpop_res = _redis.template lmpop<std::vector<std::string>>(keys.begin(), keys.end(), ListWhence::LEFT).get();
+    REDIS_ASSERT(lmpop_res && lmpop_res->first == dest && lmpop_res->second.size() == 1, "failed to test async list: lmpop");
+
+    set_ready(false);
+    _redis.template lmpop<std::vector<std::string>>(keys.begin(), keys.end(), ListWhence::LEFT, 2,
+            [this, dest](Future<Optional<std::pair<std::string, std::vector<std::string>>>> && fut) {
+                auto val = fut.get();
+                REDIS_ASSERT(val && val->first == dest && val->second.size() == 2, "failed to test async list: lmpop");
+
                 this->set_ready();
             });
     _wait();

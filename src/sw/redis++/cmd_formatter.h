@@ -377,6 +377,39 @@ FormattedCommand rpush_range(const StringView &key, Input first, Input last) {
     return format_cmd(args);
 }
 
+template <typename Input>
+FormattedCommand lmpop(Input first, Input last, ListWhence whence, long long count) {
+    assert(first != last);
+
+    CmdArgs args;
+
+    auto keys_num = std::distance(first, last);
+
+    args << "LMPOP" << keys_num << std::make_pair(first, last) << to_string(whence) << "COUNT" << count;
+
+    return format_cmd(args);
+}
+
+inline FormattedCommand lmove(const StringView &src, const StringView &dest,
+        ListWhence src_whence, ListWhence dest_whence) {
+    auto src_whence_str = to_string(src_whence);
+    auto dest_whence_str = to_string(dest_whence);
+    return format_cmd("LMOVE %b %b %s %s",
+            src.data(), src.size(),
+            dest.data(), dest.size(),
+            src_whence_str.data(), dest_whence_str.data());
+}
+
+inline FormattedCommand blmove(const StringView &src, const StringView &dest,
+        ListWhence src_whence, ListWhence dest_whence, long long timeout) {
+    auto src_whence_str = to_string(src_whence);
+    auto dest_whence_str = to_string(dest_whence);
+    return format_cmd("BLMOVE %b %b %s %s %lld",
+            src.data(), src.size(),
+            dest.data(), dest.size(),
+            src_whence_str.data(), dest_whence_str.data(), timeout);
+}
+
 // HASH commands.
 
 inline FormattedCommand hdel(const StringView &key, const StringView &field) {

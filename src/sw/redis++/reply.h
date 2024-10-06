@@ -184,6 +184,9 @@ std::string to_status(redisReply &reply);
 template <typename Output>
 void to_array(redisReply &reply, Output output);
 
+template <typename Output>
+void to_optional_array(redisReply &reply, Output output);
+
 // Parse set reply to bool type
 bool parse_set_reply(redisReply &reply);
 
@@ -492,6 +495,15 @@ void to_array(redisReply &reply, Output output) {
 #endif
 
     detail::to_array(typename IsKvPairIter<Output>::type(), reply, output);
+}
+
+template <typename Output>
+void to_optional_array(redisReply &reply, Output output) {
+    if (is_nil(reply)) {
+        return;
+    }
+
+    to_array(reply, output);
 }
 
 template <typename Output>

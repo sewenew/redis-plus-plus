@@ -339,6 +339,16 @@ inline long long Redis::rpush(const StringView &key, Input first, Input last) {
     return reply::parse<long long>(*reply);
 }
 
+template <typename Output, typename Input>
+Optional<std::pair<std::string, Output>> Redis::lmpop(Input first, Input last, ListWhence whence, long long count) {
+    range_check("LMPOP", first, last);
+
+    auto reply = command(cmd::lmpop<Input>, first, last, whence, count);
+
+    return reply::parse<Optional<std::pair<std::string, Output>>>(*reply);
+}
+
+
 // HASH commands.
 
 template <typename Input>

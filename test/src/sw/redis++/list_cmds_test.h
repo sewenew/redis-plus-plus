@@ -41,6 +41,12 @@ private:
 
     void _test_blocking();
 
+    void _test_lmove();
+
+    void _test_blmove();
+
+    void _test_lmpop();
+
     RedisInstance &_redis;
 };
 

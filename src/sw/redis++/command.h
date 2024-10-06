@@ -636,6 +636,39 @@ inline void rpushx(Connection &connection, const StringView &key, const StringVi
                     val.data(), val.size());
 }
 
+template <typename Input>
+inline void lmpop(Connection &connection, Input first, Input last, ListWhence whence, long long count) {
+    assert(first != last);
+
+    CmdArgs args;
+
+    auto keys_num = std::distance(first, last);
+
+    args << "LMPOP" << keys_num << std::make_pair(first, last) << to_string(whence) << "COUNT" << count;
+
+    connection.send(args);
+}
+
+inline void lmove(Connection &connection, const StringView &src, const StringView &dest,
+        ListWhence src_whence, ListWhence dest_whence) {
+    auto src_whence_str = to_string(src_whence);
+    auto dest_whence_str = to_string(dest_whence);
+    connection.send("LMOVE %b %b %s %s",
+                    src.data(), src.size(),
+                    dest.data(), dest.size(),
+                    src_whence_str.data(), dest_whence_str.data());
+}
+
+inline void blmove(Connection &connection, const StringView &src, const StringView &dest,
+        ListWhence src_whence, ListWhence dest_whence, long long timeout) {
+    auto src_whence_str = to_string(src_whence);
+    auto dest_whence_str = to_string(dest_whence);
+    connection.send("BLMOVE %b %b %s %s %lld",
+                    src.data(), src.size(),
+                    dest.data(), dest.size(),
+                    src_whence_str.data(), dest_whence_str.data(), timeout);
+}
+
 // HASH commands.
 
 inline void hdel(Connection &connection, const StringView &key, const StringView &field) {
