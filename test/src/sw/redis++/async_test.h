@@ -200,7 +200,7 @@ void AsyncTest<RedisInstance>::_test_list() {
             });
     _wait();
 
-    auto keys = std::initializer_list<std::string>{src, dest};
+    auto keys = {src, dest};
     auto lmpop_res = _redis.template lmpop<std::vector<std::string>>(keys.begin(), keys.end(), ListWhence::LEFT).get();
     REDIS_ASSERT(lmpop_res && lmpop_res->first == dest && lmpop_res->second.size() == 1, "failed to test async list: lmpop");
 
