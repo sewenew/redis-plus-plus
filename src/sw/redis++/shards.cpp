@@ -27,11 +27,12 @@ RedirectionError::RedirectionError(const std::string &msg): ReplyError(msg) {
 std::pair<Slot, Node> RedirectionError::_parse_error(const std::string &msg) const {
     // "slot ip:port"
     auto space_pos = msg.find(" ");
-    auto colon_pos = msg.find(":");
+    // There're colons in IPv6 address, so we need to find the last colon.
+    auto colon_pos = msg.rfind(":");
     if (space_pos == std::string::npos
             || colon_pos == std::string::npos
             || colon_pos < space_pos) {
-        throw ProtoError("Invalid ASK error message: " + msg);
+        throw ProtoError("invalid redirection error message: " + msg);
     }
 
     try {
@@ -43,7 +44,7 @@ std::pair<Slot, Node> RedirectionError::_parse_error(const std::string &msg) con
 
         return {slot, {host, port}};
     } catch (const std::exception &) {
-        throw ProtoError("Invalid ASK error message: " + msg);
+        throw ProtoError("invalid redirection error message: " + msg);
     }
 }
 
