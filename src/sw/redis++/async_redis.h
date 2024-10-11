@@ -1565,6 +1565,32 @@ public:
         return zrevrangebylex<Output, Interval, Callback>(key, interval, {}, std::forward<Callback>(cb));
     }
 
+    // TODO: withscores parameter
+    template <typename Output, typename Interval>
+    Future<Output> zrevrangebyscore(const StringView &key,
+                                    const Interval &interval,
+                                    const LimitOptions &opts) {
+        return _command<Output>(fmt::zrevrangebyscore<Interval>,
+                                key, interval, opts);
+    }
+
+    template <typename Output, typename Interval, typename Callback>
+    auto zrevrangebyscore(const StringView &key, const Interval &interval, const LimitOptions &opts, Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Output> &&>::value, void>::type {
+        _callback_fmt_command<Output>(std::forward<Callback>(cb), fmt::zrevrangebyscore<Interval>, key, interval, opts);
+    }
+
+    template <typename Output, typename Interval>
+    Future<Output> zrevrangebyscore(const StringView &key, const Interval &interval) {
+        return zrevrangebyscore(key, interval, {});
+    }
+
+    template <typename Output, typename Interval, typename Callback>
+    auto zrevrangebyscore(const StringView &key, const Interval &interval, Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Output> &&>::value, void>::type {
+        return zrevrangebyscore<Output>(key, interval, {}, std::forward<Callback>(cb));
+    }
+
     Future<OptionalLongLong> zrevrank(const StringView &key, const StringView &member) {
         return _command<OptionalLongLong>(fmt::zrevrank, key, member);
     }
