@@ -783,6 +783,21 @@ FormattedCommand zrevrangebylex(const StringView &key,
                     opts.count);
 }
 
+template <typename Interval>
+FormattedCommand zrevrangebyscore(const StringView &key,
+                                const Interval &interval,
+                                const LimitOptions &opts) {
+    const auto &min = interval.lower();
+    const auto &max = interval.upper();
+
+    return format_cmd("ZREVRANGEBYSCORE %b %b %b LIMIT %lld %lld",
+                      key.data(), key.size(),
+                      max.data(), max.size(),
+                      min.data(), min.size(),
+                      opts.offset,
+                      opts.count);
+}
+
 inline FormattedCommand zrevrank(const StringView &key, const StringView &member) {
     return format_cmd("ZREVRANK %b %b", key.data(), key.size(), member.data(), member.size());
 }
