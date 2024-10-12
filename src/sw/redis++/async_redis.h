@@ -1453,7 +1453,7 @@ public:
 
     template <typename Output, typename Interval>
     Future<Output> zrangebyscore(const StringView &key, const Interval &interval) {
-        return zrangebyscore(key, interval, {});
+        return zrangebyscore<Output>(key, interval, {});
     }
 
     template <typename Output, typename Interval, typename Callback>
@@ -1582,7 +1582,7 @@ public:
 
     template <typename Output, typename Interval>
     Future<Output> zrevrangebyscore(const StringView &key, const Interval &interval) {
-        return zrevrangebyscore(key, interval, {});
+        return zrevrangebyscore<Output>(key, interval, {});
     }
 
     template <typename Output, typename Interval, typename Callback>
