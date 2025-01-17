@@ -74,7 +74,7 @@ jobs:
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
       run: ./test/test_redis++ -h 127.0.0.1 -p 6379 -n 127.0.0.1 -c 7000
 
-  windows-test:
+  windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -97,15 +97,7 @@ jobs:
             .. && `
           ninja -v && `
           ninja install
-  
-  windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: install deps
-        run: choco install -y ninja memurai-developer
-
-      - uses: ilammy/msvc-dev-cmd@v1
-      - name: build hiredis
-        run: mkdir build && cd build && cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=${{ github.workspace }}/install .. && ninja -v && ninja install
+      - name: Test
+        working-directory: ${{ github.workspace }}/build
+        run: |
+          .\test\test_redis++ -h 127.0.0.1 -p 6379 -n 127.0.0.1 -c 7000
