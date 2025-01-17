@@ -78,27 +78,26 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Install ninja and memurai
         run: choco install -y ninja memurai-developer
-
       - name: Set up vcpkg
         run: |
           git clone https://github.com/microsoft/vcpkg.git vcpkg
           .\vcpkg\bootstrap-vcpkg.bat
-
       - name: Install Hiredis using vcpkg
         run: .\vcpkg\vcpkg install hiredis
-
       - uses: ilammy/msvc-dev-cmd@v1
-
       - name: Build hiredis and your project
         run: |
           mkdir build
           cd build
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=${{ github.workspace }}/install;${{ github.workspace }}/vcpkg/installed/x64-windows .. && ninja -v && ninja install
-
-
+          cmake -G Ninja `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install;${{ github.workspace }}/vcpkg/installed/x64-windows" `
+            .. && `
+          ninja -v && `
+          ninja install
+  
   windows:
     runs-on: windows-latest
     steps:
