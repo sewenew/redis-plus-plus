@@ -3,8 +3,12 @@ name: build and test
 on:
   push:
     branches: [ "master", "dev" ]
+    paths-ignore:
+      - '**/*.md'
   pull_request:
     branches: [ "master", "dev" ]
+    paths-ignore:
+      - '**/*.md'
 
 jobs:
   build:
@@ -32,7 +36,7 @@ jobs:
             cpp_compiler: clang++
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: libuv-dep
       run: sudo apt-get update && sudo apt-get install -y libuv1-dev wget unzip
@@ -77,11 +81,27 @@ jobs:
   windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: install deps
+      - name: Install ninja and memurai
         run: choco install -y ninja memurai-developer
+
+      - name: Set up vcpkg
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git vcpkg
+          .\vcpkg\bootstrap-vcpkg.bat
+  
+      - name: Install Hiredis using vcpkg
+        run: .\vcpkg\vcpkg install hiredis
 
       - uses: ilammy/msvc-dev-cmd@v1
       - name: build hiredis
-        run: mkdir build && cd build && cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=${{ github.workspace }}/install .. && ninja -v && ninja install
+        run: |
+          mkdir build
+          cd build
+          cmake -G Ninja `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install;${{ github.workspace }}/vcpkg/installed/x64-windows" `
+            .. && `
+          ninja -v && `
+          ninja install
