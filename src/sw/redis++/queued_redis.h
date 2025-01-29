@@ -356,6 +356,18 @@ public:
         return command(cmd::bitop_range<Input>, op, destination, first, last);
     }
 
+    template <typename Input>
+    QueuedRedis& bitfield(const StringView &key, Input first, Input last) {
+        range_check("BITFIELD", first, last);
+
+        return command(cmd::bitfield<Input>, key, first, last);
+    }
+
+    template <typename T>
+    QueuedRedis& bitfield(const StringView &key, std::initializer_list<T> il) {
+        return bitfield(key, il.begin(), il.end());
+    }
+
     template <typename T>
     QueuedRedis& bitop(BitOp op,
                         const StringView &destination,
