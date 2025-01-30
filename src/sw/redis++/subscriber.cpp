@@ -127,6 +127,12 @@ void Subscriber::consume() {
     }
 }
 
+bool Subscriber::available() {
+    _check_connection();
+
+    return _connection.avail();
+}
+
 Subscriber::MsgType Subscriber::_msg_type(redisReply *reply) const {
     if (reply == nullptr) {
         throw ProtoError("Null type reply.");
