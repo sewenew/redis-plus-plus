@@ -85,9 +85,6 @@ AsyncConnectionPool::AsyncConnectionPool(SimpleAsyncSentinel sentinel,
         throw Error("With sentinel, connection timeout and socket timeout cannot be 0");
     }
 
-    // Cleanup connection options.
-    _update_connection_opts("", -1);
-
     assert(_sentinel);
 }
 
