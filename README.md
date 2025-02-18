@@ -36,7 +36,7 @@ I create a Redis module, named [redis-llm](https://github.com/sewenew/redis-llm)
 
 ## Overview
 
-This is a C++ client library for Redis. It's based on [hiredis](https://github.com/redis/hiredis), and is compatible with C++ 17, C++ 14, and C++ 11.
+This is a C++ client library for Redis. It's based on [hiredis](https://github.com/redis/hiredis), and is compatible with C++11 and later versions. Besides Redis, it also works with other key-value stores supporting RESP (REdis Serialization Protocol), e.g. Valkey, DragonflyDB, KeyDB.
 
 **NOTE**: I'm not a native speaker. So if the documentation is unclear, please feel free to open an issue or pull request. I'll response ASAP.
 
