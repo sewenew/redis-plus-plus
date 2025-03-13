@@ -584,7 +584,10 @@ AsyncConnection::AsyncContextUPtr AsyncConnection::_connect(const ConnectionOpti
 
 GuardedAsyncConnection::GuardedAsyncConnection(const AsyncConnectionPoolSPtr &pool) :
     _pool(pool), _connection(_pool->fetch()) {
-    assert(!_connection->broken());
+    // Note: _connection might be broken, since the loop thread might change AsyncConnection::_state
+    // after we fetch it from the pool. However, that should not be problem, when the loop thread
+    // calls AsyncConnection::event_callback, any command sent by this broken connection will be
+    // cleaned up. Check issue #625
 }
 
 GuardedAsyncConnection::~GuardedAsyncConnection() {
