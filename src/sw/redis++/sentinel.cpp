@@ -146,7 +146,7 @@ Sentinel::Sentinel(const SentinelOptions &sentinel_opts) :
                     _sentinel_opts(sentinel_opts) {
     if (_sentinel_opts.connect_timeout == std::chrono::milliseconds(0)
             || _sentinel_opts.socket_timeout == std::chrono::milliseconds(0)) {
-        throw Error("With sentinel, connection timeout and socket timeout cannot be 0");
+        throw Error("With sentinel, connection timeout or socket timeout cannot be 0");
     }
 }
 
