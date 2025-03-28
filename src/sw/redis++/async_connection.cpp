@@ -113,14 +113,12 @@ namespace sw {
 namespace redis {
 
 AsyncConnection::AsyncConnection(const ConnectionOptions &opts,
-        EventLoop *loop,
+        const EventLoopWPtr &loop,
         AsyncConnectionMode mode) :
     _opts(opts),
     _loop(loop),
     _create_time(std::chrono::steady_clock::now()),
     _last_active(std::chrono::steady_clock::now().time_since_epoch()) {
-    assert(_loop != nullptr);
-
     switch (mode) {
     case AsyncConnectionMode::SINGLE:
         _state = State::NOT_CONNECTED;
@@ -146,7 +144,12 @@ void AsyncConnection::send(AsyncEventUPtr event) {
         _events.push_back(std::move(event));
     }
 
-    _loop->add(shared_from_this());
+    auto loop = _loop.lock();
+    if (loop) {
+        loop->add(shared_from_this());
+    } else {
+        _fail_events(std::make_exception_ptr(Error("event loop has been destroyed")));
+    }
 }
 
 void AsyncConnection::event_callback() {
@@ -478,7 +481,12 @@ void AsyncConnection::_connect() {
 
         assert(ctx && ctx->err == REDIS_OK);
 
-        _loop->watch(*ctx);
+        auto loop = _loop.lock();
+        if (!loop) {
+            throw Error("event loop has been destroyed");
+        }
+
+        loop->watch(*ctx);
 
         _ctx = ctx.release();
 

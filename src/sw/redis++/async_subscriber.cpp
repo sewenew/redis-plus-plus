@@ -44,14 +44,15 @@ void SubscribeEvent::_subscribe_callback(redisAsyncContext *ctx, void *r, void *
     connection->subscriber().consume(reply);
 }
 
-AsyncSubscriber::AsyncSubscriber(const EventLoopSPtr &loop,
+AsyncSubscriber::AsyncSubscriber(const EventLoopWPtr &loop,
         AsyncConnectionSPtr connection) : _loop(loop), _connection(std::move(connection)) {}
 
 AsyncSubscriber::~AsyncSubscriber() {
     if (_connection) {
-        assert(_loop);
-
-        _loop->unwatch(std::move(_connection));
+        auto loop = _loop.lock();
+        if (loop) {
+            loop->unwatch(std::move(_connection));
+        }
     }
 }
 

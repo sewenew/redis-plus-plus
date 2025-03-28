@@ -58,7 +58,7 @@ public:
 
     AsyncConnectionSPtr create(const ConnectionOptions &opts,
             const std::shared_ptr<AsyncConnectionPool> &pool,
-            EventLoop *loop);
+            const EventLoopWPtr &loop);
 
 private:
     AsyncSentinelSPtr _sentinel;
