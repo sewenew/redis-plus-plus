@@ -64,7 +64,7 @@ AsyncSubscriber AsyncRedisCluster::subscriber() {
 
     auto opts = _pool->connection_options();
 
-    auto connection = std::make_shared<AsyncConnection>(opts, _loop.get());
+    auto connection = std::make_shared<AsyncConnection>(opts, _loop);
     connection->set_subscriber_mode();
 
     return AsyncSubscriber(_loop, std::move(connection));
@@ -75,7 +75,7 @@ AsyncSubscriber AsyncRedisCluster::subscriber(const StringView &hash_tag) {
 
     auto opts = _pool->connection_options(hash_tag);
 
-    auto connection = std::make_shared<AsyncConnection>(opts, _loop.get());
+    auto connection = std::make_shared<AsyncConnection>(opts, _loop);
     connection->set_subscriber_mode();
 
     return AsyncSubscriber(_loop, std::move(connection));

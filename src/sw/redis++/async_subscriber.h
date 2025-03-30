@@ -134,13 +134,13 @@ private:
 
     friend class AsyncRedisCluster;
 
-    AsyncSubscriber(const EventLoopSPtr &loop, AsyncConnectionSPtr connection);
+    AsyncSubscriber(const EventLoopWPtr &loop, AsyncConnectionSPtr connection);
 
     void _check_connection();
 
     Future<void> _send(SubscribeEventUPtr event);
 
-    EventLoopSPtr _loop;
+    EventLoopWPtr _loop;
 
     AsyncConnectionSPtr _connection;
 };

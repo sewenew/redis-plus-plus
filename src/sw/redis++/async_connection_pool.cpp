@@ -40,7 +40,7 @@ SimpleAsyncSentinel::SimpleAsyncSentinel(const AsyncSentinelSPtr &sentinel,
 
 AsyncConnectionSPtr SimpleAsyncSentinel::create(const ConnectionOptions &opts,
         const std::shared_ptr<AsyncConnectionPool> &pool,
-        EventLoop *loop) {
+        const EventLoopWPtr &loop) {
     auto connection = std::make_shared<AsyncConnection>(opts, loop, AsyncConnectionMode::SENTINEL);
 
     AsyncSentinel::AsyncSentinelTask task;
@@ -141,7 +141,7 @@ AsyncConnectionSPtr AsyncConnectionPool::fetch() {
         if (role_changed || _need_reconnect(*connection, connection_lifetime, connection_idle_time)) {
             try {
                 auto loop = _get_loop();
-                auto tmp_connection = sentinel.create(opts, shared_from_this(), loop.get());
+                auto tmp_connection = sentinel.create(opts, shared_from_this(), _loop);
 
                 std::swap(tmp_connection, connection);
 
@@ -203,8 +203,6 @@ AsyncConnectionSPtr AsyncConnectionPool::create() {
 
     auto opts = _opts;
 
-    auto loop = _get_loop();
-
     if (_sentinel) {
         // TODO: it seems that we don't need to copy sentinel,
         // since it's thread-safe.
@@ -212,11 +210,11 @@ AsyncConnectionSPtr AsyncConnectionPool::create() {
 
         lock.unlock();
 
-        return sentinel.create(opts, shared_from_this(), loop.get());
+        return sentinel.create(opts, shared_from_this(), _loop);
     } else {
         lock.unlock();
 
-        return std::make_shared<AsyncConnection>(opts, loop.get());
+        return std::make_shared<AsyncConnection>(opts, _loop);
     }
 }
 
@@ -225,18 +223,17 @@ AsyncConnectionPoolSPtr AsyncConnectionPool::clone() {
 
     auto opts = _opts;
     auto pool_opts = _pool_opts;
-    auto loop = _get_loop();
 
     if (_sentinel) {
         auto sentinel = _sentinel;
 
         lock.unlock();
 
-        return std::make_shared<AsyncConnectionPool>(sentinel, loop, pool_opts, opts);
+        return std::make_shared<AsyncConnectionPool>(sentinel, _loop, pool_opts, opts);
     } else {
         lock.unlock();
 
-        return std::make_shared<AsyncConnectionPool>(loop, pool_opts, opts);
+        return std::make_shared<AsyncConnectionPool>(_loop, pool_opts, opts);
     }
 }
 
@@ -262,15 +259,13 @@ void AsyncConnectionPool::update_node_info(AsyncConnectionSPtr &connection,
 }
 
 AsyncConnectionSPtr AsyncConnectionPool::_create() {
-    auto loop = _get_loop();
-
     if (_sentinel) {
         // Get Redis host and port info from sentinel.
         // In this case, the mutex has been locked.
-        return _sentinel.create(_opts, shared_from_this(), loop.get());
+        return _sentinel.create(_opts, shared_from_this(), _loop);
     }
 
-    return std::make_shared<AsyncConnection>(_opts, loop.get());
+    return std::make_shared<AsyncConnection>(_opts, _loop);
 }
 
 AsyncConnectionSPtr AsyncConnectionPool::_fetch() {
