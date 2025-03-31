@@ -236,6 +236,15 @@ long long Redis::bitop(BitOp op, const StringView &destination, Input first, Inp
 }
 
 template <typename Input, typename Output>
+inline void Redis::bitfield(const StringView &key, Input first, Input last, Output output) {
+    range_check("BITFIELD", first, last);
+
+    auto reply = command(cmd::bitfield<Input>, key, first, last);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Input, typename Output>
 void Redis::mget(Input first, Input last, Output output) {
     range_check("MGET", first, last);
 
