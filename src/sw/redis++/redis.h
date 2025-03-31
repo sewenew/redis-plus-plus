@@ -976,7 +976,7 @@ public:
     /// @note If list is empty and timeout reaches, return `OptionalStringPair{}` (`std::nullopt`).
     /// @see `Redis::lpop`
     /// @see https://redis.io/commands/blpop
-    OptionalStringPair blpop(const StringView &key, long long timeout);
+    OptionalStringPair blpop(const StringView &key, double timeout);
 
     /// @brief Pop the first element of the list in a blocking way.
     /// @param key Key where the list is stored.
@@ -986,7 +986,7 @@ public:
     /// @see `Redis::lpop`
     /// @see https://redis.io/commands/blpop
     OptionalStringPair blpop(const StringView &key,
-                                const std::chrono::seconds &timeout = std::chrono::seconds{0});
+                                const std::chrono::duration<double> &timeout = std::chrono::seconds{0});
 
     /// @brief Pop the first element of multiple lists in a blocking way.
     /// @param first Iterator to the first key.
@@ -997,7 +997,7 @@ public:
     /// @see `Redis::lpop`
     /// @see https://redis.io/commands/blpop
     template <typename Input>
-    OptionalStringPair blpop(Input first, Input last, long long timeout);
+    OptionalStringPair blpop(Input first, Input last, double timeout);
 
     /// @brief Pop the first element of multiple lists in a blocking way.
     /// @param il Initializer list of keys.
@@ -1007,7 +1007,7 @@ public:
     /// @see `Redis::lpop`
     /// @see https://redis.io/commands/blpop
     template <typename T>
-    OptionalStringPair blpop(std::initializer_list<T> il, long long timeout) {
+    OptionalStringPair blpop(std::initializer_list<T> il, double timeout) {
         return blpop(il.begin(), il.end(), timeout);
     }
 
@@ -1022,7 +1022,7 @@ public:
     template <typename Input>
     OptionalStringPair blpop(Input first,
                                 Input last,
-                                const std::chrono::seconds &timeout = std::chrono::seconds{0});
+                                const std::chrono::duration<double> &timeout = std::chrono::seconds{0});
 
     /// @brief Pop the first element of multiple lists in a blocking way.
     /// @param il Initializer list of keys.
@@ -1033,7 +1033,7 @@ public:
     /// @see https://redis.io/commands/blpop
     template <typename T>
     OptionalStringPair blpop(std::initializer_list<T> il,
-                                const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+                                const std::chrono::duration<double> &timeout = std::chrono::seconds{0}) {
         return blpop(il.begin(), il.end(), timeout);
     }
 
@@ -1044,7 +1044,7 @@ public:
     /// @note If list is empty and timeout reaches, return `OptionalStringPair{}` (`std::nullopt`).
     /// @see `Redis::rpop`
     /// @see https://redis.io/commands/brpop
-    OptionalStringPair brpop(const StringView &key, long long timeout);
+    OptionalStringPair brpop(const StringView &key, double timeout);
 
     /// @brief Pop the last element of the list in a blocking way.
     /// @param key Key where the list is stored.
@@ -1054,7 +1054,7 @@ public:
     /// @see `Redis::rpop`
     /// @see https://redis.io/commands/brpop
     OptionalStringPair brpop(const StringView &key,
-                                const std::chrono::seconds &timeout = std::chrono::seconds{0});
+                                const std::chrono::duration<double> &timeout = std::chrono::seconds{0});
 
     /// @brief Pop the last element of multiple lists in a blocking way.
     /// @param first Iterator to the first key.
@@ -1065,7 +1065,7 @@ public:
     /// @see `Redis::rpop`
     /// @see https://redis.io/commands/brpop
     template <typename Input>
-    OptionalStringPair brpop(Input first, Input last, long long timeout);
+    OptionalStringPair brpop(Input first, Input last, double timeout);
 
     /// @brief Pop the last element of multiple lists in a blocking way.
     /// @param il Initializer list of lists.
@@ -1075,7 +1075,7 @@ public:
     /// @see `Redis::rpop`
     /// @see https://redis.io/commands/brpop
     template <typename T>
-    OptionalStringPair brpop(std::initializer_list<T> il, long long timeout) {
+    OptionalStringPair brpop(std::initializer_list<T> il, double timeout) {
         return brpop(il.begin(), il.end(), timeout);
     }
 
@@ -1090,7 +1090,7 @@ public:
     template <typename Input>
     OptionalStringPair brpop(Input first,
                                 Input last,
-                                const std::chrono::seconds &timeout = std::chrono::seconds{0});
+                                const std::chrono::duration<double> &timeout = std::chrono::seconds{0});
 
     /// @brief Pop the last element of multiple lists in a blocking way.
     /// @param il Initializer list of list keys.
@@ -1101,7 +1101,7 @@ public:
     /// @see https://redis.io/commands/brpop
     template <typename T>
     OptionalStringPair brpop(std::initializer_list<T> il,
-                                const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+                                const std::chrono::duration<double> &timeout = std::chrono::seconds{0}) {
         return brpop(il.begin(), il.end(), timeout);
     }
 
@@ -1115,7 +1115,7 @@ public:
     /// @see https://redis.io/commands/brpoplpush
     OptionalString brpoplpush(const StringView &source,
                                 const StringView &destination,
-                                long long timeout);
+                                double timeout);
 
     /// @brief Pop last element of one list and push it to the left of another list in blocking way.
     /// @param source Key of the source list.
@@ -1127,7 +1127,7 @@ public:
     /// @see https://redis.io/commands/brpoplpush
     OptionalString brpoplpush(const StringView &source,
                                 const StringView &destination,
-                                const std::chrono::seconds &timeout = std::chrono::seconds{0});
+                                const std::chrono::duration<double> &timeout = std::chrono::seconds{0});
 
     /// @brief Get the element at the given index of the list.
     /// @param key Key where the list is stored.
@@ -1387,7 +1387,7 @@ public:
     /// @see https://redis.io/commands/blmove
     OptionalString blmove(const StringView &src, const StringView &dest,
             ListWhence src_whence, ListWhence dest_whence,
-            const std::chrono::seconds &timeout = std::chrono::seconds{0});
+            const std::chrono::duration<double> &timeout = std::chrono::seconds{0});
 
     // HASH commands.
 
