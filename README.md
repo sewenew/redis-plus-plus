@@ -8,7 +8,6 @@ I create a Redis module, named [redis-llm](https://github.com/sewenew/redis-llm)
 
 - [Overview](#overview)
     - [Features](#features)
-    - [Branches](#branches)
 - [Installation](#installation)
     - [Install hiredis](#install-hiredis)
     - [Install redis-plus-plus](#install-redis-plus-plus)
@@ -58,10 +57,6 @@ This is a C++ client library for Redis. It's based on [hiredis](https://github.c
 - TLS/SSL support.
 - Sync and Async interface.
 - Coroutine support.
-
-### Branches
-
-The master branch is the stable branch, which passes all tests. The dev branch is unstable. If you want to contribute, please create pull request on dev branch.
 
 ## Installation
 

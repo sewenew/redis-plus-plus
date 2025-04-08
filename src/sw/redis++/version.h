@@ -23,7 +23,7 @@ namespace redis {
 
 const int VERSION_MAJOR = 1;
 const int VERSION_MINOR = 3;
-const int VERSION_PATCH = 14;
+const int VERSION_PATCH = 15;
 
 }
 
