@@ -406,29 +406,29 @@ long long Redis::strlen(const StringView &key) {
 
 // LIST commands.
 
-OptionalStringPair Redis::blpop(const StringView &key, long long timeout) {
+OptionalStringPair Redis::blpop(const StringView &key, double timeout) {
     auto reply = command(cmd::blpop, key, timeout);
 
     return reply::parse<OptionalStringPair>(*reply);
 }
 
-OptionalStringPair Redis::blpop(const StringView &key, const std::chrono::seconds &timeout) {
+OptionalStringPair Redis::blpop(const StringView &key, const std::chrono::duration<double> &timeout) {
     return blpop(key, timeout.count());
 }
 
-OptionalStringPair Redis::brpop(const StringView &key, long long timeout) {
+OptionalStringPair Redis::brpop(const StringView &key, double timeout) {
     auto reply = command(cmd::brpop, key, timeout);
 
     return reply::parse<OptionalStringPair>(*reply);
 }
 
-OptionalStringPair Redis::brpop(const StringView &key, const std::chrono::seconds &timeout) {
+OptionalStringPair Redis::brpop(const StringView &key, const std::chrono::duration<double> &timeout) {
     return brpop(key, timeout.count());
 }
 
 OptionalString Redis::brpoplpush(const StringView &source,
                                     const StringView &destination,
-                                    long long timeout) {
+                                    double timeout) {
     auto reply = command(cmd::brpoplpush, source, destination, timeout);
 
     return reply::parse<OptionalString>(*reply);
@@ -523,7 +523,7 @@ OptionalString Redis::lmove(const StringView &src, const StringView &dest,
 }
 
 OptionalString Redis::blmove(const StringView &src, const StringView &dest,
-        ListWhence src_whence, ListWhence dest_whence, const std::chrono::seconds &timeout) {
+        ListWhence src_whence, ListWhence dest_whence, const std::chrono::duration<double> &timeout) {
     auto reply = command(cmd::blmove, src, dest, src_whence, dest_whence, timeout.count());
 
     return reply::parse<OptionalString>(*reply);
