@@ -201,7 +201,7 @@ Then you can build it the instructions (links) mentioned above. If you're buildi
 
 **NOTE**:
 
-- Since 1.3.0, *redis-puls-plus* is built with C++17 by default, and you should also set your application code to be built with C++17. If you still want to build the *redis-plus-plus* with C++11, you can set the `REDIS_PLUS_PLUS_CXX_STANDARD` cmake option to 11.
+- Since 1.3.0, *redis-plus-plus* is built with C++17 by default, and you should also set your application code to be built with C++17. If you still want to build the *redis-plus-plus* with C++11, you can set the `REDIS_PLUS_PLUS_CXX_STANDARD` cmake option to 11.
 - TLS/SSL support has not been tested on Windows yet.
 
 ##### Build with Visual Studio
