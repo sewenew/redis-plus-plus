@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.5)
 
 function(GET_VERSION VERSION_PART VERSION_NUM)
     set(VERSION_REGEX "^const int VERSION_${VERSION_PART} = (.+);$")

@@ -1,6 +1,6 @@
 project(test_redis++)
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.5)
 
 set(REDIS_PLUS_PLUS_TEST_SOURCES src/sw/redis++/test_main.cpp)
 
