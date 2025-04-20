@@ -393,6 +393,19 @@ void AsyncTest<RedisInstance>::_test_generic() {
 
     _redis.template command<long long>("del", key);
 
+    val = "rawReply";
+    args = {"set", key, val};
+    auto raw_resp =_redis.template command<redisReply*>(args.begin(), args.end()).get();
+    REDIS_ASSERT(raw_resp->type == REDIS_REPLY_STATUS, "unexpected return type");
+
+    args = {"get", key};
+    raw_resp =_redis.template command<redisReply*>(args.begin(), args.end()).get();
+    REDIS_ASSERT(raw_resp->type == REDIS_REPLY_STRING, "unexpected return type");
+
+    args = {"del", key};
+    raw_resp =_redis.template command<redisReply*>(args.begin(), args.end()).get();
+    REDIS_ASSERT(raw_resp->type == REDIS_REPLY_INTEGER, "unexpected return type");
+
     std::unordered_set<std::string> mems = {"a", "b", "c"};
     args = {"sadd", another_key};
     args.insert(args.end(), mems.begin(), mems.end());
