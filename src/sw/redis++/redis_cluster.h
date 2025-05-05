@@ -299,61 +299,61 @@ public:
 
     // LIST commands.
 
-    OptionalStringPair blpop(const StringView &key, long long timeout);
+    OptionalStringPair blpop(const StringView &key, double timeout);
 
     OptionalStringPair blpop(const StringView &key,
-                                const std::chrono::seconds &timeout = std::chrono::seconds{0});
+                                const std::chrono::duration<double> &timeout = std::chrono::seconds{0});
 
     template <typename Input>
-    OptionalStringPair blpop(Input first, Input last, long long timeout);
+    OptionalStringPair blpop(Input first, Input last, double timeout);
 
     template <typename T>
-    OptionalStringPair blpop(std::initializer_list<T> il, long long timeout) {
+    OptionalStringPair blpop(std::initializer_list<T> il, double timeout) {
         return blpop(il.begin(), il.end(), timeout);
     }
 
     template <typename Input>
     OptionalStringPair blpop(Input first,
                                 Input last,
-                                const std::chrono::seconds &timeout = std::chrono::seconds{0});
+                                const std::chrono::duration<double> &timeout = std::chrono::seconds{0});
 
     template <typename T>
     OptionalStringPair blpop(std::initializer_list<T> il,
-                                const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+                                const std::chrono::duration<double> &timeout = std::chrono::seconds{0}) {
         return blpop(il.begin(), il.end(), timeout);
     }
 
-    OptionalStringPair brpop(const StringView &key, long long timeout);
+    OptionalStringPair brpop(const StringView &key, double timeout);
 
     OptionalStringPair brpop(const StringView &key,
-                                const std::chrono::seconds &timeout = std::chrono::seconds{0});
+                                const std::chrono::duration<double> &timeout = std::chrono::seconds{0});
 
     template <typename Input>
-    OptionalStringPair brpop(Input first, Input last, long long timeout);
+    OptionalStringPair brpop(Input first, Input last, double timeout);
 
     template <typename T>
-    OptionalStringPair brpop(std::initializer_list<T> il, long long timeout) {
+    OptionalStringPair brpop(std::initializer_list<T> il, double timeout) {
         return brpop(il.begin(), il.end(), timeout);
     }
 
     template <typename Input>
     OptionalStringPair brpop(Input first,
                                 Input last,
-                                const std::chrono::seconds &timeout = std::chrono::seconds{0});
+                                const std::chrono::duration<double> &timeout = std::chrono::seconds{0});
 
     template <typename T>
     OptionalStringPair brpop(std::initializer_list<T> il,
-                                const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+                                const std::chrono::duration<double> &timeout = std::chrono::seconds{0}) {
         return brpop(il.begin(), il.end(), timeout);
     }
 
     OptionalString brpoplpush(const StringView &source,
                                 const StringView &destination,
-                                long long timeout);
+                                double timeout);
 
     OptionalString brpoplpush(const StringView &source,
                                 const StringView &destination,
-                                const std::chrono::seconds &timeout = std::chrono::seconds{0});
+                                const std::chrono::duration<double> &timeout = std::chrono::seconds{0});
 
     OptionalString lindex(const StringView &key, long long index);
 
@@ -416,7 +416,7 @@ public:
 
     OptionalString blmove(const StringView &src, const StringView &dest,
             ListWhence src_whence, ListWhence dest_whence,
-            const std::chrono::seconds &timeout = std::chrono::seconds{0});
+            const std::chrono::duration<double> &timeout = std::chrono::seconds{0});
 
     // HASH commands.
 
