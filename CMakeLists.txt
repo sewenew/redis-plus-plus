@@ -139,28 +139,7 @@ else()
 endif()
 
 # hiredis dependency
-find_package(hiredis QUIET)
-if(hiredis_FOUND)
-    list(APPEND REDIS_PLUS_PLUS_HIREDIS_LIBS hiredis::hiredis)
-
-    if(REDIS_PLUS_PLUS_USE_TLS)
-        find_package(hiredis_ssl REQUIRED)
-        list(APPEND REDIS_PLUS_PLUS_HIREDIS_LIBS hiredis::hiredis_ssl)
-        find_package(OpenSSL REQUIRED)
-        list(APPEND REDIS_PLUS_PLUS_HIREDIS_LIBS ${OPENSSL_LIBRARIES})
-    endif()
-else()
-    find_path(HIREDIS_HEADER hiredis)
-    find_library(HIREDIS_LIB hiredis)
-    list(APPEND REDIS_PLUS_PLUS_HIREDIS_LIBS ${HIREDIS_LIB})
-
-    if(REDIS_PLUS_PLUS_USE_TLS)
-        find_library(HIREDIS_TLS_LIB hiredis_ssl)
-        list(APPEND REDIS_PLUS_PLUS_HIREDIS_LIBS ${HIREDIS_TLS_LIB})
-        find_package(OpenSSL REQUIRED)
-        list(APPEND REDIS_PLUS_PLUS_HIREDIS_LIBS ${OPENSSL_LIBRARIES})
-    endif()
-endif()
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/FindHiredis.cmake)
 
 # Check hiredis features
 message(STATUS "redis-plus-plus check hiredis features")
@@ -174,8 +153,9 @@ endif()
 set(HIREDIS_FEATURE_TEST_HEADER "${HIREDIS_FEATURE_TEST_INCLUDE}/hiredis/hiredis.h")
 
 include(CheckSymbolExists)
-set(CMAKE_REQUIRED_LIBRARIES_BACK ${CMAKE_REQUIRED_LIBRARIES})
-set(CMAKE_REQUIRED_LIBRARIES ${HIREDIS_FEATURE_TEST_LIB})
+
+# Add hiredis to CMAKE_REQUIRED_LIBRARIES
+list(APPEND CMAKE_REQUIRED_LIBRARIES hiredis)
 
 CHECK_SYMBOL_EXISTS(redisEnableKeepAliveWithInterval ${HIREDIS_FEATURE_TEST_HEADER} REDIS_PLUS_PLUS_HAS_redisEnableKeepAliveWithInterval)
 
@@ -183,7 +163,7 @@ set(REDIS_PLUS_PLUS_GENERATED_HEADER_DIR ${CMAKE_CURRENT_BINARY_DIR}/${REDIS_PLU
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/hiredis_features.h.in ${CMAKE_CURRENT_BINARY_DIR}/${REDIS_PLUS_PLUS_SOURCE_DIR}/hiredis_features.h)
 
 # Restore CMAKE_REQUIRED_LIBRARIES
-set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES_BACK})
+list(POP_BACK CMAKE_REQUIRED_LIBRARIES)
 
 # Build static library
 option(REDIS_PLUS_PLUS_BUILD_STATIC "Build static library" ON)
@@ -273,11 +253,10 @@ if(REDIS_PLUS_PLUS_BUILD_SHARED)
 
     if(hiredis_FOUND)
         target_include_directories(${SHARED_LIB} PUBLIC $<BUILD_INTERFACE:${hiredis_INCLUDE_DIRS}>)
-        target_link_libraries(${SHARED_LIB} PUBLIC ${REDIS_PLUS_PLUS_HIREDIS_LIBS})
     else()
         target_include_directories(${SHARED_LIB} PUBLIC $<BUILD_INTERFACE:${HIREDIS_HEADER}>)
-        target_link_libraries(${SHARED_LIB} PUBLIC ${REDIS_PLUS_PLUS_HIREDIS_LIBS})
     endif()
+    target_link_libraries(${SHARED_LIB} PUBLIC ${REDIS_PLUS_PLUS_HIREDIS_LIBS})
 
     if(REDIS_PLUS_PLUS_BUILD_ASYNC)
         target_include_directories(${SHARED_LIB} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${REDIS_PLUS_PLUS_ASYNC_FUTURE_HEADER}>)
