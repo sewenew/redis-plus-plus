@@ -18,6 +18,7 @@
 #define SEWENEW_REDISPLUSPLUS_REPLY_H
 
 #include <cassert>
+#include <cstdlib>
 #include <string>
 #include <iterator>
 #include <memory>
@@ -302,6 +303,47 @@ auto parse_tuple(redisReply **reply, std::size_t idx) ->
 }
 
 template <typename T>
+bool is_parsable(redisReply &reply);
+
+bool is_parsable(ParseTag<std::string>, redisReply &reply);
+
+bool is_parsable(ParseTag<long long>, redisReply &reply);
+
+bool is_parsable(ParseTag<double>, redisReply &reply);
+
+bool is_parsable(ParseTag<bool>, redisReply &reply);
+
+bool is_parsable(ParseTag<void>, redisReply &reply);
+
+template <typename T>
+bool is_parsable(ParseTag<Optional<T>>, redisReply &reply);
+
+template <typename T, typename U>
+bool is_parsable(ParseTag<std::pair<T, U>>, redisReply &reply);
+
+template <typename ...Args>
+bool is_parsable(ParseTag<std::tuple<Args...>>, redisReply &reply);
+
+template <typename T, typename std::enable_if<IsSequenceContainer<T>::value, int>::type = 0>
+bool is_parsable(ParseTag<T>, redisReply &reply);
+
+template <typename T, typename std::enable_if<IsAssociativeContainer<T>::value, int>::type = 0>
+bool is_parsable(ParseTag<T>, redisReply &reply);
+
+#ifdef REDIS_PLUS_PLUS_HAS_VARIANT
+
+bool is_parsable(ParseTag<Monostate>, redisReply &reply);
+
+template <typename T>
+bool is_parsable(ParseTag<Variant<T>>, redisReply &reply);
+
+template <typename T, typename ...Args>
+auto is_parsable(ParseTag<Variant<T, Args...>>, redisReply &reply)
+    -> typename std::enable_if<sizeof...(Args) != 0, bool>::type;
+
+#endif
+
+template <typename T>
 inline bool is_parsable(redisReply &reply) {
     return is_parsable(ParseTag<T>{}, reply);
 }
@@ -321,18 +363,32 @@ inline bool is_parsable(ParseTag<long long>, redisReply &reply) {
 
 inline bool is_parsable(ParseTag<double>, redisReply &reply) {
 #ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
-    return is_double(reply) || is_string(reply);
-#else
-    return is_string(reply);
+    if (is_double(reply)) {
+        return true;
+    }
 #endif
+
+    if (!is_string(reply) || reply.str == nullptr) {
+        return false;
+    }
+
+    char *end = nullptr;
+    std::strtod(reply.str, &end);
+    return end != reply.str;
 }
 
 inline bool is_parsable(ParseTag<bool>, redisReply &reply) {
 #ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
-    return is_bool(reply) || is_integer(reply);
+    if (!is_bool(reply) && !is_integer(reply)) {
+        return false;
+    }
 #else
-    return is_integer(reply);
+    if (!is_integer(reply)) {
+        return false;
+    }
 #endif
+
+    return reply.integer == 0 || reply.integer == 1;
 }
 
 inline bool is_parsable(ParseTag<void>, redisReply &reply) {
@@ -449,15 +505,6 @@ bool is_flat_kv_parsable(redisReply &reply) {
 }
 
 template <typename T>
-bool is_container_parsable(std::true_type, redisReply &reply) {
-    if (is_flat_array(reply)) {
-        return is_flat_kv_parsable<T>(reply);
-    } else {
-        return is_container_parsable<T>(std::false_type{}, reply);
-    }
-}
-
-template <typename T>
 bool is_container_parsable(std::false_type, redisReply &reply) {
     if (reply.element == nullptr || reply.elements == 0) {
         // Empty array.
@@ -472,7 +519,16 @@ bool is_container_parsable(std::false_type, redisReply &reply) {
     return is_parsable<typename T::value_type>(*sub_reply);
 }
 
-template <typename T, typename std::enable_if<IsSequenceContainer<T>::value, int>::type = 0>
+template <typename T>
+bool is_container_parsable(std::true_type, redisReply &reply) {
+    if (is_flat_array(reply)) {
+        return is_flat_kv_parsable<T>(reply);
+    } else {
+        return is_container_parsable<T>(std::false_type{}, reply);
+    }
+}
+
+template <typename T, typename std::enable_if<IsSequenceContainer<T>::value, int>::type>
 bool is_parsable(ParseTag<T>, redisReply &reply) {
 #ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
     if (!is_array(reply) && !is_set(reply)) {
@@ -486,7 +542,7 @@ bool is_parsable(ParseTag<T>, redisReply &reply) {
     return is_container_parsable<T>(typename IsKvPair<typename T::value_type>::type(), reply);
 }
 
-template <typename T, typename std::enable_if<IsAssociativeContainer<T>::value, int>::type = 0>
+template <typename T, typename std::enable_if<IsAssociativeContainer<T>::value, int>::type>
 bool is_parsable(ParseTag<T>, redisReply &reply) {
 #ifdef REDIS_PLUS_PLUS_RESP_VERSION_3
     if (!is_array(reply) && !is_map(reply) && !is_set(reply)) {
@@ -530,6 +586,21 @@ auto parse_variant(redisReply &reply) ->
 
 inline bool is_parsable(ParseTag<Monostate>, redisReply &) {
     return true;
+}
+
+template <typename T>
+bool is_parsable(ParseTag<Variant<T>>, redisReply &reply) {
+    return is_parsable(ParseTag<T>{}, reply);
+}
+
+template <typename T, typename ...Args>
+auto is_parsable(ParseTag<Variant<T, Args...>>, redisReply &reply) ->
+    typename std::enable_if<sizeof...(Args) != 0, bool>::type {
+    if (is_parsable(ParseTag<T>{}, reply)) {
+        return true;
+    }
+
+    return is_parsable(ParseTag<Variant<Args...>>{}, reply);
 }
 
 #endif
