@@ -1675,6 +1675,57 @@ public:
         return hset(key, il.begin(), il.end());
     }
 
+    template <typename Input>
+    auto hsetex(const StringView &key,
+            Input first,
+            Input last,
+            bool keep_ttl = false,
+            HSetExOption opt = HSetExOption::ALWAYS)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value, long long>::type;
+
+    template <typename Input>
+    auto hsetex(const StringView &key,
+            Input first,
+            Input last,
+            const std::chrono::milliseconds &ttl,
+            HSetExOption opt = HSetExOption::ALWAYS)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value, long long>::type;
+
+    template <typename Input>
+    auto hsetex(const StringView &key,
+            Input first,
+            Input last,
+            const std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds> &tp,
+            HSetExOption opt = HSetExOption::ALWAYS)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value, long long>::type;
+
+    template <typename Input, typename Output>
+    void httl(const StringView &key, Input first, Input last, Output output);
+
+    template <typename Input, typename Output>
+    void hpttl(const StringView &key, Input first, Input last, Output output);
+
+    template <typename Input, typename Output>
+    void hexpiretime(const StringView &key, Input first, Input last, Output output);
+
+    template <typename Input, typename Output>
+    void hpexpiretime(const StringView &key, Input first, Input last, Output output);
+
+    template <typename Input, typename Output>
+    void hpexpire(const StringView &key,
+            Input first,
+            Input last,
+            const std::chrono::milliseconds &ttl,
+            Output output);
+
+    template <typename Input, typename Output>
+    void hpexpire(const StringView &key,
+            Input first,
+            Input last,
+            const std::chrono::milliseconds &ttl,
+            HPExpireOption opt,
+            Output output);
+
     /// @brief Set hash field to value, only if the given field does not exist.
     /// @param key Key where the hash is stored.
     /// @param field Field.
