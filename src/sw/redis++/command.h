@@ -792,6 +792,208 @@ void hset_range(Connection &connection, const StringView &key, Input first, Inpu
     connection.send(args);
 }
 
+template <typename Input>
+void hsetex_keep_ttl_range(Connection &connection,
+        const StringView &key,
+        Input first,
+        Input last,
+        bool keep_ttl,
+        HSetExOption opt) {
+    assert(first != last);
+
+    CmdArgs args;
+    args << "HSETEX" << key;
+
+    switch (opt) {
+    case HSetExOption::FNX:
+        args << "FNX";
+        break;
+    case HSetExOption::FXX:
+        args << "FXX";
+        break;
+    case HSetExOption::ALWAYS:
+        break;
+    default:
+        throw Error("unknown HSetExOption");
+    }
+
+    if (keep_ttl) {
+        args << "KEEPTTL";
+    }
+
+    auto keys_num = std::distance(first, last);
+    args << "FIELDS" << keys_num << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Input>
+void hsetex_ttl_range(Connection &connection,
+        const StringView &key,
+        Input first,
+        Input last,
+        const std::chrono::milliseconds &ttl,
+        HSetExOption opt) {
+    assert(first != last);
+
+    CmdArgs args;
+    args << "HSETEX" << key;
+
+    switch (opt) {
+    case HSetExOption::FNX:
+        args << "FNX";
+        break;
+    case HSetExOption::FXX:
+        args << "FXX";
+        break;
+    case HSetExOption::ALWAYS:
+        break;
+    default:
+        throw Error("unknown HSetExOption");
+    }
+
+    args << "PX" << ttl.count();
+
+    auto keys_num = std::distance(first, last);
+    args << "FIELDS" << keys_num << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Input>
+void hsetex_time_point_range(Connection &connection,
+        const StringView &key,
+        Input first,
+        Input last,
+        const std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds> &tp,
+        HSetExOption opt) {
+    assert(first != last);
+
+    CmdArgs args;
+    args << "HSETEX" << key;
+
+    switch (opt) {
+    case HSetExOption::FNX:
+        args << "FNX";
+        break;
+    case HSetExOption::FXX:
+        args << "FXX";
+        break;
+    case HSetExOption::ALWAYS:
+        break;
+    default:
+        throw Error("unknown HSetExOption");
+    }
+
+    args << "PXAT" << tp.time_since_epoch().count();
+
+    auto keys_num = std::distance(first, last);
+    args << "FIELDS" << keys_num << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Input>
+void httl_range(Connection &connection,
+        const StringView &key,
+        Input first,
+        Input last) {
+    assert(first != last);
+
+    CmdArgs args;
+    args << "HTTL" << key << "FIELDS";
+
+    auto keys_num = std::distance(first, last);
+    args << keys_num << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Input>
+void hpttl_range(Connection &connection,
+        const StringView &key,
+        Input first,
+        Input last) {
+    assert(first != last);
+
+    CmdArgs args;
+    args << "HPTTL" << key << "FIELDS";
+
+    auto keys_num = std::distance(first, last);
+    args << keys_num << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Input>
+void hexpiretime_range(Connection &connection,
+        const StringView &key,
+        Input first,
+        Input last) {
+    assert(first != last);
+
+    CmdArgs args;
+    args << "HEXPIRETIME" << key << "FIELDS";
+
+    auto keys_num = std::distance(first, last);
+    args << keys_num << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Input>
+void hpexpiretime_range(Connection &connection,
+        const StringView &key,
+        Input first,
+        Input last) {
+    assert(first != last);
+
+    CmdArgs args;
+    args << "HPEXPIRETIME" << key << "FIELDS";
+
+    auto keys_num = std::distance(first, last);
+    args << keys_num << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Input>
+void hpexpire_range(Connection &connection,
+        const StringView &key,
+        Input first,
+        Input last,
+        const std::chrono::milliseconds &ttl,
+        HPExpireOption opt) {
+    assert(first != last);
+
+    CmdArgs args;
+    args << "HPEXPIRE" << key << ttl.count();
+
+    switch (opt) {
+    case HPExpireOption::NX:
+        args << "NX";
+        break;
+    case HPExpireOption::XX:
+        args << "XX";
+        break;
+    case HPExpireOption::GT:
+        args << "GT";
+        break;
+    case HPExpireOption::LT:
+        args << "LT";
+        break;
+    case HPExpireOption::ALWAYS:
+        break;
+    default:
+        throw Error("unknown hpexpire option");
+    }
+
+    auto keys_num = std::distance(first, last);
+    args << "FIELDS" << keys_num << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
 inline void hsetnx(Connection &connection,
                     const StringView &key,
                     const StringView &field,

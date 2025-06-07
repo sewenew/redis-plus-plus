@@ -407,6 +407,114 @@ auto RedisCluster::hset(const StringView &key, Input first, Input last)
     return reply::parse<long long>(*reply);
 }
 
+template <typename Input>
+auto RedisCluster::hsetex(const StringView &key,
+        Input first,
+        Input last,
+        bool keep_ttl,
+        HSetExOption opt)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value,
+                                    long long>::type {
+    range_check("HSETEX", first, last);
+
+    auto reply = command(cmd::hsetex_keep_ttl_range<Input>, key, first, last, keep_ttl, opt);
+
+    return reply::parse<long long>(*reply);
+}
+
+template <typename Input>
+auto RedisCluster::hsetex(const StringView &key,
+        Input first,
+        Input last,
+        const std::chrono::milliseconds &ttl,
+        HSetExOption opt)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value,
+                                    long long>::type {
+    range_check("HSETEX", first, last);
+
+    auto reply = command(cmd::hsetex_ttl_range<Input>, key, first, last, ttl, opt);
+
+    return reply::parse<long long>(*reply);
+}
+
+template <typename Input>
+auto RedisCluster::hsetex(const StringView &key,
+        Input first,
+        Input last,
+        const std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds> &tp,
+        HSetExOption opt)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value,
+                                    long long>::type {
+    range_check("HSETEX", first, last);
+
+    auto reply = command(cmd::hsetex_time_point_range<Input>, key, first, last, tp, opt);
+
+    return reply::parse<long long>(*reply);
+}
+
+template <typename Input, typename Output>
+void RedisCluster::httl(const StringView &key, Input first, Input last, Output output) {
+    range_check("HTTL", first, last);
+
+    auto reply = command(cmd::httl_range<Input>, key, first, last);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Input, typename Output>
+void RedisCluster::hpttl(const StringView &key, Input first, Input last, Output output) {
+    range_check("HPTTL", first, last);
+
+    auto reply = command(cmd::hpttl_range<Input>, key, first, last);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Input, typename Output>
+void RedisCluster::hexpiretime(const StringView &key, Input first, Input last, Output output) {
+    range_check("HEXPIRETIME", first, last);
+
+    auto reply = command(cmd::hexpiretime_range<Input>, key, first, last);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Input, typename Output>
+void RedisCluster::hpexpiretime(const StringView &key, Input first, Input last, Output output) {
+    range_check("HPEXPIRETIME", first, last);
+
+    auto reply = command(cmd::hpexpiretime_range<Input>, key, first, last);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Input, typename Output>
+void RedisCluster::hpexpire(const StringView &key,
+        Input first,
+        Input last,
+        const std::chrono::milliseconds &ttl,
+        Output output) {
+    range_check("HPEXPIRE", first, last);
+
+    auto reply = command(cmd::hpexpire_range<Input>, key, first, last, ttl, HPExpireOption::ALWAYS);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Input, typename Output>
+void RedisCluster::hpexpire(const StringView &key,
+        Input first,
+        Input last,
+        const std::chrono::milliseconds &ttl,
+        HPExpireOption opt,
+        Output output) {
+    range_check("HPEXPIRE", first, last);
+
+    auto reply = command(cmd::hpexpire_range<Input>, key, first, last, ttl, opt);
+
+    reply::to_array(*reply, output);
+}
+
 template <typename Output>
 inline void RedisCluster::hvals(const StringView &key, Output output) {
     auto reply = command(cmd::hvals, key);
