@@ -134,6 +134,10 @@ By default, *redis-plus-plus* builds both a static library and a shared library.
 
 *redis-plus-plus* builds static library with `-fPIC` option, i.e. Position Independent Code, by default. However, you can disable it with `-DREDIS_PLUS_PLUS_BUILD_STATIC_WITH_PIC=OFF`.
 
+#### FetchContent
+
+You can also use cmake's [FetchContent](https://cmake.org/cmake/help/latest/module/FetchContent.html) feature to install redis-plus-plus. Check [this](https://github.com/sewenew/redis-plus-plus/pull/639) for an example.
+
 #### Windows Support
 
 Now *hiredis* has Windows support, and since Visual Studio 2017, Visual Studio has built-in support for CMake. So *redis-plus-plus* also supports Windows platform now. It has been fully tested with Visual Studio 2017 and later on Win 10. I'm not familiar with Visual Studio environment, and the following doc might not be accurate. If you're familiar with the Windows platform, feel free to update this doc on how to install *redis-plus-plus* on Windows.
