@@ -281,12 +281,12 @@ inline FormattedCommand strlen(const StringView &key) {
     return format_cmd("STRLEN %b", key.data(), key.size());
 }
 
-inline FormattedCommand blpop(const StringView &key, const std::chrono::seconds &timeout) {
-    return format_cmd("BLPOP %b %lld", key.data(), key.size(), timeout.count());
+inline FormattedCommand blpop(const StringView &key, const std::chrono::duration<double> &timeout) {
+    return format_cmd("BLPOP %b %f", key.data(), key.size(), timeout.count());
 }
 
 template <typename Input>
-FormattedCommand blpop_range(Input first, Input last, const std::chrono::seconds &timeout) {
+FormattedCommand blpop_range(Input first, Input last, const std::chrono::duration<double> &timeout) {
     assert(first != last);
 
     CmdArgs args;
@@ -295,13 +295,13 @@ FormattedCommand blpop_range(Input first, Input last, const std::chrono::seconds
     return format_cmd(args);
 }
 
-inline FormattedCommand brpop(const StringView &key, const std::chrono::seconds &timeout) {
-    return format_cmd("BRPOP %b %lld", key.data(), key.size(), timeout.count());
+inline FormattedCommand brpop(const StringView &key, const std::chrono::duration<double> &timeout) {
+    return format_cmd("BRPOP %b %f", key.data(), key.size(), timeout.count());
 }
 
 
 template <typename Input>
-FormattedCommand brpop_range(Input first, Input last, const std::chrono::seconds &timeout) {
+FormattedCommand brpop_range(Input first, Input last, const std::chrono::duration<double> &timeout) {
     assert(first != last);
 
     CmdArgs args;
@@ -312,8 +312,8 @@ FormattedCommand brpop_range(Input first, Input last, const std::chrono::seconds
 
 inline FormattedCommand brpoplpush(const StringView &source,
         const StringView &destination,
-        const std::chrono::seconds &timeout) {
-    return format_cmd("BRPOPLPUSH %b %b %lld",
+        const std::chrono::duration<double> &timeout) {
+    return format_cmd("BRPOPLPUSH %b %b %f",
             source.data(), source.size(),
             destination.data(), destination.size(),
             timeout.count());
@@ -401,10 +401,10 @@ inline FormattedCommand lmove(const StringView &src, const StringView &dest,
 }
 
 inline FormattedCommand blmove(const StringView &src, const StringView &dest,
-        ListWhence src_whence, ListWhence dest_whence, long long timeout) {
+        ListWhence src_whence, ListWhence dest_whence, double timeout) {
     auto src_whence_str = to_string(src_whence);
     auto dest_whence_str = to_string(dest_whence);
-    return format_cmd("BLMOVE %b %b %s %s %lld",
+    return format_cmd("BLMOVE %b %b %s %s %f",
             src.data(), src.size(),
             dest.data(), dest.size(),
             src_whence_str.data(), dest_whence_str.data(), timeout);
