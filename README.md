@@ -64,7 +64,7 @@ This is a C++ client library for Redis. It's based on [hiredis](https://github.c
 
 Since *redis-plus-plus* is based on *hiredis*, you should install *hiredis* first. The minimum version requirement for *hiredis* is **v0.12.1**. However, [the latest stable release](https://github.com/redis/hiredis/releases) of *hiredis* is always recommended.
 
-**NOTE**: You must ensure that there's only 1 version of hiredis is installed. Otherwise, you might get some wired problems. Check the following issues for example: [issue 135](https://github.com/sewenew/redis-plus-plus/issues/135), [issue 140](https://github.com/sewenew/redis-plus-plus/issues/140) and [issue 158](https://github.com/sewenew/redis-plus-plus/issues/158).
+**NOTE**: You must ensure that there's only 1 version of *hiredis* installed. Otherwise, you might get some weird problems. Check the following issues for example: [issue 135](https://github.com/sewenew/redis-plus-plus/issues/135), [issue 140](https://github.com/sewenew/redis-plus-plus/issues/140) and [issue 158](https://github.com/sewenew/redis-plus-plus/issues/158).
 
 Normally, you can install *hiredis* with a C++ package manager, and that's the easiest way to do it, e.g. `sudo apt-get install libhiredis-dev`. However, if you want to install the latest code of hiredis, or a specified version (e.g. async support needs hiredis v1.0.0 or later), you can install it from source.
 
@@ -77,7 +77,7 @@ cd hiredis
 
 make
 
-make install
+sudo make install
 ```
 
 By default, *hiredis* is installed at */usr/local*. If you want to install *hiredis* at non-default location, use the following commands to specify the installation path.
@@ -105,7 +105,7 @@ cmake ..
 
 make
 
-make install
+sudo make install
 
 cd ..
 ```
