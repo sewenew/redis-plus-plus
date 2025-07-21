@@ -16,6 +16,8 @@
 
 #include "sw/redis++/event_loop.h"
 #include <cassert>
+#include <chrono>
+#include <thread>
 #include <hiredis/adapters/libuv.h>
 #include "sw/redis++/async_connection.h"
 
@@ -208,26 +210,42 @@ void EventLoop::LoopDeleter::operator()(uv_loop_t *loop) const {
     // How to correctly close an event loop:
     // https://stackoverflow.com/questions/25615340/closing-libuv-handles-correctly
     // TODO: do we need to call this? Since we always has 2 async_t handles.
-    if (uv_loop_close(loop) == 0) {
-        delete loop;
+    //if (uv_loop_close(loop) == 0) {
+    //    delete loop;
+    //
+    //    return;
+    //}
 
-        return;
-    }
+    assert(loop->data != nullptr);
 
     uv_walk(loop,
-            [](uv_handle_t *handle, void *) {
+            [](uv_handle_t *handle, void *arg) {
                 if (handle != nullptr) {
-                    // We don't need to release handle's memory in close callback,
-                    // since we'll release the memory in EventLoop's destructor.
-                    uv_close(handle, nullptr);
+                    auto *event_loop = static_cast<EventLoop *>(arg);
+
+                    assert(event_loop != nullptr);
+
+                    if (handle == reinterpret_cast<uv_handle_t *>(event_loop->_event_async.get()) ||
+                            handle == reinterpret_cast<uv_handle_t *>(event_loop->_stop_async.get())) {
+                        // We don't need to release handle's memory in close callback,
+                        // since we'll release the memory in EventLoop's destructor.
+                        uv_close(handle, nullptr);
+                    }
                 }
             },
-            nullptr);
+            loop->data);
 
     // Ensure uv_walk's callback to be called.
     uv_run(loop, UV_RUN_DEFAULT);
 
-    uv_loop_close(loop);
+    for (auto idx = 0; idx < 10; ++idx) {
+        if (uv_loop_close(loop) == 0) {
+            break;
+        }
+
+        // maybe hiredis does not close the handle yet? wait a while.
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
 
     delete loop;
 }
@@ -271,13 +289,15 @@ EventLoop::UvAsyncUPtr EventLoop::_create_uv_async(AsyncCallback callback) {
     return uv_async;
 }
 
-EventLoop::LoopUPtr EventLoop::_create_event_loop() const {
+EventLoop::LoopUPtr EventLoop::_create_event_loop() {
     auto *loop = new uv_loop_t;
     auto err = uv_loop_init(loop);
     if (err != 0) {
         delete loop;
         throw Error("failed to initialize event loop: " + _err_msg(err));
     }
+
+    loop->data = this;
 
     return LoopUPtr(loop);
 }

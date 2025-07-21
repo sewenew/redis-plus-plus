@@ -73,7 +73,7 @@ private:
         return uv_strerror(err);
     }
 
-    LoopUPtr _create_event_loop() const;
+    LoopUPtr _create_event_loop();
 
     using UvAsyncUPtr = std::unique_ptr<uv_async_t>;
 
