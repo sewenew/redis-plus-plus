@@ -801,6 +801,32 @@ public:
         return command(cmd::hvals, key);
     }
 
+    template <typename Input>
+    QueuedRedis& hsetex(const StringView &key, Input first, Input last, bool keep_ttl, HSetExOption opt) {
+        range_check("HSETEX", first, last);
+        
+        return command(cmd::hsetex_keep_ttl_range<Input>, key, first, last, keep_ttl, opt);
+    }
+
+    template <typename Input>
+    QueuedRedis& hsetex(const StringView &key, Input first, Input last, const std::chrono::milliseconds &ttl, HSetExOption opt) {
+        range_check("HSETEX", first, last);
+        
+        return command(cmd::hsetex_ttl_range<Input>, key, first, last, ttl, opt);
+    }
+
+    template <typename Input>
+    QueuedRedis& hpexpire(const StringView &key, Input first, Input last, const std::chrono::milliseconds &ttl, HPExpireOption opt) {
+        range_check("HPEXPIRE", first, last);
+
+        return command(cmd::hpexpire_range<Input>, key, first, last, ttl, opt);
+    }
+
+    template <typename Input>
+    QueuedRedis& hpexpire(const StringView &key, Input first, Input last, const std::chrono::milliseconds &ttl) {
+        return hpexpire(key, first, last, ttl, HPExpireOption::ALWAYS);
+    }
+
     // SET commands.
 
     QueuedRedis& sadd(const StringView &key, const StringView &member) {
