@@ -54,6 +54,8 @@ public:
 
     void stop();
 
+    int EventLoop::bind_cpu(int cpu_id)
+
 private:
     static void _connect_callback(const redisAsyncContext *ctx, int status);
 

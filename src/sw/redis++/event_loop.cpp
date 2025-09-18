@@ -59,6 +59,13 @@ void EventLoop::stop() {
     }
 }
 
+int EventLoop::bind_cpu(int cpu_id) {
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(cpu_id, &cpuset);
+    return pthread_setaffinity_np(_loop_thread.native_handle(), sizeof(cpu_set_t), &cpuset);
+}
+
 void EventLoop::unwatch(AsyncConnectionSPtr connection, std::exception_ptr err) {
     assert(connection);
 
