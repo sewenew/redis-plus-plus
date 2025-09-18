@@ -31,7 +31,10 @@ EventLoop::EventLoop() {
     _event_async = _create_uv_async(_event_callback);
     _stop_async = _create_uv_async(_stop_callback);
 
-    _loop_thread = std::thread([this]() { uv_run(this->_loop.get(), UV_RUN_DEFAULT); });
+    _loop_thread = std::thread([this]() { 
+        pthread_setname_np(pthread_self(), "redis-ev");
+        uv_run(this->_loop.get(), UV_RUN_DEFAULT); 
+    });
 }
 
 EventLoop::~EventLoop() {
