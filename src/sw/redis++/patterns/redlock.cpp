@@ -359,7 +359,12 @@ void RedMutexImpl::unlock() {
 
     if (!_locked()) {
         // If `lock` is not called yet, the behavior is undefined.
-        throw Error("RedMutex is not locked");
+        // throw Error("RedMutex is not locked");
+        // If the mutex is not locked, return without throwing exception.
+        // Because if the background lock-entending thread fails and resets
+        // the mutex, i.e. unlocks it, we'll throw exception in unlock, which
+        // might cause std::terminate. Check issue #659 for detail.
+        return;
     }
 
     try {
