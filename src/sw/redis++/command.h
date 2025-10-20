@@ -430,6 +430,18 @@ void set_keepttl(Connection &connection,
             bool keepttl,
             UpdateType type);
 
+void set_with_get_option(Connection &connection,
+            const StringView &key,
+            const StringView &val,
+            long long ttl,
+            UpdateType type);
+
+void set_with_get_keepttl_option(Connection &connection,
+            const StringView &key,
+            const StringView &val,
+            bool keepttl,
+            UpdateType type);
+
 inline void setex(Connection &connection,
                     const StringView &key,
                     long long ttl,

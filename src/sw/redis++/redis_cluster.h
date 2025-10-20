@@ -283,6 +283,16 @@ public:
                 bool keepttl,
                 UpdateType type = UpdateType::ALWAYS);
 
+    OptionalString set_with_get_option(const StringView &key,
+                const StringView &val,
+                const std::chrono::milliseconds &ttl = std::chrono::milliseconds(0),
+                UpdateType type = UpdateType::ALWAYS);
+
+    OptionalString set_with_get_option(const StringView &key,
+                const StringView &val,
+                bool keepttl,
+                UpdateType type = UpdateType::ALWAYS);
+
     void setex(const StringView &key,
                 long long ttl,
                 const StringView &val);

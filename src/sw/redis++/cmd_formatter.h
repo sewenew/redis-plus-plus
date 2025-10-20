@@ -277,6 +277,38 @@ inline FormattedCommand set_keepttl(const StringView &key,
     return format_cmd(args);
 }
 
+inline FormattedCommand set_with_get_option(const StringView &key,
+        const StringView &val,
+        const std::chrono::milliseconds &ttl,
+        UpdateType type) {
+    CmdArgs args;
+    args << "SET" << key << val << "GET";
+
+    if (ttl > std::chrono::milliseconds(0)) {
+        args << "PX" << ttl.count();
+    }
+
+    cmd::detail::set_update_type(args, type);
+
+    return format_cmd(args);
+}
+
+inline FormattedCommand set_with_get_keepttl_option(const StringView &key,
+        const StringView &val,
+        bool keepttl,
+        UpdateType type) {
+    CmdArgs args;
+    args << "SET" << key << val << "GET";
+
+    if (keepttl) {
+        args << "KEEPTTL";
+    }
+
+    cmd::detail::set_update_type(args, type);
+
+    return format_cmd(args);
+}
+
 inline FormattedCommand strlen(const StringView &key) {
     return format_cmd("STRLEN %b", key.data(), key.size());
 }

@@ -472,6 +472,24 @@ public:
         return command(cmd::set_keepttl, key, val, keepttl, type);
     }
 
+    QueuedRedis& set_with_get_option(const StringView &key,
+                        const StringView &val,
+                        const std::chrono::milliseconds &ttl = std::chrono::milliseconds(0),
+                        UpdateType type = UpdateType::ALWAYS) {
+        _set_cmd_indexes.insert(_cmd_num);
+
+        return command(cmd::set_with_get_option, key, val, ttl.count(), type);
+    }
+
+    QueuedRedis& set_with_get_option(const StringView &key,
+                        const StringView &val,
+                        bool keepttl,
+                        UpdateType type = UpdateType::ALWAYS) {
+        _set_cmd_indexes.insert(_cmd_num);
+
+        return command(cmd::set_with_get_keepttl_option, key, val, keepttl, type);
+    }
+
     QueuedRedis& setex(const StringView &key,
                         long long ttl,
                         const StringView &val) {
