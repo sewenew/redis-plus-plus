@@ -36,6 +36,8 @@ void StringCmdTest<RedisInstance>::run() {
 
     _test_getset();
 
+    _test_set_with_get_option();
+
     _test_mgetset();
 }
 
@@ -202,6 +204,34 @@ void StringCmdTest<RedisInstance>::_test_getset() {
 
     _redis.psetex(key, ttl, val);
     REDIS_ASSERT(_redis.pttl(key) <= pttl.count(), "failed to test psetex");
+}
+
+template <typename RedisInstance>
+void StringCmdTest<RedisInstance>::_test_set_with_get_option() {
+    auto key = test_key("set_with_get_option");
+    auto non_exist_key = test_key("non-existent");
+
+    KeyDeleter<RedisInstance> deleter(_redis, {key, non_exist_key});
+
+    std::string val("value");
+    REDIS_ASSERT(!_redis.set_with_get_option(key, val), "failed to test set_with_get_option");
+
+    auto v = _redis.set_with_get_option(key, val + val, std::chrono::milliseconds(0), UpdateType::NOT_EXIST);
+    REDIS_ASSERT(v && *v == val, "failed to test set_with_get_option (GET)");
+    v = _redis.get(key);
+    REDIS_ASSERT(v && *v == val, "failed to test set_with_get_option (NOT_EXIST)");
+
+    auto ttl = std::chrono::seconds(10);
+    _redis.set_with_get_option(non_exist_key, val, ttl, UpdateType::EXIST);
+    REDIS_ASSERT(!_redis.get(non_exist_key), "failed to test set_with_get_option (EXIST)");
+
+    _redis.set_with_get_option(key, val, ttl);
+    auto ttl_v = _redis.ttl(key);
+    REDIS_ASSERT(ttl_v >= 0 && ttl_v <= ttl.count(), "failed to test set_with_get_option (TTL)");
+
+    _redis.set_with_get_option(key, val, true);
+    ttl_v = _redis.ttl(key);
+    REDIS_ASSERT(ttl_v >= 0 && ttl_v <= ttl.count(), "failed to test set_with_get_option (KEEPTTL)");
 }
 
 template <typename RedisInstance>

@@ -41,6 +41,8 @@ private:
 
     void _test_getset();
 
+    void _test_set_with_get_option();
+
     void _test_mgetset();
 
     RedisInstance &_redis;
