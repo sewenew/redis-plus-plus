@@ -407,7 +407,7 @@ public:
     Future<void> mset(std::initializer_list<T> il) {
         return mset(il.begin(), il.end());
     }
-    
+
     template <typename Input, typename Callback>
     auto mset(Input first, Input last, Callback &&cb)
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<void> &&>::value, void>::type {
@@ -505,6 +505,71 @@ public:
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<bool> &&>::value, void>::type {
         _callback_command_with_parser<bool, fmt::SetResultParser>(std::forward<Callback>(cb),
                 fmt::set_keepttl, key, val, keepttl, type);
+    }
+
+    Future<OptionalString> set_with_get_option(const StringView &key,
+                const StringView &val,
+                const std::chrono::milliseconds &ttl = std::chrono::milliseconds(0),
+                UpdateType type = UpdateType::ALWAYS) {
+        return _command<OptionalString>(fmt::set_with_get_option, key, val, ttl, type);
+    }
+
+    template <typename Callback>
+    auto set_with_get_option(const StringView &key,
+                const StringView &val,
+                Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalString> &&>::value, void>::type {
+        _callback_fmt_command<OptionalString>(std::forward<Callback>(cb),
+                fmt::set_with_get_option, key, val, std::chrono::milliseconds(0), UpdateType::ALWAYS);
+    }
+
+    template <typename Callback>
+    auto set_with_get_option(const StringView &key,
+                const StringView &val,
+                const std::chrono::milliseconds &ttl,
+                Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalString> &&>::value, void>::type {
+        _callback_fmt_command<OptionalString>(std::forward<Callback>(cb),
+                fmt::set_with_get_option, key, val, ttl, UpdateType::ALWAYS);
+    }
+
+    template <typename Callback>
+    auto set_with_get_option(const StringView &key,
+                const StringView &val,
+                const std::chrono::milliseconds &ttl,
+                UpdateType type,
+                Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalString> &&>::value, void>::type {
+        _callback_fmt_command<OptionalString>(std::forward<Callback>(cb),
+                fmt::set_with_get_option, key, val, ttl, type);
+    }
+
+    Future<OptionalString> set_with_get_option(const StringView &key,
+                const StringView &val,
+                bool keepttl,
+                UpdateType type = UpdateType::ALWAYS) {
+        return _command<OptionalString>(fmt::set_with_get_keepttl_option, key, val, keepttl, type);
+    }
+
+    template <typename Callback>
+    auto set_with_get_option(const StringView &key,
+                const StringView &val,
+                bool keepttl,
+                Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalString> &&>::value, void>::type {
+        _callback_fmt_command<OptionalString>(std::forward<Callback>(cb),
+                fmt::set_with_get_keepttl_option, key, val, keepttl, UpdateType::ALWAYS);
+    }
+
+    template <typename Callback>
+    auto set_with_get_option(const StringView &key,
+                const StringView &val,
+                bool keepttl,
+                UpdateType type,
+                Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalString> &&>::value, void>::type {
+        _callback_fmt_command<OptionalString>(std::forward<Callback>(cb),
+                fmt::set_with_get_keepttl_option, key, val, keepttl, type);
     }
 
     Future<long long> strlen(const StringView &key) {

@@ -923,6 +923,37 @@ public:
                 bool keepttl,
                 UpdateType type = UpdateType::ALWAYS);
 
+    /// @brief Atomically set the string stored at `key` to `val`, and return the old value.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// // Set a key-value pair, and expire it after 10 seconds and get the previous value.
+    /// auto val = redis.set_with_get_option("key", "value", std::chrono::seconds(10));
+    /// if (val)
+    ///     std::cout << *val << std::endl;
+    /// else
+    ///     std::cout << "key not exist" << std::endl;
+    /// @endcode
+    /// @param key Key.
+    /// @param val Value.
+    /// @param ttl Timeout on the key. If `ttl` is 0ms, do not set timeout.
+    /// @param type Options for set command:
+    ///             - UpdateType::EXIST: Set the key only if it already exists.
+    ///             - UpdateType::NOT_EXIST: Set the key only if it does not exist.
+    ///             - UpdateType::ALWAYS: Always set the key no matter whether it exists.
+    /// @return The old value stored at key.
+    /// @note If key does not exist, `getset` returns `OptionalString{}` (`std::nullopt`).
+    /// @see https://redis.io/commands/set
+    OptionalString set_with_get_option(const StringView &key,
+                const StringView &val,
+                const std::chrono::milliseconds &ttl = std::chrono::milliseconds(0),
+                UpdateType type = UpdateType::ALWAYS);
+
+    OptionalString set_with_get_option(const StringView &key,
+                const StringView &val,
+                bool keepttl,
+                UpdateType type = UpdateType::ALWAYS);
+
     // TODO: add SETBIT command.
 
     /// @brief Set key-value pair with the given timeout in seconds.

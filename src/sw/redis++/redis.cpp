@@ -378,6 +378,24 @@ bool Redis::set(const StringView &key,
     return reply::parse_set_reply(*reply);
 }
 
+OptionalString Redis::set_with_get_option(const StringView &key,
+                    const StringView &val,
+                    const std::chrono::milliseconds &ttl,
+                    UpdateType type) {
+    auto reply = command(cmd::set_with_get_option, key, val, ttl.count(), type);
+
+    return reply::parse<OptionalString>(*reply);
+}
+
+OptionalString Redis::set_with_get_option(const StringView &key,
+                    const StringView &val,
+                    bool keepttl,
+                    UpdateType type) {
+    auto reply = command(cmd::set_with_get_keepttl_option, key, val, keepttl, type);
+
+    return reply::parse<OptionalString>(*reply);
+}
+
 void Redis::setex(const StringView &key,
                     long long ttl,
                     const StringView &val) {

@@ -89,6 +89,40 @@ void set_keepttl(Connection &connection,
     connection.send(args);
 }
 
+void set_with_get_option(Connection &connection,
+            const StringView &key,
+            const StringView &val,
+            long long ttl,
+            UpdateType type) {
+    CmdArgs args;
+    args << "SET" << key << val << "GET";
+
+    if (ttl > 0) {
+        args << "PX" << ttl;
+    }
+
+    detail::set_update_type(args, type);
+
+    connection.send(args);
+}
+
+void set_with_get_keepttl_option(Connection &connection,
+            const StringView &key,
+            const StringView &val,
+            bool keepttl,
+            UpdateType type) {
+    CmdArgs args;
+    args << "SET" << key << val << "GET";
+
+    if (keepttl) {
+        args << "KEEPTTL";
+    }
+
+    detail::set_update_type(args, type);
+
+    connection.send(args);
+}
+
 // LIST commands.
 
 void linsert(Connection &connection,
