@@ -57,9 +57,32 @@ public:
 
     AsyncRedis redis(const StringView &hash_tag, bool new_connection = true);
 
+    bool getSlotState();
+
+    void update_conn_opt(std::map<std::string, std::string> _new_opts);
+
     AsyncSubscriber subscriber();
 
     AsyncSubscriber subscriber(const StringView &hash_tag);
+
+    template <typename Result, typename Input, typename Callback>
+    auto command(const StringView &key, Input first, Input last, Callback &&cb)
+        -> typename std::enable_if<IsIter<Input>::value, void>::type {
+        if (first == last || std::next(first) == last) {
+            throw Error("command: invalid range");
+        }
+
+        auto formatter = [](Input start, Input stop) {
+            CmdArgs cmd_args;
+            while (start != stop) {
+                cmd_args.append(*start);
+                ++start;
+            }
+            return fmt::format_cmd(cmd_args);
+        };
+
+        _callback_generic_command<Result>(std::forward<Callback>(cb), formatter, key, first, last);
+    }
 
     template <typename Result, typename ...Args>
     auto command(const StringView &cmd_name, const StringView &key, Args &&...args)

@@ -147,6 +147,8 @@ public:
 
     void update_node_info(const std::string &host, int port);
 
+    
+
     void set_subscriber_mode() {
         _subscriber_impl = std::unique_ptr<AsyncSubscriberImpl>(new AsyncSubscriberImpl);
     }
