@@ -1197,6 +1197,41 @@ public:
         _callback_fmt_command<long long>(std::forward<Callback>(cb), fmt::spublish, channel, message);
     }
 
+    // Stream commands.
+
+    template <typename Output>
+    Future<Output> xread(const StringView &key,
+            const StringView &id,
+            long long count) {
+        return _command<Output>(fmt::xread, key, id, count);
+    }
+
+    template <typename Output, typename Callback>
+    auto xread(const StringView &key,
+            const StringView &id,
+            long long count,
+            Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Output> &&>::value, void>::type {
+        _callback_fmt_command<Output>(std::forward<Callback>(cb), fmt::xread, key, id, count);
+    }
+
+    template <typename Output, typename Input>
+    auto xread(Input first, Input last, long long count)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value, Future<Output>>::type {
+        range_check("XREAD", first, last);
+
+        return _command<Output>(fmt::xread_range, first, last, count);
+    }
+
+    template <typename Output, typename Input, typename Callback>
+    auto xread(Input first, Input last, long long count, Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Output> &&>::value &&
+        !std::is_convertible<Input, StringView>::value, void>::type {
+        range_check("XREAD", first, last);
+
+        _callback_fmt_command<Output>(std::forward<Callback>(cb), fmt::xread_range<Input>, first, last, count);
+    }
+
     // co_command* are used internally. DO NOT use them.
 
     template <typename Result, typename Callback>
