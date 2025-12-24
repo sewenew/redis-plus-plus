@@ -1894,7 +1894,8 @@ public:
 
     template <typename Output, typename Input, typename Callback>
     auto xread(Input first, Input last, long long count, Callback &&cb)
-        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Output> &&>::value, void>::type {
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Output> &&>::value &&
+        !std::is_convertible<Input, StringView>::value, void>::type {
         range_check("XREAD", first, last);
 
         _callback_fmt_command<Output>(std::forward<Callback>(cb), fmt::xread_range<Input>, first, last, count);
