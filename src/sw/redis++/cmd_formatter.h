@@ -1033,11 +1033,19 @@ inline FormattedCommand sunsubscribe_range(Input first, Input last) {
 
 // Stream commands.
 
-inline FormattedCommand xread(const StringView &key, const StringView &id, long long count) {
-    return format_cmd("XREAD COUNT %lld STREAMS %b %b",
-            count,
-            key.data(), key.size(),
-            id.data(), id.size());
+inline FormattedCommand xread(const StringView &key, const StringView &id, long long count, long long timeout) {
+    if (timeout >= 0) {
+        return format_cmd("XREAD COUNT %lld BLOCK %lld STREAMS %b %b",
+                count,
+                timeout,
+                key.data(), key.size(),
+                id.data(), id.size());
+    } else {
+        return format_cmd("XREAD COUNT %lld STREAMS %b %b",
+                count,
+                key.data(), key.size(),
+                id.data(), id.size());
+    }
 }
 
 template <typename Input>
