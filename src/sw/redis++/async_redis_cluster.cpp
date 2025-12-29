@@ -32,13 +32,23 @@ AsyncRedisCluster::AsyncRedisCluster(const ConnectionOptions &opts,
         _loop = std::make_shared<EventLoop>();
     }
 
-    _pool = std::make_shared<AsyncShardsPool>(_loop, pool_opts, opts, role);
+    _pool = std::make_shared<AsyncShardsPool>(_loop, pool_opts, opts, role, ClusterOptions{});
+}
+
+AsyncRedisCluster::AsyncRedisCluster(const ConnectionOptions &opts,
+        const ConnectionPoolOptions &pool_opts,
+        Role role,
+        const ClusterOptions &cluster_opts,
+        const EventLoopSPtr &loop) : _loop(loop) {
+    if (!_loop) {
+        _loop = std::make_shared<EventLoop>();
+    }
+
+    _pool = std::make_shared<AsyncShardsPool>(_loop, pool_opts, opts, role, cluster_opts);
 }
 
 AsyncRedis AsyncRedisCluster::redis(const StringView &hash_tag, bool new_connection) {
     assert(_pool);
-
-    _pool->update();
 
     auto pool = _pool->fetch(hash_tag);
     if (new_connection) {
@@ -52,11 +62,9 @@ AsyncRedis AsyncRedisCluster::redis(const StringView &hash_tag, bool new_connect
 AsyncSubscriber AsyncRedisCluster::subscriber() {
     assert(_pool);
 
-    _pool->update();
-
     auto opts = _pool->connection_options();
 
-    auto connection = std::make_shared<AsyncConnection>(opts, _loop.get());
+    auto connection = std::make_shared<AsyncConnection>(opts, _loop);
     connection->set_subscriber_mode();
 
     return AsyncSubscriber(_loop, std::move(connection));
@@ -65,11 +73,9 @@ AsyncSubscriber AsyncRedisCluster::subscriber() {
 AsyncSubscriber AsyncRedisCluster::subscriber(const StringView &hash_tag) {
     assert(_pool);
 
-    _pool->update();
-
     auto opts = _pool->connection_options(hash_tag);
 
-    auto connection = std::make_shared<AsyncConnection>(opts, _loop.get());
+    auto connection = std::make_shared<AsyncConnection>(opts, _loop);
     connection->set_subscriber_mode();
 
     return AsyncSubscriber(_loop, std::move(connection));

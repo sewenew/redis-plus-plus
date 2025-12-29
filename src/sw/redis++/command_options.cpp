@@ -184,6 +184,22 @@ const std::string& RightBoundedInterval<std::string>::lower() const {
     return NEGATIVE_INFINITY_STRING;
 }
 
+std::string to_string(ListWhence whence) {
+    std::string str;
+    switch (whence) {
+    case ListWhence::LEFT:
+        str = "LEFT";
+        break;
+    case ListWhence::RIGHT:
+        str = "RIGHT";
+        break;
+    default:
+        throw Error("unknown list whence");
+    }
+
+    return str;
+}
+
 }
 
 }

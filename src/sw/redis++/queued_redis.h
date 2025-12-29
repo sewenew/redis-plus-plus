@@ -260,22 +260,22 @@ public:
 
     // TODO: sort
 
-    QueuedRedis& scan(long long cursor,
+    QueuedRedis& scan(Cursor cursor,
                         const StringView &pattern,
                         long long count) {
         return command(cmd::scan, cursor, pattern, count);
     }
 
-    QueuedRedis& scan(long long cursor) {
+    QueuedRedis& scan(Cursor cursor) {
         return scan(cursor, "*", 10);
     }
 
-    QueuedRedis& scan(long long cursor,
+    QueuedRedis& scan(Cursor cursor,
                         const StringView &pattern) {
         return scan(cursor, pattern, 10);
     }
 
-    QueuedRedis& scan(long long cursor,
+    QueuedRedis& scan(Cursor cursor,
                         long long count) {
         return scan(cursor, "*", count);
     }
@@ -470,6 +470,24 @@ public:
         _set_cmd_indexes.insert(_cmd_num);
 
         return command(cmd::set_keepttl, key, val, keepttl, type);
+    }
+
+    QueuedRedis& set_with_get_option(const StringView &key,
+                        const StringView &val,
+                        const std::chrono::milliseconds &ttl = std::chrono::milliseconds(0),
+                        UpdateType type = UpdateType::ALWAYS) {
+        _set_cmd_indexes.insert(_cmd_num);
+
+        return command(cmd::set_with_get_option, key, val, ttl.count(), type);
+    }
+
+    QueuedRedis& set_with_get_option(const StringView &key,
+                        const StringView &val,
+                        bool keepttl,
+                        UpdateType type = UpdateType::ALWAYS) {
+        _set_cmd_indexes.insert(_cmd_num);
+
+        return command(cmd::set_with_get_keepttl_option, key, val, keepttl, type);
     }
 
     QueuedRedis& setex(const StringView &key,
@@ -740,26 +758,26 @@ public:
     }
 
     QueuedRedis& hscan(const StringView &key,
-                        long long cursor,
+                        Cursor cursor,
                         const StringView &pattern,
                         long long count) {
         return command(cmd::hscan, key, cursor, pattern, count);
     }
 
     QueuedRedis& hscan(const StringView &key,
-                        long long cursor,
+                        Cursor cursor,
                         const StringView &pattern) {
         return hscan(key, cursor, pattern, 10);
     }
 
     QueuedRedis& hscan(const StringView &key,
-                        long long cursor,
+                        Cursor cursor,
                         long long count) {
         return hscan(key, cursor, "*", count);
     }
 
     QueuedRedis& hscan(const StringView &key,
-                        long long cursor) {
+                        Cursor cursor) {
         return hscan(key, cursor, "*", 10);
     }
 
@@ -799,6 +817,32 @@ public:
 
     QueuedRedis& hvals(const StringView &key) {
         return command(cmd::hvals, key);
+    }
+
+    template <typename Input>
+    QueuedRedis& hsetex(const StringView &key, Input first, Input last, bool keep_ttl, HSetExOption opt) {
+        range_check("HSETEX", first, last);
+        
+        return command(cmd::hsetex_keep_ttl_range<Input>, key, first, last, keep_ttl, opt);
+    }
+
+    template <typename Input>
+    QueuedRedis& hsetex(const StringView &key, Input first, Input last, const std::chrono::milliseconds &ttl, HSetExOption opt) {
+        range_check("HSETEX", first, last);
+        
+        return command(cmd::hsetex_ttl_range<Input>, key, first, last, ttl, opt);
+    }
+
+    template <typename Input>
+    QueuedRedis& hpexpire(const StringView &key, Input first, Input last, const std::chrono::milliseconds &ttl, HPExpireOption opt) {
+        range_check("HPEXPIRE", first, last);
+
+        return command(cmd::hpexpire_range<Input>, key, first, last, ttl, opt);
+    }
+
+    template <typename Input>
+    QueuedRedis& hpexpire(const StringView &key, Input first, Input last, const std::chrono::milliseconds &ttl) {
+        return hpexpire(key, first, last, ttl, HPExpireOption::ALWAYS);
     }
 
     // SET commands.
@@ -930,26 +974,26 @@ public:
     }
 
     QueuedRedis& sscan(const StringView &key,
-                        long long cursor,
+                        Cursor cursor,
                         const StringView &pattern,
                         long long count) {
         return command(cmd::sscan, key, cursor, pattern, count);
     }
 
     QueuedRedis& sscan(const StringView &key,
-                    long long cursor,
+                    Cursor cursor,
                     const StringView &pattern) {
         return sscan(key, cursor, pattern, 10);
     }
 
     QueuedRedis& sscan(const StringView &key,
-                        long long cursor,
+                        Cursor cursor,
                         long long count) {
         return sscan(key, cursor, "*", count);
     }
 
     QueuedRedis& sscan(const StringView &key,
-                        long long cursor) {
+                        Cursor cursor) {
         return sscan(key, cursor, "*", 10);
     }
 
@@ -1250,26 +1294,26 @@ public:
     }
 
     QueuedRedis& zscan(const StringView &key,
-                        long long cursor,
+                        Cursor cursor,
                         const StringView &pattern,
                         long long count) {
         return command(cmd::zscan, key, cursor, pattern, count);
     }
 
     QueuedRedis& zscan(const StringView &key,
-                        long long cursor,
+                        Cursor cursor,
                         const StringView &pattern) {
         return zscan(key, cursor, pattern, 10);
     }
 
     QueuedRedis& zscan(const StringView &key,
-                        long long cursor,
+                        Cursor cursor,
                         long long count) {
         return zscan(key, cursor, "*", count);
     }
 
     QueuedRedis& zscan(const StringView &key,
-                        long long cursor) {
+                        Cursor cursor) {
         return zscan(key, cursor, "*", 10);
     }
 

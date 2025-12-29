@@ -356,7 +356,7 @@ public:
     /// @see https://redis.io/commands/expireat
     bool expireat(const StringView &key,
                     const std::chrono::time_point<std::chrono::system_clock,
-                                                    std::chrono::seconds> &tp);
+                                                    std::chrono::seconds> &timestamp);
 
     /// @brief Get keys matching the given pattern.
     /// @param pattern Pattern.
@@ -421,7 +421,7 @@ public:
     /// @see https://redis.io/commands/pexpireat
     bool pexpireat(const StringView &key,
                     const std::chrono::time_point<std::chrono::system_clock,
-                                                    std::chrono::milliseconds> &tp);
+                                                    std::chrono::milliseconds> &timestamp);
 
     /// @brief Get the TTL of a key in milliseconds.
     /// @param key Key.
@@ -480,7 +480,7 @@ public:
     ///
     /// Example:
     /// @code{.cpp}
-    /// auto cursor = 0LL;
+    /// sw::redis::Cursor cursor = 0;
     /// std::unordered_set<std::string> keys;
     /// while (true) {
     ///     cursor = redis.scan(cursor, "pattern:*", 10, std::inserter(keys, keys.begin()));
@@ -497,10 +497,10 @@ public:
     /// @see https://redis.io/commands/scan
     /// TODO: support the TYPE option for Redis 6.0.
     template <typename Output>
-    long long scan(long long cursor,
-                    const StringView &pattern,
-                    long long count,
-                    Output output);
+    Cursor scan(Cursor cursor,
+                 const StringView &pattern,
+                 long long count,
+                 Output output);
 
     /// @brief Scan all keys of the database.
     /// @param cursor Cursor.
@@ -508,8 +508,8 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/scan
     template <typename Output>
-    long long scan(long long cursor,
-                    Output output);
+    Cursor scan(Cursor cursor,
+                 Output output);
 
     /// @brief Scan keys of the database matching the given pattern.
     /// @param cursor Cursor.
@@ -518,9 +518,9 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/scan
     template <typename Output>
-    long long scan(long long cursor,
-                    const StringView &pattern,
-                    Output output);
+    Cursor scan(Cursor cursor,
+                 const StringView &pattern,
+                 Output output);
 
     /// @brief Scan keys of the database matching the given pattern.
     /// @param cursor Cursor.
@@ -529,9 +529,9 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/scan
     template <typename Output>
-    long long scan(long long cursor,
-                    long long count,
-                    Output output);
+    Cursor scan(Cursor cursor,
+                 long long count,
+                 Output output);
 
     /// @brief Update the last access time of the given key.
     /// @param key Key.
@@ -919,6 +919,37 @@ public:
                 UpdateType type = UpdateType::ALWAYS);
 
     bool set(const StringView &key,
+                const StringView &val,
+                bool keepttl,
+                UpdateType type = UpdateType::ALWAYS);
+
+    /// @brief Atomically set the string stored at `key` to `val`, and return the old value.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// // Set a key-value pair, and expire it after 10 seconds and get the previous value.
+    /// auto val = redis.set_with_get_option("key", "value", std::chrono::seconds(10));
+    /// if (val)
+    ///     std::cout << *val << std::endl;
+    /// else
+    ///     std::cout << "key not exist" << std::endl;
+    /// @endcode
+    /// @param key Key.
+    /// @param val Value.
+    /// @param ttl Timeout on the key. If `ttl` is 0ms, do not set timeout.
+    /// @param type Options for set command:
+    ///             - UpdateType::EXIST: Set the key only if it already exists.
+    ///             - UpdateType::NOT_EXIST: Set the key only if it does not exist.
+    ///             - UpdateType::ALWAYS: Always set the key no matter whether it exists.
+    /// @return The old value stored at key.
+    /// @note If key does not exist, `getset` returns `OptionalString{}` (`std::nullopt`).
+    /// @see https://redis.io/commands/set
+    OptionalString set_with_get_option(const StringView &key,
+                const StringView &val,
+                const std::chrono::milliseconds &ttl = std::chrono::milliseconds(0),
+                UpdateType type = UpdateType::ALWAYS);
+
+    OptionalString set_with_get_option(const StringView &key,
                 const StringView &val,
                 bool keepttl,
                 UpdateType type = UpdateType::ALWAYS);
@@ -1314,6 +1345,81 @@ public:
     /// @see https://redis.io/commands/rpushx
     long long rpushx(const StringView &key, const StringView &val);
 
+    /// @brief Pop one or more elements from the first non-empty list.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// auto lists = {"l1", "l2"};
+    /// auto val = redis.lmpop<std::vector<std::string>>(lists.begin(), lists.end(), ListWhence::LEFT, 2);
+    /// if (val)
+    ///     std::cout << "list: " << val->first << ", size: " << val->second.size() << std::endl;
+    /// else
+    ///     std::cout << "all lists are empty" << std::endl;
+    /// @endcode
+    /// @param first Iterator to the first list.
+    /// @param last Off-the-end iterator to the given list range.
+    /// @param whence ListWhence::LEFT or ListWhence::RIGHT.
+    /// @param count Number of elements to be popped.
+    /// @return Elements popped from list.
+    /// @note If key does not exist, `lmpop` returns `Optional<std::pair<std::string, Output>>{}` (`std::nullopt`).
+    /// @see https://redis.io/commands/lmpop
+    template <typename Output, typename Input>
+    Optional<std::pair<std::string, Output>> lmpop(Input first, Input last, ListWhence whence, long long count = 1);
+
+    /// @brief Pop one or more elements from the first non-empty list.
+    /// @param il Initializer list of Redis lists.
+    /// @param pos ListWhence::LEFT or ListWhence::RIGHT.
+    /// @param count Number of elements to be popped.
+    /// @return Elements popped from list.
+    /// @note If key does not exist, `lmpop` returns `Optional<std::pair<std::string, Output>>{}` (`std::nullopt`).
+    /// @see https://redis.io/commands/lmpop
+    template <typename Output, typename T>
+    Optional<std::pair<std::string, Output>> lmpop(std::initializer_list<T> il, ListWhence pos, long long count = 1) {
+        return lmpop<Output>(il.begin(), il.end(), pos, count);
+    }
+
+    /// @brief Move element from src list to dest list.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// auto val = redis.lmove("src", "dest", ListWhence::LEFT, ListWhence::RIGHT);
+    /// if (val)
+    ///     std::cout << "moved " << *val << " from src to dest" << std::endl;
+    /// else
+    ///     std::cout << "src list does not exist" << std::endl;
+    /// @endcode
+    /// @param src Source list.
+    /// @param dest Destination list.
+    /// @param src_whence From where of the source list.
+    /// @param dest_whence To where of the dest list.
+    /// @return The moved element.
+    /// @note If source list does not exist, `lmove` returns `OptionalString{}` (`std::nullopt`).
+    /// @see https://redis.io/commands/lmove
+    OptionalString lmove(const StringView &src, const StringView &dest,
+            ListWhence src_whence, ListWhence dest_whence);
+
+    /// @brief The block version of lmove.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// auto val = redis.blmove("src", "dest", ListWhence::LEFT, ListWhence::RIGHT, std::chrono::seonds(2));
+    /// if (val)
+    ///     std::cout << "moved " << *val << " from src to dest" << std::endl;
+    /// else
+    ///     std::cout << "src list does not exist" << std::endl;
+    /// @endcode
+    /// @param src Source list.
+    /// @param dest Destination list.
+    /// @param src_whence From where of the source list.
+    /// @param dest_whence To where of the dest list.
+    /// @param timeout Timeout in seconds. 0 means block forever.
+    /// @return The moved element.
+    /// @note If source list does not exist, `blmove` returns `OptionalString{}` (`std::nullopt`).
+    /// @see https://redis.io/commands/blmove
+    OptionalString blmove(const StringView &src, const StringView &dest,
+            ListWhence src_whence, ListWhence dest_whence,
+            const std::chrono::seconds &timeout = std::chrono::seconds{0});
+
     // HASH commands.
 
     /// @brief Remove the given field from hash.
@@ -1490,7 +1596,7 @@ public:
     ///
     /// Example:
     /// @code{.cpp}
-    /// auto cursor = 0LL;
+    /// sw::redis::Cursor cursor = 0;
     /// std::unordered_map<std::string, std::string> kvs;
     /// while (true) {
     ///     cursor = redis.hscan("hash", cursor, "pattern:*", 10, std::inserter(kvs, kvs.begin()));
@@ -1507,11 +1613,11 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/hscan
     template <typename Output>
-    long long hscan(const StringView &key,
-                    long long cursor,
-                    const StringView &pattern,
-                    long long count,
-                    Output output);
+    Cursor hscan(const StringView &key,
+                 Cursor cursor,
+                 const StringView &pattern,
+                 long long count,
+                 Output output);
 
     /// @brief Scan fields of the given hash matching the given pattern.
     /// @param key Key where the hash is stored.
@@ -1521,10 +1627,10 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/hscan
     template <typename Output>
-    long long hscan(const StringView &key,
-                    long long cursor,
-                    const StringView &pattern,
-                    Output output);
+    Cursor hscan(const StringView &key,
+                 Cursor cursor,
+                 const StringView &pattern,
+                 Output output);
 
     /// @brief Scan all fields of the given hash.
     /// @param key Key where the hash is stored.
@@ -1534,10 +1640,10 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/hscan
     template <typename Output>
-    long long hscan(const StringView &key,
-                    long long cursor,
-                    long long count,
-                    Output output);
+    Cursor hscan(const StringView &key,
+                 Cursor cursor,
+                 long long count,
+                 Output output);
 
     /// @brief Scan all fields of the given hash.
     /// @param key Key where the hash is stored.
@@ -1546,9 +1652,9 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/hscan
     template <typename Output>
-    long long hscan(const StringView &key,
-                    long long cursor,
-                    Output output);
+    Cursor hscan(const StringView &key,
+                 Cursor cursor,
+                 Output output);
 
     /// @brief Set hash field to value.
     /// @param key Key where the hash is stored.
@@ -1599,6 +1705,57 @@ public:
     long long hset(const StringView &key, std::initializer_list<T> il) {
         return hset(key, il.begin(), il.end());
     }
+
+    template <typename Input>
+    auto hsetex(const StringView &key,
+            Input first,
+            Input last,
+            bool keep_ttl = false,
+            HSetExOption opt = HSetExOption::ALWAYS)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value, long long>::type;
+
+    template <typename Input>
+    auto hsetex(const StringView &key,
+            Input first,
+            Input last,
+            const std::chrono::milliseconds &ttl,
+            HSetExOption opt = HSetExOption::ALWAYS)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value, long long>::type;
+
+    template <typename Input>
+    auto hsetex(const StringView &key,
+            Input first,
+            Input last,
+            const std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds> &tp,
+            HSetExOption opt = HSetExOption::ALWAYS)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value, long long>::type;
+
+    template <typename Input, typename Output>
+    void httl(const StringView &key, Input first, Input last, Output output);
+
+    template <typename Input, typename Output>
+    void hpttl(const StringView &key, Input first, Input last, Output output);
+
+    template <typename Input, typename Output>
+    void hexpiretime(const StringView &key, Input first, Input last, Output output);
+
+    template <typename Input, typename Output>
+    void hpexpiretime(const StringView &key, Input first, Input last, Output output);
+
+    template <typename Input, typename Output>
+    void hpexpire(const StringView &key,
+            Input first,
+            Input last,
+            const std::chrono::milliseconds &ttl,
+            Output output);
+
+    template <typename Input, typename Output>
+    void hpexpire(const StringView &key,
+            Input first,
+            Input last,
+            const std::chrono::milliseconds &ttl,
+            HPExpireOption opt,
+            Output output);
 
     /// @brief Set hash field to value, only if the given field does not exist.
     /// @param key Key where the hash is stored.
@@ -1875,7 +2032,7 @@ public:
     ///
     /// Example:
     /// @code{.cpp}
-    /// auto cursor = 0LL;
+    /// sw::redis::Cursor cursor = 0;
     /// std::unordered_set<std::string> members;
     /// while (true) {
     ///     cursor = redis.sscan("set", cursor, "pattern:*",
@@ -1893,11 +2050,11 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/sscan
     template <typename Output>
-    long long sscan(const StringView &key,
-                    long long cursor,
-                    const StringView &pattern,
-                    long long count,
-                    Output output);
+    Cursor sscan(const StringView &key,
+                 Cursor cursor,
+                 const StringView &pattern,
+                 long long count,
+                 Output output);
 
     /// @brief Scan members of the set matching the given pattern.
     /// @param key Key where the set is stored.
@@ -1907,10 +2064,10 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/sscan
     template <typename Output>
-    long long sscan(const StringView &key,
-                    long long cursor,
-                    const StringView &pattern,
-                    Output output);
+    Cursor sscan(const StringView &key,
+                 Cursor cursor,
+                 const StringView &pattern,
+                 Output output);
 
     /// @brief Scan all members of the given set.
     /// @param key Key where the set is stored.
@@ -1920,10 +2077,10 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/sscan
     template <typename Output>
-    long long sscan(const StringView &key,
-                    long long cursor,
-                    long long count,
-                    Output output);
+    Cursor sscan(const StringView &key,
+                 Cursor cursor,
+                 long long count,
+                 Output output);
 
     /// @brief Scan all members of the given set.
     /// @param key Key where the set is stored.
@@ -1932,9 +2089,9 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/sscan
     template <typename Output>
-    long long sscan(const StringView &key,
-                    long long cursor,
-                    Output output);
+    Cursor sscan(const StringView &key,
+                 Cursor cursor,
+                 Output output);
 
     /// @brief Get the union between the first set and all successive sets.
     /// @param first Iterator to the first set.
@@ -2202,8 +2359,7 @@ public:
     /// redis.zadd("zset", {std::make_pair("m1", 1.4), std::make_pair("m2", 2.3)});
     /// @endcode
     /// @param key Key where the sorted set is stored.
-    /// @param first Iterator to the first member-score pair.
-    /// @param last Off-the-end iterator to the member-score pairs range.
+    /// @param il Initializer list of member-score pairs.
     /// @param type Options for zadd command:
     ///             - UpdateType::EXIST: Add the member only if it already exists.
     ///             - UpdateType::NOT_EXIST: Add the member only if it does not exist.
@@ -2811,7 +2967,7 @@ public:
     ///
     /// Example:
     /// @code{.cpp}
-    /// auto cursor = 0LL;
+    /// sw::redis::Cursor cursor = 0;
     /// std::vector<std::pair<std::string, double>> members;
     /// while (true) {
     ///     cursor = redis.zscan("zset", cursor, "pattern:*",
@@ -2829,11 +2985,11 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/zscan
     template <typename Output>
-    long long zscan(const StringView &key,
-                    long long cursor,
-                    const StringView &pattern,
-                    long long count,
-                    Output output);
+    Cursor zscan(const StringView &key,
+                 Cursor cursor,
+                 const StringView &pattern,
+                 long long count,
+                 Output output);
 
     /// @brief Scan members of the given sorted set matching the given pattern.
     /// @param key Key where the sorted set is stored.
@@ -2843,10 +2999,10 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/zscan
     template <typename Output>
-    long long zscan(const StringView &key,
-                    long long cursor,
-                    const StringView &pattern,
-                    Output output);
+    Cursor zscan(const StringView &key,
+                 Cursor cursor,
+                 const StringView &pattern,
+                 Output output);
 
     /// @brief Scan all members of the given sorted set.
     /// @param key Key where the sorted set is stored.
@@ -2856,10 +3012,10 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/zscan
     template <typename Output>
-    long long zscan(const StringView &key,
-                    long long cursor,
-                    long long count,
-                    Output output);
+    Cursor zscan(const StringView &key,
+                 Cursor cursor,
+                 long long count,
+                 Output output);
 
     /// @brief Scan all members of the given sorted set.
     /// @param key Key where the sorted set is stored.
@@ -2868,9 +3024,9 @@ public:
     /// @return The cursor to be used for the next scan operation.
     /// @see https://redis.io/commands/zscan
     template <typename Output>
-    long long zscan(const StringView &key,
-                    long long cursor,
-                    Output output);
+    Cursor zscan(const StringView &key,
+                 Cursor cursor,
+                 Output output);
 
     /// @brief Get the score of the given member.
     /// @param key Key where the sorted set is stored.
@@ -3247,6 +3403,62 @@ public:
     void script_kill();
 
     std::string script_load(const StringView &script);
+
+    template <typename Result, typename Keys, typename Args>
+    Result fcall(const StringView &func,
+                Keys keys_first,
+                Keys keys_last,
+                Args args_first,
+                Args args_last);
+
+    template <typename Result>
+    Result fcall(const StringView &func,
+                std::initializer_list<StringView> keys,
+                std::initializer_list<StringView> args);
+
+    template <typename Keys, typename Args, typename Output>
+    void fcall(const StringView &func,
+                Keys keys_first,
+                Keys keys_last,
+                Args args_first,
+                Args args_last,
+                Output output);
+
+    template <typename Output>
+    void fcall(const StringView &func,
+                std::initializer_list<StringView> keys,
+                std::initializer_list<StringView> args,
+                Output output);
+
+    template <typename Result, typename Keys, typename Args>
+    Result fcall_ro(const StringView &func,
+                Keys keys_first,
+                Keys keys_last,
+                Args args_first,
+                Args args_last);
+
+    template <typename Result>
+    Result fcall_ro(const StringView &func,
+                std::initializer_list<StringView> keys,
+                std::initializer_list<StringView> args);
+
+    template <typename Keys, typename Args, typename Output>
+    void fcall_ro(const StringView &func,
+                Keys keys_first,
+                Keys keys_last,
+                Args args_first,
+                Args args_last,
+                Output output);
+
+    template <typename Output>
+    void fcall_ro(const StringView &func,
+                std::initializer_list<StringView> keys,
+                std::initializer_list<StringView> args,
+                Output output);
+
+    std::string function_load(const StringView &code, bool replace = false);
+
+    void function_delete(const StringView &lib_name);
 
     // PUBSUB commands.
 

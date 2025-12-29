@@ -26,10 +26,12 @@ const std::size_t ShardsPool::SHARDS;
 
 ShardsPool::ShardsPool(const ConnectionPoolOptions &pool_opts,
                         const ConnectionOptions &connection_opts,
-                        Role role) :
+                        Role role,
+                        const ClusterOptions &cluster_opts) :
                             _pool_opts(pool_opts),
                             _connection_opts(connection_opts),
-                            _role(role) {
+                            _role(role),
+                            _cluster_opts(cluster_opts) {
     if (_connection_opts.type != ConnectionType::TCP) {
         throw Error("Only support TCP connection for Redis Cluster");
     }
@@ -47,7 +49,7 @@ ShardsPool::~ShardsPool() {
     {
         std::lock_guard<std::mutex> lock(_mutex);
 
-        _update_status = UpdateStatus::STOP;
+        _stop = true;
     }
 
     _cv.notify_one();
@@ -170,22 +172,6 @@ std::vector<ConnectionPoolSPtr> ShardsPool::pools() {
     }
 
     return nodes;
-}
-
-void ShardsPool::async_update() {
-    bool should_update = false;
-    {
-        std::lock_guard<std::mutex> lock(_mutex);
-
-        if (_update_status == UpdateStatus::UPDATED) {
-            should_update = true;
-            _update_status = UpdateStatus::STALE;
-        }
-    }
-
-    if (should_update) {
-        _cv.notify_one();
-    }
 }
 
 void ShardsPool::_init_pool(const Shards &shards) {
@@ -385,34 +371,20 @@ auto ShardsPool::_add_node(const Node &node) -> NodeMap::iterator {
 void ShardsPool::_run() {
     while (true) {
         std::unique_lock<std::mutex> lock(_mutex);
-        if (_update_status == UpdateStatus::UPDATED) {
-            _cv.wait(lock, [this]() { return this->_update_status != UpdateStatus::UPDATED; });
-        }
 
-        if (_update_status == UpdateStatus::STOP) {
+        if (_cv.wait_for(lock,
+                    _cluster_opts.slot_map_refresh_interval,
+                    [this]() { return this->_stop; })) {
             break;
-        } else if (_update_status == UpdateStatus::STALE) {
-            lock.unlock();
-
-            _do_async_update();
-        } else {
-            assert("invalid UpdateStatus");
         }
-    }
-}
 
-void ShardsPool::_do_async_update() {
-    try {
-        update();
+        lock.unlock();
 
-        std::lock_guard<std::mutex> lock(_mutex);
-
-        if (_update_status != UpdateStatus::STOP) {
-            _update_status = UpdateStatus::UPDATED;
+        try {
+            update();
+        } catch (...) {
+            // Ignore exceptions.
         }
-    } catch (...) {
-        // Ignore exceptions.
-        // TODO: should we sleep a while?
     }
 }
 

@@ -1,23 +1,15 @@
 project(test_redis++)
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.5)
 
 set(REDIS_PLUS_PLUS_TEST_SOURCES src/sw/redis++/test_main.cpp)
 
 add_executable(${PROJECT_NAME} ${REDIS_PLUS_PLUS_TEST_SOURCES})
 
 # hiredis dependency
-find_path(HIREDIS_HEADER hiredis REQUIRED)
-target_include_directories(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:${HIREDIS_HEADER}>)
+include(${CMAKE_CURRENT_LIST_DIR}/../cmake/FindHiredis.cmake)
 
-find_library(TEST_HIREDIS_LIB NAMES libhiredis.a libhiredisd.a)
-if(NOT TEST_HIREDIS_LIB)
-    find_library(TEST_HIREDIS_LIB NAMES libhiredis_static.a libhiredis_staticd.a)
-    if(NOT TEST_HIREDIS_LIB)
-        find_library(TEST_HIREDIS_LIB NAMES hiredis hiredisd)
-    endif()
-endif()
-target_link_libraries(${PROJECT_NAME} ${TEST_HIREDIS_LIB})
+target_link_libraries(${PROJECT_NAME} ${REDIS_PLUS_PLUS_HIREDIS_LIBS})
 
 if(REDIS_PLUS_PLUS_USE_TLS)
     find_package(OpenSSL REQUIRED)

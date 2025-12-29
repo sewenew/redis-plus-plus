@@ -407,7 +407,7 @@ public:
     Future<void> mset(std::initializer_list<T> il) {
         return mset(il.begin(), il.end());
     }
-    
+
     template <typename Input, typename Callback>
     auto mset(Input first, Input last, Callback &&cb)
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<void> &&>::value, void>::type {
@@ -505,6 +505,71 @@ public:
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<bool> &&>::value, void>::type {
         _callback_command_with_parser<bool, fmt::SetResultParser>(std::forward<Callback>(cb),
                 fmt::set_keepttl, key, val, keepttl, type);
+    }
+
+    Future<OptionalString> set_with_get_option(const StringView &key,
+                const StringView &val,
+                const std::chrono::milliseconds &ttl = std::chrono::milliseconds(0),
+                UpdateType type = UpdateType::ALWAYS) {
+        return _command<OptionalString>(fmt::set_with_get_option, key, val, ttl, type);
+    }
+
+    template <typename Callback>
+    auto set_with_get_option(const StringView &key,
+                const StringView &val,
+                Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalString> &&>::value, void>::type {
+        _callback_fmt_command<OptionalString>(std::forward<Callback>(cb),
+                fmt::set_with_get_option, key, val, std::chrono::milliseconds(0), UpdateType::ALWAYS);
+    }
+
+    template <typename Callback>
+    auto set_with_get_option(const StringView &key,
+                const StringView &val,
+                const std::chrono::milliseconds &ttl,
+                Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalString> &&>::value, void>::type {
+        _callback_fmt_command<OptionalString>(std::forward<Callback>(cb),
+                fmt::set_with_get_option, key, val, ttl, UpdateType::ALWAYS);
+    }
+
+    template <typename Callback>
+    auto set_with_get_option(const StringView &key,
+                const StringView &val,
+                const std::chrono::milliseconds &ttl,
+                UpdateType type,
+                Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalString> &&>::value, void>::type {
+        _callback_fmt_command<OptionalString>(std::forward<Callback>(cb),
+                fmt::set_with_get_option, key, val, ttl, type);
+    }
+
+    Future<OptionalString> set_with_get_option(const StringView &key,
+                const StringView &val,
+                bool keepttl,
+                UpdateType type = UpdateType::ALWAYS) {
+        return _command<OptionalString>(fmt::set_with_get_keepttl_option, key, val, keepttl, type);
+    }
+
+    template <typename Callback>
+    auto set_with_get_option(const StringView &key,
+                const StringView &val,
+                bool keepttl,
+                Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalString> &&>::value, void>::type {
+        _callback_fmt_command<OptionalString>(std::forward<Callback>(cb),
+                fmt::set_with_get_keepttl_option, key, val, keepttl, UpdateType::ALWAYS);
+    }
+
+    template <typename Callback>
+    auto set_with_get_option(const StringView &key,
+                const StringView &val,
+                bool keepttl,
+                UpdateType type,
+                Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalString> &&>::value, void>::type {
+        _callback_fmt_command<OptionalString>(std::forward<Callback>(cb),
+                fmt::set_with_get_keepttl_option, key, val, keepttl, type);
     }
 
     Future<long long> strlen(const StringView &key) {
@@ -809,6 +874,60 @@ public:
     auto rpush(const StringView &key, std::initializer_list<T> il, Callback &&cb)
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<long long> &&>::value, void>::type {
         return rpush(key, il.begin(), il.end(), std::forward<Callback>(cb));
+    }
+
+    template <typename Output, typename Input>
+    Future<Optional<std::pair<std::string, Output>>> lmpop(Input first, Input last, ListWhence whence, long long count = 1) {
+        range_check("LMPOP", first, last);
+
+        return _command<Optional<std::pair<std::string, Output>>>(fmt::lmpop<Input>, first, last, whence, count);
+    }
+
+    template <typename Output, typename Input, typename Callback>
+    auto lmpop(Input first, Input last, ListWhence whence, long long count, Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Optional<std::pair<std::string, Output>>> &&>::value, void>::type {
+        range_check("LMPOP", first, last);
+
+        _callback_fmt_command<Optional<std::pair<std::string, Output>>>(std::forward<Callback>(cb),
+                fmt::lmpop<Input>, first, last, whence, count);
+    }
+
+    template <typename Output, typename Input, typename Callback>
+    auto lmpop(Input first, Input last, ListWhence whence, Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Optional<std::pair<std::string, Output>>> &&>::value, void>::type {
+        return lmpop<Output>(first, last, whence, 1, std::forward<Callback>(cb));
+    }
+
+    Future<OptionalString> lmove(const StringView &src, const StringView &dest,
+            ListWhence src_whence, ListWhence dest_whence) {
+        return _command<OptionalString>(fmt::lmove, src, dest, src_whence, dest_whence);
+    }
+
+    template <typename Callback>
+    void lmove(const StringView &src, const StringView &dest,
+            ListWhence src_whence, ListWhence dest_whence, Callback &&cb) {
+        _callback_fmt_command<OptionalString>(std::forward<Callback>(cb), fmt::lmove, src, dest, src_whence, dest_whence);
+    }
+
+    Future<OptionalString> blmove(const StringView &src, const StringView &dest,
+            ListWhence src_whence, ListWhence dest_whence,
+            const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+        return _command<OptionalString>(fmt::blmove, src, dest, src_whence, dest_whence, timeout.count());
+    }
+
+    template <typename Callback>
+    void blmove(const StringView &src, const StringView &dest,
+            ListWhence src_whence, ListWhence dest_whence,
+            const std::chrono::seconds &timeout, Callback &&cb) {
+        _callback_fmt_command<OptionalString>(std::forward<Callback>(cb), fmt::blmove, src, dest,
+                src_whence, dest_whence, timeout.count());
+    }
+
+    template <typename Callback>
+    auto blmove(const StringView &src, const StringView &dest,
+            ListWhence src_whence, ListWhence dest_whence, Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalString> &&>::value, void>::type {
+        blmove(src, dest, src_whence, dest_whence, std::chrono::seconds{0}, std::forward<Callback>(cb));
     }
 
     // HASH commands.
@@ -1399,7 +1518,7 @@ public:
 
     template <typename Output, typename Interval>
     Future<Output> zrangebyscore(const StringView &key, const Interval &interval) {
-        return zrangebyscore(key, interval, {});
+        return zrangebyscore<Output>(key, interval, {});
     }
 
     template <typename Output, typename Interval, typename Callback>
@@ -1511,6 +1630,32 @@ public:
         return zrevrangebylex<Output, Interval, Callback>(key, interval, {}, std::forward<Callback>(cb));
     }
 
+    // TODO: withscores parameter
+    template <typename Output, typename Interval>
+    Future<Output> zrevrangebyscore(const StringView &key,
+                                    const Interval &interval,
+                                    const LimitOptions &opts) {
+        return _command<Output>(fmt::zrevrangebyscore<Interval>,
+                                key, interval, opts);
+    }
+
+    template <typename Output, typename Interval, typename Callback>
+    auto zrevrangebyscore(const StringView &key, const Interval &interval, const LimitOptions &opts, Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Output> &&>::value, void>::type {
+        _callback_fmt_command<Output>(std::forward<Callback>(cb), fmt::zrevrangebyscore<Interval>, key, interval, opts);
+    }
+
+    template <typename Output, typename Interval>
+    Future<Output> zrevrangebyscore(const StringView &key, const Interval &interval) {
+        return zrevrangebyscore<Output>(key, interval, {});
+    }
+
+    template <typename Output, typename Interval, typename Callback>
+    auto zrevrangebyscore(const StringView &key, const Interval &interval, Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Output> &&>::value, void>::type {
+        return zrevrangebyscore<Output>(key, interval, {}, std::forward<Callback>(cb));
+    }
+
     Future<OptionalLongLong> zrevrank(const StringView &key, const StringView &member) {
         return _command<OptionalLongLong>(fmt::zrevrank, key, member);
     }
@@ -1613,6 +1758,94 @@ public:
         return evalsha<Result>(script, keys.begin(), keys.end(), args.begin(), args.end(), std::forward<Callback>(cb));
     }
 
+    template <typename Result, typename Keys, typename Args>
+    Future<Result> fcall(const StringView &func,
+                Keys keys_first,
+                Keys keys_last,
+                Args args_first,
+                Args args_last) {
+        return _command<Result>(fmt::fcall<Keys, Args>,
+                func, keys_first, keys_last, args_first, args_last);
+    }
+
+    template <typename Result, typename Keys, typename Args, typename Callback>
+    auto fcall(const StringView &func,
+              Keys keys_first,
+              Keys keys_last,
+              Args args_first,
+              Args args_last,
+              Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Result> &&>::value, void>::type {
+        _callback_fmt_command<Result>(std::forward<Callback>(cb), fmt::fcall<Keys, Args>,
+                                      func, keys_first, keys_last, args_first, args_last);
+    }
+
+    template <typename Result>
+    Future<Result> fcall(const StringView &func,
+                std::initializer_list<StringView> keys,
+                std::initializer_list<StringView> args) {
+        return fcall<Result>(func,
+                keys.begin(), keys.end(),
+                args.begin(), args.end());
+    }
+
+    template <typename Result, typename Callback>
+    auto fcall(const StringView &func,
+              std::initializer_list<StringView> keys,
+              std::initializer_list<StringView> args,
+              Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Result> &&>::value, void>::type {
+        return fcall<Result>(func, keys.begin(), keys.end(), args.begin(), args.end(), std::forward<Callback>(cb));
+    }
+
+    template <typename Result, typename Keys, typename Args>
+    Future<Result> fcall_ro(const StringView &func,
+                Keys keys_first,
+                Keys keys_last,
+                Args args_first,
+                Args args_last) {
+        return _command<Result>(fmt::fcall_ro<Keys, Args>,
+                func, keys_first, keys_last, args_first, args_last);
+    }
+
+    template <typename Result, typename Keys, typename Args, typename Callback>
+    auto fcall_ro(const StringView &func,
+              Keys keys_first,
+              Keys keys_last,
+              Args args_first,
+              Args args_last,
+              Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Result> &&>::value, void>::type {
+        _callback_fmt_command<Result>(std::forward<Callback>(cb), fmt::fcall_ro<Keys, Args>,
+                                      func, keys_first, keys_last, args_first, args_last);
+    }
+
+    template <typename Result>
+    Future<Result> fcall_ro(const StringView &func,
+                std::initializer_list<StringView> keys,
+                std::initializer_list<StringView> args) {
+        return fcall_ro<Result>(func,
+                keys.begin(), keys.end(),
+                args.begin(), args.end());
+    }
+
+    template <typename Result, typename Callback>
+    auto fcall_ro(const StringView &func,
+              std::initializer_list<StringView> keys,
+              std::initializer_list<StringView> args,
+              Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Result> &&>::value, void>::type {
+        return fcall_ro<Result>(func, keys.begin(), keys.end(), args.begin(), args.end(), std::forward<Callback>(cb));
+    }
+
+    Future<std::string> function_load(const StringView &code, bool replace = false) {
+        return _command<std::string>(fmt::function_load, code, replace);
+    }
+
+    Future<void> function_delete(const StringView &lib_name) {
+        return _command<void>(fmt::function_delete, lib_name);
+    }
+
     // PUBSUB commands.
 
     Future<long long> publish(const StringView &channel, const StringView &message) {
@@ -1631,6 +1864,41 @@ public:
     template <typename Callback>
     void spublish(const StringView &channel, const StringView &message, Callback &&cb) {
         _callback_fmt_command<long long>(std::forward<Callback>(cb), fmt::spublish, channel, message);
+    }
+
+    // Stream commands.
+
+    template <typename Output>
+    Future<Output> xread(const StringView &key,
+            const StringView &id,
+            long long count) {
+        return _command<Output>(fmt::xread, key, id, count);
+    }
+
+    template <typename Output, typename Callback>
+    auto xread(const StringView &key,
+            const StringView &id,
+            long long count,
+            Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Output> &&>::value, void>::type {
+        _callback_fmt_command<Output>(std::forward<Callback>(cb), fmt::xread, key, id, count);
+    }
+
+    template <typename Output, typename Input>
+    auto xread(Input first, Input last, long long count)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value, Future<Output>>::type {
+        range_check("XREAD", first, last);
+
+        return _command<Output>(fmt::xread_range, first, last, count);
+    }
+
+    template <typename Output, typename Input, typename Callback>
+    auto xread(Input first, Input last, long long count, Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Output> &&>::value &&
+        !std::is_convertible<Input, StringView>::value, void>::type {
+        range_check("XREAD", first, last);
+
+        _callback_fmt_command<Output>(std::forward<Callback>(cb), fmt::xread_range<Input>, first, last, count);
     }
 
     // co_command* are used internally. DO NOT use them.

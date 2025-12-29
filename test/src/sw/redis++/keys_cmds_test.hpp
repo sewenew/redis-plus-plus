@@ -145,7 +145,7 @@ void KeysCmdTest<RedisInstance>::_test_scan(Redis &instance) {
     instance.set(k2, "v");
     instance.set(k3, "v");
 
-    auto cursor = 0;
+    Cursor cursor = 0;
     std::unordered_set<std::string> res;
     while (true) {
         cursor = instance.scan(cursor, "*" + key_pattern + "*", 2, std::inserter(res, res.end()));

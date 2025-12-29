@@ -146,7 +146,7 @@ Sentinel::Sentinel(const SentinelOptions &sentinel_opts) :
                     _sentinel_opts(sentinel_opts) {
     if (_sentinel_opts.connect_timeout == std::chrono::milliseconds(0)
             || _sentinel_opts.socket_timeout == std::chrono::milliseconds(0)) {
-        throw Error("With sentinel, connection timeout and socket timeout cannot be 0");
+        throw Error("With sentinel, connection timeout or socket timeout cannot be 0");
     }
 }
 
@@ -247,7 +247,7 @@ Connection Sentinel::slave(const std::string &master_name, const ConnectionOptio
             }
         } catch (const StopIterError &err) {
             err_msgs.push_back(report_error(sentinel_node, slave_node, err.what()));
-            throw StopIterError(err_msgs);;
+            throw StopIterError(err_msgs);
         } catch (const Error &err) {
             err_msgs.push_back(report_error(sentinel_node, slave_node, err.what()));
             continue;

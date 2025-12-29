@@ -91,7 +91,7 @@ enum class AsyncConnectionMode {
 class AsyncConnection : public std::enable_shared_from_this<AsyncConnection> {
 public:
     AsyncConnection(const ConnectionOptions &opts,
-            EventLoop *loop,
+            const EventLoopWPtr &loop,
             AsyncConnectionMode = AsyncConnectionMode::SINGLE);
 
     AsyncConnection(const AsyncConnection &) = delete;
@@ -248,7 +248,7 @@ private:
 
     ConnectionOptions _opts;
 
-    EventLoop *_loop = nullptr;
+    EventLoopWPtr _loop;
 
     tls::TlsContextUPtr _tls_ctx;
 
@@ -512,8 +512,6 @@ public:
         // i.e. ClosedError or IoError, we need to update node-slot mapping.
         try {
             std::rethrow_exception(err);
-        } catch (const SlotUncoveredError &) {
-            detail::update_shards(_key, _pool, AsyncEventUPtr(new UpdateShardsEvent));
         } catch (const IoError &) {
             detail::update_shards(_key, _pool, AsyncEventUPtr(new UpdateShardsEvent));
         } catch (const ClosedError &) {

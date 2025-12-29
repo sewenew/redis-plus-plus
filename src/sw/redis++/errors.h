@@ -148,9 +148,9 @@ class MovedError;
 
 class AskError;
 
-void throw_error(const redisContext &context, const std::string &err_info);
+[[noreturn]] void throw_error(const redisContext &context, const std::string &err_info);
 
-void throw_error(const redisReply &reply);
+[[noreturn]] void throw_error(const redisReply &reply);
 
 template <typename Input>
 inline void range_check(const char *cmd, Input first, Input last) {

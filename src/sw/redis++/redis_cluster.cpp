@@ -32,8 +32,6 @@ RedisCluster::RedisCluster(const Uri &uri) :
 Redis RedisCluster::redis(const StringView &hash_tag, bool new_connection) {
     assert(_pool);
 
-    _pool->async_update();
-
     auto pool = _pool->fetch(hash_tag);
     if (new_connection) {
         // Create a new pool
@@ -45,8 +43,6 @@ Redis RedisCluster::redis(const StringView &hash_tag, bool new_connection) {
 
 Pipeline RedisCluster::pipeline(const StringView &hash_tag, bool new_connection) {
     assert(_pool);
-
-    _pool->async_update();
 
     auto pool = _pool->fetch(hash_tag);
     if (new_connection) {
@@ -60,8 +56,6 @@ Pipeline RedisCluster::pipeline(const StringView &hash_tag, bool new_connection)
 Transaction RedisCluster::transaction(const StringView &hash_tag, bool piped, bool new_connection) {
     assert(_pool);
 
-    _pool->async_update();
-
     auto pool = _pool->fetch(hash_tag);
     if (new_connection) {
         // Create a new pool
@@ -74,16 +68,12 @@ Transaction RedisCluster::transaction(const StringView &hash_tag, bool piped, bo
 Subscriber RedisCluster::subscriber() {
     assert(_pool);
 
-    _pool->async_update();
-
     auto opts = _pool->connection_options();
     return Subscriber(Connection(opts));
 }
 
 Subscriber RedisCluster::subscriber(const StringView &hash_tag) {
     assert(_pool);
-
-    _pool->async_update();
 
     auto opts = _pool->connection_options(hash_tag);
     return Subscriber(Connection(opts));
@@ -299,6 +289,24 @@ bool RedisCluster::set(const StringView &key,
     return reply::parse_set_reply(*reply);
 }
 
+OptionalString RedisCluster::set_with_get_option(const StringView &key,
+                    const StringView &val,
+                    const std::chrono::milliseconds &ttl,
+                    UpdateType type) {
+    auto reply = command(cmd::set_with_get_option, key, val, ttl.count(), type);
+
+    return reply::parse<OptionalString>(*reply);
+}
+
+OptionalString RedisCluster::set_with_get_option(const StringView &key,
+                    const StringView &val,
+                    bool keepttl,
+                    UpdateType type) {
+    auto reply = command(cmd::set_with_get_keepttl_option, key, val, keepttl, type);
+
+    return reply::parse<OptionalString>(*reply);
+}
+
 void RedisCluster::setex(const StringView &key,
                     long long ttl,
                     const StringView &val) {
@@ -434,6 +442,20 @@ long long RedisCluster::rpushx(const StringView &key, const StringView &val) {
     auto reply = command(cmd::rpushx, key, val);
 
     return reply::parse<long long>(*reply);
+}
+
+OptionalString RedisCluster::lmove(const StringView &src, const StringView &dest,
+        ListWhence src_whence, ListWhence dest_whence) {
+    auto reply = command(cmd::lmove, src, dest, src_whence, dest_whence);
+
+    return reply::parse<OptionalString>(*reply);
+}
+
+OptionalString RedisCluster::blmove(const StringView &src, const StringView &dest,
+        ListWhence src_whence, ListWhence dest_whence, const std::chrono::seconds &timeout) {
+    auto reply = command(cmd::blmove, src, dest, src_whence, dest_whence, timeout.count());
+
+    return reply::parse<OptionalString>(*reply);
 }
 
 long long RedisCluster::hdel(const StringView &key, const StringView &field) {

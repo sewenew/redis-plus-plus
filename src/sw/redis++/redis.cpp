@@ -378,6 +378,24 @@ bool Redis::set(const StringView &key,
     return reply::parse_set_reply(*reply);
 }
 
+OptionalString Redis::set_with_get_option(const StringView &key,
+                    const StringView &val,
+                    const std::chrono::milliseconds &ttl,
+                    UpdateType type) {
+    auto reply = command(cmd::set_with_get_option, key, val, ttl.count(), type);
+
+    return reply::parse<OptionalString>(*reply);
+}
+
+OptionalString Redis::set_with_get_option(const StringView &key,
+                    const StringView &val,
+                    bool keepttl,
+                    UpdateType type) {
+    auto reply = command(cmd::set_with_get_keepttl_option, key, val, keepttl, type);
+
+    return reply::parse<OptionalString>(*reply);
+}
+
 void Redis::setex(const StringView &key,
                     long long ttl,
                     const StringView &val) {
@@ -513,6 +531,20 @@ long long Redis::rpushx(const StringView &key, const StringView &val) {
     auto reply = command(cmd::rpushx, key, val);
 
     return reply::parse<long long>(*reply);
+}
+
+OptionalString Redis::lmove(const StringView &src, const StringView &dest,
+        ListWhence src_whence, ListWhence dest_whence) {
+    auto reply = command(cmd::lmove, src, dest, src_whence, dest_whence);
+
+    return reply::parse<OptionalString>(*reply);
+}
+
+OptionalString Redis::blmove(const StringView &src, const StringView &dest,
+        ListWhence src_whence, ListWhence dest_whence, const std::chrono::seconds &timeout) {
+    auto reply = command(cmd::blmove, src, dest, src_whence, dest_whence, timeout.count());
+
+    return reply::parse<OptionalString>(*reply);
 }
 
 long long Redis::hdel(const StringView &key, const StringView &field) {
@@ -853,6 +885,18 @@ std::string Redis::script_load(const StringView &script) {
     auto reply = command(cmd::script_load, script);
 
     return reply::parse<std::string>(*reply);
+}
+
+std::string Redis::function_load(const StringView &code, bool replace) {
+    auto reply = command(cmd::function_load, code, replace);
+
+    return reply::parse<std::string>(*reply);
+}
+
+void Redis::function_delete(const StringView &lib_name) {
+    auto reply = command(cmd::function_delete, lib_name);
+
+    reply::parse<void>(*reply);
 }
 
 // PUBSUB commands.

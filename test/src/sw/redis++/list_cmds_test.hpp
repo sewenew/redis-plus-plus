@@ -34,6 +34,12 @@ void ListCmdTest<RedisInstance>::run() {
     _test_list();
 
     _test_blocking();
+
+    _test_lmove();
+
+    _test_blmove();
+
+    _test_lmpop();
 }
 
 template <typename RedisInstance>
@@ -143,6 +149,63 @@ void ListCmdTest<RedisInstance>::_test_blocking() {
 
     str = _redis.rpoplpush(k3, k2);
     REDIS_ASSERT(str && *str == val, "failed to test rpoplpush");
+}
+
+template <typename RedisInstance>
+void ListCmdTest<RedisInstance>::_test_lmove() {
+    auto src = test_key("src");
+    auto dest = test_key("dest");
+
+    KeyDeleter<RedisInstance> deleter(_redis, {src, dest});
+
+    _redis.lpush(src, {"a", "b", "c"});
+    _redis.lpush(dest, {"e", "f", "d"});
+
+    auto val = _redis.lmove(src, dest, ListWhence::LEFT, ListWhence::RIGHT);
+    REDIS_ASSERT(val && *val == "c", "failed to test lmove");
+    auto src_len = _redis.llen(src);
+    auto dest_len = _redis.llen(dest);
+    REDIS_ASSERT(src_len == 2 && dest_len == 4, "failed to test lmove");
+
+    val = _redis.lmove(test_key("not_exist_list"), dest, ListWhence::LEFT, ListWhence::RIGHT);
+    REDIS_ASSERT(!val, "failed to test lmove");
+}
+
+template <typename RedisInstance>
+void ListCmdTest<RedisInstance>::_test_blmove() {
+    auto src = test_key("src");
+    auto dest = test_key("dest");
+
+    KeyDeleter<RedisInstance> deleter(_redis, {src, dest});
+
+    _redis.lpush(src, {"a", "b", "c"});
+    _redis.lpush(dest, {"e", "f", "d"});
+
+    auto val = _redis.blmove(src, dest, ListWhence::LEFT, ListWhence::RIGHT);
+    REDIS_ASSERT(val && *val == "c", "failed to test lmove");
+    auto src_len = _redis.llen(src);
+    auto dest_len = _redis.llen(dest);
+    REDIS_ASSERT(src_len == 2 && dest_len == 4, "failed to test lmove");
+
+    val = _redis.blmove(test_key("not_exist_list"), dest, ListWhence::LEFT, ListWhence::RIGHT, std::chrono::seconds(1));
+    REDIS_ASSERT(!val, "failed to test lmove");
+}
+
+template <typename RedisInstance>
+void ListCmdTest<RedisInstance>::_test_lmpop() {
+    auto k1 = test_key("k1");
+    auto k2 = test_key("k2");
+
+    KeyDeleter<RedisInstance> deleter(_redis, {k1, k2});
+
+    _redis.lpush(k1, {"a", "b"});
+    _redis.lpush(k2, {"c"});
+
+    auto res = _redis.template lmpop<std::vector<std::string>>({k1, k2}, ListWhence::LEFT, 2);
+    REDIS_ASSERT(res && res->first == k1 && res->second.size() == 2, "failed to test lmpop");
+
+    res = _redis.template lmpop<std::vector<std::string>>({k1, k2}, ListWhence::LEFT, 2);
+    REDIS_ASSERT(res && res->first == k2 && res->second.size() == 1, "failed to test lmpop");
 }
 
 }

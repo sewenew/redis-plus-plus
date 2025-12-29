@@ -47,7 +47,8 @@ class RedisCluster {
 public:
     explicit RedisCluster(const ConnectionOptions &connection_opts,
                     const ConnectionPoolOptions &pool_opts = {},
-                    Role role = Role::MASTER) : _pool(new ShardsPool(pool_opts, connection_opts, role)) {}
+                    Role role = Role::MASTER,
+                    const ClusterOptions &cluster_opts = {}) : _pool(new ShardsPool(pool_opts, connection_opts, role, cluster_opts)) {}
 
     // Construct RedisCluster with URI:
     // "tcp://127.0.0.1" or "tcp://127.0.0.1:6379"
@@ -282,6 +283,16 @@ public:
                 bool keepttl,
                 UpdateType type = UpdateType::ALWAYS);
 
+    OptionalString set_with_get_option(const StringView &key,
+                const StringView &val,
+                const std::chrono::milliseconds &ttl = std::chrono::milliseconds(0),
+                UpdateType type = UpdateType::ALWAYS);
+
+    OptionalString set_with_get_option(const StringView &key,
+                const StringView &val,
+                bool keepttl,
+                UpdateType type = UpdateType::ALWAYS);
+
     void setex(const StringView &key,
                 long long ttl,
                 const StringView &val);
@@ -402,6 +413,21 @@ public:
 
     long long rpushx(const StringView &key, const StringView &val);
 
+    template <typename Output, typename Input>
+    Optional<std::pair<std::string, Output>> lmpop(Input first, Input last, ListWhence whence, long long count = 1);
+
+    template <typename Output, typename T>
+    Optional<std::pair<std::string, Output>> lmpop(std::initializer_list<T> il, ListWhence whence, long long count = 1) {
+        return lmpop<Output>(il.begin(), il.end(), whence, count);
+    }
+
+    OptionalString lmove(const StringView &src, const StringView &dest,
+            ListWhence src_whence, ListWhence dest_whence);
+
+    OptionalString blmove(const StringView &src, const StringView &dest,
+            ListWhence src_whence, ListWhence dest_whence,
+            const std::chrono::seconds &timeout = std::chrono::seconds{0});
+
     // HASH commands.
 
     long long hdel(const StringView &key, const StringView &field);
@@ -447,28 +473,28 @@ public:
     }
 
     template <typename Output>
-    long long hscan(const StringView &key,
-                    long long cursor,
-                    const StringView &pattern,
-                    long long count,
-                    Output output);
+    Cursor hscan(const StringView &key,
+                 Cursor cursor,
+                 const StringView &pattern,
+                 long long count,
+                 Output output);
 
     template <typename Output>
-    long long hscan(const StringView &key,
-                    long long cursor,
-                    const StringView &pattern,
-                    Output output);
+    Cursor hscan(const StringView &key,
+                 Cursor cursor,
+                 const StringView &pattern,
+                 Output output);
 
     template <typename Output>
-    long long hscan(const StringView &key,
-                    long long cursor,
-                    long long count,
-                    Output output);
+    Cursor hscan(const StringView &key,
+                 Cursor cursor,
+                 long long count,
+                 Output output);
 
     template <typename Output>
-    long long hscan(const StringView &key,
-                    long long cursor,
-                    Output output);
+    Cursor hscan(const StringView &key,
+                 Cursor cursor,
+                 Output output);
 
     long long hset(const StringView &key, const StringView &field, const StringView &val);
 
@@ -482,6 +508,57 @@ public:
     long long hset(const StringView &key, std::initializer_list<T> il) {
         return hset(key, il.begin(), il.end());
     }
+
+    template <typename Input>
+    auto hsetex(const StringView &key,
+            Input first,
+            Input last,
+            bool keep_ttl = false,
+            HSetExOption opt = HSetExOption::ALWAYS)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value, long long>::type;
+
+    template <typename Input>
+    auto hsetex(const StringView &key,
+            Input first,
+            Input last,
+            const std::chrono::milliseconds &ttl,
+            HSetExOption opt = HSetExOption::ALWAYS)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value, long long>::type;
+
+    template <typename Input>
+    auto hsetex(const StringView &key,
+            Input first,
+            Input last,
+            const std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds> &tp,
+            HSetExOption opt = HSetExOption::ALWAYS)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value, long long>::type;
+
+    template <typename Input, typename Output>
+    void httl(const StringView &key, Input first, Input last, Output output);
+
+    template <typename Input, typename Output>
+    void hpttl(const StringView &key, Input first, Input last, Output output);
+
+    template <typename Input, typename Output>
+    void hexpiretime(const StringView &key, Input first, Input last, Output output);
+
+    template <typename Input, typename Output>
+    void hpexpiretime(const StringView &key, Input first, Input last, Output output);
+
+    template <typename Input, typename Output>
+    void hpexpire(const StringView &key,
+            Input first,
+            Input last,
+            const std::chrono::milliseconds &ttl,
+            Output output);
+
+    template <typename Input, typename Output>
+    void hpexpire(const StringView &key,
+            Input first,
+            Input last,
+            const std::chrono::milliseconds &ttl,
+            HPExpireOption opt,
+            Output output);
 
     bool hsetnx(const StringView &key, const StringView &field, const StringView &val);
 
@@ -578,28 +655,28 @@ public:
     }
 
     template <typename Output>
-    long long sscan(const StringView &key,
-                    long long cursor,
-                    const StringView &pattern,
-                    long long count,
-                    Output output);
+    Cursor sscan(const StringView &key,
+                 Cursor cursor,
+                 const StringView &pattern,
+                 long long count,
+                 Output output);
 
     template <typename Output>
-    long long sscan(const StringView &key,
-                    long long cursor,
-                    const StringView &pattern,
-                    Output output);
+    Cursor sscan(const StringView &key,
+                 Cursor cursor,
+                 const StringView &pattern,
+                 Output output);
 
     template <typename Output>
-    long long sscan(const StringView &key,
-                    long long cursor,
-                    long long count,
-                    Output output);
+    Cursor sscan(const StringView &key,
+                 Cursor cursor,
+                 long long count,
+                 Output output);
 
     template <typename Output>
-    long long sscan(const StringView &key,
-                    long long cursor,
-                    Output output);
+    Cursor sscan(const StringView &key,
+                 Cursor cursor,
+                 Output output);
 
     template <typename Input, typename Output>
     void sunion(Input first, Input last, Output output);
@@ -825,28 +902,28 @@ public:
     OptionalLongLong zrevrank(const StringView &key, const StringView &member);
 
     template <typename Output>
-    long long zscan(const StringView &key,
-                    long long cursor,
-                    const StringView &pattern,
-                    long long count,
-                    Output output);
+    Cursor zscan(const StringView &key,
+                 Cursor cursor,
+                 const StringView &pattern,
+                 long long count,
+                 Output output);
 
     template <typename Output>
-    long long zscan(const StringView &key,
-                    long long cursor,
-                    const StringView &pattern,
-                    Output output);
+    Cursor zscan(const StringView &key,
+                 Cursor cursor,
+                 const StringView &pattern,
+                 Output output);
 
     template <typename Output>
-    long long zscan(const StringView &key,
-                    long long cursor,
-                    long long count,
-                    Output output);
+    Cursor zscan(const StringView &key,
+                 Cursor cursor,
+                 long long count,
+                 Output output);
 
     template <typename Output>
-    long long zscan(const StringView &key,
-                    long long cursor,
-                    Output output);
+    Cursor zscan(const StringView &key,
+                 Cursor cursor,
+                 Output output);
 
     OptionalDouble zscore(const StringView &key, const StringView &member);
 
@@ -1063,6 +1140,58 @@ public:
                     std::initializer_list<StringView> keys,
                     std::initializer_list<StringView> args,
                     Output output);
+
+    template <typename Result, typename Keys, typename Args>
+    Result fcall(const StringView &func,
+                Keys keys_first,
+                Keys keys_last,
+                Args args_first,
+                Args args_last);
+
+    template <typename Result>
+    Result fcall(const StringView &func,
+                std::initializer_list<StringView> keys,
+                std::initializer_list<StringView> args);
+
+    template <typename Keys, typename Args, typename Output>
+    void fcall(const StringView &func,
+                Keys keys_first,
+                Keys keys_last,
+                Args args_first,
+                Args args_last,
+                Output output);
+
+    template <typename Output>
+    void fcall(const StringView &func,
+                std::initializer_list<StringView> keys,
+                std::initializer_list<StringView> args,
+                Output output);
+
+    template <typename Result, typename Keys, typename Args>
+    Result fcall_ro(const StringView &func,
+                Keys keys_first,
+                Keys keys_last,
+                Args args_first,
+                Args args_last);
+
+    template <typename Result>
+    Result fcall_ro(const StringView &func,
+                std::initializer_list<StringView> keys,
+                std::initializer_list<StringView> args);
+
+    template <typename Keys, typename Args, typename Output>
+    void fcall_ro(const StringView &func,
+                Keys keys_first,
+                Keys keys_last,
+                Args args_first,
+                Args args_last,
+                Output output);
+
+    template <typename Output>
+    void fcall_ro(const StringView &func,
+                std::initializer_list<StringView> keys,
+                std::initializer_list<StringView> args,
+                Output output);
 
     // PUBSUB commands.
 

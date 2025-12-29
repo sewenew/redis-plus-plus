@@ -3,8 +3,12 @@ name: build and test
 on:
   push:
     branches: [ "master", "dev" ]
+    paths-ignore:
+      - '**/*.md'
   pull_request:
     branches: [ "master", "dev" ]
+    paths-ignore:
+      - '**/*.md'
 
 jobs:
   build:
@@ -22,6 +26,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         build_type: [Release]
+        redis_version: [7.2.8]
         c_compiler: [gcc, clang]
         include:
           - os: ubuntu-latest
@@ -32,15 +37,24 @@ jobs:
             cpp_compiler: clang++
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: libuv-dep
-      run: sudo apt-get update && sudo apt-get install -y libuv1-dev wget unzip
+      run: |
+        sudo apt-get update
+        sudo apt-get install -yq libuv1-dev wget unzip
 
     - name: redis-dep
       run: |
-        wget -L https://github.com/redis/redis/archive/refs/tags/7.2.3.zip -O redis-7.2.3.zip && unzip redis-7.2.3.zip
-        cd redis-7.2.3 && make -j2 && ./src/redis-server --port 7000 --cluster-enabled yes --cluster-config-file nodes-7000.conf --daemonize yes && ./src/redis-server --port 7001 --cluster-enabled yes --cluster-config-file nodes-7001.conf --daemonize yes && ./src/redis-server --port 7002 --cluster-enabled yes --cluster-config-file nodes-7002.conf --daemonize yes && ./src/redis-cli --cluster-yes --cluster create 127.0.0.1:7000 127.0.0.1:7001 127.0.0.1:7002 && ./src/redis-server --daemonize yes
+        wget -L https://github.com/redis/redis/archive/refs/tags/${{matrix.redis_version}}.zip -O redis-${{matrix.redis_version}}.zip
+        unzip redis-${{matrix.redis_version}}.zip
+        cd redis-${{matrix.redis_version}}
+        make -j2
+        ./src/redis-server --port 7000 --cluster-enabled yes --cluster-config-file nodes-7000.conf --daemonize yes
+        ./src/redis-server --port 7001 --cluster-enabled yes --cluster-config-file nodes-7001.conf --daemonize yes
+        ./src/redis-server --port 7002 --cluster-enabled yes --cluster-config-file nodes-7002.conf --daemonize yes
+        sleep 2
+        ./src/redis-cli --cluster-yes --cluster create 127.0.0.1:7000 127.0.0.1:7001 127.0.0.1:7002 && ./src/redis-server --daemonize yes
 
     - name: hiredis-dep
       run: |
@@ -73,3 +87,31 @@ jobs:
     - name: Test
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
       run: ./test/test_redis++ -h 127.0.0.1 -p 6379 -n 127.0.0.1 -c 7000
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ninja and memurai
+        run: choco install -y ninja memurai-developer
+
+      - name: Set up vcpkg
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git vcpkg
+          .\vcpkg\bootstrap-vcpkg.bat
+  
+      - name: Install Hiredis using vcpkg
+        run: .\vcpkg\vcpkg install hiredis
+
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: build hiredis
+        run: |
+          mkdir build
+          cd build
+          cmake -G Ninja `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/install;${{ github.workspace }}/vcpkg/installed/x64-windows" `
+            .. && `
+          ninja -v && `
+          ninja install

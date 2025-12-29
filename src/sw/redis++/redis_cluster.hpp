@@ -310,6 +310,15 @@ inline long long RedisCluster::rpush(const StringView &key, Input first, Input l
     return reply::parse<long long>(*reply);
 }
 
+template <typename Output, typename Input>
+Optional<std::pair<std::string, Output>> RedisCluster::lmpop(Input first, Input last, ListWhence whence, long long count) {
+    range_check("LMPOP", first, last);
+
+    auto reply = command(cmd::lmpop<Input>, first, last, whence, count);
+
+    return reply::parse<Optional<std::pair<std::string, Output>>>(*reply);
+}
+
 // HASH commands.
 
 template <typename Input>
@@ -354,36 +363,36 @@ inline void RedisCluster::hmset(const StringView &key, Input first, Input last) 
 }
 
 template <typename Output>
-long long RedisCluster::hscan(const StringView &key,
-                        long long cursor,
-                        const StringView &pattern,
-                        long long count,
-                        Output output) {
+Cursor RedisCluster::hscan(const StringView &key,
+                     Cursor cursor,
+                     const StringView &pattern,
+                     long long count,
+                     Output output) {
     auto reply = command(cmd::hscan, key, cursor, pattern, count);
 
     return reply::parse_scan_reply(*reply, output);
 }
 
 template <typename Output>
-inline long long RedisCluster::hscan(const StringView &key,
-                                long long cursor,
-                                const StringView &pattern,
-                                Output output) {
+inline Cursor RedisCluster::hscan(const StringView &key,
+                             Cursor cursor,
+                             const StringView &pattern,
+                             Output output) {
     return hscan(key, cursor, pattern, 10, output);
 }
 
 template <typename Output>
-inline long long RedisCluster::hscan(const StringView &key,
-                                long long cursor,
-                                long long count,
-                                Output output) {
+inline Cursor RedisCluster::hscan(const StringView &key,
+                             Cursor cursor,
+                             long long count,
+                             Output output) {
     return hscan(key, cursor, "*", count, output);
 }
 
 template <typename Output>
-inline long long RedisCluster::hscan(const StringView &key,
-                                long long cursor,
-                                Output output) {
+inline Cursor RedisCluster::hscan(const StringView &key,
+                             Cursor cursor,
+                             Output output) {
     return hscan(key, cursor, "*", 10, output);
 }
 
@@ -396,6 +405,114 @@ auto RedisCluster::hset(const StringView &key, Input first, Input last)
     auto reply = command(cmd::hset_range<Input>, key, first, last);
 
     return reply::parse<long long>(*reply);
+}
+
+template <typename Input>
+auto RedisCluster::hsetex(const StringView &key,
+        Input first,
+        Input last,
+        bool keep_ttl,
+        HSetExOption opt)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value,
+                                    long long>::type {
+    range_check("HSETEX", first, last);
+
+    auto reply = command(cmd::hsetex_keep_ttl_range<Input>, key, first, last, keep_ttl, opt);
+
+    return reply::parse<long long>(*reply);
+}
+
+template <typename Input>
+auto RedisCluster::hsetex(const StringView &key,
+        Input first,
+        Input last,
+        const std::chrono::milliseconds &ttl,
+        HSetExOption opt)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value,
+                                    long long>::type {
+    range_check("HSETEX", first, last);
+
+    auto reply = command(cmd::hsetex_ttl_range<Input>, key, first, last, ttl, opt);
+
+    return reply::parse<long long>(*reply);
+}
+
+template <typename Input>
+auto RedisCluster::hsetex(const StringView &key,
+        Input first,
+        Input last,
+        const std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds> &tp,
+        HSetExOption opt)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value,
+                                    long long>::type {
+    range_check("HSETEX", first, last);
+
+    auto reply = command(cmd::hsetex_time_point_range<Input>, key, first, last, tp, opt);
+
+    return reply::parse<long long>(*reply);
+}
+
+template <typename Input, typename Output>
+void RedisCluster::httl(const StringView &key, Input first, Input last, Output output) {
+    range_check("HTTL", first, last);
+
+    auto reply = command(cmd::httl_range<Input>, key, first, last);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Input, typename Output>
+void RedisCluster::hpttl(const StringView &key, Input first, Input last, Output output) {
+    range_check("HPTTL", first, last);
+
+    auto reply = command(cmd::hpttl_range<Input>, key, first, last);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Input, typename Output>
+void RedisCluster::hexpiretime(const StringView &key, Input first, Input last, Output output) {
+    range_check("HEXPIRETIME", first, last);
+
+    auto reply = command(cmd::hexpiretime_range<Input>, key, first, last);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Input, typename Output>
+void RedisCluster::hpexpiretime(const StringView &key, Input first, Input last, Output output) {
+    range_check("HPEXPIRETIME", first, last);
+
+    auto reply = command(cmd::hpexpiretime_range<Input>, key, first, last);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Input, typename Output>
+void RedisCluster::hpexpire(const StringView &key,
+        Input first,
+        Input last,
+        const std::chrono::milliseconds &ttl,
+        Output output) {
+    range_check("HPEXPIRE", first, last);
+
+    auto reply = command(cmd::hpexpire_range<Input>, key, first, last, ttl, HPExpireOption::ALWAYS);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Input, typename Output>
+void RedisCluster::hpexpire(const StringView &key,
+        Input first,
+        Input last,
+        const std::chrono::milliseconds &ttl,
+        HPExpireOption opt,
+        Output output) {
+    range_check("HPEXPIRE", first, last);
+
+    auto reply = command(cmd::hpexpire_range<Input>, key, first, last, ttl, opt);
+
+    reply::to_array(*reply, output);
 }
 
 template <typename Output>
@@ -487,36 +604,36 @@ long long RedisCluster::srem(const StringView &key, Input first, Input last) {
 }
 
 template <typename Output>
-long long RedisCluster::sscan(const StringView &key,
-                        long long cursor,
-                        const StringView &pattern,
-                        long long count,
-                        Output output) {
+Cursor RedisCluster::sscan(const StringView &key,
+                     Cursor cursor,
+                     const StringView &pattern,
+                     long long count,
+                     Output output) {
     auto reply = command(cmd::sscan, key, cursor, pattern, count);
 
     return reply::parse_scan_reply(*reply, output);
 }
 
 template <typename Output>
-inline long long RedisCluster::sscan(const StringView &key,
-                                long long cursor,
-                                const StringView &pattern,
-                                Output output) {
+inline Cursor RedisCluster::sscan(const StringView &key,
+                             Cursor cursor,
+                             const StringView &pattern,
+                             Output output) {
     return sscan(key, cursor, pattern, 10, output);
 }
 
 template <typename Output>
-inline long long RedisCluster::sscan(const StringView &key,
-                                long long cursor,
-                                long long count,
-                                Output output) {
+inline Cursor RedisCluster::sscan(const StringView &key,
+                             Cursor cursor,
+                             long long count,
+                             Output output) {
     return sscan(key, cursor, "*", count, output);
 }
 
 template <typename Output>
-inline long long RedisCluster::sscan(const StringView &key,
-                                long long cursor,
-                                Output output) {
+inline Cursor RedisCluster::sscan(const StringView &key,
+                             Cursor cursor,
+                             Output output) {
     return sscan(key, cursor, "*", 10, output);
 }
 
@@ -744,36 +861,36 @@ void RedisCluster::zrevrangebyscore(const StringView &key,
 }
 
 template <typename Output>
-long long RedisCluster::zscan(const StringView &key,
-                        long long cursor,
-                        const StringView &pattern,
-                        long long count,
-                        Output output) {
+Cursor RedisCluster::zscan(const StringView &key,
+                     Cursor cursor,
+                     const StringView &pattern,
+                     long long count,
+                     Output output) {
     auto reply = command(cmd::zscan, key, cursor, pattern, count);
 
     return reply::parse_scan_reply(*reply, output);
 }
 
 template <typename Output>
-inline long long RedisCluster::zscan(const StringView &key,
-                                long long cursor,
-                                const StringView &pattern,
-                                Output output) {
+inline Cursor RedisCluster::zscan(const StringView &key,
+                             Cursor cursor,
+                             const StringView &pattern,
+                             Output output) {
     return zscan(key, cursor, pattern, 10, output);
 }
 
 template <typename Output>
-inline long long RedisCluster::zscan(const StringView &key,
-                                long long cursor,
-                                long long count,
-                                Output output) {
+inline Cursor RedisCluster::zscan(const StringView &key,
+                             Cursor cursor,
+                             long long count,
+                             Output output) {
     return zscan(key, cursor, "*", count, output);
 }
 
 template <typename Output>
-inline long long RedisCluster::zscan(const StringView &key,
-                                long long cursor,
-                                Output output) {
+inline Cursor RedisCluster::zscan(const StringView &key,
+                             Cursor cursor,
+                             Output output) {
     return zscan(key, cursor, "*", 10, output);
 }
 
@@ -1000,6 +1117,90 @@ void RedisCluster::evalsha(const StringView &script,
                             std::initializer_list<StringView> args,
                             Output output) {
     evalsha(script, keys.begin(), keys.end(), args.begin(), args.end(), output);
+}
+
+template <typename Result, typename Keys, typename Args>
+Result RedisCluster::fcall(const StringView &func,
+                          Keys keys_first,
+                          Keys keys_last,
+                          Args args_first,
+                          Args args_last) {
+    if (keys_first == keys_last) {
+        throw Error("DO NOT support function without key");
+    }
+
+    auto reply = _command(cmd::fcall<Keys, Args>, *keys_first, func, keys_first, keys_last, args_first, args_last);
+
+    return reply::parse<Result>(*reply);
+}
+
+template <typename Result>
+Result RedisCluster::fcall(const StringView &func,
+                            std::initializer_list<StringView> keys,
+                            std::initializer_list<StringView> args) {
+    return fcall<Result>(func, keys.begin(), keys.end(), args.begin(), args.end());
+}
+
+template <typename Keys, typename Args, typename Output>
+void RedisCluster::fcall(const StringView &func,
+                          Keys keys_first,
+                          Keys keys_last,
+                          Args args_first,
+                          Args args_last,
+                          Output output) {
+    if (keys_first == keys_last) {
+        throw Error("DO NOT support function without key");
+    }
+
+    auto reply = _command(cmd::fcall<Keys, Args>,
+                            *keys_first,
+                            func,
+                            keys_first, keys_last,
+                            args_first, args_last);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Result, typename Keys, typename Args>
+Result RedisCluster::fcall_ro(const StringView &func,
+                          Keys keys_first,
+                          Keys keys_last,
+                          Args args_first,
+                          Args args_last) {
+    if (keys_first == keys_last) {
+        throw Error("DO NOT support function without key");
+    }
+
+    auto reply = _command(cmd::fcall_ro<Keys, Args>, *keys_first, func, keys_first, keys_last, args_first, args_last);
+
+    return reply::parse<Result>(*reply);
+}
+
+template <typename Result>
+Result RedisCluster::fcall_ro(const StringView &func,
+                            std::initializer_list<StringView> keys,
+                            std::initializer_list<StringView> args) {
+    return fcall_ro<Result>(func, keys.begin(), keys.end(), args.begin(), args.end());
+}
+
+template <typename Keys, typename Args, typename Output>
+void RedisCluster::fcall_ro(const StringView &func,
+                          Keys keys_first,
+                          Keys keys_last,
+                          Args args_first,
+                          Args args_last,
+                          Output output) {
+    if (keys_first == keys_last) {
+        throw Error("DO NOT support function without key");
+    }
+
+    auto reply = _command(cmd::fcall_ro<Keys, Args>,
+                            *keys_first,
+                            func,
+                            keys_first, keys_last,
+                            args_first, args_last);
+
+    reply::to_array(*reply, output);
 }
 
 // Stream commands.
@@ -1351,11 +1552,6 @@ ReplyUPtr RedisCluster::_command(Cmd cmd, const StringView &key, Args &&...args)
             SafeConnection safe_connection(*pool);
 
             return _command(cmd, safe_connection.connection(), std::forward<Args>(args)...);
-        } catch (const SlotUncoveredError &) {
-            // Some slot is not covered, update asynchronously to see if new node added.
-            // Check https://github.com/sewenew/redis-plus-plus/issues/255 for detail.
-            // TODO: should we replace other 'update's with 'async_update's?
-            _pool->async_update();
         } catch (const IoError &) {
             // When master is down, one of its replicas will be promoted to be the new master.
             // If we try to send command to the old master, we'll get an *IoError*.

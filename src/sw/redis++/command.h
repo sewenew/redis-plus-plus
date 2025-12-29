@@ -233,10 +233,10 @@ void restore(Connection &connection,
                 bool replace);
 
 inline void scan(Connection &connection,
-                    long long cursor,
+                    Cursor cursor,
                     const StringView &pattern,
                     long long count) {
-    connection.send("SCAN %lld MATCH %b COUNT %lld",
+    connection.send("SCAN %llu MATCH %b COUNT %lld",
                     cursor,
                     pattern.data(), pattern.size(),
                     count);
@@ -425,6 +425,18 @@ void set(Connection &connection,
             UpdateType type);
 
 void set_keepttl(Connection &connection,
+            const StringView &key,
+            const StringView &val,
+            bool keepttl,
+            UpdateType type);
+
+void set_with_get_option(Connection &connection,
+            const StringView &key,
+            const StringView &val,
+            long long ttl,
+            UpdateType type);
+
+void set_with_get_keepttl_option(Connection &connection,
             const StringView &key,
             const StringView &val,
             bool keepttl,
@@ -636,6 +648,39 @@ inline void rpushx(Connection &connection, const StringView &key, const StringVi
                     val.data(), val.size());
 }
 
+template <typename Input>
+inline void lmpop(Connection &connection, Input first, Input last, ListWhence whence, long long count) {
+    assert(first != last);
+
+    CmdArgs args;
+
+    auto keys_num = std::distance(first, last);
+
+    args << "LMPOP" << keys_num << std::make_pair(first, last) << to_string(whence) << "COUNT" << count;
+
+    connection.send(args);
+}
+
+inline void lmove(Connection &connection, const StringView &src, const StringView &dest,
+        ListWhence src_whence, ListWhence dest_whence) {
+    auto src_whence_str = to_string(src_whence);
+    auto dest_whence_str = to_string(dest_whence);
+    connection.send("LMOVE %b %b %s %s",
+                    src.data(), src.size(),
+                    dest.data(), dest.size(),
+                    src_whence_str.data(), dest_whence_str.data());
+}
+
+inline void blmove(Connection &connection, const StringView &src, const StringView &dest,
+        ListWhence src_whence, ListWhence dest_whence, long long timeout) {
+    auto src_whence_str = to_string(src_whence);
+    auto dest_whence_str = to_string(dest_whence);
+    connection.send("BLMOVE %b %b %s %s %lld",
+                    src.data(), src.size(),
+                    dest.data(), dest.size(),
+                    src_whence_str.data(), dest_whence_str.data(), timeout);
+}
+
 // HASH commands.
 
 inline void hdel(Connection &connection, const StringView &key, const StringView &field) {
@@ -729,10 +774,10 @@ inline void hmset(Connection &connection,
 
 inline void hscan(Connection &connection,
                     const StringView &key,
-                    long long cursor,
+                    Cursor cursor,
                     const StringView &pattern,
                     long long count) {
-    connection.send("HSCAN %b %lld MATCH %b COUNT %lld",
+    connection.send("HSCAN %b %llu MATCH %b COUNT %lld",
                     key.data(), key.size(),
                     cursor,
                     pattern.data(), pattern.size(),
@@ -755,6 +800,208 @@ void hset_range(Connection &connection, const StringView &key, Input first, Inpu
 
     CmdArgs args;
     args << "HSET" << key << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Input>
+void hsetex_keep_ttl_range(Connection &connection,
+        const StringView &key,
+        Input first,
+        Input last,
+        bool keep_ttl,
+        HSetExOption opt) {
+    assert(first != last);
+
+    CmdArgs args;
+    args << "HSETEX" << key;
+
+    switch (opt) {
+    case HSetExOption::FNX:
+        args << "FNX";
+        break;
+    case HSetExOption::FXX:
+        args << "FXX";
+        break;
+    case HSetExOption::ALWAYS:
+        break;
+    default:
+        throw Error("unknown HSetExOption");
+    }
+
+    if (keep_ttl) {
+        args << "KEEPTTL";
+    }
+
+    auto keys_num = std::distance(first, last);
+    args << "FIELDS" << keys_num << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Input>
+void hsetex_ttl_range(Connection &connection,
+        const StringView &key,
+        Input first,
+        Input last,
+        const std::chrono::milliseconds &ttl,
+        HSetExOption opt) {
+    assert(first != last);
+
+    CmdArgs args;
+    args << "HSETEX" << key;
+
+    switch (opt) {
+    case HSetExOption::FNX:
+        args << "FNX";
+        break;
+    case HSetExOption::FXX:
+        args << "FXX";
+        break;
+    case HSetExOption::ALWAYS:
+        break;
+    default:
+        throw Error("unknown HSetExOption");
+    }
+
+    args << "PX" << ttl.count();
+
+    auto keys_num = std::distance(first, last);
+    args << "FIELDS" << keys_num << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Input>
+void hsetex_time_point_range(Connection &connection,
+        const StringView &key,
+        Input first,
+        Input last,
+        const std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds> &tp,
+        HSetExOption opt) {
+    assert(first != last);
+
+    CmdArgs args;
+    args << "HSETEX" << key;
+
+    switch (opt) {
+    case HSetExOption::FNX:
+        args << "FNX";
+        break;
+    case HSetExOption::FXX:
+        args << "FXX";
+        break;
+    case HSetExOption::ALWAYS:
+        break;
+    default:
+        throw Error("unknown HSetExOption");
+    }
+
+    args << "PXAT" << tp.time_since_epoch().count();
+
+    auto keys_num = std::distance(first, last);
+    args << "FIELDS" << keys_num << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Input>
+void httl_range(Connection &connection,
+        const StringView &key,
+        Input first,
+        Input last) {
+    assert(first != last);
+
+    CmdArgs args;
+    args << "HTTL" << key << "FIELDS";
+
+    auto keys_num = std::distance(first, last);
+    args << keys_num << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Input>
+void hpttl_range(Connection &connection,
+        const StringView &key,
+        Input first,
+        Input last) {
+    assert(first != last);
+
+    CmdArgs args;
+    args << "HPTTL" << key << "FIELDS";
+
+    auto keys_num = std::distance(first, last);
+    args << keys_num << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Input>
+void hexpiretime_range(Connection &connection,
+        const StringView &key,
+        Input first,
+        Input last) {
+    assert(first != last);
+
+    CmdArgs args;
+    args << "HEXPIRETIME" << key << "FIELDS";
+
+    auto keys_num = std::distance(first, last);
+    args << keys_num << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Input>
+void hpexpiretime_range(Connection &connection,
+        const StringView &key,
+        Input first,
+        Input last) {
+    assert(first != last);
+
+    CmdArgs args;
+    args << "HPEXPIRETIME" << key << "FIELDS";
+
+    auto keys_num = std::distance(first, last);
+    args << keys_num << std::make_pair(first, last);
+
+    connection.send(args);
+}
+
+template <typename Input>
+void hpexpire_range(Connection &connection,
+        const StringView &key,
+        Input first,
+        Input last,
+        const std::chrono::milliseconds &ttl,
+        HPExpireOption opt) {
+    assert(first != last);
+
+    CmdArgs args;
+    args << "HPEXPIRE" << key << ttl.count();
+
+    switch (opt) {
+    case HPExpireOption::NX:
+        args << "NX";
+        break;
+    case HPExpireOption::XX:
+        args << "XX";
+        break;
+    case HPExpireOption::GT:
+        args << "GT";
+        break;
+    case HPExpireOption::LT:
+        args << "LT";
+        break;
+    case HPExpireOption::ALWAYS:
+        break;
+    default:
+        throw Error("unknown hpexpire option");
+    }
+
+    auto keys_num = std::distance(first, last);
+    args << "FIELDS" << keys_num << std::make_pair(first, last);
 
     connection.send(args);
 }
@@ -937,10 +1184,10 @@ inline void srem_range(Connection &connection,
 
 inline void sscan(Connection &connection,
                     const StringView &key,
-                    long long cursor,
+                    Cursor cursor,
                     const StringView &pattern,
                     long long count) {
-    connection.send("SSCAN %b %lld MATCH %b COUNT %lld",
+    connection.send("SSCAN %b %llu MATCH %b COUNT %lld",
                     key.data(), key.size(),
                     cursor,
                     pattern.data(), pattern.size(),
@@ -1294,10 +1541,10 @@ inline void zrevrank(Connection &connection,
 
 inline void zscan(Connection &connection,
                     const StringView &key,
-                    long long cursor,
+                    Cursor cursor,
                     const StringView &pattern,
                     long long count) {
-    connection.send("ZSCAN %b %lld MATCH %b COUNT %lld",
+    connection.send("ZSCAN %b %llu MATCH %b COUNT %lld",
                     key.data(), key.size(),
                     cursor,
                     pattern.data(), pattern.size(),
@@ -1566,6 +1813,62 @@ inline void script_kill(Connection &connection) {
 
 inline void script_load(Connection &connection, const StringView &script) {
     connection.send("SCRIPT LOAD %b", script.data(), script.size());
+}
+
+template <typename Keys, typename Args>
+inline void fcall(Connection &connection,
+                       const StringView &func,
+                       Keys keys_first,
+                       Keys keys_last,
+                       Args args_first,
+                       Args args_last) {
+    CmdArgs cmd_args;
+
+    auto keys_num = std::distance(keys_first, keys_last);
+
+    cmd_args << "FCALL" << func << keys_num
+            << std::make_pair(keys_first, keys_last)
+            << std::make_pair(args_first, args_last);
+
+    connection.send(cmd_args);
+}
+
+template <typename Keys, typename Args>
+inline void fcall_ro(Connection &connection,
+                       const StringView &func,
+                       Keys keys_first,
+                       Keys keys_last,
+                       Args args_first,
+                       Args args_last) {
+    CmdArgs cmd_args;
+
+    auto keys_num = std::distance(keys_first, keys_last);
+
+    cmd_args << "FCALL_RO" << func << keys_num
+            << std::make_pair(keys_first, keys_last)
+            << std::make_pair(args_first, args_last);
+
+    connection.send(cmd_args);
+}
+
+inline void function_load(Connection &connection,
+                            const StringView &code,
+                            bool replace) {
+    CmdArgs cmd_args;
+
+    cmd_args << "FUNCTION" << "LOAD";
+
+    if (replace) {
+        cmd_args << "REPLACE";
+    }
+
+    cmd_args << code;
+
+    connection.send(cmd_args);
+}
+
+inline void function_delete(Connection &connection, const StringView &lib_name) {
+    connection.send("FUNCTION DELETE %b", lib_name.data(), lib_name.size());
 }
 
 // PUBSUB commands.

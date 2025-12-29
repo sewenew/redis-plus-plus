@@ -128,7 +128,7 @@ void Connection::Connector::_set_socket_timeout(redisContext &ctx) const {
 void Connection::Connector::_enable_keep_alive(redisContext &ctx) const {
 #ifdef REDIS_PLUS_PLUS_HAS_redisEnableKeepAliveWithInterval
     if (_opts.keep_alive_s > std::chrono::seconds{0}) {
-        if (redisEnableKeepAliveWithInterval(&ctx, _opts.keep_alive_s.count()) != REDIS_OK) {
+        if (redisEnableKeepAliveWithInterval(&ctx, static_cast<int>(_opts.keep_alive_s.count())) != REDIS_OK) {
             throw_error(ctx, "Failed to enable keep alive option");
         }
 

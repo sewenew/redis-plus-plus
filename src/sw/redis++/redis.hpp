@@ -173,32 +173,32 @@ inline void Redis::restore(const StringView &key,
 }
 
 template <typename Output>
-long long Redis::scan(long long cursor,
-                    const StringView &pattern,
-                    long long count,
-                    Output output) {
+Cursor Redis::scan(Cursor cursor,
+                 const StringView &pattern,
+                 long long count,
+                 Output output) {
     auto reply = command(cmd::scan, cursor, pattern, count);
 
     return reply::parse_scan_reply(*reply, output);
 }
 
 template <typename Output>
-inline long long Redis::scan(long long cursor,
-                                const StringView &pattern,
-                                Output output) {
+inline Cursor Redis::scan(Cursor cursor,
+                             const StringView &pattern,
+                             Output output) {
     return scan(cursor, pattern, 10, output);
 }
 
 template <typename Output>
-inline long long Redis::scan(long long cursor,
-                                long long count,
-                                Output output) {
+inline Cursor Redis::scan(Cursor cursor,
+                             long long count,
+                             Output output) {
     return scan(cursor, "*", count, output);
 }
 
 template <typename Output>
-inline long long Redis::scan(long long cursor,
-                                Output output) {
+inline Cursor Redis::scan(Cursor cursor,
+                             Output output) {
     return scan(cursor, "*", 10, output);
 }
 
@@ -339,6 +339,16 @@ inline long long Redis::rpush(const StringView &key, Input first, Input last) {
     return reply::parse<long long>(*reply);
 }
 
+template <typename Output, typename Input>
+Optional<std::pair<std::string, Output>> Redis::lmpop(Input first, Input last, ListWhence whence, long long count) {
+    range_check("LMPOP", first, last);
+
+    auto reply = command(cmd::lmpop<Input>, first, last, whence, count);
+
+    return reply::parse<Optional<std::pair<std::string, Output>>>(*reply);
+}
+
+
 // HASH commands.
 
 template <typename Input>
@@ -383,36 +393,36 @@ inline void Redis::hmset(const StringView &key, Input first, Input last) {
 }
 
 template <typename Output>
-long long Redis::hscan(const StringView &key,
-                        long long cursor,
-                        const StringView &pattern,
-                        long long count,
-                        Output output) {
+Cursor Redis::hscan(const StringView &key,
+                     Cursor cursor,
+                     const StringView &pattern,
+                     long long count,
+                     Output output) {
     auto reply = command(cmd::hscan, key, cursor, pattern, count);
 
     return reply::parse_scan_reply(*reply, output);
 }
 
 template <typename Output>
-inline long long Redis::hscan(const StringView &key,
-                                long long cursor,
-                                const StringView &pattern,
-                                Output output) {
+inline Cursor Redis::hscan(const StringView &key,
+                             Cursor cursor,
+                             const StringView &pattern,
+                             Output output) {
     return hscan(key, cursor, pattern, 10, output);
 }
 
 template <typename Output>
-inline long long Redis::hscan(const StringView &key,
-                                long long cursor,
-                                long long count,
-                                Output output) {
+inline Cursor Redis::hscan(const StringView &key,
+                             Cursor cursor,
+                             long long count,
+                             Output output) {
     return hscan(key, cursor, "*", count, output);
 }
 
 template <typename Output>
-inline long long Redis::hscan(const StringView &key,
-                                long long cursor,
-                                Output output) {
+inline Cursor Redis::hscan(const StringView &key,
+                             Cursor cursor,
+                             Output output) {
     return hscan(key, cursor, "*", 10, output);
 }
 
@@ -425,6 +435,114 @@ auto Redis::hset(const StringView &key, Input first, Input last)
     auto reply = command(cmd::hset_range<Input>, key, first, last);
 
     return reply::parse<long long>(*reply);
+}
+
+template <typename Input>
+auto Redis::hsetex(const StringView &key,
+        Input first,
+        Input last,
+        bool keep_ttl,
+        HSetExOption opt)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value,
+                                    long long>::type {
+    range_check("HSETEX", first, last);
+
+    auto reply = command(cmd::hsetex_keep_ttl_range<Input>, key, first, last, keep_ttl, opt);
+
+    return reply::parse<long long>(*reply);
+}
+
+template <typename Input>
+auto Redis::hsetex(const StringView &key,
+        Input first,
+        Input last,
+        const std::chrono::milliseconds &ttl,
+        HSetExOption opt)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value,
+                                    long long>::type {
+    range_check("HSETEX", first, last);
+
+    auto reply = command(cmd::hsetex_ttl_range<Input>, key, first, last, ttl, opt);
+
+    return reply::parse<long long>(*reply);
+}
+
+template <typename Input>
+auto Redis::hsetex(const StringView &key,
+        Input first,
+        Input last,
+        const std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds> &tp,
+        HSetExOption opt)
+        -> typename std::enable_if<!std::is_convertible<Input, StringView>::value,
+                                    long long>::type {
+    range_check("HSETEX", first, last);
+
+    auto reply = command(cmd::hsetex_time_point_range<Input>, key, first, last, tp, opt);
+
+    return reply::parse<long long>(*reply);
+}
+
+template <typename Input, typename Output>
+void Redis::httl(const StringView &key, Input first, Input last, Output output) {
+    range_check("HTTL", first, last);
+
+    auto reply = command(cmd::httl_range<Input>, key, first, last);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Input, typename Output>
+void Redis::hpttl(const StringView &key, Input first, Input last, Output output) {
+    range_check("HPTTL", first, last);
+
+    auto reply = command(cmd::hpttl_range<Input>, key, first, last);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Input, typename Output>
+void Redis::hexpiretime(const StringView &key, Input first, Input last, Output output) {
+    range_check("HEXPIRETIME", first, last);
+
+    auto reply = command(cmd::hexpiretime_range<Input>, key, first, last);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Input, typename Output>
+void Redis::hpexpiretime(const StringView &key, Input first, Input last, Output output) {
+    range_check("HPEXPIRETIME", first, last);
+
+    auto reply = command(cmd::hpexpiretime_range<Input>, key, first, last);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Input, typename Output>
+void Redis::hpexpire(const StringView &key,
+        Input first,
+        Input last,
+        const std::chrono::milliseconds &ttl,
+        Output output) {
+    range_check("HPEXPIRE", first, last);
+
+    auto reply = command(cmd::hpexpire_range<Input>, key, first, last, ttl, HPExpireOption::ALWAYS);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Input, typename Output>
+void Redis::hpexpire(const StringView &key,
+        Input first,
+        Input last,
+        const std::chrono::milliseconds &ttl,
+        HPExpireOption opt,
+        Output output) {
+    range_check("HPEXPIRE", first, last);
+
+    auto reply = command(cmd::hpexpire_range<Input>, key, first, last, ttl, opt);
+
+    reply::to_array(*reply, output);
 }
 
 template <typename Output>
@@ -516,36 +634,36 @@ long long Redis::srem(const StringView &key, Input first, Input last) {
 }
 
 template <typename Output>
-long long Redis::sscan(const StringView &key,
-                        long long cursor,
-                        const StringView &pattern,
-                        long long count,
-                        Output output) {
+Cursor Redis::sscan(const StringView &key,
+                      Cursor cursor,
+                      const StringView &pattern,
+                      long long count,
+                      Output output) {
     auto reply = command(cmd::sscan, key, cursor, pattern, count);
 
     return reply::parse_scan_reply(*reply, output);
 }
 
 template <typename Output>
-inline long long Redis::sscan(const StringView &key,
-                                long long cursor,
-                                const StringView &pattern,
-                                Output output) {
+inline Cursor Redis::sscan(const StringView &key,
+                             Cursor cursor,
+                             const StringView &pattern,
+                             Output output) {
     return sscan(key, cursor, pattern, 10, output);
 }
 
 template <typename Output>
-inline long long Redis::sscan(const StringView &key,
-                                long long cursor,
-                                long long count,
-                                Output output) {
+inline Cursor Redis::sscan(const StringView &key,
+                             Cursor cursor,
+                             long long count,
+                             Output output) {
     return sscan(key, cursor, "*", count, output);
 }
 
 template <typename Output>
-inline long long Redis::sscan(const StringView &key,
-                                long long cursor,
-                                Output output) {
+inline Cursor Redis::sscan(const StringView &key,
+                             Cursor cursor,
+                             Output output) {
     return sscan(key, cursor, "*", 10, output);
 }
 
@@ -773,36 +891,36 @@ void Redis::zrevrangebyscore(const StringView &key,
 }
 
 template <typename Output>
-long long Redis::zscan(const StringView &key,
-                        long long cursor,
-                        const StringView &pattern,
-                        long long count,
-                        Output output) {
+Cursor Redis::zscan(const StringView &key,
+                     Cursor cursor,
+                     const StringView &pattern,
+                     long long count,
+                     Output output) {
     auto reply = command(cmd::zscan, key, cursor, pattern, count);
 
     return reply::parse_scan_reply(*reply, output);
 }
 
 template <typename Output>
-inline long long Redis::zscan(const StringView &key,
-                                long long cursor,
-                                const StringView &pattern,
-                                Output output) {
+inline Cursor Redis::zscan(const StringView &key,
+                             Cursor cursor,
+                             const StringView &pattern,
+                             Output output) {
     return zscan(key, cursor, pattern, 10, output);
 }
 
 template <typename Output>
-inline long long Redis::zscan(const StringView &key,
-                                long long cursor,
-                                long long count,
-                                Output output) {
+inline Cursor Redis::zscan(const StringView &key,
+                             Cursor cursor,
+                             long long count,
+                             Output output) {
     return zscan(key, cursor, "*", count, output);
 }
 
 template <typename Output>
-inline long long Redis::zscan(const StringView &key,
-                                long long cursor,
-                                Output output) {
+inline Cursor Redis::zscan(const StringView &key,
+                             Cursor cursor,
+                             Output output) {
     return zscan(key, cursor, "*", 10, output);
 }
 
@@ -1020,6 +1138,88 @@ void Redis::script_exists(Input first, Input last, Output output) {
     auto reply = command(cmd::script_exists_range<Input>, first, last);
 
     reply::to_array(*reply, output);
+}
+
+template <typename Result, typename Keys, typename Args>
+Result Redis::fcall(const StringView &func,
+            Keys keys_first,
+            Keys keys_last,
+            Args args_first,
+            Args args_last) {
+    auto reply = command(cmd::fcall<Keys, Args>, func, keys_first, keys_last, args_first, args_last);
+
+    return reply::parse<Result>(*reply);
+}
+
+template <typename Result>
+Result Redis::fcall(const StringView &func,
+            std::initializer_list<StringView> keys,
+            std::initializer_list<StringView> args) {
+    return fcall<Result>(func, keys.begin(), keys.end(), args.begin(), args.end());
+}
+
+template <typename Keys, typename Args, typename Output>
+void Redis::fcall(const StringView &func,
+            Keys keys_first,
+            Keys keys_last,
+            Args args_first,
+            Args args_last,
+            Output output) {
+    auto reply = command(cmd::fcall<Keys, Args>,
+                            func,
+                            keys_first, keys_last,
+                            args_first, args_last);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Output>
+void Redis::fcall(const StringView &func,
+            std::initializer_list<StringView> keys,
+            std::initializer_list<StringView> args,
+            Output output) {
+    fcall(func, keys.begin(), keys.end(), args.begin(), args.end(), output);
+}
+
+template <typename Result, typename Keys, typename Args>
+Result Redis::fcall_ro(const StringView &func,
+            Keys keys_first,
+            Keys keys_last,
+            Args args_first,
+            Args args_last) {
+    auto reply = command(cmd::fcall_ro<Keys, Args>, func, keys_first, keys_last, args_first, args_last);
+
+    return reply::parse<Result>(*reply);
+}
+
+template <typename Result>
+Result Redis::fcall_ro(const StringView &func,
+            std::initializer_list<StringView> keys,
+            std::initializer_list<StringView> args) {
+    return fcall_ro<Result>(func, keys.begin(), keys.end(), args.begin(), args.end());
+}
+
+template <typename Keys, typename Args, typename Output>
+void Redis::fcall_ro(const StringView &func,
+            Keys keys_first,
+            Keys keys_last,
+            Args args_first,
+            Args args_last,
+            Output output) {
+    auto reply = command(cmd::fcall_ro<Keys, Args>,
+                            func,
+                            keys_first, keys_last,
+                            args_first, args_last);
+
+    reply::to_array(*reply, output);
+}
+
+template <typename Output>
+void Redis::fcall_ro(const StringView &func,
+            std::initializer_list<StringView> keys,
+            std::initializer_list<StringView> args,
+            Output output) {
+    fcall_ro(func, keys.begin(), keys.end(), args.begin(), args.end(), output);
 }
 
 // Transaction commands.

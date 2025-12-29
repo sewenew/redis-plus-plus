@@ -8,7 +8,6 @@ I create a Redis module, named [redis-llm](https://github.com/sewenew/redis-llm)
 
 - [Overview](#overview)
     - [Features](#features)
-    - [Branches](#branches)
 - [Installation](#installation)
     - [Install hiredis](#install-hiredis)
     - [Install redis-plus-plus](#install-redis-plus-plus)
@@ -36,7 +35,7 @@ I create a Redis module, named [redis-llm](https://github.com/sewenew/redis-llm)
 
 ## Overview
 
-This is a C++ client library for Redis. It's based on [hiredis](https://github.com/redis/hiredis), and is compatible with C++ 17, C++ 14, and C++ 11.
+This is a C++ client library for Redis. It's based on [hiredis](https://github.com/redis/hiredis), and is compatible with C++11 and later versions. Besides Redis, it also works with other key-value stores supporting RESP (REdis Serialization Protocol), e.g. Valkey, DragonflyDB, KeyDB.
 
 **NOTE**: I'm not a native speaker. So if the documentation is unclear, please feel free to open an issue or pull request. I'll response ASAP.
 
@@ -59,17 +58,13 @@ This is a C++ client library for Redis. It's based on [hiredis](https://github.c
 - Sync and Async interface.
 - Coroutine support.
 
-### Branches
-
-The master branch is the stable branch, which passes all tests. The dev branch is unstable. If you want to contribute, please create pull request on dev branch.
-
 ## Installation
 
 ### Install hiredis
 
 Since *redis-plus-plus* is based on *hiredis*, you should install *hiredis* first. The minimum version requirement for *hiredis* is **v0.12.1**. However, [the latest stable release](https://github.com/redis/hiredis/releases) of *hiredis* is always recommended.
 
-**NOTE**: You must ensure that there's only 1 version of hiredis is installed. Otherwise, you might get some wired problems. Check the following issues for example: [issue 135](https://github.com/sewenew/redis-plus-plus/issues/135), [issue 140](https://github.com/sewenew/redis-plus-plus/issues/140) and [issue 158](https://github.com/sewenew/redis-plus-plus/issues/158).
+**NOTE**: You must ensure that there's only 1 version of *hiredis* installed. Otherwise, you might get some weird problems. Check the following issues for example: [issue 135](https://github.com/sewenew/redis-plus-plus/issues/135), [issue 140](https://github.com/sewenew/redis-plus-plus/issues/140) and [issue 158](https://github.com/sewenew/redis-plus-plus/issues/158).
 
 Normally, you can install *hiredis* with a C++ package manager, and that's the easiest way to do it, e.g. `sudo apt-get install libhiredis-dev`. However, if you want to install the latest code of hiredis, or a specified version (e.g. async support needs hiredis v1.0.0 or later), you can install it from source.
 
@@ -82,7 +77,7 @@ cd hiredis
 
 make
 
-make install
+sudo make install
 ```
 
 By default, *hiredis* is installed at */usr/local*. If you want to install *hiredis* at non-default location, use the following commands to specify the installation path.
@@ -110,7 +105,7 @@ cmake ..
 
 make
 
-make install
+sudo make install
 
 cd ..
 ```
@@ -138,6 +133,10 @@ cmake -DCMAKE_PREFIX_PATH=/path/to/hiredis -DCMAKE_INSTALL_PREFIX=/path/to/insta
 By default, *redis-plus-plus* builds both a static library and a shared library. If you only want to build one of them, you can disable the other with `-DREDIS_PLUS_PLUS_BUILD_STATIC=OFF` or `-DREDIS_PLUS_PLUS_BUILD_SHARED=OFF`.
 
 *redis-plus-plus* builds static library with `-fPIC` option, i.e. Position Independent Code, by default. However, you can disable it with `-DREDIS_PLUS_PLUS_BUILD_STATIC_WITH_PIC=OFF`.
+
+#### FetchContent
+
+You can also use cmake's [FetchContent](https://cmake.org/cmake/help/latest/module/FetchContent.html) feature to install redis-plus-plus. Check [this](https://github.com/sewenew/redis-plus-plus/pull/639) for an example.
 
 #### Windows Support
 
@@ -206,7 +205,7 @@ Then you can build it the instructions (links) mentioned above. If you're buildi
 
 **NOTE**:
 
-- Since 1.3.0, *redis-puls-plus* is built with C++17 by default, and you should also set your application code to be built with C++17. If you still want to build the *redis-plus-plus* with C++11, you can set the `REDIS_PLUS_PLUS_CXX_STANDARD` cmake option to 11.
+- Since 1.3.0, *redis-plus-plus* is built with C++17 by default, and you should also set your application code to be built with C++17. If you still want to build the *redis-plus-plus* with C++11, you can set the `REDIS_PLUS_PLUS_CXX_STANDARD` cmake option to 11.
 - TLS/SSL support has not been tested on Windows yet.
 
 ##### Build with Visual Studio
@@ -318,9 +317,9 @@ Visual Studio 2019 (Win 10)
 
 If you build *redis-plus-plus* with `-DREDIS_PLUS_PLUS_BUILD_TEST=ON` (the default behavior, and you can disable building test with `-DREDIS_PLUS_PLUS_BUILD_TEST=OFF`), you'll get a test program in *build/test* directory: *build/test/test_redis++*.
 
-In order to run the tests, you need to set up a Redis instance, and a Redis Cluster. Since the test program will send most of Redis commands to the server and cluster, you need to set up Redis of the latest version (by now, it's 5.0). Otherwise, the tests might fail. For example, if you set up Redis 4.0 for testing, the test program will fail when it tries to send the `ZPOPMAX` command (a Redis 5.0 command) to the server. If you want to run the tests with other Redis versions, you have to comment out commands that haven't been supported by your Redis, from test source files in *redis-plus-plus/test/src/sw/redis++/* directory. Sorry for the inconvenience, and I'll fix this problem to make the test program work with any version of Redis in the future.
+In order to run the tests, you need to set up a Redis instance, and a Redis Cluster. Since the test program will send most of Redis commands to the server and cluster, you need to set up Redis of the latest version. Otherwise, the tests might fail. For example, if you set up Redis 4.0 for testing, the test program will fail when it tries to send the `ZPOPMAX` command (a Redis 5.0 command) to the server. If you want to run the tests with other Redis versions, you have to comment out commands that haven't been supported by your Redis, from test source files in *redis-plus-plus/test/src/sw/redis++/* directory. Sorry for the inconvenience, and I'll fix this problem to make the test program work with any version of Redis in the future.
 
-**NOTE**: The latest version of Redis is only a requirement for running the tests. In fact, you can use *redis-plus-plus* with Redis of any version, e.g. Redis 2.0, Redis 3.0, Redis 4.0, Redis 5.0.
+**NOTE**: The latest version of Redis is only a requirement for running the tests. In fact, you can use *redis-plus-plus* with Redis of any version, i.e. Redis 2.0 and above.
 
 **NEVER** run the test program in production envronment, since the keys, which the test program reads or writes, might conflict with your application.
 
@@ -1336,7 +1335,7 @@ redis.smembers("s1", std::back_inserter(s_vec));
 ##### SCAN Commands
 
 ```C++
-auto cursor = 0LL;
+sw::redis::Cursor cursor = 0;
 auto pattern = "*pattern*";
 auto count = 5;
 std::unordered_set<std::string> keys;
@@ -2298,6 +2297,8 @@ If master is down, the cluster will promote one of its replicas to be the new ma
 
 - When the master is down, *redis-plus-plus* losts connection to it. In this case, if you try to send commands to this master, *redis-plus-plus* will try to update slot-node mapping from other nodes. If the mapping remains unchanged, i.e. new master hasn't been elected yet, it fails to send command to Redis Cluster and throws exception.
 - When the new master has been elected, the slot-node mapping will be updated by the cluster. In this case, if you send commands to the cluster, *redis-plus-plus* can get an update-to-date mapping, and sends commands to the new master.
+
+Since redis-plus-plus 1.3.13, it also updates the slot-node mapping every `ClusterOptions::slot_map_refresh_interval` time interval (by default, it updates every 10 seconds).
 
 ### Redis Sentinel
 

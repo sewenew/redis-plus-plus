@@ -69,6 +69,11 @@ void cluster_specializing_test(Test &test,
 }
 
 template <typename RedisInstance>
+void delete_keys(RedisInstance &r, const std::vector<std::string> &keys) {
+    r.del(keys.begin(), keys.end());
+}
+
+template <typename RedisInstance>
 class KeyDeleter {
 public:
     template <typename Input>
@@ -88,7 +93,7 @@ public:
 private:
     void _delete() {
         if (!_keys.empty()) {
-            _redis.del(_keys.begin(), _keys.end());
+            delete_keys<RedisInstance>(_redis, _keys);
         }
     }
 

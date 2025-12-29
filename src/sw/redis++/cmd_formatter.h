@@ -277,6 +277,38 @@ inline FormattedCommand set_keepttl(const StringView &key,
     return format_cmd(args);
 }
 
+inline FormattedCommand set_with_get_option(const StringView &key,
+        const StringView &val,
+        const std::chrono::milliseconds &ttl,
+        UpdateType type) {
+    CmdArgs args;
+    args << "SET" << key << val << "GET";
+
+    if (ttl > std::chrono::milliseconds(0)) {
+        args << "PX" << ttl.count();
+    }
+
+    cmd::detail::set_update_type(args, type);
+
+    return format_cmd(args);
+}
+
+inline FormattedCommand set_with_get_keepttl_option(const StringView &key,
+        const StringView &val,
+        bool keepttl,
+        UpdateType type) {
+    CmdArgs args;
+    args << "SET" << key << val << "GET";
+
+    if (keepttl) {
+        args << "KEEPTTL";
+    }
+
+    cmd::detail::set_update_type(args, type);
+
+    return format_cmd(args);
+}
+
 inline FormattedCommand strlen(const StringView &key) {
     return format_cmd("STRLEN %b", key.data(), key.size());
 }
@@ -375,6 +407,39 @@ FormattedCommand rpush_range(const StringView &key, Input first, Input last) {
     args << "RPUSH" << key << std::make_pair(first, last);
 
     return format_cmd(args);
+}
+
+template <typename Input>
+FormattedCommand lmpop(Input first, Input last, ListWhence whence, long long count) {
+    assert(first != last);
+
+    CmdArgs args;
+
+    auto keys_num = std::distance(first, last);
+
+    args << "LMPOP" << keys_num << std::make_pair(first, last) << to_string(whence) << "COUNT" << count;
+
+    return format_cmd(args);
+}
+
+inline FormattedCommand lmove(const StringView &src, const StringView &dest,
+        ListWhence src_whence, ListWhence dest_whence) {
+    auto src_whence_str = to_string(src_whence);
+    auto dest_whence_str = to_string(dest_whence);
+    return format_cmd("LMOVE %b %b %s %s",
+            src.data(), src.size(),
+            dest.data(), dest.size(),
+            src_whence_str.data(), dest_whence_str.data());
+}
+
+inline FormattedCommand blmove(const StringView &src, const StringView &dest,
+        ListWhence src_whence, ListWhence dest_whence, long long timeout) {
+    auto src_whence_str = to_string(src_whence);
+    auto dest_whence_str = to_string(dest_whence);
+    return format_cmd("BLMOVE %b %b %s %s %lld",
+            src.data(), src.size(),
+            dest.data(), dest.size(),
+            src_whence_str.data(), dest_whence_str.data(), timeout);
 }
 
 // HASH commands.
@@ -750,6 +815,21 @@ FormattedCommand zrevrangebylex(const StringView &key,
                     opts.count);
 }
 
+template <typename Interval>
+FormattedCommand zrevrangebyscore(const StringView &key,
+                                const Interval &interval,
+                                const LimitOptions &opts) {
+    const auto &min = interval.lower();
+    const auto &max = interval.upper();
+
+    return format_cmd("ZREVRANGEBYSCORE %b %b %b LIMIT %lld %lld",
+                      key.data(), key.size(),
+                      max.data(), max.size(),
+                      min.data(), min.size(),
+                      opts.offset,
+                      opts.count);
+}
+
 inline FormattedCommand zrevrank(const StringView &key, const StringView &member) {
     return format_cmd("ZREVRANK %b %b", key.data(), key.size(), member.data(), member.size());
 }
@@ -789,6 +869,56 @@ FormattedCommand evalsha(const StringView &script,
             << std::make_pair(args_first, args_last);
 
     return format_cmd(args);
+}
+
+template <typename Keys, typename Args>
+FormattedCommand fcall(const StringView &func,
+        Keys keys_first,
+        Keys keys_last,
+        Args args_first,
+        Args args_last) {
+    CmdArgs args;
+    auto keys_num = std::distance(keys_first, keys_last);
+
+    args << "FCALL" << func << keys_num
+            << std::make_pair(keys_first, keys_last)
+            << std::make_pair(args_first, args_last);
+
+    return format_cmd(args);
+}
+
+template <typename Keys, typename Args>
+FormattedCommand fcall_ro(const StringView &func,
+        Keys keys_first,
+        Keys keys_last,
+        Args args_first,
+        Args args_last) {
+    CmdArgs args;
+    auto keys_num = std::distance(keys_first, keys_last);
+
+    args << "FCALL_RO" << func << keys_num
+            << std::make_pair(keys_first, keys_last)
+            << std::make_pair(args_first, args_last);
+
+    return format_cmd(args);
+}
+
+inline FormattedCommand function_load(const StringView &code, bool replace) {
+    CmdArgs cmd_args;
+
+    cmd_args << "FUNCTION" << "LOAD";
+
+    if (replace) {
+        cmd_args << "REPLACE";
+    }
+
+    cmd_args << code;
+
+    return format_cmd(cmd_args);
+}
+
+inline FormattedCommand function_delete(const StringView &lib_name) {
+    return format_cmd("FUNCTION DELETE %b", lib_name.data(), lib_name.size());
 }
 
 // PUBSUB commands.
@@ -897,6 +1027,31 @@ inline FormattedCommand sunsubscribe_range(Input first, Input last) {
 
     CmdArgs args;
     args << "SUNSUBSCRIBE" << std::make_pair(first, last);
+
+    return format_cmd(args);
+}
+
+// Stream commands.
+
+inline FormattedCommand xread(const StringView &key, const StringView &id, long long count) {
+    return format_cmd("XREAD COUNT %lld STREAMS %b %b",
+            count,
+            key.data(), key.size(),
+            id.data(), id.size());
+}
+
+template <typename Input>
+FormattedCommand xread_range(Input first, Input last, long long count) {
+    CmdArgs args;
+    args << "XREAD" << "COUNT" << count << "STREAMS";
+
+    for (auto iter = first; iter != last; ++iter) {
+        args << iter->first;
+    }
+
+    for (auto iter = first; iter != last; ++iter) {
+        args << iter->second;
+    }
 
     return format_cmd(args);
 }

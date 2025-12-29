@@ -259,7 +259,7 @@ private:
                           const std::string& random_string);
 
     int _quorum() const {
-        return _instances.size() / 2 + 1;
+        return static_cast<int>(_instances.size() / 2 + 1);
     }
 
     std::vector<std::shared_ptr<Redis>> _instances;
