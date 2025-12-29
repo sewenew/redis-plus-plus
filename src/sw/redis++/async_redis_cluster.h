@@ -61,6 +61,20 @@ public:
 
     AsyncSubscriber subscriber(const StringView &hash_tag);
 
+    template <typename Callback>
+    void for_each(Callback &&cb) {
+        assert(_pool);
+        _pool->update();
+
+        auto pools = _pool->pools();
+        for (auto &pool : pools) {
+            auto connection = std::make_shared<GuardedAsyncConnection>(pool);
+
+            auto ar = AsyncRedis(connection);
+            cb(ar);
+        }
+    }
+
     template <typename Result, typename ...Args>
     auto command(const StringView &cmd_name, const StringView &key, Args &&...args)
         -> typename std::enable_if<!IsInvocable<typename LastType<Args...>::type,

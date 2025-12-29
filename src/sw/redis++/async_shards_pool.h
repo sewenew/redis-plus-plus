@@ -60,6 +60,8 @@ public:
 
     ConnectionOptions connection_options();
 
+    std::vector<AsyncConnectionPoolSPtr> pools();
+
 private:
     struct RedeliverEvent {
         std::string key;
