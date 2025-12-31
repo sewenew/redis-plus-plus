@@ -1872,7 +1872,7 @@ public:
     Future<Output> xread(const StringView &key,
             const StringView &id,
             long long count) {
-        return _command<Output>(fmt::xread, key, id, count);
+        return _command<Output>(fmt::xread, key, id, count, -1);
     }
 
     template <typename Output, typename Callback>
@@ -1881,7 +1881,17 @@ public:
             long long count,
             Callback &&cb)
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Output> &&>::value, void>::type {
-        _callback_fmt_command<Output>(std::forward<Callback>(cb), fmt::xread, key, id, count);
+        _callback_fmt_command<Output>(std::forward<Callback>(cb), fmt::xread, key, id, count, -1);
+    }
+
+    template <typename Output, typename Callback>
+    auto xread(const StringView &key,
+            const StringView &id,
+            long long count,
+            const std::chrono::milliseconds& timeout,
+            Callback &&cb)
+        -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<Output> &&>::value, void>::type {
+        _callback_fmt_command<Output>(std::forward<Callback>(cb), fmt::xread, key, id, count, timeout.count());
     }
 
     template <typename Output, typename Input>
