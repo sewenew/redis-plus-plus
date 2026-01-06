@@ -45,7 +45,7 @@ if(REDIS_PLUS_PLUS_BUILD_ASYNC)
         message(STATUS "redis-plus-plus build async interface with libuv")
 
         # libuv dependency
-        find_package(libuv NO_MODULE CONFIG)
+        find_package(libuv)
         if (NOT libuv_FOUND)
             find_path(REDIS_PLUS_PLUS_ASYNC_LIB_HEADER NAMES uv.h)
             find_library(REDIS_PLUS_PLUS_ASYNC_LIB uv)
