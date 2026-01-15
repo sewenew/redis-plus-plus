@@ -206,7 +206,13 @@ if(REDIS_PLUS_PLUS_BUILD_STATIC)
     if(REDIS_PLUS_PLUS_BUILD_ASYNC)
         target_include_directories(${STATIC_LIB} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${REDIS_PLUS_PLUS_ASYNC_FUTURE_HEADER}>)
         if(libuv_FOUND)
-            target_link_libraries(${STATIC_LIB} PUBLIC $<TARGET_NAME:libuv::uv>)
+            target_link_libraries(${STATIC_LIB} PUBLIC 
+                $<IF:$<TARGET_EXISTS:libuv::uv>, libuv::uv, 
+                    $<IF:$<TARGET_EXISTS:libuv::uv_a>, libuv::uv_a, 
+                        $<IF:$<TARGET_EXISTS:uv>, uv, uv_a>
+                    >
+                >
+            )
         else()
             target_include_directories(${STATIC_LIB} PUBLIC $<BUILD_INTERFACE:${REDIS_PLUS_PLUS_ASYNC_LIB_HEADER}>)
         endif()
@@ -263,7 +269,13 @@ if(REDIS_PLUS_PLUS_BUILD_SHARED)
     if(REDIS_PLUS_PLUS_BUILD_ASYNC)
         target_include_directories(${SHARED_LIB} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${REDIS_PLUS_PLUS_ASYNC_FUTURE_HEADER}>)
         if(libuv_FOUND)
-            target_link_libraries(${SHARED_LIB} PUBLIC $<TARGET_NAME:libuv::uv>)
+            target_link_libraries(${SHARED_LIB} PUBLIC 
+                $<IF:$<TARGET_EXISTS:libuv::uv>, libuv::uv, 
+                    $<IF:$<TARGET_EXISTS:libuv::uv_a>, libuv::uv_a, 
+                        $<IF:$<TARGET_EXISTS:uv>, uv, uv_a>
+                    >
+                >
+            )
         else()
             target_include_directories(${SHARED_LIB} PUBLIC $<BUILD_INTERFACE:${REDIS_PLUS_PLUS_ASYNC_LIB_HEADER}>)
             target_link_libraries(${SHARED_LIB} PUBLIC ${REDIS_PLUS_PLUS_ASYNC_LIB})
