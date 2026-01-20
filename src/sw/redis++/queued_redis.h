@@ -1977,8 +1977,9 @@ public:
         return command(cmd::xrevrange_count, key, end, start, count);
     }
 
-    QueuedRedis& xtrim(const StringView &key, long long count, bool approx = true) {
-        return command(cmd::xtrim, key, count, approx);
+    QueuedRedis& xtrim(const StringView &key, long long count, bool approx = true,
+            XtrimStrategy strategy = XtrimStrategy::MAXLEN) {
+        return command(cmd::xtrim, key, count, approx, strategy);
     }
 
 private:
