@@ -47,6 +47,16 @@ AsyncRedisCluster::AsyncRedisCluster(const ConnectionOptions &opts,
     _pool = std::make_shared<AsyncShardsPool>(_loop, pool_opts, opts, role, cluster_opts);
 }
 
+bool AsyncRedisCluster::getSlotState() 
+{
+    return _pool->getSlotState();
+}
+
+void AsyncRedisCluster::update_conn_opt(std::map<std::string, std::string> _new_opts)
+{
+    _pool->update_conn_opt(_new_opts);
+}
+
 AsyncRedis AsyncRedisCluster::redis(const StringView &hash_tag, bool new_connection) {
     assert(_pool);
 

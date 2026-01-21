@@ -58,6 +58,8 @@ struct ConnectionOptions {
 
     int port = 6379;
 
+    std::string srcip;
+
     std::string path;
 
     std::string user = "default";

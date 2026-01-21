@@ -78,6 +78,8 @@ inline T parse(redisReply &reply) {
 template <typename T>
 T parse_leniently(redisReply &reply);
 
+redisReply* parse(ParseTag<redisReply*>, redisReply &reply);
+
 void parse(ParseTag<void>, redisReply &reply);
 
 std::string parse(ParseTag<std::string>, redisReply &reply);
