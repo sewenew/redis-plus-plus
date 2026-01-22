@@ -90,6 +90,10 @@ std::string parse(ParseTag<std::string>, redisReply &reply) {
     return std::string(reply.str, reply.len);
 }
 
+redisReply* parse(ParseTag<redisReply*>, redisReply &reply) {
+    return &reply;
+}
+
 long long parse(ParseTag<long long>, redisReply &reply) {
     if (!reply::is_integer(reply)) {
         throw ParseError("INTEGER", reply);
