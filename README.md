@@ -2339,7 +2339,7 @@ Besides `std::shared_ptr<Sentinel>` and master name, you also need to specify a 
 
 With `Role::MASTER`, *redis-plus-plus* will always connect to current master instance, even if a failover occurs. Each time when *redis-plus-plus* needs to create a new connection to master, or a connection is broken, and it needs to reconnect to master, *redis-plus-plus* will ask master address from Redis Sentinel, and connects to current master. If a failover occurs, *redis-plus-plus* can automatically get the address of the new master, and refresh all connections in the underlying connection pool.
 
-Similarly, with `Role::SLAVE`, *redis-plus-plus* will always connect to a slave instance. A master might have several slaves, *redis-plus-plus* will randomly pick one, and connect to it, i.e. all connections in the underlying connection pool, connect to the same slave instance (check [this discussion](https://github.com/sewenew/redis-plus-plus/issues/99) on why *redis-plus-plus* not connect to all slaves). If the connection is broken, while this slave instance is still an alive slave, *redis-plus-plus* will reconnect to this slave. However, if this slave instance is down, or it has been promoted to be the master, *redis-plus-plus* will randomly connect to another slave. If there's no slave alive, it throws an exception.
+Similarly, with `Role::SLAVE`, *redis-plus-plus* will always connect to a slave instance. A master might have several slaves, *redis-plus-plus* will randomly pick one (unless user has provided a specific host in the connection options, see [example below](#specifying-slave-host)), and connect to it, i.e. all connections in the underlying connection pool, connect to the same slave instance (check [this discussion](https://github.com/sewenew/redis-plus-plus/issues/99) on why *redis-plus-plus* not connect to all slaves). If the connection is broken, while this slave instance is still an alive slave, *redis-plus-plus* will reconnect to this slave. However, if this slave instance is down, or it has been promoted to be the master, *redis-plus-plus* will randomly connect to another slave. If there's no slave alive, it throws an exception.
 
 #### Create Redis With Sentinel
 
@@ -2359,6 +2359,8 @@ auto redis = Redis(sentinel, "master_name", Role::MASTER, connection_opts, pool_
 
 You might have noticed that we didn't specify the `host` and `port` fields for `ConnectionOptions`. Because, `Redis` will get these info from Redis Sentinel. Also, in this case, `ConnectionOptions::connect_timeout` and `ConnectionOptions::socket_timeout` CANNOT be 0ms, otherwise, it throws an exception. So you always need to specify these two timeouts manually.
 
+**NOTE**: it is recommended **not** to specify `host` and `port` fields, unless you know what you are doing. See example [below](#specifying-slave-host)
+
 After creating the `Redis` object with sentinel, you can send commands with it, just like an ordinary `Redis` object.
 
 If you want to write to master, and scale read with slaves. You can use the following pattern:
@@ -2376,6 +2378,26 @@ master.set("key", "value");
 // Read from slave.
 slave.get("key");
 ```
+
+##### Specifying slave host
+
+The following pattern could be used to specify slave host to connect to:
+
+```C++
+auto sentinel = std::make_shared<Sentinel>(sentinel_opts);
+
+// Specifying preferred host to connect to
+connection_opts.host = "127.0.0.1";
+connection_opts.port = 6379;
+auto slave = Redis(sentinel, "master_name", Role::SLAVE, connection_opts, pool_opts);
+
+// Try read from specified slave.
+slave.get("key");
+```
+
+In this example `Sentinel` will verify that specified host is available and has appropriate role. If host is unavailable or has been elected as master, then we will use same failover mechanism as shown above - connect to randomly selected host from available replicas
+
+**NOTE**: It is usually better **not** to specify host to connect to. But it can be benefitial for some use cases, e.g. if hosts are physicaly located on different servers and you know that ping to one of them is significaly lower than to others
 
 ### Redis Stream
 
