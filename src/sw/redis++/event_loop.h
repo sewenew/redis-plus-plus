@@ -37,6 +37,8 @@ class EventLoop {
 public:
     EventLoop();
 
+    explicit EventLoop(uv_loop_t* external_loop);
+
     EventLoop(const EventLoop &) = delete;
     EventLoop& operator=(const EventLoop &) = delete;
 
@@ -109,6 +111,12 @@ private:
 
     // _loop must be defined at last, since its destructor needs other data members.
     LoopUPtr _loop;
+
+    uv_loop_t* _external_loop{nullptr};
+
+    uv_loop_t* _get_loop() const noexcept {
+        return _loop ? _loop.get() : _external_loop;
+    }
 
     bool _stopped{false};
 };
