@@ -104,6 +104,12 @@ void EventLoop::watch(redisAsyncContext &ctx) {
 
     redisAsyncSetConnectCallback(&ctx, EventLoop::_connect_callback);
     redisAsyncSetDisconnectCallback(&ctx, EventLoop::_disconnect_callback);
+
+    auto *context = static_cast<AsyncContext *>(ctx.data);
+    if (context) {
+        context->event_loop = this;
+        _watch_count++;
+    }
 }
 
 void EventLoop::_connect_callback(const redisAsyncContext *ctx, int status) {
@@ -130,6 +136,11 @@ void EventLoop::_disconnect_callback(const redisAsyncContext *ctx, int status) {
 
     auto *context = static_cast<AsyncContext *>(ctx->data);
     assert(context != nullptr);
+
+    if (context->event_loop) {
+        context->event_loop->_watch_count--;
+        context->event_loop->_check_drain_complete();
+    }
 
     if (!context->run_disconnect_callback) {
         return;
@@ -180,6 +191,8 @@ void EventLoop::_event_callback(uv_async_t *handle) {
         // and this `disconnect` call will do nothing.
         connection->disconnect(err);
     }
+
+    event_loop->_check_drain_complete();
 }
 
 void EventLoop::_stop_callback(uv_async_t *handle) {
@@ -265,6 +278,31 @@ void EventLoop::LoopDeleter::operator()(uv_loop_t *loop) const {
     }
 
     delete loop;
+}
+
+void EventLoop::_check_drain_complete() {
+    if (!_draining || _watch_count > 0) return;
+
+    _draining = false;
+    // move out before calling: cb() may destroy this EventLoop
+    auto cb = std::move(_drain_callback);
+    if (cb) cb();
+}
+
+void EventLoop::drain(DrainCallback callback) {
+    assert(_external_loop);
+
+    // abort pending connect/command events immediately with an error
+    auto events = _get_events();
+    _clean_up(events.first, events.second);
+
+    _drain_callback = std::move(callback);
+    _draining = true;
+
+    // trigger _event_callback on the next iteration, which calls _check_drain_complete();
+    // this handles the zero-connection case and avoids firing the callback synchronously
+    // while still inside drain() itself
+    uv_async_send(_event_async.get());
 }
 
 void EventLoop::_notify() {
