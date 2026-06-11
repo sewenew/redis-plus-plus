@@ -13,6 +13,7 @@ I create a Redis module, named [redis-llm](https://github.com/sewenew/redis-llm)
     - [Install redis-plus-plus](#install-redis-plus-plus)
     - [Run Tests (Optional)](#run-tests-optional)
     - [Use redis-plus-plus In Your Project](#use-redis-plus-plus-in-your-project)
+    - [Install using Conan](#install-using-conan)
 - [Getting Started](#getting-started)
 - [API Reference](#api-reference)
     - [Connection](#connection)
@@ -379,6 +380,22 @@ The bechmark will generate `100` random binary keys for testing, and the size of
 ### Use redis-plus-plus In Your Project
 
 After compiling the code, you'll get both shared library and static library. Since *redis-plus-plus* depends on *hiredis*, you need to link both libraries to your Application. Also don't forget to specify the c++ standard, `-std=c++17`, `-std=c++14` or `-std=c++11`, as well as the thread-related option.
+
+### Install using Conan
+
+If you are using Conan, you can also install redis-plus-plus using Conan,
+instead of compiling it from source code.
+
+You can download and install redis-plus-plus from ConanCenter: using the [Conan](https://conan.io/) dependency manager:
+
+```
+conan install -r conancenter --requires="redis-plus-plus/[*]" --build=missing
+```
+
+The redis-plus-plus package in Conan Center is maintained by
+[ConanCenterIndex](https://github.com/conan-io/conan-center-index) community.
+If the version is out of date or the package does not work,
+please create an issue or pull request on the [Conan Center Index repository](https://github.com/conan-io/conan-center-index).
 
 #### Use Static Libraries
 
