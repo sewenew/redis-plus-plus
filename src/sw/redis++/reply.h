@@ -62,7 +62,8 @@ public:
     virtual ~ParseError() override = default;
 
 private:
-    std::string _err_info(const std::string &type, const redisReply &reply) const;
+    // Make it static to walk around GCC 16 bug. Check issues #678 for detail.
+    static std::string _err_info(const std::string &type, const redisReply &reply);
 };
 
 namespace reply {

@@ -138,7 +138,8 @@ public:
     virtual ~StopIterError() override = default;
 
 private:
-    std::string _to_msg(const std::vector<std::string> &errs) const;
+    // Make it static to walk around GCC 16 bug. Check issues #678 for detail.
+    static std::string _to_msg(const std::vector<std::string> &errs);
 };
 
 }

@@ -23,7 +23,7 @@ namespace sw {
 namespace redis {
 
 std::string ParseError::_err_info(const std::string &expect_type,
-        const redisReply &reply) const {
+        const redisReply &reply) {
     return "expect " + expect_type + " reply, but got " +
         reply::type_to_string(reply.type) + " reply";
 }
