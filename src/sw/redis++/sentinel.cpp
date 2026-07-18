@@ -408,7 +408,7 @@ Connection SimpleSentinel::create(const ConnectionOptions &opts) {
     return _sentinel->slave(_master_name, opts);
 }
 
-std::string StopIterError::_to_msg(const std::vector<std::string> &errs) const {
+std::string StopIterError::_to_msg(const std::vector<std::string> &errs) {
     std::string msg;
     for (const auto &err : errs) {
         if (!msg.empty()) {
