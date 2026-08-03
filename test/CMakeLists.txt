@@ -55,3 +55,7 @@ if(REDIS_PLUS_PLUS_BUILD_ASYNC_TEST)
     target_compile_definitions(${PROJECT_NAME} PRIVATE REDIS_PLUS_PLUS_RUN_ASYNC_TEST)
     target_link_libraries(${PROJECT_NAME} ${REDIS_PLUS_PLUS_ASYNC_LIB})
 endif()
+
+if(MSVC)
+    target_compile_options(${PROJECT_NAME} PRIVATE /bigobj)
+endif()
