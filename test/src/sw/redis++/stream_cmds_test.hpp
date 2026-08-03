@@ -153,7 +153,8 @@ void StreamCmdsTest<RedisInstance>::_test_group_cmds() {
         {"f2", "v2"}
     };
     auto id = _redis.xadd(key, "*", attrs.begin(), attrs.end());
-    auto keys = {std::make_pair(key, ">")};
+    // explicitly declare variable type due to a VS 2019 bug. see #682 for detail.
+    std::vector<std::pair<std::string, std::string>> keys = {std::make_pair(key, ">")};
 
     Result result;
     _redis.xreadgroup(group,
