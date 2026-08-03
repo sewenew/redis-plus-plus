@@ -4,8 +4,6 @@
 
 [中文交流群](https://github.com/sewenew/redis-plus-plus/blob/master/Chinese.md)
 
-I create a Redis module, named [redis-llm](https://github.com/sewenew/redis-llm), which integrates LLMs (Large Language Models) with Redis. You can [learn redis-plus-plus by asking questions with it](https://github.com/sewenew/redis-llm/tree/main/examples/search-application).
-
 - [Overview](#overview)
     - [Features](#features)
 - [Installation](#installation)
@@ -202,7 +200,7 @@ Since *redis-plus-plus* depends on *hiredis*, we need to specify the installatio
 }
 ```
 
-Then you can build it the instructions (links) mentioned above. If you're building with Visual Studio 2017 in debug mode, you might get [/bigobj error](https://docs.microsoft.com/en-us/cpp/build/reference/bigobj-increase-number-of-sections-in-dot-obj-file?view=vs-2017) when building the test. In this case, you can disable building test by setting `-DREDIS_PLUS_PLUS_BUILD_TEST=OFF` or build it in Release mode.
+Then you can build it with the instructions (links) mentioned above.
 
 **NOTE**:
 
