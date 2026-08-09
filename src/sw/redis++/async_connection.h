@@ -283,6 +283,8 @@ struct AsyncContext {
     AsyncConnectionSPtr connection;
 
     bool run_disconnect_callback = true;
+
+    EventLoop* event_loop = nullptr;
 };
 
 template <typename Result, typename ResultParser>

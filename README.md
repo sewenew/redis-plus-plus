@@ -2764,10 +2764,12 @@ Future<void> fut2 = sub.psubscribe("pattern1*");
 
 **NOTE**: The following is an experimental feature, and might be modified or abandaned in the future.
 
-By default, `AsyncRedis` and `AsyncRedisCluster` create a default event loop, and runs the loop in a dedicated thread to handle read and write operations. However, you can also share the underlying event loop with multiple `AsyncRedis` and `AsyncRedisCluster` objects. In order to do that, you need to create a `std::shared_ptr<EventLoop>`, and pass it to the constructors of `AsyncRedis` and `AsyncRedisCluster`.
+By default, `AsyncRedis` and `AsyncRedisCluster` create a default event loop, and runs the loop in a dedicated thread to handle read and write operations. However, you can also share the underlying event loop with multiple `AsyncRedis` and `AsyncRedisCluster` objects. In order to do that, you need to create a `std::shared_ptr<EventLoop>`, and pass it to the constructors of `AsyncRedis` and `AsyncRedisCluster`. You can also inject an external libuv event loop.
 
 ```c++
 auto event_loop = std::make_shared<EventLoop>();
+// or:
+auto event_loop = std::make_shared<EventLoop>(externalLibuvLoop);
 
 auto redis = AsyncRedis(connection_opts, pool_opts, loop);
 

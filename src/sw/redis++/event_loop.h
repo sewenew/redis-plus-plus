@@ -21,6 +21,7 @@
 #include <unordered_map>
 #include <memory>
 #include <exception>
+#include <functional>
 #include <mutex>
 #include <thread>
 #include <uv.h>
@@ -36,6 +37,8 @@ class AsyncEvent;
 class EventLoop {
 public:
     EventLoop();
+
+    explicit EventLoop(uv_loop_t* external_loop);
 
     EventLoop(const EventLoop &) = delete;
     EventLoop& operator=(const EventLoop &) = delete;
@@ -53,6 +56,12 @@ public:
     void watch(redisAsyncContext &ctx);
 
     void stop();
+
+    using DrainCallback = std::function<void()>;
+
+    // Abort pending connections with an error, then call callback once all
+    // hiredis poll handles have been closed. Only valid for external loops.
+    void drain(DrainCallback callback);
 
 private:
     static void _connect_callback(const redisAsyncContext *ctx, int status);
@@ -109,6 +118,19 @@ private:
 
     // _loop must be defined at last, since its destructor needs other data members.
     LoopUPtr _loop;
+
+    uv_loop_t* _external_loop{nullptr};
+
+    DrainCallback _drain_callback;
+
+    int _watch_count{0};
+    bool _draining{false};
+
+    void _check_drain_complete();
+
+    uv_loop_t* _get_loop() const noexcept {
+        return _loop ? _loop.get() : _external_loop;
+    }
 
     bool _stopped{false};
 };

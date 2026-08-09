@@ -34,6 +34,14 @@ EventLoop::EventLoop() {
     _loop_thread = std::thread([this]() { uv_run(this->_loop.get(), UV_RUN_DEFAULT); });
 }
 
+EventLoop::EventLoop(uv_loop_t* external_loop) {
+    _external_loop = external_loop;
+
+    _event_async = _create_uv_async(_event_callback);
+
+    // No background thread: the external loop drives execution
+}
+
 EventLoop::~EventLoop() {
     stop();
 }
@@ -49,10 +57,19 @@ void EventLoop::stop() {
         _stopped = true;
     }
 
-    _stop();
+    if (!_external_loop) {
+        _stop();
 
-    if (_loop_thread.joinable()) {
-        _loop_thread.join();
+        if (_loop_thread.joinable()) {
+            _loop_thread.join();
+        }
+    } else {
+        auto* event_async = _event_async.release();
+        if (event_async) {
+            uv_close(reinterpret_cast<uv_handle_t*>(event_async), [](uv_handle_t* handle) {
+                delete reinterpret_cast<uv_async_t*>(handle);
+            });
+        }
     }
 }
 
@@ -81,12 +98,18 @@ void EventLoop::add(AsyncConnectionSPtr event) {
 }
 
 void EventLoop::watch(redisAsyncContext &ctx) {
-    if (redisLibuvAttach(&ctx, _loop.get()) != REDIS_OK) {
+    if (redisLibuvAttach(&ctx, _get_loop()) != REDIS_OK) {
         throw Error("failed to attach to event loop");
     }
 
     redisAsyncSetConnectCallback(&ctx, EventLoop::_connect_callback);
     redisAsyncSetDisconnectCallback(&ctx, EventLoop::_disconnect_callback);
+
+    auto *context = static_cast<AsyncContext *>(ctx.data);
+    if (context) {
+        context->event_loop = this;
+        _watch_count++;
+    }
 }
 
 void EventLoop::_connect_callback(const redisAsyncContext *ctx, int status) {
@@ -113,6 +136,11 @@ void EventLoop::_disconnect_callback(const redisAsyncContext *ctx, int status) {
 
     auto *context = static_cast<AsyncContext *>(ctx->data);
     assert(context != nullptr);
+
+    if (context->event_loop) {
+        context->event_loop->_watch_count--;
+        context->event_loop->_check_drain_complete();
+    }
 
     if (!context->run_disconnect_callback) {
         return;
@@ -163,6 +191,8 @@ void EventLoop::_event_callback(uv_async_t *handle) {
         // and this `disconnect` call will do nothing.
         connection->disconnect(err);
     }
+
+    event_loop->_check_drain_complete();
 }
 
 void EventLoop::_stop_callback(uv_async_t *handle) {
@@ -250,6 +280,31 @@ void EventLoop::LoopDeleter::operator()(uv_loop_t *loop) const {
     delete loop;
 }
 
+void EventLoop::_check_drain_complete() {
+    if (!_draining || _watch_count > 0) return;
+
+    _draining = false;
+    // move out before calling: cb() may destroy this EventLoop
+    auto cb = std::move(_drain_callback);
+    if (cb) cb();
+}
+
+void EventLoop::drain(DrainCallback callback) {
+    assert(_external_loop);
+
+    // abort pending connect/command events immediately with an error
+    auto events = _get_events();
+    _clean_up(events.first, events.second);
+
+    _drain_callback = std::move(callback);
+    _draining = true;
+
+    // trigger _event_callback on the next iteration, which calls _check_drain_complete();
+    // this handles the zero-connection case and avoids firing the callback synchronously
+    // while still inside drain() itself
+    uv_async_send(_event_async.get());
+}
+
 void EventLoop::_notify() {
     assert(_event_async);
 
@@ -279,7 +334,7 @@ auto EventLoop::_get_events()
 
 EventLoop::UvAsyncUPtr EventLoop::_create_uv_async(AsyncCallback callback) {
     auto uv_async = std::unique_ptr<uv_async_t>(new uv_async_t);
-    auto err = uv_async_init(_loop.get(), uv_async.get(), callback);
+    auto err = uv_async_init(_get_loop(), uv_async.get(), callback);
     if (err != 0) {
         throw Error("failed to initialize async: " + _err_msg(err));
     }
