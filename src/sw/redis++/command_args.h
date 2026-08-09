@@ -133,7 +133,7 @@ auto CmdArgs::operator<<(const std::tuple<Args...> &arg) ->
     typename std::enable_if<N < sizeof...(Args), CmdArgs&>::type {
     operator<<(std::get<N>(arg));
 
-    return operator<<<N + 1, Args...>(arg);
+    return operator<< <N + 1, Args...>(arg);
 }
 
 inline CmdArgs& CmdArgs::_append(std::string arg) {
