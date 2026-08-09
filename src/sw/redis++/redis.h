@@ -723,6 +723,50 @@ public:
     /// @see https://redis.io/commands/getbit
     long long getbit(const StringView &key, long long offset);
 
+    /// @brief Batch operations on multiple bits of a string.
+    ///
+    /// Example:
+    /// @code{.cpp}
+    /// std::vector<std::string> ops = {"SET", "u1", "1", "1","SET", "u1", "3", "0","SET", "u1", "6", "1"};
+    /// std::vector<long long> vals;
+    /// redis.bitfield("bitfieldkey", ops.begin(), ops.end(), std::back_inserter(vals));
+    /// for (int i = 0; i < vals.size(); i++) {
+    ///     std::cout << vals[i] << std::endl;
+    /// }
+    /// @endcode
+    /// @param key Key where the string is stored.
+    /// @param first Iterator to the first sub command.
+    /// @param last Off-the-end iterator to the given sub commands range.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @note The destination should be a container of `long long` type,
+    ///       the value of the corresponding is only `1` or `0`.
+    /// @see https://redis.io/commands/bitfield
+    template <typename Input, typename Output>
+    void bitfield(const StringView &key, Input first, Input last, Output output);
+
+    /// @brief Batch operations on multiple bits of a string.
+    /// Example:
+    /// @code{.cpp}
+    /// std::vector<long long> vals;
+    /// redis.bitfield("bitfieldkey",
+    ///                {"SET", "u1", "1", "1","SET", "u1", "3", "0","SET", "u1", "6", "1"},
+    ///                std::back_inserter(vals));
+    /// for (int i = 0; i < vals.size(); i++) {
+    ///     std::cout << vals[i] << std::endl;
+    /// }
+    /// @endcode
+    /// @param key Key where the string is stored.
+    /// @param first Iterator to the first sub command.
+    /// @param last Off-the-end iterator to the given sub commands range.
+    /// @param output Output iterator to the destination where the result is saved.
+    /// @note The destination should be a container of `long long` type,
+    ///       the value of the corresponding is only `1` or `0`.
+    /// @see https://redis.io/commands/bitfield
+    template <typename T, typename Output>
+    void bitfield(const StringView &key, std::initializer_list<T> il, Output output) {
+        bitfield(key, il.begin(), il.end(), output);
+    }
+
     /// @brief Get the substring of the string stored at key.
     /// @param key Key.
     /// @param start Start index (inclusive) of the range. 0 means the beginning of the string.
