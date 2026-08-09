@@ -21,6 +21,7 @@
 #include <memory>
 #include <hiredis/hiredis.h>
 #include <hiredis/hiredis_ssl.h>
+#include <openssl/ssl.h>
 
 namespace sw {
 
@@ -35,7 +36,7 @@ namespace tls {
 // Disable auto initializing OpenSSL.
 // You should call it only once and call it before any sw::redis::Redis operation.
 // Otherwise, the behavior is undefined.
-void disable_auto_init();
+void enable_auto_init();
 
 class TlsInit {
 public:
@@ -55,6 +56,10 @@ struct TlsOptions {
 
     std::string sni;
 
+    std::string tls_protocol;
+
+    std::string ciphers; //list preferred ciphers, use ":" as separator
+
 #ifdef REDIS_PLUS_PLUS_TLS_VERIFY_MODE
     int verify_mode = REDIS_SSL_VERIFY_PEER;
 #endif // end REDIS_PLUS_PLUS_TLS_VERIFY_MODE
@@ -64,17 +69,33 @@ inline bool enabled(const TlsOptions &opts) {
     return opts.enabled;
 }
 
+inline bool isEqualIgnoreCase(const std::string &str1, const std::string &str2)
+{
+    if (str1.length() != str2.length())
+    {
+        return false;
+    }
+    return std::equal(str1.begin(), str1.end(), str2.begin(),
+                      [](char c1, char c2)
+                      {
+                          return std::tolower(c1) == std::tolower(c2);
+                      });
+}
+
 struct TlsContextDeleter {
-    void operator()(redisSSLContext *ssl) const {
-        if (ssl != nullptr) {
-            redisFreeSSLContext(ssl);
+    void operator()(SSL_CTX *ssl_context) const {
+        if (ssl_context != nullptr) {
+            SSL_CTX_free(ssl_context);
         }
     }
 };
 
-using TlsContextUPtr = std::unique_ptr<redisSSLContext, TlsContextDeleter>;
+using TlsContextUPtr = std::unique_ptr<SSL_CTX, TlsContextDeleter>;
 
 TlsContextUPtr secure_connection(redisContext &ctx, const TlsOptions &opts);
+
+SSL_CTX * initSSLCTX(const TlsOptions &opts);
+SSL * initSSL(SSL_CTX *ssl_context, const TlsOptions &opts);
 
 }
 

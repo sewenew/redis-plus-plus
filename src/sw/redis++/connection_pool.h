@@ -42,6 +42,9 @@ struct ConnectionPoolOptions {
 
     // Max idle time of a connection. 0ms means we never expire the connection.
     std::chrono::milliseconds connection_idle_time{0};
+
+    // Max interval for retry solt node detection at error case, 5s as the default value.
+    std::chrono::seconds solt_node_error_recover_time{5};
 };
 
 class ConnectionPool {

@@ -56,9 +56,13 @@ public:
 
     void update();
 
+    bool getSlotState() {return _slot_ready;}
+
     ConnectionOptions connection_options(const StringView &key);
 
     ConnectionOptions connection_options();
+
+    void update_conn_opt(std::map<std::string, std::string> _new_opts);
 
 private:
     struct RedeliverEvent {
@@ -119,6 +123,8 @@ private:
     std::queue<RedeliverEvent> _events;
 
     static const std::size_t SHARDS = 16383;
+
+    bool _slot_ready = false;
 };
 
 using AsyncShardsPoolSPtr = std::shared_ptr<AsyncShardsPool>;

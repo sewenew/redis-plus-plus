@@ -107,6 +107,11 @@ public:
     void update_node_info(AsyncConnectionSPtr &connection,
             std::exception_ptr err);
 
+    void update_conn_opt(ConnectionOptions _new_opts) {
+        std::lock_guard<std::mutex> lock(_mutex);
+        _opts = _new_opts;                
+    }
+
 private:
     // NOT thread-safe
     AsyncConnectionSPtr _create();

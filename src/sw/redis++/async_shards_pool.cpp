@@ -199,7 +199,7 @@ void AsyncShardsPool::_run() {
             }
 
             // Failed to update shards, retry later.
-            std::this_thread::sleep_for(std::chrono::seconds(1));
+            std::this_thread::sleep_for(_pool_opts.solt_node_error_recover_time);
 
             update();
         }
@@ -222,6 +222,101 @@ auto AsyncShardsPool::_fetch_events() -> std::queue<RedeliverEvent> {
 
     return events;
 }
+
+void AsyncShardsPool::update_conn_opt(std::map<std::string, std::string> _new_opts)
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+
+//Auth related
+    if (_new_opts.count("passwd") != 0)
+    {
+        _connection_opts.password = _new_opts["passwd"];
+    }
+
+    if (_new_opts.count("user") != 0)
+    {
+        _connection_opts.user = _new_opts["user"];
+    }
+//TLS related
+    if (_new_opts.count("enable_tls") != 0)
+    {
+        if (_new_opts["enable_tls"] == "True") {
+            _connection_opts.tls.enabled = true;
+        } else {
+            _connection_opts.tls.enabled = false;
+        }        
+    }
+
+    if (_new_opts.count("trust_ca_file") != 0)
+    {
+        _connection_opts.tls.cacert = _new_opts["trust_ca_file"];
+    }
+    if (_new_opts.count("trust_ca_path") != 0)
+    {
+        _connection_opts.tls.cacertdir = _new_opts["trust_ca_path"];
+    }
+    if (_new_opts.count("client_cert_file") != 0)
+    {
+        _connection_opts.tls.cert = _new_opts["client_cert_file"];
+    }
+    if (_new_opts.count("client_cert_key") != 0)
+    {
+        _connection_opts.tls.key = _new_opts["client_cert_key"];
+    }
+    if (_new_opts.count("server_name") != 0)
+    {
+        _connection_opts.tls.sni = _new_opts["server_name"];
+    }
+    if (_new_opts.count("tls_protocol") != 0)
+    {
+        _connection_opts.tls.tls_protocol = _new_opts["tls_protocol"];
+    }
+    if (_new_opts.count("tls_ciphers") != 0)
+    {
+        _connection_opts.tls.ciphers = _new_opts["tls_ciphers"];
+    }
+//Timers
+    int interval;
+    if (_new_opts.count("conn_timeout") != 0)
+    {
+        try {
+            interval = std::stoi(_new_opts["conn_timeout"]);
+            _connection_opts.connect_timeout = std::chrono::milliseconds(interval);
+        } catch (std::exception &e) {
+            //ingore
+        }
+    }
+    if (_new_opts.count("command_timeout") != 0)
+    {
+        try {
+            interval = std::stoi(_new_opts["command_timeout"]);
+            _connection_opts.socket_timeout = std::chrono::milliseconds(interval);
+        } catch (std::exception &e) {
+            //ingore
+        }
+    }
+    if (_new_opts.count("slot_error_retry") != 0)
+    {
+        try {
+            interval = std::stoi(_new_opts["slot_error_retry"]);
+            _connection_opts.socket_timeout = std::chrono::seconds(interval);
+        } catch (std::exception &e) {
+            // ingore
+        }
+    }
+
+    //Above new prop update, only apply into new connections.
+
+    for (const auto &entry : _pools)
+    {
+        const AsyncConnectionPoolSPtr &pool = entry.second;
+        if (pool != nullptr)
+        {
+            pool->update_conn_opt(_connection_opts);
+        }
+    }
+}
+
 
 std::size_t AsyncShardsPool::_random(std::size_t min, std::size_t max) const {
     static thread_local std::default_random_engine engine;
@@ -292,6 +387,10 @@ void AsyncShardsPool::_update_shards() {
                 if (_pools.find(node) == _pools.end()) {
                     _add_node(node);
                 }
+            }
+
+            if (!_slot_ready) {
+                _slot_ready = true; //inital ready, mark it
             }
 
             // Update successfully.

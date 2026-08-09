@@ -562,6 +562,10 @@ AsyncConnection::AsyncContextUPtr AsyncConnection::_connect(const ConnectionOpti
         redis_opts.type = REDIS_CONN_TCP;
         redis_opts.endpoint.tcp.ip = opts.host.c_str();
         redis_opts.endpoint.tcp.port = opts.port;
+        if (!opts.srcip.empty())
+        {
+            redis_opts.endpoint.tcp.source_addr = opts.srcip.c_str();
+        }
         break;
 
     case ConnectionType::UNIX:
