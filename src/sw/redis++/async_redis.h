@@ -579,13 +579,13 @@ public:
     // LIST commands.
 
     Future<OptionalStringPair> blpop(const StringView &key,
-                                const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+                                const std::chrono::duration<double> &timeout = std::chrono::seconds{0}) {
         return _command<OptionalStringPair>(fmt::blpop, key, timeout);
     }
 
     template <typename Callback>
     auto blpop(const StringView &key,
-               const std::chrono::seconds &timeout,
+               const std::chrono::duration<double> &timeout,
                Callback &&cb)
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalStringPair> &&>::value, void>::type {
         _callback_fmt_command<OptionalStringPair>(std::forward<Callback>(cb), fmt::blpop, key, timeout);
@@ -601,7 +601,7 @@ public:
     template <typename Input>
     Future<OptionalStringPair> blpop(Input first,
                                 Input last,
-                                const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+                                const std::chrono::duration<double> &timeout = std::chrono::seconds{0}) {
         range_check("BLPOP", first, last);
 
         return _command<OptionalStringPair>(fmt::blpop_range<Input>, first, last, timeout);
@@ -610,7 +610,7 @@ public:
     template <typename Input, typename Callback>
     auto blpop(Input first,
                Input last,
-               const std::chrono::seconds &timeout,
+               const std::chrono::duration<double> &timeout,
                Callback &&cb)
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalStringPair> &&>::value, void>::type {
         range_check("BLPOP", first, last);
@@ -628,13 +628,13 @@ public:
 
     template <typename T>
     Future<OptionalStringPair> blpop(std::initializer_list<T> il,
-                                const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+                                const std::chrono::duration<double> &timeout = std::chrono::seconds{0}) {
         return blpop(il.begin(), il.end(), timeout);
     }
 
     template <typename T, typename Callback>
     auto blpop(std::initializer_list<T> il,
-               const std::chrono::seconds &timeout,
+               const std::chrono::duration<double> &timeout,
                Callback &&cb)
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalStringPair> &&>::value, void>::type {
         return blpop(il.begin(), il.end(), timeout, std::forward<Callback>(cb));
@@ -648,13 +648,13 @@ public:
     }
 
     Future<OptionalStringPair> brpop(const StringView &key,
-                                const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+                                const std::chrono::duration<double> &timeout = std::chrono::seconds{0}) {
         return _command<OptionalStringPair>(fmt::brpop, key, timeout);
     }
 
     template <typename Callback>
     auto brpop(const StringView &key,
-               const std::chrono::seconds &timeout,
+               const std::chrono::duration<double> &timeout,
                Callback &&cb)
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalStringPair> &&>::value, void>::type {
         _callback_fmt_command<OptionalStringPair>(std::forward<Callback>(cb), fmt::brpop, key, timeout);
@@ -670,7 +670,7 @@ public:
     template <typename Input>
     Future<OptionalStringPair> brpop(Input first,
                                 Input last,
-                                const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+                                const std::chrono::duration<double> &timeout = std::chrono::seconds{0}) {
         range_check("BRPOP", first, last);
 
         return _command<OptionalStringPair>(fmt::brpop_range<Input>, first, last, timeout);
@@ -679,7 +679,7 @@ public:
     template <typename Input, typename Callback>
     auto brpop(Input first,
                Input last,
-               const std::chrono::seconds &timeout,
+               const std::chrono::duration<double> &timeout,
                Callback &&cb)
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalStringPair> &&>::value, void>::type {
         range_check("BRPOP", first, last);
@@ -697,13 +697,13 @@ public:
 
     template <typename T>
     Future<OptionalStringPair> brpop(std::initializer_list<T> il,
-                                const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+                                const std::chrono::duration<double> &timeout = std::chrono::seconds{0}) {
         return brpop(il.begin(), il.end(), timeout);
     }
 
     template <typename T, typename Callback>
     auto brpop(std::initializer_list<T> il,
-               const std::chrono::seconds &timeout,
+               const std::chrono::duration<double> &timeout,
                Callback &&cb)
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalStringPair> &&>::value, void>::type {
         return brpop(il.begin(), il.end(), timeout, std::forward<Callback>(cb));
@@ -718,14 +718,14 @@ public:
 
     Future<OptionalString> brpoplpush(const StringView &source,
                                 const StringView &destination,
-                                const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+                                const std::chrono::duration<double> &timeout = std::chrono::seconds{0}) {
         return _command<OptionalString>(fmt::brpoplpush, source, destination, timeout);
     }
 
     template <typename Callback>
     auto brpoplpush(const StringView &source,
                     const StringView &destination,
-                    const std::chrono::seconds &timeout,
+                    const std::chrono::duration<double> &timeout,
                     Callback &&cb)
         -> typename std::enable_if<IsInvocable<typename std::decay<Callback>::type, Future<OptionalString> &&>::value, void>::type {
         _callback_fmt_command<OptionalString>(std::forward<Callback>(cb), fmt::brpoplpush, source, destination, timeout);
@@ -911,14 +911,14 @@ public:
 
     Future<OptionalString> blmove(const StringView &src, const StringView &dest,
             ListWhence src_whence, ListWhence dest_whence,
-            const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+            const std::chrono::duration<double> &timeout = std::chrono::seconds{0}) {
         return _command<OptionalString>(fmt::blmove, src, dest, src_whence, dest_whence, timeout.count());
     }
 
     template <typename Callback>
     void blmove(const StringView &src, const StringView &dest,
             ListWhence src_whence, ListWhence dest_whence,
-            const std::chrono::seconds &timeout, Callback &&cb) {
+            const std::chrono::duration<double> &timeout, Callback &&cb) {
         _callback_fmt_command<OptionalString>(std::forward<Callback>(cb), fmt::blmove, src, dest,
                 src_whence, dest_whence, timeout.count());
     }

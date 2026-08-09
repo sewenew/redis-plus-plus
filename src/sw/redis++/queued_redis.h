@@ -518,83 +518,83 @@ public:
 
     // LIST commands.
 
-    QueuedRedis& blpop(const StringView &key, long long timeout) {
+    QueuedRedis& blpop(const StringView &key, double timeout) {
         return command(cmd::blpop, key, timeout);
     }
 
     QueuedRedis& blpop(const StringView &key,
-                        const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+                        const std::chrono::duration<double> &timeout = std::chrono::seconds{0}) {
         return blpop(key, timeout.count());
     }
 
     template <typename Input>
-    QueuedRedis& blpop(Input first, Input last, long long timeout) {
+    QueuedRedis& blpop(Input first, Input last, double timeout) {
         range_check("BLPOP", first, last);
 
         return command(cmd::blpop_range<Input>, first, last, timeout);
     }
 
     template <typename T>
-    QueuedRedis& blpop(std::initializer_list<T> il, long long timeout) {
+    QueuedRedis& blpop(std::initializer_list<T> il, double timeout) {
         return blpop(il.begin(), il.end(), timeout);
     }
 
     template <typename Input>
     QueuedRedis& blpop(Input first,
                         Input last,
-                        const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+                        const std::chrono::duration<double> &timeout = std::chrono::seconds{0}) {
         return blpop(first, last, timeout.count());
     }
 
     template <typename T>
     QueuedRedis& blpop(std::initializer_list<T> il,
-                        const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+                        const std::chrono::duration<double> &timeout = std::chrono::seconds{0}) {
         return blpop(il.begin(), il.end(), timeout);
     }
 
-    QueuedRedis& brpop(const StringView &key, long long timeout) {
+    QueuedRedis& brpop(const StringView &key, double timeout) {
         return command(cmd::brpop, key, timeout);
     }
 
     QueuedRedis& brpop(const StringView &key,
-                        const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+                        const std::chrono::duration<double> &timeout = std::chrono::seconds{0}) {
         return brpop(key, timeout.count());
     }
 
     template <typename Input>
-    QueuedRedis& brpop(Input first, Input last, long long timeout) {
+    QueuedRedis& brpop(Input first, Input last, double timeout) {
         range_check("BRPOP", first, last);
 
         return command(cmd::brpop_range<Input>, first, last, timeout);
     }
 
     template <typename T>
-    QueuedRedis& brpop(std::initializer_list<T> il, long long timeout) {
+    QueuedRedis& brpop(std::initializer_list<T> il, double timeout) {
         return brpop(il.begin(), il.end(), timeout);
     }
 
     template <typename Input>
     QueuedRedis& brpop(Input first,
                         Input last,
-                        const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+                        const std::chrono::duration<double> &timeout = std::chrono::seconds{0}) {
         return brpop(first, last, timeout.count());
     }
 
     template <typename T>
     QueuedRedis& brpop(std::initializer_list<T> il,
-                        const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+                        const std::chrono::duration<double> &timeout = std::chrono::seconds{0}) {
         return brpop(il.begin(), il.end(), timeout);
     }
 
     QueuedRedis& brpoplpush(const StringView &source,
                             const StringView &destination,
-                            long long timeout) {
+                            double timeout) {
         return command(cmd::brpoplpush, source, destination, timeout);
     }
 
     QueuedRedis& brpoplpush(const StringView &source,
                             const StringView &destination,
-                            const std::chrono::seconds &timeout = std::chrono::seconds{0}) {
+                            const std::chrono::duration<double> &timeout = std::chrono::seconds{0}) {
         return brpoplpush(source, destination, timeout.count());
     }
 

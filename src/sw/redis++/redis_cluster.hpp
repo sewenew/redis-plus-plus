@@ -248,7 +248,7 @@ inline void RedisCluster::setex(const StringView &key,
 // LIST commands.
 
 template <typename Input>
-OptionalStringPair RedisCluster::blpop(Input first, Input last, long long timeout) {
+OptionalStringPair RedisCluster::blpop(Input first, Input last, double timeout) {
     range_check("BLPOP", first, last);
 
     auto reply = command(cmd::blpop_range<Input>, first, last, timeout);
@@ -259,12 +259,12 @@ OptionalStringPair RedisCluster::blpop(Input first, Input last, long long timeou
 template <typename Input>
 OptionalStringPair RedisCluster::blpop(Input first,
                                 Input last,
-                                const std::chrono::seconds &timeout) {
+                                const std::chrono::duration<double> &timeout) {
     return blpop(first, last, timeout.count());
 }
 
 template <typename Input>
-OptionalStringPair RedisCluster::brpop(Input first, Input last, long long timeout) {
+OptionalStringPair RedisCluster::brpop(Input first, Input last, double timeout) {
     range_check("BRPOP", first, last);
 
     auto reply = command(cmd::brpop_range<Input>, first, last, timeout);
@@ -275,13 +275,13 @@ OptionalStringPair RedisCluster::brpop(Input first, Input last, long long timeou
 template <typename Input>
 OptionalStringPair RedisCluster::brpop(Input first,
                                 Input last,
-                                const std::chrono::seconds &timeout) {
+                                const std::chrono::duration<double> &timeout) {
     return brpop(first, last, timeout.count());
 }
 
 inline OptionalString RedisCluster::brpoplpush(const StringView &source,
                                         const StringView &destination,
-                                        const std::chrono::seconds &timeout) {
+                                        const std::chrono::duration<double> &timeout) {
     return brpoplpush(source, destination, timeout.count());
 }
 

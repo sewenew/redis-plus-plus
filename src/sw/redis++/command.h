@@ -476,8 +476,8 @@ inline void strlen(Connection &connection, const StringView &key) {
 
 // LIST commands.
 
-inline void blpop(Connection &connection, const StringView &key, long long timeout) {
-    connection.send("BLPOP %b %lld",
+inline void blpop(Connection &connection, const StringView &key, double timeout) {
+    connection.send("BLPOP %b %f",
                     key.data(), key.size(),
                     timeout);
 }
@@ -486,7 +486,7 @@ template <typename Input>
 inline void blpop_range(Connection &connection,
                         Input first,
                         Input last,
-                        long long timeout) {
+                        double timeout) {
     assert(first != last);
 
     CmdArgs args;
@@ -495,8 +495,8 @@ inline void blpop_range(Connection &connection,
     connection.send(args);
 }
 
-inline void brpop(Connection &connection, const StringView &key, long long timeout) {
-    connection.send("BRPOP %b %lld",
+inline void brpop(Connection &connection, const StringView &key, double timeout) {
+    connection.send("BRPOP %b %f",
                     key.data(), key.size(),
                     timeout);
 }
@@ -505,7 +505,7 @@ template <typename Input>
 inline void brpop_range(Connection &connection,
                         Input first,
                         Input last,
-                        long long timeout) {
+                        double timeout) {
     assert(first != last);
 
     CmdArgs args;
@@ -517,8 +517,8 @@ inline void brpop_range(Connection &connection,
 inline void brpoplpush(Connection &connection,
                         const StringView &source,
                         const StringView &destination,
-                        long long timeout) {
-    connection.send("BRPOPLPUSH %b %b %lld",
+                        double timeout) {
+    connection.send("BRPOPLPUSH %b %b %f",
                     source.data(), source.size(),
                     destination.data(), destination.size(),
                     timeout);
@@ -672,10 +672,10 @@ inline void lmove(Connection &connection, const StringView &src, const StringVie
 }
 
 inline void blmove(Connection &connection, const StringView &src, const StringView &dest,
-        ListWhence src_whence, ListWhence dest_whence, long long timeout) {
+        ListWhence src_whence, ListWhence dest_whence, double timeout) {
     auto src_whence_str = to_string(src_whence);
     auto dest_whence_str = to_string(dest_whence);
-    connection.send("BLMOVE %b %b %s %s %lld",
+    connection.send("BLMOVE %b %b %s %s %f",
                     src.data(), src.size(),
                     dest.data(), dest.size(),
                     src_whence_str.data(), dest_whence_str.data(), timeout);

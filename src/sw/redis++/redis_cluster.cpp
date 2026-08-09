@@ -335,29 +335,29 @@ long long RedisCluster::strlen(const StringView &key) {
 
 // LIST commands.
 
-OptionalStringPair RedisCluster::blpop(const StringView &key, long long timeout) {
+OptionalStringPair RedisCluster::blpop(const StringView &key, double timeout) {
     auto reply = command(cmd::blpop, key, timeout);
 
     return reply::parse<OptionalStringPair>(*reply);
 }
 
-OptionalStringPair RedisCluster::blpop(const StringView &key, const std::chrono::seconds &timeout) {
+OptionalStringPair RedisCluster::blpop(const StringView &key, const std::chrono::duration<double> &timeout) {
     return blpop(key, timeout.count());
 }
 
-OptionalStringPair RedisCluster::brpop(const StringView &key, long long timeout) {
+OptionalStringPair RedisCluster::brpop(const StringView &key, double timeout) {
     auto reply = command(cmd::brpop, key, timeout);
 
     return reply::parse<OptionalStringPair>(*reply);
 }
 
-OptionalStringPair RedisCluster::brpop(const StringView &key, const std::chrono::seconds &timeout) {
+OptionalStringPair RedisCluster::brpop(const StringView &key, const std::chrono::duration<double> &timeout) {
     return brpop(key, timeout.count());
 }
 
 OptionalString RedisCluster::brpoplpush(const StringView &source,
                                     const StringView &destination,
-                                    long long timeout) {
+                                    double timeout) {
     auto reply = command(cmd::brpoplpush, source, destination, timeout);
 
     return reply::parse<OptionalString>(*reply);
@@ -452,7 +452,7 @@ OptionalString RedisCluster::lmove(const StringView &src, const StringView &dest
 }
 
 OptionalString RedisCluster::blmove(const StringView &src, const StringView &dest,
-        ListWhence src_whence, ListWhence dest_whence, const std::chrono::seconds &timeout) {
+        ListWhence src_whence, ListWhence dest_whence, const std::chrono::duration<double> &timeout) {
     auto reply = command(cmd::blmove, src, dest, src_whence, dest_whence, timeout.count());
 
     return reply::parse<OptionalString>(*reply);
