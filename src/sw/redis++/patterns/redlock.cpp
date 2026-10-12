@@ -15,6 +15,7 @@
  *************************************************************************/
 
 #include "sw/redis++/patterns/redlock.h"
+#include <exception>
 
 namespace sw {
 
@@ -65,10 +66,26 @@ std::chrono::milliseconds RedMutexTx::extend_lock(const std::string &val,
     auto start = std::chrono::steady_clock::now();
 
     auto lock_cnt = 0U;
+    std::size_t err_cnt = 0U;
+    std::exception_ptr err;
     for (auto &master : _masters) {
-        if (_extend_lock_master(*master, val, ttl)) {
-            ++lock_cnt;
+        try {
+            if (_extend_lock_master(*master, val, ttl)) {
+                ++lock_cnt;
+            }
+        } catch (const Error &) {
+            // A master we cannot reach does not count towards the quorum, but
+            // the others still do.
+            ++err_cnt;
+            if (!err) {
+                err = std::current_exception();
+            }
         }
+    }
+
+    if (err && _masters.size() - err_cnt < _quorum()) {
+        // Too many masters are unreachable for any quorum to be possible.
+        std::rethrow_exception(err);
     }
 
     auto lock_ok = lock_cnt >= _quorum();
@@ -157,10 +174,26 @@ void RedMutexTx::_unlock_master(Redis &master, const std::string &val) {
 
 bool RedMutexTx::_try_lock(const std::string &val, const std::chrono::milliseconds &ttl) {
     std::size_t lock_cnt = 0U;
+    std::size_t err_cnt = 0U;
+    std::exception_ptr err;
     for (auto &master : _masters) {
-        if (_try_lock_master(*master, val, ttl)) {
-            ++lock_cnt;
+        try {
+            if (_try_lock_master(*master, val, ttl)) {
+                ++lock_cnt;
+            }
+        } catch (const Error &) {
+            // A master we cannot reach does not count towards the quorum, but
+            // the others still do.
+            ++err_cnt;
+            if (!err) {
+                err = std::current_exception();
+            }
         }
+    }
+
+    if (err && _masters.size() - err_cnt < _quorum()) {
+        // Too many masters are unreachable for any quorum to be possible.
+        std::rethrow_exception(err);
     }
 
     return lock_cnt >= _quorum();
@@ -274,10 +307,29 @@ RedLockMutexVessel::LockInfo RedLockMutexVessel::lock(const std::string& resourc
 
     for (int i=0; i<retry_count; i++) {
         int num_locked = 0;
+        std::size_t num_failed = 0U;
+        std::exception_ptr err;
         for (auto& instance : _instances) {
-            if (_lock_instance(*instance, lock_info.resource, lock_info.random_string, ttl)) {
-                num_locked++;
+            try {
+                if (_lock_instance(*instance, lock_info.resource, lock_info.random_string, ttl)) {
+                    num_locked++;
+                }
+            } catch (const Error &) {
+                // An instance we cannot reach does not count towards the quorum,
+                // but the others still do, so the lock can be acquired as long as
+                // a majority answers.
+                ++num_failed;
+                if (!err) {
+                    err = std::current_exception();
+                }
             }
+        }
+
+        if (err && _instances.size() - num_failed < static_cast<std::size_t>(_quorum())) {
+            // Too many instances are unreachable for any quorum to be possible.
+            // Report it, instead of retrying something that cannot succeed.
+            unlock(lock_info);
+            std::rethrow_exception(err);
         }
 
         const auto drift = std::chrono::duration<decltype(clock_drift_factor)>(ttl) * clock_drift_factor + std::chrono::milliseconds(2);
@@ -314,10 +366,26 @@ RedLockMutexVessel::LockInfo RedLockMutexVessel::extend_lock(const RedLockMutexV
 
         if (time_remaining.count() > 0) {
             int num_locked = 0;
+            std::size_t num_failed = 0U;
+            std::exception_ptr err;
             for (auto& instance : _instances) {
-                if (_extend_lock_instance(*instance, lock_info.resource, lock_info.random_string, ttl)) {
-                    num_locked++;
+                try {
+                    if (_extend_lock_instance(*instance, lock_info.resource, lock_info.random_string, ttl)) {
+                        num_locked++;
+                    }
+                } catch (const Error &) {
+                    // An instance we cannot reach does not count towards the quorum.
+                    ++num_failed;
+                    if (!err) {
+                        err = std::current_exception();
+                    }
                 }
+            }
+
+            if (err && _instances.size() - num_failed < static_cast<std::size_t>(_quorum())) {
+                // Too many instances are unreachable for any quorum to be possible.
+                unlock(lock_info);
+                std::rethrow_exception(err);
             }
 
             const auto drift = std::chrono::duration<decltype(clock_drift_factor)>(ttl) * clock_drift_factor + std::chrono::milliseconds(2);
@@ -341,7 +409,12 @@ RedLockMutexVessel::LockInfo RedLockMutexVessel::extend_lock(const RedLockMutexV
 void RedLockMutexVessel::unlock(const LockInfo& lock_info)
 {
     for (auto& instance : _instances) {
-        _unlock_instance(*instance, lock_info.resource, lock_info.random_string);
+        try {
+            _unlock_instance(*instance, lock_info.resource, lock_info.random_string);
+        } catch (const Error &) {
+            // Ignore errors, and continue to unlock the other instances. The lock
+            // expires on an unreachable instance by itself, once the TTL passes.
+        }
     }
 }
 

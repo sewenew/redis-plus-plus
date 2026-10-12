@@ -30,11 +30,14 @@ namespace test {
 template <typename RedisInstance>
 class RedLockTest {
 public:
-    explicit RedLockTest(std::shared_ptr<RedisInstance> instance) : _redis(std::move(instance)) {}
+    RedLockTest(const ConnectionOptions &opts, std::shared_ptr<RedisInstance> instance) :
+        _opts(opts), _redis(std::move(instance)) {}
 
     void run();
 
 private:
+    ConnectionOptions _opts;
+
     std::shared_ptr<RedisInstance> _redis;
 };
 

@@ -19,6 +19,7 @@
 
 #include <sw/redis++/redis++.h>
 #include <queue>
+#include <vector>
 #include <iostream>
 #include <thread>
 
@@ -233,6 +234,53 @@ void RedLockTest<Redis>::run() {
         }
         else {
             REDIS_ASSERT(0, "unable to obtain a lock");
+        }
+    }
+
+    // A minority of unreachable instances must not prevent locking, and a
+    // majority of them must be reported instead of retried forever.
+    {
+        // A second reachable instance, on another database, so that it has a
+        // keyspace of its own and can hold the same resource independently.
+        auto other_db_opts = _opts;
+        other_db_opts.db = (_opts.db + 1) % 16;
+
+        // Nothing listens on port 1, and binding it needs root, so a connection
+        // there fails the way an unreachable instance does.
+        auto unreachable_opts = _opts;
+        unreachable_opts.type = ConnectionType::TCP;
+        unreachable_opts.host = "127.0.0.1";
+        unreachable_opts.port = 1;
+        unreachable_opts.connect_timeout = std::chrono::milliseconds(100);
+        unreachable_opts.socket_timeout = std::chrono::milliseconds(100);
+
+        auto other_db = std::make_shared<Redis>(other_db_opts);
+        auto unreachable = std::make_shared<Redis>(unreachable_opts);
+
+        // 2 of 3 instances reachable, which is the quorum.
+        std::vector<std::shared_ptr<Redis>> minority_down = {_redis, other_db, unreachable};
+        RedLockMutexVessel redlock_minority_down(minority_down.begin(), minority_down.end());
+        const auto lock_info = redlock_minority_down.lock(resource, random_string, ttl);
+        if (!lock_info.locked) {
+            REDIS_ASSERT(0, "redlock failed to lock with a minority of instances unreachable");
+        }
+        redlock_minority_down.unlock(lock_info);
+
+        // Only 1 of 3 instances reachable, so no quorum is possible.
+        std::vector<std::shared_ptr<Redis>> majority_down = {_redis, unreachable, unreachable};
+        RedLockMutexVessel redlock_majority_down(majority_down.begin(), majority_down.end());
+        auto reported = false;
+        try {
+            const auto no_lock_info = redlock_majority_down.lock(resource, random_string, ttl);
+            if (no_lock_info.locked) {
+                redlock_majority_down.unlock(no_lock_info);
+                REDIS_ASSERT(0, "redlock locked without a quorum");
+            }
+        } catch (const Error &) {
+            reported = true;
+        }
+        if (!reported) {
+            REDIS_ASSERT(0, "redlock did not report that no quorum is possible");
         }
     }
 
